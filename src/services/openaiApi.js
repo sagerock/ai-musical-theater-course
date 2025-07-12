@@ -21,8 +21,8 @@ export const AI_TOOLS = {
   'Claude Sonnet 3.5': 'claude-3-5-sonnet-20241022',
   'Claude Haiku 3.5': 'claude-3-5-haiku-20241022',
   // Google Models
-  'Gemini 2.5 Pro': 'gemini-2.5-pro',
-  'Gemini 2.5 Flash': 'gemini-2.5-flash'
+  'Gemini 2.5 Pro': 'gemini-2.0-flash-exp',
+  'Gemini 2.5 Flash': 'gemini-1.5-flash'
 };
 
 export const openaiApi = {

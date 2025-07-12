@@ -5,8 +5,8 @@ const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GOOGLE_API_KEY);
 
 // Available Google models
 export const GOOGLE_MODELS = {
-  'Gemini 2.5 Pro': 'gemini-2.5-pro',
-  'Gemini 2.5 Flash': 'gemini-2.5-flash'
+  'Gemini 2.5 Pro': 'gemini-2.0-flash-exp',
+  'Gemini 2.5 Flash': 'gemini-1.5-flash'
 };
 
 export const googleApi = {
@@ -50,12 +50,30 @@ export const googleApi = {
       const result = await chatSession.sendMessage(prompt);
       const response = result.response;
       
+      console.log('Google API result:', result);
+      console.log('Google API response:', response);
+      console.log('Google API candidates:', response.candidates);
+      
       // Extract text from candidates
       let responseText = '';
       if (response.candidates && response.candidates.length > 0) {
         const candidate = response.candidates[0];
+        console.log('Google API candidate:', candidate);
+        console.log('Google API candidate content:', candidate.content);
+        
         if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
           responseText = candidate.content.parts[0].text || '';
+          console.log('Google API extracted text:', responseText);
+        }
+      }
+      
+      // Try alternative extraction method if first method fails
+      if (!responseText) {
+        try {
+          responseText = response.text() || '';
+          console.log('Google API text() method result:', responseText);
+        } catch (e) {
+          console.log('Google API text() method failed:', e);
         }
       }
       
@@ -96,7 +114,7 @@ export const googleApi = {
   // Validate API key
   async validateApiKey() {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const result = await model.generateContent('test');
       return result.response.text() !== undefined;
     } catch (error) {
