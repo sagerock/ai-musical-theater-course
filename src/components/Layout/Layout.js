@@ -43,7 +43,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
@@ -89,9 +89,9 @@ export default function Layout() {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
+      <div className="hidden lg:flex lg:flex-shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-50">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
+          <div className="flex flex-col flex-grow bg-white border-r border-gray-200 h-screen">
             <div className="flex items-center h-16 px-4 border-b border-gray-200">
               <div className="h-8 w-8 bg-primary-500 rounded-lg flex items-center justify-center">
                 <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,8 +151,8 @@ export default function Layout() {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col flex-1 lg:ml-64">
-        {/* Top navigation */}
+      <div className="flex flex-col flex-1 lg:pl-64">
+        {/* Top navigation for mobile */}
         <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow border-b border-gray-200 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
