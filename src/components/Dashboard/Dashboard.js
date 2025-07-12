@@ -1,0 +1,245 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { projectApi, chatApi } from '../../services/supabaseApi';
+import { format } from 'date-fns';
+import {
+  FolderIcon,
+  ChatBubbleLeftRightIcon,
+  PlusIcon,
+  ClockIcon,
+  TagIcon
+} from '@heroicons/react/24/outline';
+
+export default function Dashboard() {
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [recentChats, setRecentChats] = useState([]);
+  const [stats, setStats] = useState({
+    totalProjects: 0,
+    totalChats: 0,
+    recentChats: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [currentUser]);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load user's projects
+      const projects = await projectApi.getUserProjects(currentUser.uid);
+      setRecentProjects(projects.slice(0, 3)); // Show only recent 3
+
+      // Load user's recent chats
+      const chats = await chatApi.getUserChats(currentUser.uid, 5);
+      setRecentChats(chats);
+
+      // Calculate stats
+      const allUserChats = await chatApi.getUserChats(currentUser.uid, 1000);
+      const today = new Date();
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const recentChatsCount = allUserChats.filter(chat => 
+        new Date(chat.created_at) >= sevenDaysAgo
+      ).length;
+
+      setStats({
+        totalProjects: projects.length,
+        totalChats: allUserChats.length,
+        recentChats: recentChatsCount
+      });
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-64 bg-gray-200 rounded-lg"></div>
+            <div className="h-64 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0]}!
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Here's what's happening with your AI interactions.
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-md">
+              <FolderIcon className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Projects</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 rounded-md">
+              <ChatBubbleLeftRightIcon className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Chats</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalChats}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 rounded-md">
+              <ClockIcon className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">This Week</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.recentChats}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Projects */}
+        <div className="bg-white rounded-lg shadow border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Recent Projects</h2>
+              <Link
+                to="/projects"
+                className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+              >
+                View all
+              </Link>
+            </div>
+          </div>
+          <div className="p-6">
+            {recentProjects.length > 0 ? (
+              <div className="space-y-4">
+                {recentProjects.map((project) => (
+                  <div key={project.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div className="flex items-center">
+                      <FolderIcon className="h-5 w-5 text-gray-400 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{project.title}</p>
+                        <p className="text-xs text-gray-500">
+                          Created {format(new Date(project.created_at), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      to={`/chat/${project.id}`}
+                      className="text-sm text-primary-600 hover:text-primary-500"
+                    >
+                      Open
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
+                <p className="mt-1 text-sm text-gray-500">Get started by creating a new project.</p>
+                <div className="mt-6">
+                  <Link
+                    to="/projects"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                  >
+                    <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                    New Project
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Chat Activity */}
+        <div className="bg-white rounded-lg shadow border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+          </div>
+          <div className="p-6">
+            {recentChats.length > 0 ? (
+              <div className="space-y-4">
+                {recentChats.map((chat) => (
+                  <div key={chat.id} className="border-l-4 border-primary-200 pl-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <ChatBubbleLeftRightIcon className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-xs text-gray-500">{chat.tool_used}</span>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {format(new Date(chat.created_at), 'MMM dd, HH:mm')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-900 mt-1 line-clamp-2">
+                      {chat.prompt.length > 100 ? `${chat.prompt.substring(0, 100)}...` : chat.prompt}
+                    </p>
+                    {chat.projects && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Project: {chat.projects.title}
+                      </p>
+                    )}
+                    {chat.chat_tags && chat.chat_tags.length > 0 && (
+                      <div className="flex items-center mt-2">
+                        <TagIcon className="h-3 w-3 text-gray-400 mr-1" />
+                        <div className="flex space-x-1">
+                          {chat.chat_tags.slice(0, 3).map((chatTag, index) => (
+                            <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {chatTag.tags.name}
+                            </span>
+                          ))}
+                          {chat.chat_tags.length > 3 && (
+                            <span className="text-xs text-gray-500">+{chat.chat_tags.length - 3} more</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <ChatBubbleLeftRightIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No chat activity yet</h3>
+                <p className="mt-1 text-sm text-gray-500">Start a conversation with AI to see your activity here.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 
