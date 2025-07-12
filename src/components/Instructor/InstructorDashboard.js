@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { chatApi, projectApi, userApi, tagApi, analyticsApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import SessionDetailModal from './SessionDetailModal';
 import {
   ChartBarIcon,
   FunnelIcon,
@@ -10,10 +11,7 @@ import {
   UsersIcon,
   ChatBubbleLeftRightIcon,
   FolderIcon,
-  TagIcon,
-  DocumentTextIcon,
-  CalendarIcon,
-  AdjustmentsHorizontalIcon
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboard() {
@@ -43,6 +41,8 @@ export default function InstructorDashboard() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { currentUser, userRole } = useAuth();
 
@@ -213,6 +213,18 @@ export default function InstructorDashboard() {
 
   // Get unique AI tools for filter
   const aiTools = [...new Set(chats.map(chat => chat.tool_used))];
+
+  // Handle clicking on a chat session
+  const handleChatClick = (chat) => {
+    setSelectedChat(chat);
+    setIsModalOpen(true);
+  };
+
+  // Close modal
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedChat(null);
+  };
 
   if (loading) {
     return (
@@ -458,7 +470,11 @@ export default function InstructorDashboard() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredChats.map((chat) => (
-                <tr key={chat.id} className="hover:bg-gray-50">
+                <tr 
+                  key={chat.id} 
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handleChatClick(chat)}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
@@ -533,6 +549,13 @@ export default function InstructorDashboard() {
           )}
         </div>
       </div>
+
+      {/* Session Detail Modal */}
+      <SessionDetailModal
+        chat={selectedChat}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 } 
