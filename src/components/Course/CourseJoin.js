@@ -56,10 +56,21 @@ export default function CourseJoin() {
     setLoading(true);
     
     try {
-      // First, authenticate with Firebase (create account if needed)
-      await login(profile.email, profile.name);
+      // Check if user is already logged in
+      if (!currentUser) {
+        // If not logged in, redirect to login page with course info
+        toast.error('Please log in first to join a course');
+        // You could store course info in localStorage and redirect
+        localStorage.setItem('pendingCourseJoin', JSON.stringify({
+          courseCode: courseCode.trim().toUpperCase(),
+          role: role,
+          courseInfo: courseInfo
+        }));
+        window.location.href = '/login';
+        return;
+      }
       
-      // Then join the course
+      // User is logged in, join the course directly
       await courseApi.joinCourse(courseCode.trim().toUpperCase(), currentUser.uid, role);
       
       toast.success(`Successfully requested to join ${courseInfo.name}! ${
@@ -68,7 +79,8 @@ export default function CourseJoin() {
           : 'Your request is pending instructor approval.'
       }`);
       
-      // The app will redirect based on the auth state
+      // Redirect to appropriate dashboard
+      window.location.href = '/';
       
     } catch (error) {
       console.error('Error joining course:', error);

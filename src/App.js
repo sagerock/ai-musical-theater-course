@@ -7,6 +7,9 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Chat from './components/Chat/Chat';
 import Projects from './components/Projects/Projects';
 import InstructorDashboard from './components/Instructor/InstructorDashboard';
+import AdminPanel from './components/Admin/AdminPanel';
+import CourseJoin from './components/Course/CourseJoin';
+import CourseDashboard from './components/Course/CourseDashboard';
 import Layout from './components/Layout/Layout';
 
 function App() {
@@ -15,11 +18,15 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/join" element={<CourseJoin />} />
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="projects" element={<Projects />} />
             <Route path="chat/:projectId" element={<Chat />} />
+            <Route path="course/:courseId" element={<CourseDashboard />} />
+            <Route path="course/:courseId/projects" element={<Projects />} />
             <Route path="instructor" element={<InstructorRoute><InstructorDashboard /></InstructorRoute>} />
+            <Route path="admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Route>
         </Routes>
       </div>
@@ -42,9 +49,19 @@ function ProtectedRoute({ children }) {
 }
 
 function InstructorRoute({ children }) {
+  const { currentUser, userRole, isInstructorAnywhere } = useAuth();
+  
+  if (!isInstructorAnywhere) {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
+}
+
+function AdminRoute({ children }) {
   const { currentUser, userRole } = useAuth();
   
-  if (userRole !== 'instructor' && userRole !== 'admin') {
+  if (userRole !== 'admin') {
     return <Navigate to="/" />;
   }
   

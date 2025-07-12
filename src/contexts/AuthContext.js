@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { supabase } from '../config/supabase';
+import { courseApi } from '../services/supabaseApi';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -39,9 +40,33 @@ async function getUserRole(userId) {
   }
 }
 
+// Check if user is an instructor in any course
+async function checkInstructorStatus(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('course_memberships')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'instructor')
+      .eq('status', 'approved')
+      .limit(1);
+
+    if (error) {
+      console.error('Error checking instructor status:', error);
+      return false;
+    }
+
+    return data && data.length > 0;
+  } catch (error) {
+    console.error('Failed to check instructor status:', error);
+    return false;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [isInstructorAnywhere, setIsInstructorAnywhere] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Sign up with email and password
@@ -133,9 +158,61 @@ export function AuthProvider({ children }) {
         throw error;
       }
 
+      // Set Supabase auth to match Firebase UID
+      await setSupabaseAuth(user.uid);
+
       setUserRole(role);
     } catch (error) {
       console.error('Failed to sync user to Supabase:', error);
+      throw error;
+    }
+  }
+
+  // Set Supabase authentication using Firebase UID
+  async function setSupabaseAuth(firebaseUid) {
+    try {
+      // Get Firebase ID token
+      const user = auth.currentUser;
+      if (user) {
+        const idToken = await user.getIdToken();
+        
+        // Use Firebase token to authenticate with Supabase
+        // Note: This requires custom JWT verification in Supabase
+        // For now, we'll use a simpler approach
+        
+        // Set a custom session that includes the Firebase UID
+        await supabase.auth.signInAnonymously();
+        
+        // Store Firebase UID in local storage for API calls
+        localStorage.setItem('firebase_uid', firebaseUid);
+      }
+    } catch (error) {
+      console.error('Failed to set Supabase auth:', error);
+    }
+  }
+
+  // Update user role (admin function)
+  async function updateUserRole(userId, newRole) {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+
+      // If updating current user's role, refresh it
+      if (userId === currentUser?.uid) {
+        setUserRole(newRole);
+      }
+
+      toast.success(`User role updated to ${newRole}`);
+    } catch (error) {
+      console.error('Failed to update user role:', error);
+      toast.error('Failed to update user role');
       throw error;
     }
   }
@@ -145,12 +222,24 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
+        
+        // Set Supabase auth to match Firebase UID
+        await setSupabaseAuth(user.uid);
+        
         // Get user role from Supabase
         const role = await getUserRole(user.uid);
         setUserRole(role);
+        
+        // Check if user is an instructor in any course
+        const instructorStatus = await checkInstructorStatus(user.uid);
+        setIsInstructorAnywhere(instructorStatus);
       } else {
         setCurrentUser(null);
         setUserRole(null);
+        setIsInstructorAnywhere(false);
+        
+        // Clear Supabase auth when Firebase user logs out
+        await supabase.auth.signOut();
       }
       setLoading(false);
     });
@@ -161,11 +250,13 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     userRole,
+    isInstructorAnywhere,
     signup,
     login,
     loginWithGoogle,
     logout,
-    syncUserToSupabase
+    syncUserToSupabase,
+    updateUserRole
   };
 
   return (

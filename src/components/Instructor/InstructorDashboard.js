@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { chatApi, projectApi, userApi, tagApi, analyticsApi } from '../../services/supabaseApi';
+import { chatApi, projectApi, userApi, tagApi, analyticsApi, courseApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
@@ -13,10 +13,13 @@ import {
   ChatBubbleLeftRightIcon,
   FolderIcon,
   DocumentTextIcon,
-  SparklesIcon
+  SparklesIcon,
+  AcademicCapIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboard() {
+  const [instructorCourses, setInstructorCourses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [stats, setStats] = useState({
     totalChats: 0,
     totalUsers: 0,
@@ -47,23 +50,53 @@ export default function InstructorDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
 
-  const { currentUser, userRole } = useAuth();
+  const { currentUser, userRole, isInstructorAnywhere } = useAuth();
 
   useEffect(() => {
-    if (userRole === 'instructor' || userRole === 'admin') {
+    if (isInstructorAnywhere) {
+      loadInstructorCourses();
+    }
+  }, [currentUser, isInstructorAnywhere]);
+
+  useEffect(() => {
+    if (selectedCourseId) {
       loadDashboardData();
     }
-  }, [userRole]);
+  }, [selectedCourseId]);
 
   useEffect(() => {
     applyFilters();
   }, [chats, filters]);
 
+  const loadInstructorCourses = async () => {
+    try {
+      const userCourses = await courseApi.getUserCourses(currentUser.uid);
+      const instructorCourses = userCourses.filter(membership => 
+        membership.role === 'instructor' && membership.status === 'approved'
+      );
+      
+      setInstructorCourses(instructorCourses);
+      
+      // Auto-select first course if available
+      if (instructorCourses.length > 0 && !selectedCourseId) {
+        setSelectedCourseId(instructorCourses[0].courses.id);
+      }
+    } catch (error) {
+      console.error('Error loading instructor courses:', error);
+      toast.error('Failed to load courses');
+    }
+  };
+
   const loadDashboardData = async () => {
+    if (!selectedCourseId) return;
+    
     try {
       setLoading(true);
       
-      // Load all data in parallel
+      console.log('🎯 InstructorDashboard.loadDashboardData - selectedCourseId:', selectedCourseId);
+      console.log('🎯 InstructorDashboard.loadDashboardData - selectedCourseId type:', typeof selectedCourseId);
+      
+      // Load all data in parallel for the selected course
       const [
         overallStats,
         allChats,
@@ -71,12 +104,19 @@ export default function InstructorDashboard() {
         allUsers,
         allTags
       ] = await Promise.all([
-        analyticsApi.getOverallStats(),
-        chatApi.getChatsWithFilters({ limit: 1000 }),
-        projectApi.getAllProjects(),
-        userApi.getAllUsers(),
+        analyticsApi.getOverallStats(selectedCourseId),
+        chatApi.getChatsWithFilters({ courseId: selectedCourseId, limit: 1000 }),
+        projectApi.getAllProjects(selectedCourseId),
+        userApi.getAllUsers(selectedCourseId),
         tagApi.getAllTags()
       ]);
+
+      console.log('📊 Dashboard data loaded:');
+      console.log('  - overallStats:', overallStats);
+      console.log('  - allChats length:', allChats?.length || 0);
+      console.log('  - allProjects length:', allProjects?.length || 0);
+      console.log('  - allUsers length:', allUsers?.length || 0);
+      console.log('  - allTags length:', allTags?.length || 0);
 
       setStats(overallStats);
       setChats(allChats);
@@ -245,6 +285,36 @@ export default function InstructorDashboard() {
     );
   }
 
+  const selectedCourse = instructorCourses.find(c => c.courses.id === selectedCourseId);
+
+  if (!isInstructorAnywhere) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            You need to be an instructor in at least one course to access this dashboard.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (instructorCourses.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No Courses Found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            You are not currently an instructor in any courses.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-8">
@@ -279,6 +349,43 @@ export default function InstructorDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Course Selection */}
+      {instructorCourses.length > 1 && (
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200 mb-6">
+          <div className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700">Viewing Course:</label>
+            <select
+              value={selectedCourseId || ''}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+            >
+              {instructorCourses.map((courseMembership) => (
+                <option key={courseMembership.courses.id} value={courseMembership.courses.id}>
+                  {courseMembership.courses.name} ({courseMembership.courses.course_code})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Current Course Info */}
+      {selectedCourse && (
+        <div className="bg-primary-50 border border-primary-200 p-4 rounded-lg mb-6">
+          <div className="flex items-center">
+            <AcademicCapIcon className="h-5 w-5 text-primary-600 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-primary-900">
+                {selectedCourse.courses.name}
+              </h3>
+              <p className="text-xs text-primary-700">
+                {selectedCourse.courses.course_code} • {selectedCourse.courses.semester} {selectedCourse.courses.year}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

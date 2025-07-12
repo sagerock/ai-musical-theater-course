@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { courseApi } from '../../services/supabaseApi';
 import {
   HomeIcon,
   FolderIcon,
@@ -9,14 +10,41 @@ import {
   Bars3Icon,
   XMarkIcon,
   UserCircleIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  CogIcon,
+  AcademicCapIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { currentUser, userRole, logout } = useAuth();
+  const [userCourses, setUserCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const { currentUser, userRole, isInstructorAnywhere, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    loadUserCourses();
+  }, [currentUser]);
+
+  const loadUserCourses = async () => {
+    if (!currentUser) {
+      setUserCourses([]);
+      setLoadingCourses(false);
+      return;
+    }
+
+    try {
+      setLoadingCourses(true);
+      const courses = await courseApi.getUserCourses(currentUser.uid);
+      setUserCourses(courses);
+    } catch (error) {
+      console.error('Error loading user courses:', error);
+      setUserCourses([]);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -29,9 +57,11 @@ export default function Layout() {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
-    { name: 'Projects', href: '/projects', icon: FolderIcon },
-    ...(userRole === 'instructor' || userRole === 'admin' 
+    ...(isInstructorAnywhere 
       ? [{ name: 'Instructor Dashboard', href: '/instructor', icon: ChartBarIcon }] 
+      : []),
+    ...(userRole === 'admin' 
+      ? [{ name: 'Admin Panel', href: '/admin', icon: CogIcon }] 
       : [])
   ];
 
@@ -84,6 +114,71 @@ export default function Layout() {
                 {item.name}
               </Link>
             ))}
+
+            {/* Courses Section */}
+            {userCourses.length > 0 && (
+              <div className="pt-4 mt-4 border-t border-gray-200">
+                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  My Courses
+                </h3>
+                <div className="space-y-1">
+                  {userCourses.map((courseMembership) => (
+                    <div key={courseMembership.id}>
+                      {/* Course Overview Link */}
+                      <Link
+                        to={`/course/${courseMembership.courses.id}`}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                          location.pathname === `/course/${courseMembership.courses.id}`
+                            ? 'bg-primary-100 text-primary-700'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <AcademicCapIcon className={`mr-3 h-5 w-5 ${
+                          location.pathname === `/course/${courseMembership.courses.id}` 
+                            ? 'text-primary-500' 
+                            : 'text-gray-400 group-hover:text-gray-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">{courseMembership.courses.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {courseMembership.courses.course_code} • {courseMembership.role}
+                          </div>
+                        </div>
+                      </Link>
+                      
+                      {/* Course Sub-navigation */}
+                      <div className="ml-8 mt-1 space-y-1">
+                        <Link
+                          to={`/course/${courseMembership.courses.id}/projects`}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                            location.pathname === `/course/${courseMembership.courses.id}/projects`
+                              ? 'bg-primary-50 text-primary-600'
+                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                          }`}
+                        >
+                          <FolderIcon className="mr-2 h-4 w-4" />
+                          Projects
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Join Course Link */}
+            <div className="pt-2">
+              <Link
+                to="/join"
+                onClick={() => setSidebarOpen(false)}
+                className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              >
+                <AcademicCapIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+                Join Course
+              </Link>
+            </div>
           </nav>
         </div>
       </div>
@@ -119,6 +214,68 @@ export default function Layout() {
                   {item.name}
                 </Link>
               ))}
+
+              {/* Courses Section */}
+              {userCourses.length > 0 && (
+                <div className="pt-4 mt-4 border-t border-gray-200">
+                  <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    My Courses
+                  </h3>
+                  <div className="space-y-1">
+                    {userCourses.map((courseMembership) => (
+                      <div key={courseMembership.id}>
+                        {/* Course Overview Link */}
+                        <Link
+                          to={`/course/${courseMembership.courses.id}`}
+                          className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            location.pathname === `/course/${courseMembership.courses.id}`
+                              ? 'bg-primary-100 text-primary-700'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          }`}
+                        >
+                          <AcademicCapIcon className={`mr-3 h-5 w-5 ${
+                            location.pathname === `/course/${courseMembership.courses.id}` 
+                              ? 'text-primary-500' 
+                              : 'text-gray-400 group-hover:text-gray-500'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate">{courseMembership.courses.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {courseMembership.courses.course_code} • {courseMembership.role}
+                            </div>
+                          </div>
+                        </Link>
+                        
+                        {/* Course Sub-navigation */}
+                        <div className="ml-8 mt-1 space-y-1">
+                          <Link
+                            to={`/course/${courseMembership.courses.id}/projects`}
+                            className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                              location.pathname === `/course/${courseMembership.courses.id}/projects`
+                                ? 'bg-primary-50 text-primary-600'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                            }`}
+                          >
+                            <FolderIcon className="mr-2 h-4 w-4" />
+                            Projects
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Join Course Link */}
+              <div className="pt-2">
+                <Link
+                  to="/join"
+                  className="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                >
+                  <AcademicCapIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+                  Join Course
+                </Link>
+              </div>
             </nav>
             
             {/* User profile section */}

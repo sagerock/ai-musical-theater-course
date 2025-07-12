@@ -1,44 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi } from '../../services/supabaseApi';
+import { projectApi, courseApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
   PlusIcon,
   FolderIcon,
   ChatBubbleLeftRightIcon,
-  CalendarIcon,
   UserIcon,
-  XMarkIcon
+  XMarkIcon,
+  TrashIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
+  const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
-    semester: ''
+    description: ''
   });
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { currentUser } = useAuth();
+  const { courseId } = useParams();
 
   useEffect(() => {
     loadProjects();
-  }, [currentUser]);
+    if (courseId) {
+      loadCourseInfo();
+    }
+  }, [currentUser, courseId]);
 
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const userProjects = await projectApi.getUserProjects(currentUser.uid);
+      // Load projects based on whether we're in a course context or not
+      const userProjects = courseId 
+        ? await projectApi.getUserProjects(currentUser.uid, courseId)
+        : await projectApi.getUserProjects(currentUser.uid);
       setProjects(userProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
       toast.error('Failed to load projects');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCourseInfo = async () => {
+    try {
+      const courseData = await courseApi.getCourseById(courseId);
+      setCourse(courseData);
+    } catch (error) {
+      console.error('Error loading course info:', error);
     }
   };
 
@@ -56,12 +76,18 @@ export default function Projects() {
       return;
     }
 
+    // If we're in a course context, require courseId for project creation
+    if (courseId && !courseId) {
+      toast.error('Course context required to create project');
+      return;
+    }
+
     try {
       setCreating(true);
-      const newProject = await projectApi.createProject(formData, currentUser.uid);
+      const newProject = await projectApi.createProject(formData, currentUser.uid, courseId);
       setProjects([newProject, ...projects]);
       setShowCreateModal(false);
-      setFormData({ title: '', description: '', semester: '' });
+      setFormData({ title: '', description: '' });
       toast.success('Project created successfully!');
     } catch (error) {
       console.error('Error creating project:', error);
@@ -69,6 +95,33 @@ export default function Projects() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleDeleteProject = (project) => {
+    setProjectToDelete(project);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    
+    try {
+      setDeleting(true);
+      await projectApi.deleteProject(projectToDelete.id, currentUser.uid);
+      setProjects(projects.filter(p => p.id !== projectToDelete.id));
+      toast.success('Project deleted successfully!');
+      setShowDeleteModal(false);
+      setProjectToDelete(null);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error(error.message || 'Failed to delete project');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const isProjectOwner = (project) => {
+    return project.created_by === currentUser.uid;
   };
 
   if (loading) {
@@ -90,9 +143,14 @@ export default function Projects() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {courseId ? `${course?.name || 'Course'} Projects` : 'Projects'}
+          </h1>
           <p className="text-gray-600 mt-1">
-            Manage your AI interaction projects and collaborate with your team.
+            {courseId 
+              ? `Manage projects for ${course?.course_code || 'this course'}`
+              : 'Manage your AI interaction projects and collaborate with your team.'
+            }
           </p>
         </div>
         <button
@@ -117,10 +175,22 @@ export default function Projects() {
                         {project.title}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        {project.project_members && project.project_members[0]?.role === 'admin' ? 'Owner' : 'Member'}
+                        {isProjectOwner(project) ? 'Owner' : 'Member'}
                       </p>
                     </div>
                   </div>
+                  {isProjectOwner(project) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProject(project);
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      title="Delete project"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
 
                 {project.description && (
@@ -129,13 +199,7 @@ export default function Projects() {
                   </p>
                 )}
 
-                <div className="mt-4 space-y-2">
-                  {project.semester && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      {project.semester}
-                    </div>
-                  )}
+                <div className="mt-4">
                   <div className="flex items-center text-sm text-gray-500">
                     <UserIcon className="h-4 w-4 mr-2" />
                     Created {format(new Date(project.created_at), 'MMM dd, yyyy')}
@@ -226,20 +290,6 @@ export default function Projects() {
                       />
                     </div>
 
-                    <div>
-                      <label htmlFor="semester" className="block text-sm font-medium text-gray-700">
-                        Semester/Term
-                      </label>
-                      <input
-                        type="text"
-                        name="semester"
-                        id="semester"
-                        value={formData.semester}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                        placeholder="e.g., Fall 2024"
-                      />
-                    </div>
                   </div>
                 </div>
 
@@ -260,6 +310,47 @@ export default function Projects() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && projectToDelete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowDeleteModal(false)} />
+            
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex items-center mb-4">
+                  <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full mr-3">
+                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">Delete Project</h3>
+                </div>
+                
+                <p className="text-sm text-gray-500 mb-6">
+                  Are you sure you want to delete "{projectToDelete.title}"? This action cannot be undone and will permanently delete all associated chats and data.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  onClick={confirmDeleteProject}
+                  disabled={deleting}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting...' : 'Delete Project'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleting}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

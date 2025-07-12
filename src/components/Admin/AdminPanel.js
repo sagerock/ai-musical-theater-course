@@ -3,21 +3,36 @@ import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import PendingApprovals from '../Instructor/PendingApprovals';
 import {
   PlusIcon,
   AcademicCapIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
   EyeIcon,
-  PencilIcon
+  PencilIcon,
+  TrashIcon,
+  XMarkIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminPanel() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRemoveMemberConfirm, setShowRemoveMemberConfirm] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [memberToRemove, setMemberToRemove] = useState(null);
   const [newCourse, setNewCourse] = useState({
+    name: '',
+    description: '',
+    semester: 'Spring',
+    year: new Date().getFullYear()
+  });
+  const [editCourse, setEditCourse] = useState({
     name: '',
     description: '',
     semester: 'Spring',
@@ -81,6 +96,81 @@ export default function AdminPanel() {
     }
   };
 
+  const handleEditCourse = (course) => {
+    setEditingCourse(course);
+    setEditCourse({
+      name: course.name,
+      description: course.description || '',
+      semester: course.semester,
+      year: course.year
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateCourse = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await courseApi.updateCourse(editingCourse.id, editCourse);
+      toast.success('Course updated successfully!');
+      setShowEditModal(false);
+      setEditingCourse(null);
+      loadCourses();
+    } catch (error) {
+      console.error('Error updating course:', error);
+      toast.error('Failed to update course');
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!editingCourse) return;
+    
+    try {
+      await courseApi.deleteCourse(editingCourse.id);
+      toast.success('Course deleted successfully!');
+      setShowDeleteConfirm(false);
+      setShowEditModal(false);
+      setEditingCourse(null);
+      loadCourses();
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      toast.error('Failed to delete course');
+    }
+  };
+
+  const handleMemberRoleChange = async (membershipId, currentRole) => {
+    const newRole = currentRole === 'student' ? 'instructor' : 'student';
+    
+    try {
+      await courseApi.updateMemberRole(membershipId, newRole);
+      toast.success(`Member role changed to ${newRole}`);
+      loadCourses();
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      toast.error('Failed to update member role');
+    }
+  };
+
+  const handleRemoveMember = (membership) => {
+    setMemberToRemove(membership);
+    setShowRemoveMemberConfirm(true);
+  };
+
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    
+    try {
+      await courseApi.removeMemberFromCourse(memberToRemove.id);
+      toast.success('Member removed successfully!');
+      setShowRemoveMemberConfirm(false);
+      setMemberToRemove(null);
+      loadCourses();
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error('Failed to remove member');
+    }
+  };
+
   const getMembershipStats = (course) => {
     const memberships = course.course_memberships || [];
     const approved = memberships.filter(m => m.status === 'approved');
@@ -124,6 +214,22 @@ export default function AdminPanel() {
         </button>
       </div>
 
+      {/* Pending Approvals Section */}
+      {courses.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Membership Requests</h2>
+          <div className="space-y-4">
+            {courses.map((course) => (
+              <PendingApprovals 
+                key={course.id}
+                courseId={course.id} 
+                courseName={course.name}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Courses Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((course) => {
@@ -149,7 +255,10 @@ export default function AdminPanel() {
                   >
                     <EyeIcon className="h-4 w-4" />
                   </button>
-                  <button className="p-1 text-gray-400 hover:text-gray-600">
+                  <button 
+                    onClick={() => handleEditCourse(course)}
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                  >
                     <PencilIcon className="h-4 w-4" />
                   </button>
                 </div>
@@ -333,10 +442,10 @@ export default function AdminPanel() {
                       <div key={membership.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {membership.users.name}
+                            {membership.users?.name || 'Unknown User'}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {membership.users.email}
+                            {membership.users?.email || 'No email available'}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -369,6 +478,246 @@ export default function AdminPanel() {
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Course Modal */}
+      {showEditModal && editingCourse && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowEditModal(false)}></div>
+            
+            <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit Course: {editingCourse.name}</h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpdateCourse} className="space-y-6">
+                {/* Course Details */}
+                <div className="border-b border-gray-200 pb-6">
+                  <h4 className="text-md font-medium text-gray-900 mb-4">Course Details</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Course Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editCourse.name}
+                        onChange={(e) => setEditCourse(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={editCourse.description}
+                        onChange={(e) => setEditCourse(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Semester
+                        </label>
+                        <select
+                          value={editCourse.semester}
+                          onChange={(e) => setEditCourse(prev => ({ ...prev, semester: e.target.value }))}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="Spring">Spring</option>
+                          <option value="Summer">Summer</option>
+                          <option value="Fall">Fall</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Year
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          value={editCourse.year}
+                          onChange={(e) => setEditCourse(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          min={new Date().getFullYear() - 5}
+                          max={new Date().getFullYear() + 5}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Course Members Management */}
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-4">Manage Members</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {editingCourse.course_memberships?.map((membership) => (
+                      <div key={membership.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">
+                            {membership.users?.name || 'Unknown User'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {membership.users?.email || 'No email available'}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            membership.role === 'instructor' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {membership.role}
+                          </span>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            membership.status === 'approved' 
+                              ? 'bg-green-100 text-green-800' 
+                              : membership.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {membership.status}
+                          </span>
+                          {membership.status === 'approved' && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleMemberRoleChange(membership.id, membership.role)}
+                                className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              >
+                                Switch to {membership.role === 'student' ? 'Instructor' : 'Student'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMember(membership)}
+                                className="p-1 text-red-400 hover:text-red-600"
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                  >
+                    <TrashIcon className="h-4 w-4 mr-2" />
+                    Delete Course
+                  </button>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                    >
+                      Update Course
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowDeleteConfirm(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full mr-3">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Delete Course</h3>
+              </div>
+              
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete "{editingCourse?.name}"? This action cannot be undone and will permanently delete all course data, projects, and chat sessions.
+              </p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteCourse}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  Delete Course
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Member Confirmation Modal */}
+      {showRemoveMemberConfirm && memberToRemove && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowRemoveMemberConfirm(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full mr-3">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Remove Member</h3>
+              </div>
+              
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to remove {memberToRemove.users?.name || 'this member'} from the course? They will lose access to all course content and their progress may be affected.
+              </p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowRemoveMemberConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRemoveMember}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  Remove Member
                 </button>
               </div>
             </div>
