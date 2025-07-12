@@ -410,9 +410,9 @@ export const analyticsApi = {
   // Get overall statistics (for instructors)
   async getOverallStats() {
     const [
-      { data: totalChats, error: chatsError },
-      { data: totalUsers, error: usersError },
-      { data: totalProjects, error: projectsError },
+      { count: totalChats, error: chatsError },
+      { count: totalUsers, error: usersError },
+      { count: totalProjects, error: projectsError },
       { data: reflectionRate, error: reflectionError }
     ] = await Promise.all([
       supabase.from('chats').select('id', { count: 'exact', head: true }),
