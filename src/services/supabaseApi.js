@@ -54,17 +54,30 @@ export const userApi = {
         const testQuery = await supabase.from('course_memberships').select('user_id').limit(1);
         if (!testQuery.error) {
           console.log('✅ course_memberships table exists, applying filter');
-          query = query
-            .select(`
-              *,
-              course_memberships!inner (
-                course_id,
-                role,
-                status
-              )
-            `)
-            .eq('course_memberships.course_id', courseId)
-            .eq('course_memberships.status', 'approved');
+          
+          // Get user IDs from course memberships first to avoid relationship conflicts
+          const { data: memberships, error: memberError } = await supabase
+            .from('course_memberships')
+            .select('user_id')
+            .eq('course_id', courseId)
+            .eq('status', 'approved');
+          
+          if (memberError) {
+            console.log('❌ Error getting course memberships:', memberError);
+            throw memberError;
+          }
+          
+          console.log('📊 Found course memberships:', memberships?.length || 0);
+          
+          if (memberships && memberships.length > 0) {
+            const userIds = memberships.map(m => m.user_id);
+            query = query.in('id', userIds);
+            console.log('✅ Filtering users by course membership IDs:', userIds.length);
+          } else {
+            console.log('⚠️ No approved course members found, returning empty result');
+            // Return a query that will match no users
+            query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+          }
         } else {
           console.log('❌ course_memberships table does not exist:', testQuery.error);
           console.log('🔄 Continuing without course filter (all users)');
@@ -431,6 +444,23 @@ export const chatApi = {
     console.log('📈 getChatsWithFilters results:');
     console.log('  - data length:', data?.length || 0);
     console.log('  - error:', error?.message || 'none');
+    
+    // Debug: Let's also check all chats without course filter
+    if (data?.length === 0 && filters.courseId) {
+      console.log('🔍 No chats found with course filter. Checking all chats...');
+      const { data: allChats, error: allError } = await supabase
+        .from('chats')
+        .select('id, course_id, project_id, created_at')
+        .limit(10);
+      
+      console.log('📊 All chats sample:', allChats?.length || 0, 'chats found');
+      if (allChats?.length > 0) {
+        console.log('📋 Sample chat data:', allChats.slice(0, 3));
+        console.log('🎯 Current course ID we\'re filtering for:', filters.courseId);
+        console.log('🔍 Course IDs in chat data:', allChats.map(chat => chat.course_id));
+        console.log('🔍 Project IDs in chat data:', allChats.map(chat => chat.project_id));
+      }
+    }
     
     if (error) {
       console.error('❌ getChatsWithFilters error:', error);
@@ -955,6 +985,69 @@ export const courseApi = {
       .eq('id', courseId);
     
     if (error) throw error;
+  },
+
+  // Fix chat course linkage (repair orphaned chats)
+  async fixChatCourseLinkage() {
+    try {
+      console.log('🔧 Starting chat course linkage repair...');
+      
+      // Get all chats with null course_id but valid project_id
+      const { data: orphanedChats, error: chatError } = await dbClient
+        .from('chats')
+        .select('id, project_id')
+        .is('course_id', null)
+        .not('project_id', 'is', null);
+      
+      if (chatError) throw chatError;
+      
+      console.log(`📊 Found ${orphanedChats?.length || 0} orphaned chats`);
+      
+      if (!orphanedChats || orphanedChats.length === 0) {
+        console.log('✅ No orphaned chats found');
+        return { fixed: 0 };
+      }
+      
+      // Get project course mappings for these chats
+      const projectIds = [...new Set(orphanedChats.map(chat => chat.project_id))];
+      const { data: projects, error: projectError } = await dbClient
+        .from('projects')
+        .select('id, course_id')
+        .in('id', projectIds)
+        .not('course_id', 'is', null);
+      
+      if (projectError) throw projectError;
+      
+      console.log(`📊 Found ${projects?.length || 0} projects with course links`);
+      
+      let fixedCount = 0;
+      
+      // Update chats with correct course_id
+      for (const project of projects || []) {
+        const chatsToUpdate = orphanedChats.filter(chat => chat.project_id === project.id);
+        
+        if (chatsToUpdate.length > 0) {
+          const { error: updateError } = await dbClient
+            .from('chats')
+            .update({ course_id: project.course_id })
+            .in('id', chatsToUpdate.map(chat => chat.id));
+          
+          if (updateError) {
+            console.error(`❌ Error updating chats for project ${project.id}:`, updateError);
+          } else {
+            fixedCount += chatsToUpdate.length;
+            console.log(`✅ Fixed ${chatsToUpdate.length} chats for project ${project.id}`);
+          }
+        }
+      }
+      
+      console.log(`🎉 Successfully fixed ${fixedCount} chat course linkages`);
+      return { fixed: fixedCount };
+      
+    } catch (error) {
+      console.error('❌ Error fixing chat course linkage:', error);
+      throw error;
+    }
   }
 };
 
