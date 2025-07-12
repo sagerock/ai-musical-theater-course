@@ -1,5 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
+import ReactMarkdown from 'react-markdown';
 import {
   UserIcon,
   ComputerDesktopIcon,
@@ -52,7 +53,9 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
             </span>
           </div>
           <div className="mt-1 bg-gray-50 rounded-lg p-3">
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{chat.response}</p>
+            <div className="text-sm text-gray-900 prose prose-sm max-w-none">
+              <ReactMarkdown>{chat.response}</ReactMarkdown>
+            </div>
           </div>
         </div>
       </div>
