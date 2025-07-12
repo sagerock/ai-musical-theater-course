@@ -42,12 +42,13 @@ export const userApi = {
 // Project operations
 export const projectApi = {
   // Create project
-  async createProject(projectData, userId) {
+  async createProject(projectData, userId, courseId) {
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .insert({
         ...projectData,
-        created_by: userId
+        created_by: userId,
+        course_id: courseId
       })
       .select()
       .single();
@@ -67,8 +68,8 @@ export const projectApi = {
     return project;
   },
 
-  // Get user's projects
-  async getUserProjects(userId) {
+  // Get user's projects (within a specific course)
+  async getUserProjects(userId, courseId) {
     const { data, error } = await supabase
       .from('projects')
       .select(`
@@ -79,14 +80,15 @@ export const projectApi = {
         )
       `)
       .eq('project_members.user_id', userId)
+      .eq('course_id', courseId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
     return data;
   },
 
-  // Get all projects (for instructors)
-  async getAllProjects() {
+  // Get all projects (for instructors within a course)
+  async getAllProjects(courseId) {
     const { data, error } = await supabase
       .from('projects')
       .select(`
@@ -96,6 +98,7 @@ export const projectApi = {
           users (name, email, role)
         )
       `)
+      .eq('course_id', courseId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -238,7 +241,12 @@ export const chatApi = {
         reflections (*)
       `);
 
-    // Apply filters
+    // Apply course filter (required)
+    if (filters.courseId) {
+      query = query.eq('course_id', filters.courseId);
+    }
+
+    // Apply other filters
     if (filters.userId) {
       query = query.eq('user_id', filters.userId);
     }
@@ -388,6 +396,153 @@ export const reflectionApi = {
 };
 
 // Analytics operations
+// Course operations
+export const courseApi = {
+  // Create course (admin only)
+  async createCourse(courseData) {
+    const { data, error } = await supabase
+      .from('courses')
+      .insert(courseData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Get all courses (admin view)
+  async getAllCourses() {
+    const { data, error } = await supabase
+      .from('courses')
+      .select(`
+        *,
+        course_memberships (
+          id,
+          role,
+          status,
+          users (name, email)
+        )
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Get course by code
+  async getCourseByCode(courseCode) {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('course_code', courseCode)
+      .eq('is_active', true)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Get user's courses
+  async getUserCourses(userId) {
+    const { data, error } = await supabase
+      .from('course_memberships')
+      .select(`
+        *,
+        courses (*)
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'approved')
+      .order('joined_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Join course with code
+  async joinCourse(courseCode, userId, role = 'student') {
+    // First, get the course
+    const course = await this.getCourseByCode(courseCode);
+    
+    // Then create membership
+    const { data, error } = await supabase
+      .from('course_memberships')
+      .insert({
+        course_id: course.id,
+        user_id: userId,
+        role: role,
+        status: role === 'instructor' ? 'pending' : 'pending' // All need approval
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Get pending approvals for instructor
+  async getPendingApprovals(courseId, instructorId) {
+    const { data, error } = await supabase
+      .from('course_memberships')
+      .select(`
+        *,
+        users (name, email),
+        courses (name)
+      `)
+      .eq('course_id', courseId)
+      .eq('status', 'pending')
+      .order('joined_at', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Approve/reject course membership
+  async updateMembershipStatus(membershipId, status, approvedBy) {
+    const { data, error } = await supabase
+      .from('course_memberships')
+      .update({
+        status: status,
+        approved_at: status === 'approved' ? new Date().toISOString() : null,
+        approved_by: status === 'approved' ? approvedBy : null
+      })
+      .eq('id', membershipId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Get course members
+  async getCourseMembers(courseId) {
+    const { data, error } = await supabase
+      .from('course_memberships')
+      .select(`
+        *,
+        users (id, name, email)
+      `)
+      .eq('course_id', courseId)
+      .eq('status', 'approved')
+      .order('role', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Generate unique course code
+  async generateCourseCode(courseName, semester, year) {
+    const { data, error } = await supabase
+      .rpc('generate_course_code', {
+        course_name: courseName,
+        semester: semester,
+        year: year
+      });
+    
+    if (error) throw error;
+    return data;
+  }
+};
+
 export const analyticsApi = {
   // Get user activity summary
   async getUserActivitySummary(userId) {
