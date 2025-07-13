@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, chatApi } from '../../services/supabaseApi';
+import { projectApi, chatApi, courseApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import {
   FolderIcon,
@@ -30,26 +30,61 @@ export default function Dashboard() {
     try {
       setLoading(true);
       
-      // Load user's projects
-      const projects = await projectApi.getUserProjects(currentUser.uid);
-      setRecentProjects(projects.slice(0, 3)); // Show only recent 3
-
-      // Load user's recent chats
-      const chats = await chatApi.getUserChats(currentUser.uid, 5);
-      setRecentChats(chats);
+      // Get user's courses first
+      const userCourses = await courseApi.getUserCourses(currentUser.uid);
+      const approvedCourses = userCourses.filter(membership => 
+        membership.status === 'approved'
+      );
+      
+      console.log('📊 Dashboard: User courses:', approvedCourses.length);
+      
+      // Aggregate projects and chats across all user's courses
+      let allProjects = [];
+      let allChats = [];
+      
+      if (approvedCourses.length > 0) {
+        // Load projects from all courses
+        const projectPromises = approvedCourses.map(membership =>
+          projectApi.getUserProjects(currentUser.uid, membership.courses.id)
+        );
+        const projectResults = await Promise.all(projectPromises);
+        allProjects = projectResults.flat();
+        
+        // Load chats from all courses
+        const chatPromises = approvedCourses.map(membership =>
+          chatApi.getUserChats(currentUser.uid, membership.courses.id, 1000)
+        );
+        const chatResults = await Promise.all(chatPromises);
+        allChats = chatResults.flat();
+      } else {
+        // Fallback: Load projects and chats without course filter (legacy data)
+        console.log('📊 Dashboard: No courses found, loading legacy data');
+        allProjects = await projectApi.getUserProjects(currentUser.uid);
+        allChats = await chatApi.getUserChats(currentUser.uid, null, 1000);
+      }
+      
+      console.log('📊 Dashboard data loaded:');
+      console.log('  - Projects:', allProjects.length);
+      console.log('  - Chats:', allChats.length);
+      
+      // Sort by date and get recent items
+      allProjects.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      allChats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      setRecentProjects(allProjects.slice(0, 3));
+      setRecentChats(allChats.slice(0, 5));
 
       // Calculate stats
-      const allUserChats = await chatApi.getUserChats(currentUser.uid, 1000);
       const today = new Date();
       const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       
-      const recentChatsCount = allUserChats.filter(chat => 
+      const recentChatsCount = allChats.filter(chat => 
         new Date(chat.created_at) >= sevenDaysAgo
       ).length;
 
       setStats({
-        totalProjects: projects.length,
-        totalChats: allUserChats.length,
+        totalProjects: allProjects.length,
+        totalChats: allChats.length,
         recentChats: recentChatsCount
       });
 
