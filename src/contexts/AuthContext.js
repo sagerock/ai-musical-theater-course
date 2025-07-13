@@ -19,21 +19,43 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-// Get user role from Supabase
+// Get user role from Supabase (prioritize highest role)
 async function getUserRole(userId) {
   try {
-    const { data, error } = await supabase
+    // First check global role
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('role')
       .eq('id', userId)
       .single();
 
-    if (error) {
-      console.error('Error fetching user role:', error);
-      return 'student'; // Default to student
+    if (userError) {
+      console.error('Error fetching user role:', userError);
+      return 'student';
     }
 
-    return data?.role || 'student';
+    const globalRole = userData?.role || 'student';
+    
+    // If they're a global admin, that takes priority
+    if (globalRole === 'admin') {
+      return 'admin';
+    }
+    
+    // Check if they're an instructor in any course
+    const { data: instructorMemberships, error: memberError } = await supabase
+      .from('course_memberships')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'instructor')
+      .eq('status', 'approved')
+      .limit(1);
+
+    if (!memberError && instructorMemberships && instructorMemberships.length > 0) {
+      return 'instructor';
+    }
+    
+    // Fall back to global role or student
+    return globalRole;
   } catch (error) {
     console.error('Failed to get user role:', error);
     return 'student';
