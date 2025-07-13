@@ -8,7 +8,7 @@ import {
   CheckIcon
 } from '@heroicons/react/24/outline';
 
-export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdated }) {
+export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdated, courseId }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [newTagName, setNewTagName] = useState('');
   const [creatingTag, setCreatingTag] = useState(false);
@@ -38,7 +38,7 @@ export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdat
       const newTag = await tagApi.createTag({
         name: newTagName.trim(),
         description: `User-created tag: ${newTagName.trim()}`
-      });
+      }, courseId);
 
       // Add to available tags
       availableTags.push(newTag);

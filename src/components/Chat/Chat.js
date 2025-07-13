@@ -38,8 +38,14 @@ export default function Chat() {
 
   useEffect(() => {
     loadProjectAndChats();
-    loadTags();
   }, [projectId, currentUser]);
+
+  // Load tags when project is loaded (to get course_id)
+  useEffect(() => {
+    if (project) {
+      loadTags();
+    }
+  }, [project]);
 
   useEffect(() => {
     scrollToBottom();
@@ -72,7 +78,9 @@ export default function Chat() {
 
   const loadTags = async () => {
     try {
-      const tags = await tagApi.getAllTags();
+      // Get courseId from project if available
+      const courseId = project?.course_id || null;
+      const tags = await tagApi.getAllTags(courseId);
       setAvailableTags(tags);
     } catch (error) {
       console.error('Error loading tags:', error);
@@ -303,6 +311,7 @@ export default function Chat() {
           availableTags={availableTags}
           onClose={() => setShowTaggingModal(false)}
           onTagsUpdated={onTagsUpdated}
+          courseId={project?.course_id}
         />
       )}
 

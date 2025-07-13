@@ -472,27 +472,137 @@ export const chatApi = {
 
 // Tag operations
 export const tagApi = {
-  // Get all tags
-  async getAllTags() {
-    const { data, error } = await supabase
+  // Get all tags (global + course-specific if courseId provided)
+  async getAllTags(courseId = null) {
+    console.log('🏷️ tagApi.getAllTags called with courseId:', courseId);
+    
+    let query = supabase
       .from('tags')
       .select('*')
       .order('name');
+
+    if (courseId) {
+      // Get both global tags (course_id is NULL) and course-specific tags
+      query = query.or(`course_id.is.null,course_id.eq.${courseId}`);
+      console.log('✅ Filtering tags for course + global tags');
+    } else {
+      // If no courseId provided, return only global tags for backward compatibility
+      query = query.is('course_id', null);
+      console.log('✅ Returning only global tags (backward compatibility)');
+    }
     
-    if (error) throw error;
+    const { data, error } = await query;
+    
+    console.log('📊 getAllTags results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getAllTags error:', error);
+      throw error;
+    }
     return data;
   },
 
-  // Create tag
-  async createTag(tagData) {
+  // Get course-specific tags for management (instructors only)
+  async getCourseTags(courseId) {
+    console.log('🏷️ tagApi.getCourseTags called with courseId:', courseId);
+    
     const { data, error } = await supabase
       .from('tags')
-      .insert(tagData)
+      .select('*')
+      .eq('course_id', courseId)
+      .order('name');
+    
+    console.log('📊 getCourseTags results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getCourseTags error:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  // Create tag (course-specific or global)
+  async createTag(tagData, courseId = null) {
+    console.log('🏷️ tagApi.createTag called with:', { tagData, courseId });
+    
+    const insertData = {
+      ...tagData,
+      ...(courseId && { course_id: courseId })
+    };
+
+    const { data, error } = await supabase
+      .from('tags')
+      .insert(insertData)
       .select()
       .single();
     
-    if (error) throw error;
+    console.log('📊 createTag results:');
+    console.log('  - data:', data);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ createTag error:', error);
+      throw error;
+    }
     return data;
+  },
+
+  // Update tag (instructors can only update course-specific tags they manage)
+  async updateTag(tagId, updates, courseId = null) {
+    console.log('🏷️ tagApi.updateTag called with:', { tagId, updates, courseId });
+    
+    let query = supabase
+      .from('tags')
+      .update(updates)
+      .eq('id', tagId);
+
+    // If courseId is provided, ensure we only update tags belonging to that course
+    if (courseId) {
+      query = query.eq('course_id', courseId);
+    }
+    
+    const { data, error } = await query
+      .select()
+      .single();
+    
+    console.log('📊 updateTag results:');
+    console.log('  - data:', data);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ updateTag error:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  // Delete tag (instructors can only delete course-specific tags they manage)
+  async deleteTag(tagId, courseId = null) {
+    console.log('🏷️ tagApi.deleteTag called with:', { tagId, courseId });
+    
+    let query = supabase
+      .from('tags')
+      .delete()
+      .eq('id', tagId);
+
+    // If courseId is provided, ensure we only delete tags belonging to that course
+    if (courseId) {
+      query = query.eq('course_id', courseId);
+    }
+    
+    const { error } = await query;
+    
+    console.log('📊 deleteTag results:');
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ deleteTag error:', error);
+      throw error;
+    }
   },
 
   // Add tags to chat
@@ -520,18 +630,44 @@ export const tagApi = {
     if (error) throw error;
   },
 
-  // Get tag usage statistics
-  async getTagUsageStats() {
-    const { data, error } = await supabase
+  // Get tag usage statistics for a course
+  async getTagUsageStats(courseId = null) {
+    console.log('🏷️ tagApi.getTagUsageStats called with courseId:', courseId);
+    
+    let query = supabase
       .from('chat_tags')
       .select(`
         tag_id,
-        tags (name),
+        tags (name, course_id),
         count
       `)
       .order('count', { ascending: false });
+
+    // If courseId provided, filter by course-specific and global tags
+    if (courseId) {
+      // This requires a join with chats table to filter by course
+      // For now, we'll get all stats and filter in JavaScript
+      // TODO: Optimize this query for better performance
+    }
     
-    if (error) throw error;
+    const { data, error } = await query;
+    
+    console.log('📊 getTagUsageStats results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getTagUsageStats error:', error);
+      throw error;
+    }
+    
+    // Filter by course if needed
+    if (courseId && data) {
+      return data.filter(stat => 
+        !stat.tags.course_id || stat.tags.course_id === courseId
+      );
+    }
+    
     return data;
   }
 };

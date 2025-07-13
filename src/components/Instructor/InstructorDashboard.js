@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
 import InstructorAIChat from './InstructorAIChat';
+import TagManagement from './TagManagement';
 import {
   ChartBarIcon,
   FunnelIcon,
@@ -15,7 +16,8 @@ import {
   FolderIcon,
   DocumentTextIcon,
   SparklesIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboard() {
@@ -50,6 +52,7 @@ export default function InstructorDashboard() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showTagManagement, setShowTagManagement] = useState(false);
 
   const { currentUser, userRole, isInstructorAnywhere } = useAuth();
   const [fixingChats, setFixingChats] = useState(false);
@@ -110,7 +113,7 @@ export default function InstructorDashboard() {
         chatApi.getChatsWithFilters({ courseId: selectedCourseId, limit: 1000 }),
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
-        tagApi.getAllTags()
+        tagApi.getAllTags(selectedCourseId)
       ]);
 
       console.log('📊 Dashboard data loaded:');
@@ -398,6 +401,13 @@ export default function InstructorDashboard() {
               >
                 <SparklesIcon className="h-3 w-3 mr-1" />
                 AI Assistant
+              </button>
+              <button
+                onClick={() => setShowTagManagement(true)}
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <TagIcon className="h-3 w-3 mr-1" />
+                Manage Tags
               </button>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -793,6 +803,14 @@ export default function InstructorDashboard() {
           tags,
           stats
         }}
+      />
+
+      {/* Tag Management */}
+      <TagManagement
+        isOpen={showTagManagement}
+        onClose={() => setShowTagManagement(false)}
+        courseId={selectedCourseId}
+        courseName={selectedCourse?.courses?.name}
       />
     </div>
   );
