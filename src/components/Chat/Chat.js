@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, chatApi, tagApi, reflectionApi } from '../../services/supabaseApi';
+import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi } from '../../services/supabaseApi';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -16,11 +16,12 @@ import {
 import ChatMessage from './ChatMessage';
 import TaggingModal from './TaggingModal';
 import ReflectionModal from './ReflectionModal';
+import InstructorNotes from '../Instructor/InstructorNotes';
 
 export default function Chat() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
   const messagesEndRef = useRef(null);
 
   const [project, setProject] = useState(null);
@@ -35,6 +36,11 @@ export default function Chat() {
   const [showTaggingModal, setShowTaggingModal] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [currentChatForModal, setCurrentChatForModal] = useState(null);
+
+  // Access control - check if user can send AI messages
+  const isProjectOwner = project?.created_by === currentUser?.uid;
+  const isInstructor = userRole === 'instructor' || userRole === 'admin';
+  const canSendAIMessages = isProjectOwner || !isInstructor;
 
   useEffect(() => {
     loadProjectAndChats();
@@ -259,49 +265,79 @@ export default function Chat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <div className="bg-white border-t border-gray-200 p-6">
-        <form onSubmit={handleSendMessage} className="flex space-x-4">
-          <div className="flex-1">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Type your message here..."
-              rows={3}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-500 focus:border-primary-500 resize-none"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
-              }}
-            />
-          </div>
-          <div className="flex flex-col justify-end">
-            <button
-              type="submit"
-              disabled={!prompt.trim() || sending}
-              className="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {sending ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Sending...
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <PaperAirplaneIcon className="h-4 w-4 mr-2" />
-                  Send
-                </div>
-              )}
-            </button>
-          </div>
-        </form>
-        
-        <div className="mt-3 flex items-center text-xs text-gray-500">
-          <SparklesIcon className="h-4 w-4 mr-1" />
-          <span>Press Enter to send, Shift+Enter for new line</span>
+      {/* Instructor Notes Section */}
+      {project && (
+        <div className="px-6 pb-6">
+          <InstructorNotes 
+            project={project} 
+            courseId={project.course_id}
+            isInstructorView={isInstructor && !isProjectOwner}
+          />
         </div>
+      )}
+
+      {/* Message Input or Instructor Message */}
+      <div className="bg-white border-t border-gray-200 p-6">
+        {canSendAIMessages ? (
+          <>
+            <form onSubmit={handleSendMessage} className="flex space-x-4">
+              <div className="flex-1">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Type your message here..."
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex flex-col justify-end">
+                <button
+                  type="submit"
+                  disabled={!prompt.trim() || sending}
+                  className="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {sending ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Sending...
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <PaperAirplaneIcon className="h-4 w-4 mr-2" />
+                      Send
+                    </div>
+                  )}
+                </button>
+              </div>
+            </form>
+            
+            <div className="mt-3 flex items-center text-xs text-gray-500">
+              <SparklesIcon className="h-4 w-4 mr-1" />
+              <span>Press Enter to send, Shift+Enter for new line</span>
+            </div>
+          </>
+        ) : (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="flex items-center">
+              <ExclamationTriangleIcon className="h-6 w-6 text-blue-600 mr-3" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-900">
+                  Instructor View - Read Only
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  You're viewing this student's project as an instructor. You can see their AI conversations but cannot send AI messages. 
+                  Use the instructor dashboard to leave notes for students.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}

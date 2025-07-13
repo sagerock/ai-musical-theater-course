@@ -1303,4 +1303,155 @@ export const analyticsApi = {
     console.log('📊 Final stats:', stats);
     return stats;
   }
+};
+
+// Instructor Notes operations
+export const instructorNotesApi = {
+  // Create instructor note
+  async createNote(noteData) {
+    console.log('📝 instructorNotesApi.createNote called with:', noteData);
+    
+    const { data, error } = await supabase
+      .from('instructor_notes')
+      .insert(noteData)
+      .select()
+      .single();
+    
+    console.log('📊 createNote results:');
+    console.log('  - data:', data);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ createNote error:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  // Get notes for a project
+  async getProjectNotes(projectId) {
+    console.log('📝 instructorNotesApi.getProjectNotes called with projectId:', projectId);
+    
+    const { data, error } = await supabase
+      .from('instructor_notes')
+      .select(`
+        *,
+        instructor:instructor_id (name, email)
+      `)
+      .eq('project_id', projectId)
+      .eq('is_visible_to_student', true)
+      .order('created_at', { ascending: false });
+    
+    console.log('📊 getProjectNotes results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getProjectNotes error:', error);
+      throw error;
+    }
+    return data || [];
+  },
+
+  // Get notes by instructor for a course
+  async getInstructorNotes(instructorId, courseId = null) {
+    console.log('📝 instructorNotesApi.getInstructorNotes called with:', { instructorId, courseId });
+    
+    let query = supabase
+      .from('instructor_notes')
+      .select(`
+        *,
+        project:project_id (title, created_by),
+        course:course_id (name)
+      `)
+      .eq('instructor_id', instructorId)
+      .order('created_at', { ascending: false });
+
+    if (courseId) {
+      query = query.eq('course_id', courseId);
+    }
+    
+    const { data, error } = await query;
+    
+    console.log('📊 getInstructorNotes results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getInstructorNotes error:', error);
+      throw error;
+    }
+    return data || [];
+  },
+
+  // Update instructor note
+  async updateNote(noteId, updates, instructorId) {
+    console.log('📝 instructorNotesApi.updateNote called with:', { noteId, updates, instructorId });
+    
+    const { data, error } = await supabase
+      .from('instructor_notes')
+      .update(updates)
+      .eq('id', noteId)
+      .eq('instructor_id', instructorId) // Ensure only the author can update
+      .select()
+      .single();
+    
+    console.log('📊 updateNote results:');
+    console.log('  - data:', data);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ updateNote error:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  // Delete instructor note
+  async deleteNote(noteId, instructorId) {
+    console.log('📝 instructorNotesApi.deleteNote called with:', { noteId, instructorId });
+    
+    const { error } = await supabase
+      .from('instructor_notes')
+      .delete()
+      .eq('id', noteId)
+      .eq('instructor_id', instructorId); // Ensure only the author can delete
+    
+    console.log('📊 deleteNote results:');
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ deleteNote error:', error);
+      throw error;
+    }
+  },
+
+  // Get notes for instructor dashboard (with project and student info)
+  async getNotesForDashboard(instructorId, courseId) {
+    console.log('📝 instructorNotesApi.getNotesForDashboard called with:', { instructorId, courseId });
+    
+    const { data, error } = await supabase
+      .from('instructor_notes')
+      .select(`
+        *,
+        project:project_id (
+          title,
+          created_by,
+          student:created_by (name, email)
+        )
+      `)
+      .eq('instructor_id', instructorId)
+      .eq('course_id', courseId)
+      .order('created_at', { ascending: false });
+    
+    console.log('📊 getNotesForDashboard results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getNotesForDashboard error:', error);
+      throw error;
+    }
+    return data || [];
+  }
 }; 

@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Chat from './components/Chat/Chat';
 import Projects from './components/Projects/Projects';
 import InstructorDashboard from './components/Instructor/InstructorDashboard';
+import InstructorNotesList from './components/Instructor/InstructorNotesList';
 import AdminPanel from './components/Admin/AdminPanel';
 import CourseJoin from './components/Course/CourseJoin';
 import CourseDashboard from './components/Course/CourseDashboard';
@@ -25,6 +26,7 @@ function App() {
             <Route path="chat/:projectId" element={<Chat />} />
             <Route path="course/:courseId" element={<CourseDashboard />} />
             <Route path="course/:courseId/projects" element={<Projects />} />
+            <Route path="course/:courseId/instructor-notes" element={<InstructorRoute><InstructorNotesList /></InstructorRoute>} />
             <Route path="instructor" element={<InstructorRoute><InstructorDashboard /></InstructorRoute>} />
             <Route path="admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Route>

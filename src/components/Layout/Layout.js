@@ -12,7 +12,8 @@ import {
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   CogIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
@@ -161,6 +162,22 @@ export default function Layout() {
                           <FolderIcon className="mr-2 h-4 w-4" />
                           Projects
                         </Link>
+                        
+                        {/* Show Instructor Notes for instructors only */}
+                        {courseMembership.role === 'instructor' && (
+                          <Link
+                            to={`/course/${courseMembership.courses.id}/instructor-notes`}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                              location.pathname === `/course/${courseMembership.courses.id}/instructor-notes`
+                                ? 'bg-primary-50 text-primary-600'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                            }`}
+                          >
+                            <DocumentTextIcon className="mr-2 h-4 w-4" />
+                            Instructor Notes
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}
