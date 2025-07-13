@@ -1336,7 +1336,7 @@ export const instructorNotesApi = {
       .from('instructor_notes')
       .select(`
         *,
-        instructor:instructor_id (name, email)
+        users!instructor_id (name, email)
       `)
       .eq('project_id', projectId)
       .eq('is_visible_to_student', true)
@@ -1361,8 +1361,8 @@ export const instructorNotesApi = {
       .from('instructor_notes')
       .select(`
         *,
-        project:project_id (title, created_by),
-        course:course_id (name)
+        projects!project_id (title, created_by),
+        courses!course_id (name)
       `)
       .eq('instructor_id', instructorId)
       .order('created_at', { ascending: false });
@@ -1434,10 +1434,10 @@ export const instructorNotesApi = {
       .from('instructor_notes')
       .select(`
         *,
-        project:project_id (
+        projects!project_id (
           title,
           created_by,
-          student:created_by (name, email)
+          users!created_by (name, email)
         )
       `)
       .eq('instructor_id', instructorId)

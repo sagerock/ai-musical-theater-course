@@ -285,8 +285,8 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
                     
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <div className="flex items-center space-x-4">
-                        {note.instructor && (
-                          <span>By: {note.instructor.name}</span>
+                        {note.users && (
+                          <span>By: {note.users.name}</span>
                         )}
                         <span>{format(new Date(note.created_at), 'MMM dd, yyyy at h:mm a')}</span>
                       </div>

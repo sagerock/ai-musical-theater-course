@@ -32,7 +32,7 @@ export default function InstructorNotesList() {
       const projectId = note.project_id;
       if (!acc[projectId]) {
         acc[projectId] = {
-          project: note.project,
+          project: note.projects,
           notes: []
         };
       }
@@ -92,10 +92,10 @@ export default function InstructorNotesList() {
                       <h3 className="text-lg font-medium text-gray-900">
                         {projectData.project?.title || 'Unknown Project'}
                       </h3>
-                      {projectData.project?.student && (
+                      {projectData.project?.users && (
                         <p className="text-sm text-gray-500 flex items-center mt-1">
                           <UserIcon className="h-4 w-4 mr-1" />
-                          {projectData.project.student.name} ({projectData.project.student.email})
+                          {projectData.project.users.name} ({projectData.project.users.email})
                         </p>
                       )}
                     </div>
