@@ -1,18 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import MarkdownRenderer from './MarkdownRenderer';
+import { attachmentApi } from '../../services/supabaseApi';
 import {
   UserIcon,
   ComputerDesktopIcon,
   TagIcon,
   ChatBubbleBottomCenterTextIcon,
-  PlusIcon
+  PlusIcon,
+  DocumentIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 
 export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentUserId }) {
   const isCurrentUser = chat.user_id === currentUserId;
   const hasReflection = chat.reflections && chat.reflections.length > 0;
   const hasTags = chat.chat_tags && chat.chat_tags.length > 0;
+  const [attachments, setAttachments] = useState([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(true);
+
+  // Load attachments when component mounts
+  useEffect(() => {
+    loadAttachments();
+  }, [chat.id]);
+
+  const loadAttachments = async () => {
+    try {
+      const chatAttachments = await attachmentApi.getChatAttachments(chat.id);
+      setAttachments(chatAttachments);
+    } catch (error) {
+      console.error('Error loading attachments:', error);
+      // Handle permission errors gracefully - just show no attachments
+      if (error.code === '42501' || error.message?.includes('permission denied')) {
+        console.log('📎 Attachment loading blocked by RLS - showing empty attachments');
+        setAttachments([]);
+      }
+    } finally {
+      setLoadingAttachments(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      const downloadUrl = await attachmentApi.getAttachmentDownloadUrl(attachment.storage_path);
+      window.open(downloadUrl, '_blank');
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -34,6 +69,37 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
           </div>
           <div className="mt-1 bg-blue-50 rounded-lg p-3">
             <p className="text-sm text-gray-900 whitespace-pre-wrap">{chat.prompt}</p>
+            
+            {/* PDF Attachments */}
+            {!loadingAttachments && attachments.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {attachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center justify-between p-2 bg-white rounded border border-blue-200"
+                  >
+                    <div className="flex items-center">
+                      <DocumentIcon className="h-4 w-4 text-blue-600 mr-2" />
+                      <div>
+                        <p className="text-xs font-medium text-gray-900">
+                          {attachment.file_name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(attachment.file_size / 1024 / 1024).toFixed(1)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDownloadAttachment(attachment)}
+                      className="text-blue-600 hover:text-blue-800 p-1"
+                      title="Download PDF"
+                    >
+                      <ArrowDownTrayIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

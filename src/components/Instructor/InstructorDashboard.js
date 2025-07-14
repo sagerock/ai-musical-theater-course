@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { chatApi, projectApi, userApi, tagApi, analyticsApi, courseApi } from '../../services/supabaseApi';
+import { chatApi, projectApi, userApi, tagApi, analyticsApi, courseApi, attachmentApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
@@ -19,7 +19,8 @@ import {
   AcademicCapIcon,
   TagIcon,
   TrashIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  PaperClipIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboard() {
@@ -36,6 +37,7 @@ export default function InstructorDashboard() {
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [tags, setTags] = useState([]);
+  const [attachments, setAttachments] = useState([]);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -132,13 +134,15 @@ export default function InstructorDashboard() {
         allChats,
         allProjects,
         allUsers,
-        allTags
+        allTags,
+        allAttachments
       ] = await Promise.all([
         analyticsApi.getOverallStats(selectedCourseId),
         chatApi.getChatsWithFilters(backendFilters),
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
-        tagApi.getAllTags(selectedCourseId)
+        tagApi.getAllTags(selectedCourseId),
+        attachmentApi.getCourseAttachments(selectedCourseId, currentUser.uid)
       ]);
 
       console.log('📊 Dashboard data loaded:');
@@ -147,6 +151,7 @@ export default function InstructorDashboard() {
       console.log('  - allProjects length:', allProjects?.length || 0);
       console.log('  - allUsers length:', allUsers?.length || 0);
       console.log('  - allTags length:', allTags?.length || 0);
+      console.log('  - allAttachments length:', allAttachments?.length || 0);
       console.log('  - Selected course ID:', selectedCourseId);
       
       if (allChats?.length === 0) {
@@ -160,8 +165,18 @@ export default function InstructorDashboard() {
       setChats(allChats);
       setProjects(allProjects);
       // Filter users by course-specific role (course_role) instead of global role
-      setUsers(allUsers.filter(user => (user.course_role || user.role) === 'student'));
+      // The getAllUsers function now properly filters by course membership
+      const courseStudents = allUsers.filter(user => (user.course_role || user.role) === 'student');
+      
+      console.log('👥 Course users filtering:');
+      console.log('  - All users loaded:', allUsers.length);
+      console.log('  - Users with course_role:', allUsers.filter(u => u.course_role).length);
+      console.log('  - Course students:', courseStudents.length);
+      console.log('  - Sample users:', allUsers.slice(0, 3).map(u => ({ name: u.name, course_role: u.course_role, role: u.role })));
+      
+      setUsers(courseStudents);
       setTags(allTags);
+      setAttachments(allAttachments || []);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -306,6 +321,7 @@ export default function InstructorDashboard() {
   const aiTools = [...new Set(chats.map(chat => chat.tool_used))];
 
   // Generate student statistics
+  console.log('📊 Calculating studentStats. Total users:', users.length);
   const studentStats = users.map(user => {
     const userProjects = projects.filter(project => project.user_id === user.id);
     const userChats = chats.filter(chat => chat.user_id === user.id);
@@ -368,15 +384,67 @@ export default function InstructorDashboard() {
 
   // Handle student removal
   const handleRemoveStudent = async (student) => {
+    console.log('🗑️ handleRemoveStudent called with:', {
+      student: student,
+      selectedCourseId: selectedCourseId,
+      currentUserUid: currentUser.uid
+    });
+    
     try {
+      console.log('🔄 Calling userApi.removeStudentFromCourse...');
       await userApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.uid);
+      console.log('✅ Student removed successfully');
+      
+      // Immediately update local state to remove the student from the UI
+      setUsers(prevUsers => {
+        console.log('🔄 Before filtering users. Total users:', prevUsers.length);
+        console.log('🔄 Removing student with ID:', student.id);
+        const filteredUsers = prevUsers.filter(user => user.id !== student.id);
+        console.log('🔄 After filtering users. Total users:', filteredUsers.length);
+        return filteredUsers;
+      });
+      
+      // Also remove the student's chats and projects from local state for immediate UI update
+      setChats(prevChats => {
+        const filteredChats = prevChats.filter(chat => chat.user_id !== student.id);
+        console.log('🔄 Removed chats for student. Before:', prevChats.length, 'After:', filteredChats.length);
+        return filteredChats;
+      });
+      setFilteredChats(prevChats => {
+        const filteredChats = prevChats.filter(chat => chat.user_id !== student.id);
+        console.log('🔄 Removed filtered chats for student. Before:', prevChats.length, 'After:', filteredChats.length);
+        return filteredChats;
+      });
+      setProjects(prevProjects => {
+        const filteredProjects = prevProjects.filter(project => project.user_id !== student.id);
+        console.log('🔄 Removed projects for student. Before:', prevProjects.length, 'After:', filteredProjects.length);
+        return filteredProjects;
+      });
+      
       toast.success(`${student.name} has been removed from the course`);
       setDeletingStudent(null);
-      // Reload dashboard data to reflect the change
-      loadDashboardData();
+      
+      // Reload dashboard data to reflect the change and ensure data consistency
+      await loadDashboardData();
     } catch (error) {
-      console.error('Error removing student:', error);
-      toast.error('Failed to remove student from course');
+      console.error('❌ Error removing student:', error);
+      toast.error(`Failed to remove student from course: ${error.message}`);
+      setDeletingStudent(null); // Close modal even on error
+    }
+  };
+
+  // Handle PDF download
+  const handleDownloadPDF = async (attachment) => {
+    try {
+      console.log('📎 Downloading PDF:', attachment.file_name);
+      const downloadUrl = await attachmentApi.getAttachmentDownloadUrl(attachment.storage_path);
+      
+      // Open in new tab for download
+      window.open(downloadUrl, '_blank');
+      toast.success('PDF download started');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error('Failed to download PDF');
     }
   };
 
@@ -585,7 +653,10 @@ export default function InstructorDashboard() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => setDeletingStudent(student)}
+                        onClick={() => {
+                          console.log('🗑️ Delete button clicked for student:', student.name);
+                          setDeletingStudent(student);
+                        }}
                         className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
                         title="Remove student from course"
                       >
@@ -659,6 +730,69 @@ export default function InstructorDashboard() {
               <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
               <p className="mt-1 text-sm text-gray-500">
                 Students haven't created any projects in this course yet.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PDF Attachments Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Student PDF Attachments</h2>
+        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+          {attachments.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {attachments.map((attachment) => (
+                <div key={attachment.id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
+                      <PaperClipIcon className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {attachment.file_name}
+                          </h3>
+                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                            {format(new Date(attachment.uploaded_at), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center text-sm text-gray-500">
+                          <span className="truncate">
+                            {attachment.chats?.users?.name || 'Unknown Student'} • {attachment.chats?.users?.email}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center text-sm text-gray-500">
+                          <span className="truncate">
+                            Project: {attachment.chats?.projects?.title || 'Unknown Project'} • 
+                            Size: {Math.round(attachment.file_size / 1024)} KB
+                          </span>
+                        </div>
+                        {attachment.chats?.prompt && (
+                          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                            Context: {attachment.chats.prompt}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      <button
+                        onClick={() => handleDownloadPDF(attachment)}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
+                      >
+                        <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <PaperClipIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No PDF attachments yet</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Students haven't uploaded any PDF files to their chats yet.
               </p>
             </div>
           )}
@@ -954,7 +1088,10 @@ export default function InstructorDashboard() {
             </p>
             <div className="flex items-center justify-center space-x-3">
               <button
-                onClick={() => handleRemoveStudent(deletingStudent)}
+                onClick={() => {
+                  console.log('🗑️ Modal confirm button clicked for:', deletingStudent?.name);
+                  handleRemoveStudent(deletingStudent);
+                }}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
               >
                 <TrashIcon className="h-4 w-4 mr-2" />

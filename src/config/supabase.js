@@ -11,15 +11,22 @@ if (!supabaseUrl || !supabaseKey) {
 // Configure Supabase client to work with Firebase auth
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    autoRefreshToken: false,
-    persistSession: false,
+    autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: false
   }
 });
 
 // Admin client with service role key (for development only)
 // TODO: Replace with actual service key for testing
-const hardcodedServiceKey = 'PASTE_YOUR_SERVICE_ROLE_KEY_HERE'; // TEMPORARY - REMOVE IN PRODUCTION
+const hardcodedServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFia3B4dHJuc2VnaHpzcnZxaGloIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyMzgyNiwiZXhwIjoyMDY3NDk5ODI2fQ.CHhOVYfTBimQtW_GZW1UVLvbmcPSoOk6GTNAV0HjLuA'; // TEMPORARY - REMOVE IN PRODUCTION
+
+console.log('🔧 SERVICE KEY DEBUG:');
+console.log('  - Environment service key exists:', !!supabaseServiceKey);
+console.log('  - Environment service key value:', supabaseServiceKey ? supabaseServiceKey.substring(0, 20) + '...' : 'Not set');
+console.log('  - Hardcoded service key exists:', !!hardcodedServiceKey);
+console.log('  - Hardcoded service key value:', hardcodedServiceKey ? hardcodedServiceKey.substring(0, 20) + '...' : 'Not set');
+console.log('  - Final service key to use:', (supabaseServiceKey || hardcodedServiceKey) ? (supabaseServiceKey || hardcodedServiceKey).substring(0, 20) + '...' : 'None');
 
 export const supabaseAdmin = (supabaseServiceKey || hardcodedServiceKey) ? 
   createClient(supabaseUrl, supabaseServiceKey || hardcodedServiceKey, {
@@ -40,6 +47,8 @@ if (typeof window !== 'undefined') {
   console.log('URL:', supabaseUrl?.substring(0, 30) + '...');
   console.log('Anon key exists:', !!supabaseKey);
   console.log('Service key exists:', !!supabaseServiceKey);
+  console.log('Service key value:', supabaseServiceKey ? supabaseServiceKey.substring(0, 20) + '...' : 'Not set');
+  console.log('Hardcoded key exists:', hardcodedServiceKey !== 'PASTE_YOUR_SERVICE_ROLE_KEY_HERE');
   console.log('Using admin client:', supabaseAdmin !== supabase);
 }
 

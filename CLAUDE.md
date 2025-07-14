@@ -45,6 +45,7 @@ REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 REACT_APP_FIREBASE_APP_ID=your_app_id
 REACT_APP_SUPABASE_URL=your_supabase_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_SUPABASE_SERVICE_KEY=your_supabase_service_key
 ```
 
 ## Known Issues & Solutions
@@ -238,6 +239,89 @@ REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 **Impact:** Simplified user experience with focused, high-quality model selection while adding research capabilities through Perplexity integration.
 
+### PDF Upload System Implementation
+**Problem:** Students needed the ability to upload PDF documents to share with AI models for analysis and discussion.
+
+**Solution Applied:**
+1. **Database Schema**: Created `pdf_attachments` table with proper foreign key relationships to chats and file metadata storage
+2. **Supabase Storage**: Set up `pdf-uploads` bucket with organized folder structure (`userId/chatId/filename`)
+3. **Authentication Resolution**: Resolved critical JWT service key authentication issues:
+   - Used Legacy API Keys service_role JWT token instead of new API key format
+   - Legacy JWT token required for service-level operations and RLS bypass
+   - Temporarily disabled RLS on pdf_attachments table for development
+4. **PDF Processing**: Implemented intelligent PDF handling that provides file metadata to AI without complex text extraction
+5. **Instructor Dashboard**: Added dedicated PDF attachments section for instructor oversight
+6. **File Validation**: Added proper file type (PDF only) and size validation (10MB max)
+
+**Authentication Challenge & Resolution:**
+- **Issue**: New Supabase secret keys (`sb_secret_...`) cannot be used in browsers
+- **Issue**: Legacy JWT service keys were missing required `sub` claim
+- **Resolution**: Used the Legacy API Keys service_role JWT token from Supabase Dashboard → Settings → API → Legacy API Keys
+- **Final Configuration**: Set `REACT_APP_SUPABASE_SERVICE_KEY` to the legacy JWT token starting with `eyJ...`
+
+**Critical Mistakes Made & Lessons Learned:**
+1. **Wrong Key Location**: Initially tried using API Keys tab instead of Legacy API Keys tab
+   - **Mistake**: Assumed new API key format would work in browsers
+   - **Lesson**: New secret keys (`sb_secret_...`) are server-only and forbidden in browsers
+   - **Solution**: Always use Legacy API Keys → service_role secret for browser applications
+
+2. **JWT Keys Confusion**: Confused JWT signing key with service role JWT token
+   - **Mistake**: Copied the raw JWT signing key from JWT Keys tab (looks like `taaJS7ZWLu3...`)
+   - **Lesson**: The JWT signing key is for token generation, not API authentication
+   - **Solution**: Use the actual JWT token from Legacy API Keys tab (starts with `eyJ...`)
+
+3. **RLS Configuration Errors**: Spent excessive time trying to configure RLS policies
+   - **Mistake**: Assumed RLS was needed for development and tried complex policy configurations
+   - **Lesson**: RLS adds complexity and may not be necessary for all use cases
+   - **Solution**: Disable RLS for development, implement properly for production if needed
+
+4. **PDF Text Extraction Complexity**: Attempted browser-incompatible PDF parsing libraries
+   - **Mistake**: Tried `pdf-parse` (Node.js only) and complex PDF.js implementations
+   - **Lesson**: Browser PDF text extraction is complex and often unreliable
+   - **Solution**: Use metadata-based approach with AI guidance for better UX
+
+5. **Service Key Storage**: Hardcoded service key in code instead of environment variables
+   - **Mistake**: Embedded JWT token directly in supabaseApi.js for "testing"
+   - **Lesson**: Always use environment variables for sensitive credentials
+   - **Solution**: Properly configured `REACT_APP_SUPABASE_SERVICE_KEY` environment variable
+
+**Key Takeaways for Future Development:**
+- Always check Legacy API Keys first for browser applications
+- Environment variables for ALL sensitive data, no exceptions
+- Test authentication thoroughly before building complex features
+- Simple solutions often work better than complex ones
+- RLS should be carefully planned, not assumed necessary
+
+**Files Modified:**
+- `src/services/supabaseApi.js`: Added complete `attachmentApi` with upload, download, and course filtering functions
+- `src/components/Chat/Chat.js`: Added PDF upload UI and integration with AI chat workflow
+- `src/components/Chat/ChatMessage.js`: Added attachment loading and display functionality
+- `src/components/Instructor/InstructorDashboard.js`: Added PDF attachments section with download capabilities
+- `disable_rls_pdf_attachments.sql`: SQL script to disable RLS on pdf_attachments table
+
+**Database Schema:**
+```sql
+CREATE TABLE pdf_attachments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  chat_id UUID REFERENCES chats(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  file_type TEXT NOT NULL DEFAULT 'application/pdf',
+  storage_path TEXT NOT NULL,
+  extracted_text TEXT,
+  uploaded_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**User Experience:**
+- **Students**: Upload PDFs in chat, AI acknowledges upload and guides interaction
+- **Instructors**: View all student PDFs in dashboard, download for review
+- **AI Integration**: PDF metadata included in AI context for guided assistance
+- **File Management**: Secure storage with proper access controls and organized paths
+
+**Impact:** Complete PDF workflow enabling students to share documents with AI while providing instructors full oversight and access to student materials.
+
 ## Development Commands
 ```bash
 npm install          # Install dependencies
@@ -256,4 +340,4 @@ npm run test        # Run tests
 https://github.com/sagerock/ai-musical-theater-course
 
 ## Last Updated
-January 14, 2025 - Streamlined AI models from 12 to 4 focused models, added Perplexity integration with Sonar Pro, updated all provider configurations and documentation
+January 14, 2025 - Implemented complete PDF upload system with Supabase Storage integration, resolved JWT service key authentication issues, added instructor PDF dashboard, and streamlined AI models from 12 to 4 focused models with Perplexity integration

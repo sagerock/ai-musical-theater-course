@@ -212,18 +212,51 @@ export function AuthProvider({ children }) {
       if (user) {
         const idToken = await user.getIdToken();
         
-        // Use Firebase token to authenticate with Supabase
-        // Note: This requires custom JWT verification in Supabase
-        // For now, we'll use a simpler approach
+        // Create a proper authenticated session in Supabase
+        // We'll use sign up with email/password approach for simplicity
+        const email = user.email || `${firebaseUid}@temp.local`;
+        const password = firebaseUid.substring(0, 20); // Use Firebase UID as password
         
-        // Set a custom session that includes the Firebase UID
-        await supabase.auth.signInAnonymously();
+        // Try to sign in first, if that fails, sign up
+        let { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (signInError && signInError.message.includes('Invalid login credentials')) {
+          // User doesn't exist, create them
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                firebase_uid: firebaseUid
+              }
+            }
+          });
+          
+          if (signUpError) {
+            console.error('Failed to create Supabase user:', signUpError);
+            // Fallback to anonymous if signup fails
+            await supabase.auth.signInAnonymously();
+          }
+        } else if (signInError) {
+          console.error('Failed to sign in to Supabase:', signInError);
+          // Fallback to anonymous if signin fails
+          await supabase.auth.signInAnonymously();
+        }
         
         // Store Firebase UID in local storage for API calls
         localStorage.setItem('firebase_uid', firebaseUid);
       }
     } catch (error) {
       console.error('Failed to set Supabase auth:', error);
+      // Fallback to anonymous
+      try {
+        await supabase.auth.signInAnonymously();
+      } catch (fallbackError) {
+        console.error('Even anonymous auth failed:', fallbackError);
+      }
     }
   }
 

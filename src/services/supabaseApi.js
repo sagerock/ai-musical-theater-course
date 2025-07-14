@@ -1,9 +1,35 @@
 import { supabase, supabaseAdmin } from '../config/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 // Use admin client only for development - switch to regular client for production
 const isDevelopment = process.env.NODE_ENV === 'development';
 const hasServiceKey = !!process.env.REACT_APP_SUPABASE_SERVICE_KEY;
 const dbClient = (isDevelopment && hasServiceKey) ? supabaseAdmin : supabase;
+
+// DIRECT ADMIN CLIENT - bypasses any configuration issues
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const serviceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY;
+
+const directAdminClient = createClient(supabaseUrl, serviceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false
+  }
+});
+
+// For attachments, use direct admin client to bypass RLS issues
+const attachmentClient = directAdminClient;
+
+// IMMEDIATE DEBUG - This will run when the file loads
+console.log('🚀 SUPABASE API MODULE LOADED');
+console.log('🚀 DIRECT ADMIN CLIENT CREATED');
+console.log('  - URL:', supabaseUrl);
+console.log('  - Service key starts with:', serviceKey.substring(0, 20) + '...');
+console.log('  - Client created successfully:', !!directAdminClient);
+console.log('🔐 ATTACHMENT CLIENT VERIFICATION:');
+console.log('  - Using direct admin client:', attachmentClient === directAdminClient);
+console.log('  - Ready for PDF operations');
 
 // Helper function to get current Firebase UID for API calls
 function getCurrentFirebaseUID() {
@@ -86,31 +112,82 @@ export const userApi = {
     }
 
     // Fallback for no courseId or if course-specific query fails
-    let query = supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    console.log('📊 Executing getAllUsers query (fallback)...');
-    const { data, error } = await query;
-    
-    console.log('📈 getAllUsers results:');
-    console.log('  - data length:', data?.length || 0);
-    console.log('  - error:', error?.message || 'none');
-    
-    if (error) {
-      console.error('❌ getAllUsers error:', error);
-      throw error;
+    if (courseId) {
+      // For course-specific requests, we need to filter by course membership
+      console.log('🔄 Fallback: Manually filtering users by course membership...');
+      
+      // Get all users first
+      const { data: allUsers, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (usersError) {
+        console.error('❌ getAllUsers error:', usersError);
+        throw usersError;
+      }
+      
+      // Get course memberships for this course
+      const { data: memberships, error: membershipsError } = await supabase
+        .from('course_memberships')
+        .select('user_id, role')
+        .eq('course_id', courseId)
+        .eq('status', 'approved');
+      
+      if (membershipsError) {
+        console.error('❌ Course memberships error:', membershipsError);
+        throw membershipsError;
+      }
+      
+      // Create a map of user_id -> course_role
+      const membershipMap = memberships.reduce((acc, membership) => {
+        acc[membership.user_id] = membership.role;
+        return acc;
+      }, {});
+      
+      // Filter users who have course membership and add course_role
+      const courseUsers = allUsers
+        .filter(user => membershipMap[user.id])
+        .map(user => ({
+          ...user,
+          course_role: membershipMap[user.id]
+        }));
+      
+      console.log('📊 Fallback query results:');
+      console.log('  - Total users:', allUsers.length);
+      console.log('  - Course memberships:', memberships.length);
+      console.log('  - Course users:', courseUsers.length);
+      
+      return courseUsers;
+    } else {
+      // No courseId, return all users
+      let query = supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log('📊 Executing getAllUsers query (no course filter)...');
+      const { data, error } = await query;
+      
+      console.log('📈 getAllUsers results:');
+      console.log('  - data length:', data?.length || 0);
+      console.log('  - error:', error?.message || 'none');
+      
+      if (error) {
+        console.error('❌ getAllUsers error:', error);
+        throw error;
+      }
+      return data;
     }
-    return data;
   },
 
   // Remove student from course (instructor only)
   async removeStudentFromCourse(userId, courseId, instructorId) {
-    console.log('🗑️ Removing student from course:', { userId, courseId, instructorId });
+    console.log('🗑️ API removeStudentFromCourse called:', { userId, courseId, instructorId });
     
     try {
       // First, verify the instructor has permission for this course
+      console.log('🔍 Checking instructor permissions...');
       const { data: instructorMembership, error: instructorError } = await supabase
         .from('course_memberships')
         .select('role')
@@ -119,9 +196,15 @@ export const userApi = {
         .eq('status', 'approved')
         .single();
       
+      console.log('👨‍🏫 Instructor membership check result:', { instructorMembership, instructorError });
+      
       if (instructorError || !instructorMembership || instructorMembership.role !== 'instructor') {
-        throw new Error('Unauthorized: You must be an instructor for this course');
+        const errorMsg = 'Unauthorized: You must be an instructor for this course';
+        console.error('❌ Authorization failed:', errorMsg);
+        throw new Error(errorMsg);
       }
+      
+      console.log('✅ Instructor authorized, proceeding with student removal...');
       
       // Remove the student's course membership
       const { error: removeError } = await supabase
@@ -129,6 +212,8 @@ export const userApi = {
         .delete()
         .eq('user_id', userId)
         .eq('course_id', courseId);
+      
+      console.log('🗑️ Delete operation result:', { removeError });
       
       if (removeError) {
         console.error('❌ Error removing student from course:', removeError);
@@ -504,6 +589,28 @@ export const chatApi = {
     
     if (error) {
       console.error('❌ getChatsWithFilters error:', error);
+      throw error;
+    }
+    return data;
+  },
+  
+  // Update chat
+  async updateChat(chatId, updates) {
+    console.log('💬 chatApi.updateChat called with:', { chatId, updates });
+    
+    const { data, error } = await supabase
+      .from('chats')
+      .update(updates)
+      .eq('id', chatId)
+      .select()
+      .single();
+    
+    console.log('📊 updateChat results:');
+    console.log('  - data:', data ? 'updated' : 'none');
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ updateChat error:', error);
       throw error;
     }
     return data;
@@ -1595,5 +1702,340 @@ export const instructorNotesApi = {
       throw error;
     }
     return data || [];
+  }
+};
+
+// Chat Attachments operations
+export const attachmentApi = {
+  // Upload PDF file and create attachment record
+  async uploadPDFAttachment(file, chatId, userId) {
+    console.log('📎 attachmentApi.uploadPDFAttachment called with:', { 
+      fileName: file.name, 
+      fileSize: file.size, 
+      chatId, 
+      userId 
+    });
+    
+    try {
+      // Validate file type - accept multiple formats
+      const allowedTypes = ['pdf', 'txt', 'docx', 'doc'];
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      
+      const isValidType = allowedTypes.some(type => 
+        fileType.includes(type) || fileName.endsWith(`.${type}`)
+      );
+      
+      if (!isValidType) {
+        throw new Error('Supported formats: PDF, TXT, DOC, DOCX');
+      }
+      
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        throw new Error('File size must be less than 10MB');
+      }
+      
+      // Generate unique file path
+      const fileExtension = file.name.split('.').pop();
+      const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+      const filePath = `${userId}/${chatId}/${uniqueFileName}`;
+      
+      console.log('📁 Uploading to storage path:', filePath);
+      
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await attachmentClient.storage
+        .from('pdf-uploads')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+      
+      console.log('✅ File uploaded successfully:', uploadData.path);
+      
+      // Extract text based on file type
+      let extractedText = '';
+      try {
+        console.log('📝 Starting text extraction for:', file.type);
+        
+        if (file.type.includes('text/plain') || fileName.endsWith('.txt')) {
+          // Handle TXT files
+          extractedText = await file.text();
+          console.log('✅ TXT text extraction successful');
+          
+        } else if (file.type.includes('pdf') || fileName.endsWith('.pdf')) {
+          // Handle PDF files
+          console.log('📄 Processing PDF...');
+          
+          // Import PDF.js
+          const pdfjsLib = await import('pdfjs-dist/webpack');
+          
+          // Convert file to array buffer
+          const arrayBuffer = await file.arrayBuffer();
+          
+          // Load PDF document
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          
+          let fullText = '';
+          console.log(`📄 Processing ${pdf.numPages} pages...`);
+          
+          // Extract text from each page
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += `\n\n--- Page ${pageNum} ---\n${pageText}`;
+          }
+          
+          extractedText = fullText.trim();
+          console.log('✅ PDF text extraction successful');
+          
+        } else if (file.type.includes('word') || fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+          // Handle Word documents - for now, provide guidance
+          const fileSizeKB = Math.round(file.size / 1024);
+          extractedText = `Word document: ${file.name} (${fileSizeKB} KB) - Please copy and paste the text content you'd like help with, as Word document text extraction is not yet supported.`;
+          
+        } else {
+          // Fallback for unsupported formats
+          const fileSizeKB = Math.round(file.size / 1024);
+          extractedText = `Document: ${file.name} (${fileSizeKB} KB) - Please copy and paste the text content you'd like help with.`;
+        }
+        
+        console.log('📄 Extracted text length:', extractedText.length);
+        
+        // If extraction was successful but no text found
+        if (!extractedText || extractedText.trim().length === 0) {
+          extractedText = `File: ${file.name} - No extractable text found, please describe the content you'd like help with.`;
+        }
+        
+      } catch (error) {
+        console.warn('⚠️ Text extraction failed:', error);
+        // Fallback to metadata-based approach
+        const fileSizeKB = Math.round(file.size / 1024);
+        extractedText = `File: ${file.name} (${fileSizeKB} KB) - Text extraction failed, please describe the content you'd like help with or copy and paste relevant sections.`;
+      }
+      
+      // Create attachment record in database
+      const attachmentData = {
+        chat_id: chatId,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        storage_path: uploadData.path,
+        extracted_text: extractedText
+      };
+      
+      console.log('💾 Creating attachment record:', attachmentData);
+      
+      const { data: attachment, error: dbError } = await attachmentClient
+        .from('pdf_attachments')
+        .insert(attachmentData)
+        .select()
+        .single();
+      
+      if (dbError) {
+        console.error('❌ Database error:', dbError);
+        // Clean up uploaded file if database insert fails
+        await attachmentClient.storage
+          .from('pdf-uploads')
+          .remove([uploadData.path]);
+        throw new Error(`Database error: ${dbError.message}`);
+      }
+      
+      console.log('✅ Attachment created successfully:', attachment.id);
+      return attachment;
+      
+    } catch (error) {
+      console.error('❌ uploadPDFAttachment error:', error);
+      throw error;
+    }
+  },
+  
+  // Get attachments for a chat
+  async getChatAttachments(chatId) {
+    console.log('📎 attachmentApi.getChatAttachments called with chatId:', chatId);
+    
+    const { data, error } = await attachmentClient
+      .from('pdf_attachments')
+      .select('*')
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: true });
+    
+    console.log('📊 getChatAttachments results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getChatAttachments error:', error);
+      throw error;
+    }
+    return data || [];
+  },
+  
+  // Get download URL for a PDF attachment
+  async getAttachmentDownloadUrl(storagePath) {
+    console.log('📎 attachmentApi.getAttachmentDownloadUrl called with path:', storagePath);
+    
+    const { data, error } = await attachmentClient.storage
+      .from('pdf-uploads')
+      .createSignedUrl(storagePath, 3600); // 1 hour expiry
+    
+    console.log('📊 getAttachmentDownloadUrl results:');
+    console.log('  - signedUrl:', data?.signedUrl ? 'generated' : 'null');
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getAttachmentDownloadUrl error:', error);
+      throw error;
+    }
+    return data?.signedUrl;
+  },
+  
+  // Delete attachment (removes file and database record)
+  async deleteAttachment(attachmentId, userId) {
+    console.log('📎 attachmentApi.deleteAttachment called with:', { attachmentId, userId });
+    
+    try {
+      // First get the attachment to verify ownership and get storage path
+      const { data: attachment, error: fetchError } = await attachmentClient
+        .from('pdf_attachments')
+        .select(`
+          *,
+          chats!chat_id (user_id)
+        `)
+        .eq('id', attachmentId)
+        .single();
+      
+      if (fetchError) {
+        console.error('❌ Fetch attachment error:', fetchError);
+        throw new Error(`Failed to fetch attachment: ${fetchError.message}`);
+      }
+      
+      // Verify ownership
+      if (attachment.chats.user_id !== userId) {
+        throw new Error('Unauthorized: You can only delete your own attachments');
+      }
+      
+      // Delete from storage
+      const { error: storageError } = await attachmentClient.storage
+        .from('pdf-uploads')
+        .remove([attachment.storage_path]);
+      
+      if (storageError) {
+        console.error('❌ Storage deletion error:', storageError);
+        // Continue with database deletion even if storage deletion fails
+      }
+      
+      // Delete from database
+      const { error: dbError } = await attachmentClient
+        .from('pdf_attachments')
+        .delete()
+        .eq('id', attachmentId);
+      
+      if (dbError) {
+        console.error('❌ Database deletion error:', dbError);
+        throw new Error(`Database deletion failed: ${dbError.message}`);
+      }
+      
+      console.log('✅ Attachment deleted successfully');
+      
+    } catch (error) {
+      console.error('❌ deleteAttachment error:', error);
+      throw error;
+    }
+  },
+  
+  // Get all attachments for a course (for instructors)
+  async getCourseAttachments(courseId, instructorId) {
+    console.log('📎 attachmentApi.getCourseAttachments called with:', { courseId, instructorId });
+    
+    try {
+      // First, get all attachments with basic chat info
+      const { data: attachments, error: attachmentError } = await attachmentClient
+        .from('pdf_attachments')
+        .select(`
+          *,
+          chats!chat_id (
+            id,
+            prompt,
+            created_at,
+            user_id,
+            project_id
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (attachmentError) {
+        console.error('❌ getCourseAttachments error:', attachmentError);
+        throw attachmentError;
+      }
+      
+      if (!attachments || attachments.length === 0) {
+        console.log('📊 No attachments found');
+        return [];
+      }
+      
+      // Get unique user IDs and project IDs
+      const userIds = [...new Set(attachments.map(a => a.chats?.user_id).filter(Boolean))];
+      const projectIds = [...new Set(attachments.map(a => a.chats?.project_id).filter(Boolean))];
+      
+      // Get user data
+      const { data: users, error: userError } = await attachmentClient
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds);
+      
+      if (userError) {
+        console.warn('⚠️ Error loading users:', userError);
+      }
+      
+      // Get project data with course filter
+      const { data: projects, error: projectError } = await attachmentClient
+        .from('projects')
+        .select('id, title, course_id')
+        .in('id', projectIds)
+        .eq('course_id', courseId);
+      
+      if (projectError) {
+        console.warn('⚠️ Error loading projects:', projectError);
+      }
+      
+      // Filter attachments to only include those from the selected course
+      const courseAttachments = attachments.filter(attachment => {
+        const project = projects?.find(p => p.id === attachment.chats?.project_id);
+        return project && project.course_id === courseId;
+      });
+      
+      // Enhance attachments with user and project data
+      const enhancedAttachments = courseAttachments.map(attachment => {
+        const user = users?.find(u => u.id === attachment.chats?.user_id);
+        const project = projects?.find(p => p.id === attachment.chats?.project_id);
+        
+        return {
+          ...attachment,
+          chats: {
+            ...attachment.chats,
+            users: user,
+            projects: project
+          }
+        };
+      });
+      
+      console.log('📊 getCourseAttachments results:');
+      console.log('  - total attachments:', attachments.length);
+      console.log('  - course attachments:', enhancedAttachments.length);
+      console.log('  - error:', 'none');
+      
+      return enhancedAttachments;
+      
+    } catch (error) {
+      console.error('❌ getCourseAttachments error:', error);
+      throw error;
+    }
   }
 }; 

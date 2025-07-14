@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi } from '../../services/supabaseApi';
+import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi, attachmentApi } from '../../services/supabaseApi';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -11,7 +11,9 @@ import {
   TagIcon,
   ChatBubbleLeftRightIcon,
   ExclamationTriangleIcon,
-  SparklesIcon
+  SparklesIcon,
+  PaperClipIcon,
+  DocumentIcon
 } from '@heroicons/react/24/outline';
 import ChatMessage from './ChatMessage';
 import TaggingModal from './TaggingModal';
@@ -31,6 +33,8 @@ export default function Chat() {
   const [prompt, setPrompt] = useState('');
   const [selectedTool, setSelectedTool] = useState('Claude Sonnet 4');
   const [availableTags, setAvailableTags] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   
   // Modal states
   const [showTaggingModal, setShowTaggingModal] = useState(false);
@@ -93,12 +97,52 @@ export default function Chat() {
     }
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type - accept multiple formats
+      const allowedTypes = ['pdf', 'txt', 'docx', 'doc'];
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      
+      const isValidType = allowedTypes.some(type => 
+        fileType.includes(type) || fileName.endsWith(`.${type}`)
+      );
+      
+      if (!isValidType) {
+        toast.error('Supported formats: PDF, TXT, DOC, DOCX');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+      toast.success(`PDF selected: ${file.name}`);
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
-    if (!prompt.trim() || sending) return;
+    if ((!prompt.trim() && !selectedFile) || sending) return;
 
     const userPrompt = prompt.trim();
+    let finalPrompt = userPrompt;
+    
+    // If there's a file but no text prompt, create a default prompt
+    if (selectedFile && !userPrompt) {
+      finalPrompt = `I've uploaded a PDF file "${selectedFile.name}". Please analyze its content and provide insights.`;
+    }
+    
     setPrompt('');
     setSending(true);
 
@@ -108,38 +152,86 @@ export default function Chat() {
         .filter(chat => chat.user_id === currentUser.uid)
         .slice(-5);
 
-      // Call AI API (automatically routes to correct provider)
+      // Upload PDF first if selected
+      let pdfContent = '';
+      let tempChatId = null;
+      
+      if (selectedFile) {
+        try {
+          setUploading(true);
+          // Create a temporary chat record to get an ID for the PDF upload
+          const tempChatData = {
+            user_id: currentUser.uid,
+            project_id: projectId,
+            tool_used: selectedTool,
+            prompt: finalPrompt,
+            response: 'Processing PDF...' // Temporary response to satisfy NOT NULL constraint
+          };
+          
+          const tempChat = await chatApi.createChat(tempChatData, project?.course_id);
+          tempChatId = tempChat.id;
+          
+          const attachment = await attachmentApi.uploadPDFAttachment(
+            selectedFile, 
+            tempChat.id, 
+            currentUser.uid
+          );
+          
+          pdfContent = `\n\n[PDF Attachment: ${attachment.file_name}]\n${attachment.extracted_text}`;
+          toast.success('PDF uploaded successfully!');
+        } catch (uploadError) {
+          console.error('PDF upload failed:', uploadError);
+          toast.error('PDF upload failed, but message will be sent without attachment');
+        } finally {
+          setUploading(false);
+        }
+      }
+
+      // Call AI API with the prompt and PDF content
+      const aiPrompt = finalPrompt + pdfContent;
       const aiResponse = await aiApi.sendChatCompletion(
-        userPrompt, 
+        aiPrompt, 
         selectedTool,
         recentChats
       );
 
-      // Save chat to database
-      const chatData = {
-        user_id: currentUser.uid,
-        project_id: projectId,
-        tool_used: selectedTool,
-        prompt: userPrompt,
-        response: aiResponse.response
-      };
-
-      const newChat = await chatApi.createChat(chatData, project?.course_id);
+      // Create or update the chat with the AI response
+      let finalChat;
+      if (tempChatId) {
+        // Update the temporary chat with the real AI response
+        finalChat = await chatApi.updateChat(tempChatId, {
+          response: aiResponse.response
+        });
+      } else {
+        // Create a new chat without PDF
+        const chatData = {
+          user_id: currentUser.uid,
+          project_id: projectId,
+          tool_used: selectedTool,
+          prompt: finalPrompt,
+          response: aiResponse.response
+        };
+        
+        finalChat = await chatApi.createChat(chatData, project?.course_id);
+      }
 
       // Add to local state
       setChats(prev => [...prev, {
-        ...newChat,
+        ...finalChat,
         users: { name: currentUser.displayName || 'You', email: currentUser.email },
         chat_tags: [],
         reflections: []
       }]);
+
+      // Clear selected file
+      setSelectedFile(null);
 
       // Show success message and offer tagging
       toast.success('Message sent successfully!');
       
       // Prompt for tagging after a brief delay
       setTimeout(() => {
-        setCurrentChatForModal(newChat);
+        setCurrentChatForModal(finalChat);
         setShowTaggingModal(true);
       }, 1000);
 
@@ -280,12 +372,32 @@ export default function Chat() {
       <div className="bg-white border-t border-gray-200 p-6">
         {canSendAIMessages ? (
           <>
+            {/* File Upload Indicator */}
+            {selectedFile && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <DocumentIcon className="h-5 w-5 text-blue-600 mr-2" />
+                    <span className="text-sm text-blue-800">
+                      {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                    </span>
+                  </div>
+                  <button
+                    onClick={removeSelectedFile}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSendMessage} className="flex space-x-4">
               <div className="flex-1">
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Type your message here..."
+                  placeholder={selectedFile ? "Ask a question about your PDF (optional)..." : "Type your message here..."}
                   rows={3}
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-500 focus:border-primary-500 resize-none"
                   onKeyDown={(e) => {
@@ -296,16 +408,34 @@ export default function Chat() {
                   }}
                 />
               </div>
-              <div className="flex flex-col justify-end">
+              <div className="flex flex-col justify-end space-y-2">
+                {/* File Upload Button */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".pdf,.txt,.doc,.docx"
+                    onChange={handleFileSelect}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                    title="Upload PDF"
+                  >
+                    <PaperClipIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                {/* Send Button */}
                 <button
                   type="submit"
-                  disabled={!prompt.trim() || sending}
+                  disabled={(!prompt.trim() && !selectedFile) || sending}
                   className="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {sending ? (
+                  {sending || uploading ? (
                     <div className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Sending...
+                      {uploading ? 'Uploading...' : 'Sending...'}
                     </div>
                   ) : (
                     <div className="flex items-center">
@@ -319,7 +449,7 @@ export default function Chat() {
             
             <div className="mt-3 flex items-center text-xs text-gray-500">
               <SparklesIcon className="h-4 w-4 mr-1" />
-              <span>Press Enter to send, Shift+Enter for new line</span>
+              <span>Press Enter to send, Shift+Enter for new line • Upload PDF, TXT, DOC, DOCX up to 10MB</span>
             </div>
           </>
         ) : (
