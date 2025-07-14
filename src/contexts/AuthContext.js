@@ -6,7 +6,8 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { supabase } from '../config/supabase';
@@ -145,6 +146,17 @@ export function AuthProvider({ children }) {
       
       toast.success('Logged in with Google successfully!');
       return result;
+    } catch (error) {
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  // Reset password
+  async function resetPassword(email) {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success('Password reset email sent! Check your inbox.');
     } catch (error) {
       toast.error(error.message);
       throw error;
@@ -295,6 +307,7 @@ export function AuthProvider({ children }) {
     signup,
     login,
     loginWithGoogle,
+    resetPassword,
     logout,
     syncUserToSupabase,
     updateUserRole,

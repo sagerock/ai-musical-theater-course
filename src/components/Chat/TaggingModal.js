@@ -8,7 +8,7 @@ import {
   CheckIcon
 } from '@heroicons/react/24/outline';
 
-export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdated, courseId }) {
+export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdated, courseId, userRole }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [newTagName, setNewTagName] = useState('');
   const [creatingTag, setCreatingTag] = useState(false);
@@ -38,7 +38,7 @@ export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdat
       const newTag = await tagApi.createTag({
         name: newTagName.trim(),
         description: `User-created tag: ${newTagName.trim()}`
-      }, courseId);
+      }, courseId, userRole);
 
       // Add to available tags
       availableTags.push(newTag);
@@ -139,35 +139,46 @@ export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdat
                 </div>
               </div>
 
-              {/* Create New Tag */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Create New Tag</h4>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newTagName}
-                    onChange={(e) => setNewTagName(e.target.value)}
-                    placeholder="Enter tag name"
-                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleCreateNewTag();
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={handleCreateNewTag}
-                    disabled={!newTagName.trim() || creatingTag}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                  >
-                    {creatingTag ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                      <PlusIcon className="h-4 w-4" />
-                    )}
-                  </button>
+              {/* Create New Tag - Only for Admins and Instructors */}
+              {(userRole === 'admin' || userRole === 'instructor') && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Create New Tag</h4>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      placeholder="Enter tag name"
+                      className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleCreateNewTag();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={handleCreateNewTag}
+                      disabled={!newTagName.trim() || creatingTag}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                    >
+                      {creatingTag ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      ) : (
+                        <PlusIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Message for students */}
+              {userRole === 'student' && availableTags.length === 0 && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500">
+                    No tags available yet. Your instructor can create tags for this course.
+                  </p>
+                </div>
+              )}
 
               {/* Selected Tags Summary */}
               {selectedTags.length > 0 && (

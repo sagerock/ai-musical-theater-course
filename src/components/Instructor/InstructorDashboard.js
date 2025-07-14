@@ -393,27 +393,18 @@ export default function InstructorDashboard() {
             
             {/* Course-specific Actions */}
             <div className="flex items-center space-x-3">
+              {/* Legacy sync button (should no longer be needed after fix) */}
               {stats.totalChats === 0 && (
                 <button
                   onClick={handleFixChatLinkage}
                   disabled={fixingChats}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 disabled:opacity-50"
+                  title="Legacy: Fix any unlinked AI interactions from before the course linking fix"
                 >
                   <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
-                  {fixingChats ? 'Fixing...' : 'Fix AI Interactions'}
+                  {fixingChats ? 'Fixing...' : 'Fix Legacy Data'}
                 </button>
               )}
-              
-              {/* Manual fix button (always visible for debugging) */}
-              <button
-                onClick={handleFixChatLinkage}
-                disabled={fixingChats}
-                className="inline-flex items-center px-3 py-1.5 border border-orange-300 rounded-md shadow-sm text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
-                title="Fix any unlinked AI interactions"
-              >
-                <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
-                {fixingChats ? 'Fixing...' : 'Sync AI Data'}
-              </button>
               <button
                 onClick={() => setShowAIChat(true)}
                 className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"

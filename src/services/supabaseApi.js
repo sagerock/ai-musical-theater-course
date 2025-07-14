@@ -526,8 +526,13 @@ export const tagApi = {
   },
 
   // Create tag (course-specific or global)
-  async createTag(tagData, courseId = null) {
-    console.log('🏷️ tagApi.createTag called with:', { tagData, courseId });
+  async createTag(tagData, courseId = null, userRole = null) {
+    console.log('🏷️ tagApi.createTag called with:', { tagData, courseId, userRole });
+    
+    // Check permissions - only admins and instructors can create tags
+    if (userRole && userRole === 'student') {
+      throw new Error('Students are not allowed to create tags. Only instructors and admins can create tags.');
+    }
     
     const insertData = {
       ...tagData,

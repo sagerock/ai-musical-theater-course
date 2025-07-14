@@ -114,6 +114,60 @@ REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 **Usage:** Admin users can click "Cleanup Data" button in the admin panel to remove all orphaned membership records.
 
+### Forgot Password Feature
+**Problem:** Users had no way to reset their password if they forgot it.
+
+**Solution Applied:**
+1. Added `sendPasswordResetEmail` import and `resetPassword` function to AuthContext
+2. Added "Forgot your password?" link to login form (only visible on sign-in mode)
+3. Created modal popup for password reset with email input and proper loading states
+4. Integrated with Firebase Auth password reset functionality
+
+**Files Modified:**
+- `src/contexts/AuthContext.js`: Added resetPassword function using Firebase's sendPasswordResetEmail
+- `src/components/Auth/Login.js`: Added forgot password UI, modal, and handler functions
+
+**Usage:** Users can click "Forgot your password?" link on the login page, enter their email, and receive a password reset link via email.
+
+### AI Interaction Course Linking Fix
+**Problem:** AI interactions weren't automatically appearing in instructor dashboards, requiring manual "Sync AI Data" button clicks.
+
+**Root Cause:** When AI interactions were created in `Chat.js`, the `createChat()` function wasn't receiving the course context (`course_id`), even though it was available via `project?.course_id`. This caused interactions to be created without course linkage, making them invisible to instructors filtering by course.
+
+**Solution Applied:**
+1. Modified `createChat()` call in Chat component to pass course context: `createChat(chatData, project?.course_id)`
+2. Updated instructor dashboard to de-emphasize the sync button (now "Fix Legacy Data" and gray)
+3. New AI interactions now automatically appear in instructor dashboards without manual intervention
+
+**Files Modified:**
+- `src/components/Chat/Chat.js`: Fixed createChat call to include course_id parameter
+- `src/components/Instructor/InstructorDashboard.js`: Updated sync button styling and title
+
+**Impact:** Eliminates the need for manual syncing - AI interactions now appear immediately in instructor dashboards.
+
+### Tag Creation Permissions Restriction
+**Problem:** Students could create tags in the tagging modal, which could lead to tag proliferation and inconsistent tagging schemes.
+
+**Solution Applied:**
+1. Modified `TaggingModal` component to hide "Create New Tag" section for students
+2. Added role-based conditional rendering: only admins and instructors see tag creation UI
+3. Added server-side validation in `createTag` API function to reject student requests
+4. Updated all `createTag` calls to include `userRole` parameter for validation
+5. Added helpful message for students when no tags are available
+
+**Files Modified:**
+- `src/components/Chat/TaggingModal.js`: Added userRole prop and conditional UI rendering
+- `src/components/Chat/Chat.js`: Pass userRole to TaggingModal component
+- `src/services/supabaseApi.js`: Added userRole validation in createTag function
+- `src/components/Instructor/TagManagement.js`: Updated createTag call with instructor role
+
+**User Experience:**
+- **Students**: Can select and apply existing tags but cannot create new ones
+- **Instructors/Admins**: Full tag management capabilities including creation
+- **System**: Maintains consistent tagging schemes controlled by educators
+
+**Impact:** Ensures tag governance while maintaining student ability to categorize their AI interactions with instructor-approved tags.
+
 ## Development Commands
 ```bash
 npm install          # Install dependencies
@@ -132,4 +186,4 @@ npm run test        # Run tests
 https://github.com/sagerock/ai-musical-theater-course
 
 ## Last Updated
-January 14, 2025 - Implemented orphaned data cleanup system for admin panel to remove "Unknown User" entries
+January 14, 2025 - Fixed AI interaction course linking, added forgot password feature, and restricted tag creation to instructors/admins only

@@ -68,7 +68,7 @@ export default function TagManagement({ isOpen, onClose, courseId, courseName })
       const newTag = await tagApi.createTag({
         name: formData.name.trim(),
         description: formData.description.trim() || `Course-specific tag: ${formData.name.trim()}`
-      }, courseId);
+      }, courseId, 'instructor'); // Tag management is only accessible to instructors
 
       setCourseTags([...courseTags, newTag]);
       setFormData({ name: '', description: '' });

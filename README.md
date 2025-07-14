@@ -5,33 +5,41 @@ A powerful analytics platform that helps educators understand how students inter
 ## 🌟 Features
 
 ### For Students
-- **AI Chat Interface**: Interact with multiple AI models (GPT-3.5, GPT-4, GPT-4-Turbo)
+- **AI Chat Interface**: Interact with 12 AI models across OpenAI, Anthropic, and Google
 - **Project Organization**: Create and manage projects to organize AI interactions
-- **Smart Tagging**: Categorize interactions with predefined and custom tags
+- **Smart Tagging**: Apply instructor-curated tags to categorize interactions
 - **Reflection System**: Guided reflection prompts to encourage thoughtful AI usage
 - **Personal Dashboard**: View activity, stats, and interaction history
+- **Trial Access**: Join trial course (TR-SP25) for immediate platform exploration
 
 ### For Instructors
-- **Analytics Dashboard**: Monitor student AI usage across all projects
+- **Analytics Dashboard**: Monitor student AI usage across all projects with real-time updates
 - **Advanced Filtering**: Filter by student, project, AI tool, tags, dates, and reflection status
 - **Data Export**: Export interaction data as CSV for external analysis
 - **Usage Statistics**: Track reflection completion rates and tool usage patterns
 - **Student Oversight**: View all student interactions while maintaining educational value
+- **Course Management**: Create courses, manage enrollment, and approve student requests
+- **Tag Governance**: Create and manage course-specific tags for consistent categorization
+- **Trial Course Access**: Immediate instructor access for platform evaluation
 
 ### System Features
-- **Real-time Logging**: Automatic capture of all AI interactions
+- **Real-time Logging**: Automatic capture of all AI interactions with instant instructor visibility
 - **Dual Database**: Firebase for real-time operations, Supabase for analytics
-- **Role-based Access**: Secure authentication with student/instructor roles
+- **Role-based Access**: Secure authentication with student/instructor/admin roles
+- **Trial Course System**: TR-SP25 provides immediate access for platform evaluation
+- **Forgot Password**: Self-service password reset via email
 - **Responsive Design**: Beautiful, modern UI that works on all devices
 - **Ethics Focus**: Built-in prompts encouraging ethical AI usage
+- **Data Cleanup Tools**: Admin tools for maintaining data integrity
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: React.js with Tailwind CSS
-- **Authentication**: Firebase Authentication
+- **Authentication**: Firebase Authentication with forgot password
 - **Real-time Database**: Firebase Firestore
 - **Analytics Database**: Supabase (PostgreSQL)
-- **AI Integration**: OpenAI API (GPT models)
+- **AI Integration**: OpenAI API, Anthropic Claude API, Google Gemini API
+- **Supported Models**: 12 models across GPT-4.1, Claude Opus/Sonnet, Gemini 2.0
 - **Hosting**: Vercel (frontend), Supabase Cloud, Firebase
 - **Icons**: Heroicons
 - **Notifications**: React Hot Toast
@@ -205,22 +213,50 @@ The application will open at `http://localhost:3000`.
 
 ## 🎯 Usage Guide
 
+### Getting Started - Trial Course
+
+**Want to try AI Engagement Hub without setup?** Join our trial course for immediate access!
+
+- **Course Code**: `TR-SP25`
+- **Automatic Approval**: No waiting for instructor approval
+- **Choose Your Role**: Join as either a student or instructor to explore different perspectives
+- **Full Feature Access**: Experience all platform capabilities instantly
+- **No Commitment**: Perfect for evaluating the platform before setting up your own courses
+
+Simply visit the home page and click "Join Trial Course" to get started immediately!
+
 ### For Students
 
 1. **Sign Up/Login**: Create account or login with email or Google
-2. **Create Project**: Organize your work into projects
-3. **Start Chatting**: Select an AI tool and begin your conversation
-4. **Add Tags**: Categorize your interactions for better organization
-5. **Reflect**: Use guided prompts to reflect on your AI usage
-6. **Review**: Check your dashboard for activity and insights
+2. **Join Course**: Enter a course code or join the trial course (TR-SP25)
+3. **Create Project**: Organize your work into projects within your course
+4. **Start Chatting**: Select an AI tool and begin your conversation
+5. **Add Tags**: Apply instructor-created tags to categorize your interactions
+6. **Reflect**: Use guided prompts to reflect on your AI usage
+7. **Review**: Check your dashboard for activity and insights
 
 ### For Instructors
 
 1. **Login**: Use instructor credentials to access advanced features
-2. **View Analytics**: Monitor student usage patterns and statistics
-3. **Filter Data**: Use advanced filters to analyze specific interactions
-4. **Export Data**: Download CSV files for external analysis
-5. **Track Progress**: Monitor reflection completion rates
+2. **Course Management**: Create courses and manage student enrollment
+3. **Approval Workflow**: Review and approve student course join requests
+4. **Tag Management**: Create and organize tags for student use
+5. **View Analytics**: Monitor student usage patterns and statistics
+6. **Filter Data**: Use advanced filters to analyze specific interactions
+7. **Export Data**: Download CSV files for external analysis
+8. **Track Progress**: Monitor reflection completion rates
+
+### Course Join Process
+
+**Trial Course (TR-SP25)**:
+- ✅ **Automatic approval** - immediate access
+- ✅ **No instructor required** - perfect for exploration
+- ✅ **Full platform features** - complete experience
+
+**Regular Courses**:
+- ⏳ **Instructor approval required** - maintains classroom control
+- 📧 **Email notifications** - instructors notified of requests
+- 🔒 **Secure enrollment** - ensures only authorized students join
 
 ## 🔧 Configuration
 

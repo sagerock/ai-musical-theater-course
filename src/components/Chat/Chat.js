@@ -124,7 +124,7 @@ export default function Chat() {
         response: aiResponse.response
       };
 
-      const newChat = await chatApi.createChat(chatData);
+      const newChat = await chatApi.createChat(chatData, project?.course_id);
 
       // Add to local state
       setChats(prev => [...prev, {
@@ -348,6 +348,7 @@ export default function Chat() {
           onClose={() => setShowTaggingModal(false)}
           onTagsUpdated={onTagsUpdated}
           courseId={project?.course_id}
+          userRole={userRole}
         />
       )}
 
