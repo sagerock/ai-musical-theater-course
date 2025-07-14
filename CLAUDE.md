@@ -168,6 +168,29 @@ REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 **Impact:** Ensures tag governance while maintaining student ability to categorize their AI interactions with instructor-approved tags.
 
+### Collapsible Instructor Notes
+**Problem:** Instructor Notes in the chat window took up too much screen real estate, making it difficult to focus on AI conversations.
+
+**Solution Applied:**
+1. Made Instructor Notes collapsible with expand/collapse toggle button
+2. Notes start collapsed by default to prioritize chat visibility
+3. Added smooth transition animations for better UX
+4. Reduced padding and shadow when collapsed for minimal footprint
+5. Moved "Add Note" button to only show when expanded
+6. Added chevron icons to indicate collapse state
+
+**Files Modified:**
+- `src/components/Instructor/InstructorNotes.js`: Added collapse state and toggle functionality
+- `src/components/Chat/Chat.js`: Reduced padding around InstructorNotes component
+
+**User Experience:**
+- **Collapsed**: Minimal header bar with note count and expand button
+- **Expanded**: Full notes interface with create/edit capabilities
+- **Smooth Transitions**: Visual feedback when toggling states
+- **Better Focus**: AI conversations get maximum screen space by default
+
+**Impact:** Improved chat interface usability while maintaining full instructor note functionality when needed.
+
 ## Development Commands
 ```bash
 npm install          # Install dependencies
@@ -186,4 +209,4 @@ npm run test        # Run tests
 https://github.com/sagerock/ai-musical-theater-course
 
 ## Last Updated
-January 14, 2025 - Fixed AI interaction course linking, added forgot password feature, and restricted tag creation to instructors/admins only
+January 14, 2025 - Fixed AI interaction course linking, added forgot password feature, restricted tag creation to instructors/admins, and made instructor notes collapsible

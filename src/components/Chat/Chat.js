@@ -265,9 +265,9 @@ export default function Chat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Instructor Notes Section */}
+      {/* Instructor Notes Section - Compact */}
       {project && (
-        <div className="px-6 pb-6">
+        <div className="px-6 py-2">
           <InstructorNotes 
             project={project} 
             courseId={project.course_id}

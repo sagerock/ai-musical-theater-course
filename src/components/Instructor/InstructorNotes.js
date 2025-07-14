@@ -10,12 +10,15 @@ import {
   CheckIcon,
   XMarkIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorNotes({ project, courseId, isInstructorView = false }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Start collapsed by default
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [deletingNote, setDeletingNote] = useState(null);
@@ -158,18 +161,29 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
   }
 
   return (
-    <div className="bg-white rounded-lg shadow border border-gray-200">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className={`bg-white rounded-lg border border-gray-200 transition-all duration-200 ${
+      isCollapsed ? 'shadow-sm' : 'shadow'
+    }`}>
+      {/* Header - Always visible */}
+      <div className={`px-4 py-3 ${!isCollapsed ? 'border-b border-gray-200' : ''}`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center hover:bg-gray-50 rounded-md p-1 -ml-1 transition-colors"
+          >
             <DocumentTextIcon className="h-5 w-5 text-primary-600 mr-2" />
-            <h3 className="text-lg font-medium text-gray-900">
+            <h3 className="text-lg font-medium text-gray-900 mr-2">
               {isInstructorView ? 'Your Notes' : 'Instructor Notes'}
             </h3>
-            <span className="ml-2 text-sm text-gray-500">({notes.length})</span>
-          </div>
-          {isInstructor && isInstructorView && (
+            <span className="text-sm text-gray-500 mr-2">({notes.length})</span>
+            {isCollapsed ? (
+              <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+            ) : (
+              <ChevronUpIcon className="h-4 w-4 text-gray-400" />
+            )}
+          </button>
+          
+          {!isCollapsed && isInstructor && isInstructorView && (
             <button
               onClick={startCreate}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
@@ -181,9 +195,11 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
         </div>
       </div>
 
-      <div className="p-6">
-        {/* Create/Edit Form */}
-        {(showCreateForm || editingNote) && isInstructor && isInstructorView && (
+      {/* Collapsible content */}
+      {!isCollapsed && (
+        <div className="p-6">
+          {/* Create/Edit Form */}
+          {(showCreateForm || editingNote) && isInstructor && isInstructorView && (
           <form onSubmit={editingNote ? handleEditNote : handleCreateNote} className="bg-gray-50 p-4 rounded-lg mb-6">
             <div className="space-y-4">
               <div>
@@ -315,7 +331,8 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
             </p>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deletingNote && (
