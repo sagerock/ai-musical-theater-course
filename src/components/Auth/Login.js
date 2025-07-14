@@ -17,7 +17,7 @@ export default function Login() {
 
   // Redirect if already logged in
   if (currentUser) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleInputChange = (e) => {
@@ -55,7 +55,7 @@ export default function Login() {
             </svg>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            AI Interaction Logger
+            AI Engagement Hub
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {isSignUp ? 'Create your account' : 'Sign in to your account'}

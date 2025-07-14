@@ -1,6 +1,6 @@
-# 🧠 AI Interaction Logger
+# 🧠 AI Engagement Hub
 
-A comprehensive web application that allows students and instructors to interact with generative AI tools while automatically logging interactions, enabling structured reflection, and providing powerful analytics for educational insights.
+A powerful analytics platform that helps educators understand how students interact with AI in real time. Designed for classrooms at any level—from high school to higher ed—it provides a smarter lens on AI usage, offering teachers clear visibility into prompt activity, model selection, and engagement patterns across leading AI tools.
 
 ## 🌟 Features
 
@@ -123,7 +123,7 @@ src/
 
 ```bash
 git clone <repository-url>
-cd ai-interaction-logger
+cd ai-engagement-hub
 npm install
 ```
 

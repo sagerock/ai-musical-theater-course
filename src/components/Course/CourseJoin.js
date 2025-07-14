@@ -52,7 +52,7 @@ export default function CourseJoin() {
       }`);
       
       // Redirect to appropriate dashboard
-      window.location.href = '/';
+      window.location.href = '/dashboard';
       
     } catch (error) {
       console.error('Error joining course:', error);

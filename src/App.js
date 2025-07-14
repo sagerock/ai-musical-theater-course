@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
+import PublicHomePage from './components/Home/PublicHomePage';
 import Login from './components/Auth/Login';
 import Dashboard from './components/Dashboard/Dashboard';
 import Chat from './components/Chat/Chat';
@@ -18,22 +19,51 @@ function App() {
     <AuthProvider>
       <div className="App">
         <Routes>
+          <Route path="/" element={<HomeRoute />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join" element={<CourseJoin />} />
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
-            <Route path="projects" element={<Projects />} />
-            <Route path="chat/:projectId" element={<Chat />} />
-            <Route path="course/:courseId" element={<CourseDashboard />} />
-            <Route path="course/:courseId/projects" element={<Projects />} />
-            <Route path="course/:courseId/instructor-notes" element={<InstructorRoute><InstructorNotesList /></InstructorRoute>} />
-            <Route path="instructor" element={<InstructorRoute><InstructorDashboard /></InstructorRoute>} />
-            <Route path="admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
+          </Route>
+          <Route path="/projects" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<Projects />} />
+          </Route>
+          <Route path="/chat/:projectId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<Chat />} />
+          </Route>
+          <Route path="/course/:courseId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<CourseDashboard />} />
+          </Route>
+          <Route path="/course/:courseId/projects" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<Projects />} />
+          </Route>
+          <Route path="/course/:courseId/instructor-notes" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<InstructorRoute><InstructorNotesList /></InstructorRoute>} />
+          </Route>
+          <Route path="/instructor" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<InstructorRoute><InstructorDashboard /></InstructorRoute>} />
+          </Route>
+          <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Route>
         </Routes>
       </div>
     </AuthProvider>
   );
+}
+
+function HomeRoute() {
+  const { currentUser, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+  
+  return currentUser ? <Navigate to="/dashboard" /> : <PublicHomePage />;
 }
 
 function ProtectedRoute({ children }) {
@@ -54,7 +84,7 @@ function InstructorRoute({ children }) {
   const { currentUser, userRole, isInstructorAnywhere } = useAuth();
   
   if (!isInstructorAnywhere) {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" />;
   }
   
   return children;
@@ -64,7 +94,7 @@ function AdminRoute({ children }) {
   const { currentUser, userRole } = useAuth();
   
   if (userRole !== 'admin') {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" />;
   }
   
   return children;

@@ -1,7 +1,7 @@
-# Claude Memory File - AI Musical Theater Course
+# Claude Memory File - AI Engagement Hub
 
 ## Project Overview
-AI Interaction Logger - An educational web application that allows students and instructors to interact with multiple AI models while automatically logging interactions, enabling structured reflection, and providing analytics.
+AI Engagement Hub - An educational analytics platform that helps educators understand how students interact with AI in real time. Designed for classrooms at any level—from high school to higher ed—it provides a smarter lens on AI usage, offering teachers clear visibility into prompt activity, model selection, and engagement patterns across leading AI tools.
 
 ## AI Models Configuration
 
@@ -98,6 +98,22 @@ REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 **Solution:** Created custom markdown renderer to avoid external dependencies.
 
+### Orphaned Data Cleanup System
+**Problem:** "Unknown User" entries appearing in admin panel due to orphaned course membership records with null user_ids from early testing phase.
+
+**Root Cause:** Course membership records were created without proper user linkage during development testing.
+
+**Solution Applied:**
+1. Created `cleanupOrphanedMemberships()` function in `courseApi` to identify and remove memberships with null `user_id`
+2. Added "Cleanup Data" button to AdminPanel with proper loading states and user feedback
+3. Function safely removes orphaned records and provides success feedback
+
+**Files Modified:**
+- `src/services/supabaseApi.js`: Added cleanupOrphanedMemberships function
+- `src/components/Admin/AdminPanel.js`: Added cleanup button and handler function
+
+**Usage:** Admin users can click "Cleanup Data" button in the admin panel to remove all orphaned membership records.
+
 ## Development Commands
 ```bash
 npm install          # Install dependencies
@@ -116,4 +132,4 @@ npm run test        # Run tests
 https://github.com/sagerock/ai-musical-theater-course
 
 ## Last Updated
-January 12, 2025 - Fixed Gemini model integration and response display issues
+January 14, 2025 - Implemented orphaned data cleanup system for admin panel to remove "Unknown User" entries

@@ -166,8 +166,12 @@ export default function CourseDashboard() {
                       </div>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-900">{member.users.name}</p>
-                      <p className="text-sm text-gray-500">{member.users.email}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {member.users?.name || 'Unknown User'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {member.users?.email || 'No email'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -196,8 +200,12 @@ export default function CourseDashboard() {
                       </div>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-900">{member.users.name}</p>
-                      <p className="text-sm text-gray-500">{member.users.email}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {member.users?.name || 'Unknown User'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {member.users?.email || 'No email'}
+                      </p>
                     </div>
                   </div>
                 </div>

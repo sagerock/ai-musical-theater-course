@@ -899,6 +899,95 @@ export const courseApi = {
     }
   },
 
+  // Clean up orphaned course memberships (admin function)
+  async cleanupOrphanedMemberships() {
+    try {
+      console.log('🧹 Starting cleanup of orphaned course memberships...');
+      
+      // Find memberships with null user_id
+      const { data: orphanedMemberships, error: findError } = await dbClient
+        .from('course_memberships')
+        .select('id, course_id, user_id, role')
+        .is('user_id', null);
+      
+      if (findError) throw findError;
+      
+      console.log('📊 Found orphaned memberships:', orphanedMemberships?.length || 0);
+      
+      if (!orphanedMemberships || orphanedMemberships.length === 0) {
+        return { deleted: 0, message: 'No orphaned memberships found' };
+      }
+      
+      // Delete orphaned memberships
+      const { error: deleteError } = await dbClient
+        .from('course_memberships')
+        .delete()
+        .is('user_id', null);
+      
+      if (deleteError) throw deleteError;
+      
+      console.log('✅ Cleanup complete. Deleted:', orphanedMemberships.length, 'orphaned memberships');
+      
+      return { 
+        deleted: orphanedMemberships.length, 
+        message: `Successfully cleaned up ${orphanedMemberships.length} orphaned membership records` 
+      };
+    } catch (error) {
+      console.error('❌ Error in cleanupOrphanedMemberships:', error);
+      throw error;
+    }
+  },
+
+  // Join trial course with auto-approval
+  async joinTrialCourse(courseCode, userId, role = 'student') {
+    try {
+      // First, get the course
+      const course = await this.getCourseByCode(courseCode);
+      
+      // Check if user already has membership in this course
+      const { data: existingMembership } = await dbClient
+        .from('course_memberships')
+        .select('*')
+        .eq('course_id', course.id)
+        .eq('user_id', userId)
+        .single();
+      
+      if (existingMembership) {
+        // If membership exists but is pending, auto-approve it for trial course
+        if (existingMembership.status === 'pending') {
+          const { data: updatedMembership, error: updateError } = await dbClient
+            .from('course_memberships')
+            .update({ status: 'approved' })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+          
+          if (updateError) throw updateError;
+          return updatedMembership;
+        }
+        throw new Error('User already exists in this course');
+      }
+      
+      // Create membership with auto-approval for trial course
+      const { data, error } = await dbClient
+        .from('course_memberships')
+        .insert({
+          course_id: course.id,
+          user_id: userId,
+          role: role,
+          status: 'approved' // Auto-approve for trial course
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in joinTrialCourse:', error);
+      throw error;
+    }
+  },
+
   // Get pending approvals for instructor
   async getPendingApprovals(courseId, instructorId) {
     try {
@@ -968,12 +1057,13 @@ export const courseApi = {
   // Get course members
   async getCourseMembers(courseId) {
     try {
-      // Get approved memberships
+      // Get approved memberships with valid user_id
       const { data: memberships, error: membershipsError } = await dbClient
         .from('course_memberships')
         .select('*')
         .eq('course_id', courseId)
         .eq('status', 'approved')
+        .not('user_id', 'is', null)
         .order('role', { ascending: true });
       
       if (membershipsError) throw membershipsError;
@@ -992,11 +1082,18 @@ export const courseApi = {
       if (usersError) throw usersError;
       
       // Combine the data
-      const result = memberships.map(membership => ({
-        ...membership,
-        users: users.find(user => user.id === membership.user_id)
-      }));
+      const result = memberships.map(membership => {
+        const userMatch = users.find(user => user.id === membership.user_id);
+        if (!userMatch) {
+          console.warn('⚠️ getCourseMembers: No user found for membership:', membership);
+        }
+        return {
+          ...membership,
+          users: userMatch
+        };
+      });
       
+      console.log('📊 getCourseMembers result:', result);
       return result;
     } catch (error) {
       console.error('Error in getCourseMembers:', error);

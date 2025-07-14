@@ -40,10 +40,19 @@ export default function Projects() {
   const loadProjects = async () => {
     try {
       setLoading(true);
+      console.log('📂 Projects: Loading projects...');
+      console.log('  - Current user:', currentUser.uid);
+      console.log('  - Course ID:', courseId);
+      console.log('  - Current URL:', window.location.pathname);
+      
       // Load projects based on whether we're in a course context or not
       const userProjects = courseId 
         ? await projectApi.getUserProjects(currentUser.uid, courseId)
         : await projectApi.getUserProjects(currentUser.uid);
+      
+      console.log('  - Projects loaded:', userProjects.length);
+      console.log('  - Projects:', userProjects.map(p => ({ id: p.id, title: p.title, course_id: p.course_id, created_at: p.created_at })));
+      
       setProjects(userProjects);
     } catch (error) {
       console.error('Error loading projects:', error);

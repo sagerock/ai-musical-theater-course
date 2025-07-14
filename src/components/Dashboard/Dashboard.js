@@ -8,7 +8,14 @@ import {
   ChatBubbleLeftRightIcon,
   PlusIcon,
   ClockIcon,
-  TagIcon
+  TagIcon,
+  ChartBarIcon,
+  EyeIcon,
+  AcademicCapIcon,
+  ShieldCheckIcon,
+  UserGroupIcon,
+  CogIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
@@ -114,16 +121,84 @@ export default function Dashboard() {
     );
   }
 
+  const isNewUser = stats.totalProjects === 0 && stats.totalChats === 0;
+
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0]}!
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Here's what's happening with your AI interactions.
-        </p>
-      </div>
+      {isNewUser ? (
+        // New user welcome section
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-8 mb-8">
+            <h1 className="text-3xl font-bold mb-4">
+              Welcome to AI Engagement Hub!
+            </h1>
+            <p className="text-lg mb-6">
+              A powerful analytics platform that helps educators understand how students interact with AI in real time.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                to="/projects"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
+              >
+                Create Your First Project
+                <ArrowRightIcon className="ml-2 h-5 w-5" />
+              </Link>
+              <Link
+                to="/join"
+                className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
+              >
+                Join a Course
+              </Link>
+            </div>
+          </div>
+
+          {/* Key Features for New Users */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Why AI Engagement Hub?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center mb-3">
+                  <div className="p-2 bg-blue-100 rounded-md">
+                    <EyeIcon className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="ml-3 text-lg font-medium text-gray-900">Real-time Monitoring</h3>
+                </div>
+                <p className="text-gray-600">Track student interactions with AI models as they happen, providing immediate insights into usage patterns.</p>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center mb-3">
+                  <div className="p-2 bg-green-100 rounded-md">
+                    <ChartBarIcon className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h3 className="ml-3 text-lg font-medium text-gray-900">Rich Analytics</h3>
+                </div>
+                <p className="text-gray-600">Visualize engagement patterns, model preferences, and usage trends through intuitive dashboards.</p>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center mb-3">
+                  <div className="p-2 bg-purple-100 rounded-md">
+                    <AcademicCapIcon className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <h3 className="ml-3 text-lg font-medium text-gray-900">Learning Support</h3>
+                </div>
+                <p className="text-gray-600">Enable structured reflection on AI interactions to deepen understanding and improve outcomes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Existing user dashboard
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0]}!
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Here's what's happening with your AI interactions.
+          </p>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

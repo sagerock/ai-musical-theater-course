@@ -122,6 +122,14 @@ export default function InstructorDashboard() {
       console.log('  - allProjects length:', allProjects?.length || 0);
       console.log('  - allUsers length:', allUsers?.length || 0);
       console.log('  - allTags length:', allTags?.length || 0);
+      console.log('  - Selected course ID:', selectedCourseId);
+      
+      if (allChats?.length === 0) {
+        console.log('💡 No AI interactions found. This could be because:');
+        console.log('  1. No students have joined this course yet');
+        console.log('  2. Students haven\'t used AI tools yet');
+        console.log('  3. All interactions are from before course assignments');
+      }
 
       setStats(overallStats);
       setChats(allChats);
@@ -270,7 +278,7 @@ export default function InstructorDashboard() {
         toast.success(`Fixed ${result.fixed} AI interactions! Refreshing dashboard...`);
         loadDashboardData(); // Reload data to show the fixed interactions
       } else {
-        toast.info('No AI interactions needed fixing');
+        toast.success('No AI interactions needed fixing');
       }
     } catch (error) {
       console.error('Error fixing chat linkage:', error);
@@ -395,6 +403,17 @@ export default function InstructorDashboard() {
                   {fixingChats ? 'Fixing...' : 'Fix AI Interactions'}
                 </button>
               )}
+              
+              {/* Manual fix button (always visible for debugging) */}
+              <button
+                onClick={handleFixChatLinkage}
+                disabled={fixingChats}
+                className="inline-flex items-center px-3 py-1.5 border border-orange-300 rounded-md shadow-sm text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
+                title="Fix any unlinked AI interactions"
+              >
+                <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
+                {fixingChats ? 'Fixing...' : 'Sync AI Data'}
+              </button>
               <button
                 onClick={() => setShowAIChat(true)}
                 className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"

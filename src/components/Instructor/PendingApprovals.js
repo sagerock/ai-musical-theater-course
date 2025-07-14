@@ -129,7 +129,7 @@ export default function PendingApprovals({ courseId, courseName }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
                       <p className="text-sm font-medium text-gray-900">
-                        {request.users.name}
+                        {request.users?.name || 'Unknown User'}
                       </p>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         request.role === 'instructor' 
@@ -140,7 +140,7 @@ export default function PendingApprovals({ courseId, courseName }) {
                       </span>
                     </div>
                     <p className="text-sm text-gray-500">
-                      {request.users.email}
+                      {request.users?.email || 'No email'}
                     </p>
                     <p className="text-xs text-gray-400">
                       Requested {format(new Date(request.joined_at), 'MMM dd, yyyy HH:mm')}
@@ -150,7 +150,7 @@ export default function PendingApprovals({ courseId, courseName }) {
 
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => handleApproval(request.id, 'rejected', request.users.name)}
+                    onClick={() => handleApproval(request.id, 'rejected', request.users?.name || 'Unknown User')}
                     disabled={processing[request.id]}
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
                   >
@@ -165,7 +165,7 @@ export default function PendingApprovals({ courseId, courseName }) {
                   </button>
                   
                   <button
-                    onClick={() => handleApproval(request.id, 'approved', request.users.name)}
+                    onClick={() => handleApproval(request.id, 'approved', request.users?.name || 'Unknown User')}
                     disabled={processing[request.id]}
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                   >

@@ -65,22 +65,24 @@ async function getUserRole(userId) {
 // Check if user is an instructor in any course
 async function checkInstructorStatus(userId) {
   try {
+    console.log('🔍 AuthContext: Checking instructor status for user:', userId);
+    
     const { data, error } = await supabase
       .from('course_memberships')
-      .select('role')
+      .select('role, status, course_id')
       .eq('user_id', userId)
       .eq('role', 'instructor')
-      .eq('status', 'approved')
-      .limit(1);
+      .eq('status', 'approved');
 
     if (error) {
-      console.error('Error checking instructor status:', error);
+      console.error('❌ Error checking instructor status:', error);
       return false;
     }
 
+    console.log('📊 AuthContext: Found instructor memberships:', data);
     return data && data.length > 0;
   } catch (error) {
-    console.error('Failed to check instructor status:', error);
+    console.error('❌ Failed to check instructor status:', error);
     return false;
   }
 }
@@ -239,6 +241,23 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Refresh user role and instructor status
+  async function refreshUserStatus() {
+    if (currentUser) {
+      console.log('🔄 AuthContext: Refreshing user status for:', currentUser.uid);
+      
+      const role = await getUserRole(currentUser.uid);
+      console.log('📊 AuthContext: User role:', role);
+      setUserRole(role);
+      
+      const instructorStatus = await checkInstructorStatus(currentUser.uid);
+      console.log('👨‍🏫 AuthContext: Instructor status:', instructorStatus);
+      setIsInstructorAnywhere(instructorStatus);
+      
+      console.log('✅ AuthContext: User status refresh complete');
+    }
+  }
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -278,7 +297,8 @@ export function AuthProvider({ children }) {
     loginWithGoogle,
     logout,
     syncUserToSupabase,
-    updateUserRole
+    updateUserRole,
+    refreshUserStatus
   };
 
   return (

@@ -26,6 +26,7 @@ export default function AdminPanel() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [memberToRemove, setMemberToRemove] = useState(null);
+  const [cleaningUp, setCleaningUp] = useState(false);
   const [newCourse, setNewCourse] = useState({
     name: '',
     description: '',
@@ -171,6 +172,22 @@ export default function AdminPanel() {
     }
   };
 
+  const handleCleanupOrphanedData = async () => {
+    try {
+      setCleaningUp(true);
+      const result = await courseApi.cleanupOrphanedMemberships();
+      toast.success(result.message);
+      if (result.deleted > 0) {
+        loadCourses(); // Reload to refresh the display
+      }
+    } catch (error) {
+      console.error('Error cleaning up orphaned data:', error);
+      toast.error('Failed to clean up orphaned data');
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
   const getMembershipStats = (course) => {
     const memberships = course.course_memberships || [];
     const approved = memberships.filter(m => m.status === 'approved');
@@ -205,13 +222,24 @@ export default function AdminPanel() {
             Manage courses, instructors, and system settings
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Create Course
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleCleanupOrphanedData}
+            disabled={cleaningUp}
+            className="inline-flex items-center px-3 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
+            title="Remove orphaned data records"
+          >
+            <TrashIcon className="h-4 w-4 mr-2" />
+            {cleaningUp ? 'Cleaning...' : 'Cleanup Data'}
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Course
+          </button>
+        </div>
       </div>
 
       {/* Pending Approvals Section */}
