@@ -310,9 +310,27 @@ export default function InstructorDashboard() {
     const userProjects = projects.filter(project => project.user_id === user.id);
     const userChats = chats.filter(chat => chat.user_id === user.id);
     
+    // Get unique project IDs from the user's chats to count actual projects with interactions
+    const projectIdsWithChats = [...new Set(userChats.map(chat => chat.project_id))];
+    const actualProjectCount = Math.max(userProjects.length, projectIdsWithChats.length);
+    
+    // Debug logging for the inconsistency
+    if (userProjects.length === 0 && userChats.length > 0) {
+      console.log('🔍 Data inconsistency found for user:', user.name);
+      console.log('  - User ID:', user.id);
+      console.log('  - Projects found in course:', userProjects.length);
+      console.log('  - Chats found:', userChats.length);
+      console.log('  - Unique project IDs from chats:', projectIdsWithChats);
+      console.log('  - All projects in course:', projects.length);
+      console.log('  - All chats in course:', chats.length);
+      console.log('  - User chats project IDs:', userChats.map(chat => chat.project_id));
+      console.log('  - Available project IDs:', projects.map(p => p.id));
+      console.log('  - Adjusted project count:', actualProjectCount);
+    }
+    
     return {
       ...user,
-      projectCount: userProjects.length,
+      projectCount: actualProjectCount,
       chatCount: userChats.length,
       lastActivity: userChats.length > 0 ? userChats[0].created_at : userProjects.length > 0 ? userProjects[0].created_at : null
     };
