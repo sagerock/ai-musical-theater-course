@@ -503,69 +503,45 @@ export default function InstructorDashboard() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Student Projects</h2>
         <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
           {projects.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Project Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Creator
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {projects.map((project) => (
-                    <tr key={project.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <FolderIcon className="h-5 w-5 text-primary-500 mr-3" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {project.title}
-                            </div>
-                          </div>
+            <div className="divide-y divide-gray-200">
+              {projects.map((project) => (
+                <div key={project.id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
+                      <FolderIcon className="h-5 w-5 text-primary-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {project.title}
+                          </h3>
+                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                            {format(new Date(project.created_at), 'MMM dd, yyyy')}
+                          </span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {project.users?.name || 'Unknown'}
+                        <div className="mt-1 flex items-center text-sm text-gray-500">
+                          <span className="truncate">
+                            {project.users?.name || 'Unknown'} • {project.users?.email}
+                          </span>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {project.users?.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 max-w-xs">
-                        <p className="text-sm text-gray-900 line-clamp-2">
-                          {project.description || 'No description provided'}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {format(new Date(project.created_at), 'MMM dd, yyyy')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link
-                          to={`/chat/${project.id}`}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200"
-                        >
-                          <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
-                          View Project
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        {project.description && (
+                          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                            {project.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      <Link
+                        to={`/chat/${project.id}`}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200"
+                      >
+                        <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
+                        View
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -727,115 +703,93 @@ export default function InstructorDashboard() {
         </div>
       )}
 
-      {/* Chat Interactions Table */}
+      {/* Chat Interactions List */}
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Project
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  AI Tool
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Prompt
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tags
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reflection
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredChats.map((chat) => (
-                <tr 
-                  key={chat.id} 
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleChatClick(chat)}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {chat.users?.name || 'Unknown'}
+        {filteredChats.length > 0 ? (
+          <div className="divide-y divide-gray-200">
+            {filteredChats.map((chat) => (
+              <div 
+                key={chat.id} 
+                className="p-6 hover:bg-gray-50 cursor-pointer"
+                onClick={() => handleChatClick(chat)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    {/* Header row with student, project, and date */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-sm font-medium text-gray-900">
+                          {chat.users?.name || 'Unknown'}
+                        </div>
+                        <div className="text-sm text-gray-500">•</div>
+                        <div className="text-sm text-gray-500">
+                          {chat.projects?.title || 'Unknown Project'}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {chat.users?.email}
+                      <div className="text-xs text-gray-500">
+                        {format(new Date(chat.created_at), 'MMM dd, yyyy')}
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {chat.projects?.title || 'Unknown'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {chat.tool_used}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 max-w-xs">
-                    <p className="text-sm text-gray-900 line-clamp-2">
-                      {chat.prompt}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    {chat.chat_tags && chat.chat_tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {chat.chat_tags.slice(0, 2).map((chatTag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800"
-                          >
-                            {chatTag.tags.name}
-                          </span>
-                        ))}
-                        {chat.chat_tags.length > 2 && (
-                          <span className="text-xs text-gray-500">
-                            +{chat.chat_tags.length - 2} more
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">No tags</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {chat.reflections && chat.reflections.length > 0 ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Yes
+                    
+                    {/* AI Tool and Reflection status */}
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {chat.tool_used}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        No
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {format(new Date(chat.created_at), 'MMM dd, yyyy')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          {filteredChats.length === 0 && (
-            <div className="text-center py-12">
-              <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No interactions found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Try adjusting your filters or check back later.
-              </p>
-            </div>
-          )}
-        </div>
+                      {chat.reflections && chat.reflections.length > 0 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Has Reflection
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          No Reflection
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Prompt */}
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-900 line-clamp-2">
+                        {chat.prompt}
+                      </p>
+                    </div>
+                    
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1">
+                      {chat.chat_tags && chat.chat_tags.length > 0 ? (
+                        <>
+                          {chat.chat_tags.slice(0, 3).map((chatTag, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800"
+                            >
+                              {chatTag.tags.name}
+                            </span>
+                          ))}
+                          {chat.chat_tags.length > 3 && (
+                            <span className="text-xs text-gray-500 py-1">
+                              +{chat.chat_tags.length - 3} more
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-gray-400">No tags</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No interactions found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Try adjusting your filters or check back later.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Session Detail Modal */}
