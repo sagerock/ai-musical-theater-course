@@ -17,7 +17,9 @@ import {
   DocumentTextIcon,
   SparklesIcon,
   AcademicCapIcon,
-  TagIcon
+  TagIcon,
+  TrashIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboard() {
@@ -54,6 +56,7 @@ export default function InstructorDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showTagManagement, setShowTagManagement] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState(null);
 
   const { currentUser, userRole, isInstructorAnywhere } = useAuth();
   const [fixingChats, setFixingChats] = useState(false);
@@ -302,6 +305,19 @@ export default function InstructorDashboard() {
   // Get unique AI tools for filter
   const aiTools = [...new Set(chats.map(chat => chat.tool_used))];
 
+  // Generate student statistics
+  const studentStats = users.map(user => {
+    const userProjects = projects.filter(project => project.user_id === user.id);
+    const userChats = chats.filter(chat => chat.user_id === user.id);
+    
+    return {
+      ...user,
+      projectCount: userProjects.length,
+      chatCount: userChats.length,
+      lastActivity: userChats.length > 0 ? userChats[0].created_at : userProjects.length > 0 ? userProjects[0].created_at : null
+    };
+  });
+
   const handleFixChatLinkage = async () => {
     try {
       setFixingChats(true);
@@ -330,6 +346,20 @@ export default function InstructorDashboard() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedChat(null);
+  };
+
+  // Handle student removal
+  const handleRemoveStudent = async (student) => {
+    try {
+      await userApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.uid);
+      toast.success(`${student.name} has been removed from the course`);
+      setDeletingStudent(null);
+      // Reload dashboard data to reflect the change
+      loadDashboardData();
+    } catch (error) {
+      console.error('Error removing student:', error);
+      toast.error('Failed to remove student from course');
+    }
   };
 
   if (loading) {
@@ -491,6 +521,74 @@ export default function InstructorDashboard() {
         </div>
       </div>
 
+
+      {/* Student Overview Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Student Overview</h2>
+        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+          {studentStats.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {studentStats.map((student) => (
+                <div key={student.id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-blue-600">
+                            {student.name?.charAt(0)?.toUpperCase() || '?'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {student.name || 'Unknown Student'}
+                          </h3>
+                          <span className="text-xs text-gray-500">
+                            {student.email}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <FolderIcon className="h-4 w-4" />
+                            <span>{student.projectCount} projects</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                            <span>{student.chatCount} AI interactions</span>
+                          </div>
+                          {student.lastActivity && (
+                            <div className="flex items-center space-x-1">
+                              <span>Last activity: {format(new Date(student.lastActivity), 'MMM dd, yyyy')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setDeletingStudent(student)}
+                        className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove student from course"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No students yet</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Students haven't joined this course yet.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Student Projects Section */}
       <div className="mb-8">
@@ -821,6 +919,39 @@ export default function InstructorDashboard() {
         courseId={selectedCourseId}
         courseName={selectedCourse?.courses?.name}
       />
+
+      {/* Student Deletion Confirmation Modal */}
+      {deletingStudent && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex items-center justify-center mb-4">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
+              Remove Student from Course
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Are you sure you want to remove <strong>{deletingStudent.name}</strong> from this course?
+              This will remove their course membership but will not delete their projects or AI interactions.
+            </p>
+            <div className="flex items-center justify-center space-x-3">
+              <button
+                onClick={() => handleRemoveStudent(deletingStudent)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                <TrashIcon className="h-4 w-4 mr-2" />
+                Remove Student
+              </button>
+              <button
+                onClick={() => setDeletingStudent(null)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

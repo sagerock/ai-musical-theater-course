@@ -103,6 +103,45 @@ export const userApi = {
       throw error;
     }
     return data;
+  },
+
+  // Remove student from course (instructor only)
+  async removeStudentFromCourse(userId, courseId, instructorId) {
+    console.log('🗑️ Removing student from course:', { userId, courseId, instructorId });
+    
+    try {
+      // First, verify the instructor has permission for this course
+      const { data: instructorMembership, error: instructorError } = await supabase
+        .from('course_memberships')
+        .select('role')
+        .eq('user_id', instructorId)
+        .eq('course_id', courseId)
+        .eq('status', 'approved')
+        .single();
+      
+      if (instructorError || !instructorMembership || instructorMembership.role !== 'instructor') {
+        throw new Error('Unauthorized: You must be an instructor for this course');
+      }
+      
+      // Remove the student's course membership
+      const { error: removeError } = await supabase
+        .from('course_memberships')
+        .delete()
+        .eq('user_id', userId)
+        .eq('course_id', courseId);
+      
+      if (removeError) {
+        console.error('❌ Error removing student from course:', removeError);
+        throw removeError;
+      }
+      
+      console.log('✅ Student removed from course successfully');
+      return { success: true };
+      
+    } catch (error) {
+      console.error('❌ removeStudentFromCourse error:', error);
+      throw error;
+    }
   }
 };
 
