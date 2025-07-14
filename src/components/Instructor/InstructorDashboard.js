@@ -129,14 +129,8 @@ export default function InstructorDashboard() {
       console.log('🔍 Backend filters being applied:', backendFilters);
 
       // Load all data in parallel for the selected course
-      const [
-        overallStats,
-        allChats,
-        allProjects,
-        allUsers,
-        allTags,
-        allAttachments
-      ] = await Promise.all([
+      // Use Promise.allSettled to handle individual failures gracefully
+      const results = await Promise.allSettled([
         analyticsApi.getOverallStats(selectedCourseId),
         chatApi.getChatsWithFilters(backendFilters),
         projectApi.getAllProjects(selectedCourseId),
@@ -144,6 +138,22 @@ export default function InstructorDashboard() {
         tagApi.getAllTags(selectedCourseId),
         attachmentApi.getCourseAttachments(selectedCourseId, currentUser.uid)
       ]);
+
+      // Extract successful results or defaults
+      const overallStats = results[0].status === 'fulfilled' ? results[0].value : { totalChats: 0, totalUsers: 0, totalProjects: 0, reflectionCompletionRate: 0 };
+      const allChats = results[1].status === 'fulfilled' ? results[1].value : [];
+      const allProjects = results[2].status === 'fulfilled' ? results[2].value : [];
+      const allUsers = results[3].status === 'fulfilled' ? results[3].value : [];
+      const allTags = results[4].status === 'fulfilled' ? results[4].value : [];
+      const allAttachments = results[5].status === 'fulfilled' ? results[5].value : [];
+
+      // Log any failures
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const names = ['analyticsApi.getOverallStats', 'chatApi.getChatsWithFilters', 'projectApi.getAllProjects', 'userApi.getAllUsers', 'tagApi.getAllTags', 'attachmentApi.getCourseAttachments'];
+          console.error(`❌ ${names[index]} failed:`, result.reason);
+        }
+      });
 
       console.log('📊 Dashboard data loaded:');
       console.log('  - overallStats:', overallStats);

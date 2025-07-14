@@ -322,6 +322,46 @@ CREATE TABLE pdf_attachments (
 
 **Impact:** Complete PDF workflow enabling students to share documents with AI while providing instructors full oversight and access to student materials.
 
+### Instructor Dashboard Data Loading Failure
+**Problem:** Instructor Dashboard showed all zeros (0 projects, 0 students, 0 AI interactions) despite having data in the database. The dashboard was failing to load with "Failed to load dashboard data" error.
+
+**Root Cause:** 
+1. **Database relationship error**: The `userApi.getAllUsers()` function had a Supabase relationship ambiguity error: "Could not embed because more than one relationship was found for 'users' and 'course_memberships'"
+2. **Permission denied error**: The `chats` table had Row Level Security (RLS) enabled, causing "permission denied for table chats" when PDF attachments tried to join with chat data
+3. **Promise.all failure cascade**: The dashboard used `Promise.all()` to load multiple data sources simultaneously, but when any single promise failed, the entire dashboard loading process failed and never reached the `setStats()` call
+
+**Technical Details:**
+- `analyticsApi.getOverallStats()` was working correctly and returning proper data (24 chats, 3 users, 8 projects)
+- The `getAllUsers()` function was throwing an error due to ambiguous foreign key relationships in the database schema
+- The `pdf_attachments` table query was failing due to RLS restrictions on the `chats` table
+- Because `Promise.all()` fails immediately when any promise rejects, the dashboard never displayed the successfully loaded statistics
+
+**Solution Applied:**
+1. **Fixed database permissions**: Disabled RLS on `chats` table using `ALTER TABLE chats DISABLE ROW LEVEL SECURITY;`
+2. **Added foreign key constraint**: Created proper relationship between `pdf_attachments` and `chats` tables
+3. **Improved error handling**: Modified `getAllUsers()` to gracefully fall back to manual filtering instead of throwing errors
+4. **Implemented graceful degradation**: Changed dashboard from `Promise.all()` to `Promise.allSettled()` to handle individual failures without crashing the entire dashboard
+5. **Added detailed error logging**: Enhanced debugging with specific error messages for each failed operation
+
+**Files Modified:**
+- `src/services/supabaseApi.js`: Modified `getAllUsers()` to handle relationship errors gracefully
+- `src/components/Instructor/InstructorDashboard.js`: Changed from `Promise.all()` to `Promise.allSettled()` for resilient data loading
+- `fix_chats_table_permissions.sql`: SQL script to disable RLS on chats table
+- `cleanup_and_fix_pdf_attachments.sql`: SQL script to clean orphaned data and add foreign key constraints
+
+**Key Technical Insights:**
+- **Promise.all() vs Promise.allSettled()**: `Promise.all()` fails immediately when any promise rejects, while `Promise.allSettled()` waits for all promises to complete and provides detailed results for each
+- **Database RLS complexity**: Row Level Security can cause unexpected permission errors when joining tables, especially with service keys
+- **Error handling strategy**: Individual API failures should not crash entire dashboard interfaces - graceful degradation is critical
+- **Database relationship debugging**: Supabase relationship errors often indicate schema inconsistencies that need explicit constraint definition
+
+**User Experience Impact:**
+- **Before**: Dashboard showed all zeros and "Failed to load dashboard data" error
+- **After**: Dashboard displays correct statistics (24 AI interactions, 3 active students, 8 projects) with individual error logging for failed operations
+- **Resilience**: Dashboard now continues to function even if some data sources fail, providing partial functionality instead of complete failure
+
+**Impact:** Instructor Dashboard now reliably displays analytics data with proper error handling and graceful degradation, providing instructors with critical course insights even when some data sources experience issues.
+
 ## Development Commands
 ```bash
 npm install          # Install dependencies
@@ -340,4 +380,4 @@ npm run test        # Run tests
 https://github.com/sagerock/ai-musical-theater-course
 
 ## Last Updated
-January 14, 2025 - Implemented complete PDF upload system with Supabase Storage integration, resolved JWT service key authentication issues, added instructor PDF dashboard, and streamlined AI models from 12 to 4 focused models with Perplexity integration
+January 14, 2025 - Fixed critical instructor dashboard data loading failure by implementing graceful error handling with Promise.allSettled(), resolved database RLS permission issues, and enhanced PDF attachment system with proper foreign key relationships

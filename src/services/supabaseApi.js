@@ -89,20 +89,22 @@ export const userApi = {
         
         if (error) {
           console.error('❌ getAllUsers error:', error);
-          throw error;
+          console.log('🔄 Falling back to manual filtering due to relationship error');
+          // Don't throw error - fall back to manual filtering
+        } else {
+          // Only use the data if there's no error
+          // Flatten the course_memberships data to add course_role to each user
+          const usersWithCourseRole = data.map(user => ({
+            ...user,
+            course_role: user.course_memberships?.[0]?.role || 'student'
+          }));
+          
+          console.log('📈 getAllUsers results:');
+          console.log('  - data length:', usersWithCourseRole?.length || 0);
+          console.log('  - course roles:', usersWithCourseRole.map(u => `${u.name}: ${u.course_role}`));
+          
+          return usersWithCourseRole;
         }
-        
-        // Flatten the course_memberships data to add course_role to each user
-        const usersWithCourseRole = data.map(user => ({
-          ...user,
-          course_role: user.course_memberships?.[0]?.role || 'student'
-        }));
-        
-        console.log('📈 getAllUsers results:');
-        console.log('  - data length:', usersWithCourseRole?.length || 0);
-        console.log('  - course roles:', usersWithCourseRole.map(u => `${u.name}: ${u.course_role}`));
-        
-        return usersWithCourseRole;
         
       } catch (error) {
         console.log('❌ Error getting users with course roles:', error);
