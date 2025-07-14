@@ -156,7 +156,8 @@ export default function InstructorDashboard() {
       setStats(overallStats);
       setChats(allChats);
       setProjects(allProjects);
-      setUsers(allUsers.filter(user => user.role === 'student'));
+      // Filter users by course-specific role (course_role) instead of global role
+      setUsers(allUsers.filter(user => (user.course_role || user.role) === 'student'));
       setTags(allTags);
 
     } catch (error) {

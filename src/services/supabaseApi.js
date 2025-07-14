@@ -41,55 +41,57 @@ export const userApi = {
   async getAllUsers(courseId = null) {
     console.log('🔍 userApi.getAllUsers called with courseId:', courseId);
     
-    let query = supabase
-      .from('users')
-      .select('*');
-
-    // If courseId is provided, filter by course membership
+    // If courseId is provided, get users with their course-specific roles
     if (courseId) {
-      console.log('🎯 Applying course filter for courseId:', courseId);
+      console.log('🎯 Getting users with course-specific roles for courseId:', courseId);
       
-      // Check if course_memberships table exists
       try {
-        const testQuery = await supabase.from('course_memberships').select('user_id').limit(1);
-        if (!testQuery.error) {
-          console.log('✅ course_memberships table exists, applying filter');
-          
-          // Get user IDs from course memberships first to avoid relationship conflicts
-          const { data: memberships, error: memberError } = await supabase
-            .from('course_memberships')
-            .select('user_id')
-            .eq('course_id', courseId)
-            .eq('status', 'approved');
-          
-          if (memberError) {
-            console.log('❌ Error getting course memberships:', memberError);
-            throw memberError;
-          }
-          
-          console.log('📊 Found course memberships:', memberships?.length || 0);
-          
-          if (memberships && memberships.length > 0) {
-            const userIds = memberships.map(m => m.user_id);
-            query = query.in('id', userIds);
-            console.log('✅ Filtering users by course membership IDs:', userIds.length);
-          } else {
-            console.log('⚠️ No approved course members found, returning empty result');
-            // Return a query that will match no users
-            query = query.eq('id', '00000000-0000-0000-0000-000000000000');
-          }
-        } else {
-          console.log('❌ course_memberships table does not exist:', testQuery.error);
-          console.log('🔄 Continuing without course filter (all users)');
+        // Join users with course_memberships to get course-specific roles
+        const { data, error } = await supabase
+          .from('users')
+          .select(`
+            *,
+            course_memberships!inner (
+              role,
+              status,
+              course_id
+            )
+          `)
+          .eq('course_memberships.course_id', courseId)
+          .eq('course_memberships.status', 'approved')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('❌ getAllUsers error:', error);
+          throw error;
         }
+        
+        // Flatten the course_memberships data to add course_role to each user
+        const usersWithCourseRole = data.map(user => ({
+          ...user,
+          course_role: user.course_memberships?.[0]?.role || 'student'
+        }));
+        
+        console.log('📈 getAllUsers results:');
+        console.log('  - data length:', usersWithCourseRole?.length || 0);
+        console.log('  - course roles:', usersWithCourseRole.map(u => `${u.name}: ${u.course_role}`));
+        
+        return usersWithCourseRole;
+        
       } catch (error) {
-        console.log('❌ Error checking course_memberships table:', error);
+        console.log('❌ Error getting users with course roles:', error);
+        // Fallback to original method
+        console.log('🔄 Falling back to original method');
       }
     }
 
-    query = query.order('created_at', { ascending: false });
+    // Fallback for no courseId or if course-specific query fails
+    let query = supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
     
-    console.log('📊 Executing getAllUsers query...');
+    console.log('📊 Executing getAllUsers query (fallback)...');
     const { data, error } = await query;
     
     console.log('📈 getAllUsers results:');
