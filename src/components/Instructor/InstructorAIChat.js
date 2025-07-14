@@ -4,7 +4,7 @@ import { aiApi } from '../../services/aiApi';
 import MarkdownRenderer from '../Chat/MarkdownRenderer';
 import toast from 'react-hot-toast';
 
-export default function InstructorAIChat({ isOpen, onClose, dashboardData }) {
+export default function InstructorAIChat({ isOpen, onClose, dashboardData, filters = {} }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,6 +21,28 @@ export default function InstructorAIChat({ isOpen, onClose, dashboardData }) {
   // Initialize with welcome message
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      // Check if any filters are active
+      const activeFilters = Object.entries(filters).filter(([key, value]) => value && value !== '');
+      const hasActiveFilters = activeFilters.length > 0;
+      
+      let filterNotice = '';
+      if (hasActiveFilters) {
+        const filterDescriptions = activeFilters.map(([key, value]) => {
+          switch (key) {
+            case 'userId': return `Student: ${dashboardData.users?.find(u => u.id === value)?.name || 'Unknown'}`;
+            case 'projectId': return `Project: ${dashboardData.projects?.find(p => p.id === value)?.title || 'Unknown'}`;
+            case 'toolUsed': return `AI Tool: ${value}`;
+            case 'tagId': return `Tag: ${dashboardData.tags?.find(t => t.id === value)?.name || 'Unknown'}`;
+            case 'startDate': return `Start Date: ${value}`;
+            case 'endDate': return `End Date: ${value}`;
+            case 'hasReflection': return `Reflection: ${value === 'true' ? 'With Reflection' : 'Without Reflection'}`;
+            default: return `${key}: ${value}`;
+          }
+        }).join(', ');
+        
+        filterNotice = `\n\n🔍 **Filter Notice**: I'm analyzing filtered data based on: ${filterDescriptions}. My insights will focus on this subset of interactions.`;
+      }
+      
       setMessages([{
         id: 1,
         type: 'ai',
@@ -35,13 +57,13 @@ You can ask me questions like:
 - "Which students need more support?"
 - "What are the most popular AI tools?"
 - "Show me reflection completion rates by project"
-- "What themes appear most in student tags?"
+- "What themes appear most in student tags?"${filterNotice}
 
 What would you like to know about your students?`,
         timestamp: new Date()
       }]);
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen, messages.length, filters, dashboardData]);
 
   const generateDataContext = () => {
     const { chats, users, projects, tags, stats } = dashboardData;
@@ -132,10 +154,32 @@ What would you like to know about your students?`,
     try {
       const dataContext = generateDataContext();
       
+      // Check if filters are active
+      const activeFilters = Object.entries(filters).filter(([key, value]) => value && value !== '');
+      const hasActiveFilters = activeFilters.length > 0;
+      
+      let filterContext = '';
+      if (hasActiveFilters) {
+        const filterDescriptions = activeFilters.map(([key, value]) => {
+          switch (key) {
+            case 'userId': return `Student: ${dashboardData.users?.find(u => u.id === value)?.name || 'Unknown'}`;
+            case 'projectId': return `Project: ${dashboardData.projects?.find(p => p.id === value)?.title || 'Unknown'}`;
+            case 'toolUsed': return `AI Tool: ${value}`;
+            case 'tagId': return `Tag: ${dashboardData.tags?.find(t => t.id === value)?.name || 'Unknown'}`;
+            case 'startDate': return `Start Date: ${value}`;
+            case 'endDate': return `End Date: ${value}`;
+            case 'hasReflection': return `Reflection: ${value === 'true' ? 'With Reflection' : 'Without Reflection'}`;
+            default: return `${key}: ${value}`;
+          }
+        }).join(', ');
+        
+        filterContext = `\n\nIMPORTANT: The data you're analyzing is FILTERED based on: ${filterDescriptions}. This means you're only seeing a subset of all AI interactions. Be sure to mention this in your response and clarify that your insights are based on the filtered data, not all interactions.`;
+      }
+
       const systemPrompt = `You are an AI assistant helping an instructor analyze student learning data. You have access to comprehensive data about students, their AI tool usage, projects, reflections, and tagging patterns.
 
 Here's the current data context:
-${JSON.stringify(dataContext, null, 2)}
+${JSON.stringify(dataContext, null, 2)}${filterContext}
 
 Guidelines for your responses:
 1. Be conversational and helpful
@@ -146,6 +190,7 @@ Guidelines for your responses:
 6. Protect student privacy - use general patterns rather than calling out specific students negatively
 7. If asked about specific students, provide constructive insights
 8. Suggest follow-up questions the instructor might want to explore
+9. If analyzing filtered data, clearly mention this limitation in your response
 
 The instructor has asked: "${inputMessage.trim()}"
 
@@ -198,7 +243,14 @@ Analyze the data and provide helpful insights.`;
                 <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">AI Data Assistant</h2>
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-lg font-semibold text-gray-900">AI Data Assistant</h2>
+                  {Object.entries(filters).filter(([key, value]) => value && value !== '').length > 0 && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                      Filtered Data
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-500">Ask questions about your students and projects</p>
               </div>
             </div>

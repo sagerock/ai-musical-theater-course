@@ -437,13 +437,6 @@ export default function InstructorDashboard() {
                 </button>
               )}
               <button
-                onClick={() => setShowAIChat(true)}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                <SparklesIcon className="h-3 w-3 mr-1" />
-                AI Assistant
-              </button>
-              <button
                 onClick={() => setShowTagManagement(true)}
                 className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
@@ -566,6 +559,13 @@ export default function InstructorDashboard() {
             >
               <FunnelIcon className="h-3 w-3 mr-1" />
               Filter AI Interactions
+            </button>
+            <button
+              onClick={() => setShowAIChat(true)}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              <SparklesIcon className="h-3 w-3 mr-1" />
+              AI Assistant
             </button>
             <button
               onClick={exportData}
@@ -810,6 +810,7 @@ export default function InstructorDashboard() {
           tags,
           stats
         }}
+        filters={filters}
       />
 
       {/* Tag Management */}
