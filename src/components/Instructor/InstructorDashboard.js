@@ -47,6 +47,7 @@ export default function InstructorDashboard() {
   });
   
   const [loading, setLoading] = useState(true);
+  const [filtersLoading, setFiltersLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -70,8 +71,16 @@ export default function InstructorDashboard() {
   }, [selectedCourseId]);
 
   useEffect(() => {
+    // Reload data when significant filters change to optimize backend queries
+    if (selectedCourseId) {
+      setFiltersLoading(true);
+      loadDashboardData().finally(() => setFiltersLoading(false));
+    }
+  }, [filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate]);
+
+  useEffect(() => {
     applyFilters();
-  }, [chats, filters]);
+  }, [chats, filters.tagId, filters.hasReflection]); // Only apply client-side for tag and reflection filters
 
   const loadInstructorCourses = async () => {
     try {
@@ -101,6 +110,19 @@ export default function InstructorDashboard() {
       console.log('🎯 InstructorDashboard.loadDashboardData - selectedCourseId:', selectedCourseId);
       console.log('🎯 InstructorDashboard.loadDashboardData - selectedCourseId type:', typeof selectedCourseId);
       
+      // Prepare backend filters (excluding tag and reflection filters which are handled client-side)
+      const backendFilters = {
+        courseId: selectedCourseId,
+        limit: 1000,
+        ...(filters.userId && { userId: filters.userId }),
+        ...(filters.projectId && { projectId: filters.projectId }),
+        ...(filters.toolUsed && { toolUsed: filters.toolUsed }),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate })
+      };
+
+      console.log('🔍 Backend filters being applied:', backendFilters);
+
       // Load all data in parallel for the selected course
       const [
         overallStats,
@@ -110,7 +132,7 @@ export default function InstructorDashboard() {
         allTags
       ] = await Promise.all([
         analyticsApi.getOverallStats(selectedCourseId),
-        chatApi.getChatsWithFilters({ courseId: selectedCourseId, limit: 1000 }),
+        chatApi.getChatsWithFilters(backendFilters),
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
         tagApi.getAllTags(selectedCourseId)
@@ -148,54 +170,63 @@ export default function InstructorDashboard() {
   const applyFilters = () => {
     let filtered = [...chats];
 
-    // Apply user filter
-    if (filters.userId) {
-      filtered = filtered.filter(chat => chat.user_id === filters.userId);
-    }
-
-    // Apply project filter
-    if (filters.projectId) {
-      filtered = filtered.filter(chat => chat.project_id === filters.projectId);
-    }
-
-    // Apply tool filter
-    if (filters.toolUsed) {
-      filtered = filtered.filter(chat => chat.tool_used === filters.toolUsed);
-    }
-
-    // Apply tag filter
+    // Apply tag filter (client-side only, since it involves joined data)
     if (filters.tagId) {
-      filtered = filtered.filter(chat => 
-        chat.chat_tags && chat.chat_tags.some(ct => ct.tags.id === filters.tagId)
-      );
+      console.log('🏷️ Applying client-side tag filter for tagId:', filters.tagId, 'type:', typeof filters.tagId);
+      
+      // Debug: Log some sample chat_tags structure
+      if (filtered.length > 0) {
+        const sampleChat = filtered.find(chat => chat.chat_tags && chat.chat_tags.length > 0);
+        if (sampleChat) {
+          console.log('🏷️ Sample chat_tags structure:', sampleChat.chat_tags.slice(0, 2));
+        }
+      }
+      
+      filtered = filtered.filter(chat => {
+        if (!chat.chat_tags || chat.chat_tags.length === 0) {
+          return false;
+        }
+        
+        const hasMatchingTag = chat.chat_tags.some(ct => {
+          if (!ct.tags || !ct.tags.id) {
+            console.warn('🏷️ Warning: Invalid tag structure in chat_tags:', ct);
+            return false;
+          }
+          
+          // Handle both string and number IDs
+          const tagId = ct.tags.id;
+          const filterTagId = filters.tagId;
+          const match = tagId == filterTagId; // Use == for loose comparison
+          
+          if (match) {
+            console.log('🏷️ Tag match found:', tagId, '==', filterTagId);
+          }
+          
+          return match;
+        });
+        
+        return hasMatchingTag;
+      });
+      console.log('🏷️ After tag filter, found', filtered.length, 'chats');
     }
 
-    // Apply date filters
-    if (filters.startDate) {
-      filtered = filtered.filter(chat => 
-        new Date(chat.created_at) >= new Date(filters.startDate)
-      );
-    }
-
-    if (filters.endDate) {
-      filtered = filtered.filter(chat => 
-        new Date(chat.created_at) <= new Date(filters.endDate + 'T23:59:59')
-      );
-    }
-
-    // Apply reflection filter
+    // Apply reflection filter (client-side only)
     if (filters.hasReflection) {
+      console.log('💭 Applying client-side reflection filter for hasReflection:', filters.hasReflection);
       const hasReflection = filters.hasReflection === 'true';
       filtered = filtered.filter(chat => 
         hasReflection ? (chat.reflections && chat.reflections.length > 0) : 
                        (!chat.reflections || chat.reflections.length === 0)
       );
+      console.log('💭 After reflection filter, found', filtered.length, 'chats');
     }
 
+    console.log('🔍 Final filtered results:', filtered.length, 'of', chats.length, 'chats');
     setFilteredChats(filtered);
   };
 
   const handleFilterChange = (key, value) => {
+    console.log('🔧 Filter change:', key, '=', value, '(type:', typeof value, ')');
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -672,14 +703,20 @@ export default function InstructorDashboard() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">AI Interactions</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Showing {filteredChats.length} of {chats.length} AI conversations
-          {Object.values(filters).some(v => v) && (
-            <span className="ml-2 text-primary-600">(filtered)</span>
-          )}
-          {chats.length === 0 && (
-            <span className="ml-2 text-gray-500">
-              • Students haven't used AI tools yet
-            </span>
+          {filtersLoading ? (
+            <span className="text-primary-600">Loading filtered results...</span>
+          ) : (
+            <>
+              Showing {filteredChats.length} of {chats.length} AI conversations
+              {Object.values(filters).some(v => v) && (
+                <span className="ml-2 text-primary-600">(filtered)</span>
+              )}
+              {chats.length === 0 && (
+                <span className="ml-2 text-gray-500">
+                  • Students haven't used AI tools yet
+                </span>
+              )}
+            </>
           )}
         </p>
       </div>

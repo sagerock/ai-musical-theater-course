@@ -428,9 +428,8 @@ export const chatApi = {
     if (filters.endDate) {
       query = query.lte('created_at', filters.endDate);
     }
-    if (filters.tagId) {
-      query = query.contains('chat_tags.tag_id', [filters.tagId]);
-    }
+    // Tag filtering - we'll handle this client-side since it involves joined data
+    // The backend will return all chats and frontend will filter by tags
 
     query = query.order('created_at', { ascending: false });
 

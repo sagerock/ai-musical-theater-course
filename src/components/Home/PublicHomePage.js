@@ -87,12 +87,6 @@ export default function PublicHomePage() {
     }
   ];
 
-  const stats = [
-    { label: 'AI Models Supported', value: '12+' },
-    { label: 'Educational Institutions', value: '50+' },
-    { label: 'Student Interactions Tracked', value: '100K+' },
-    { label: 'Courses Created', value: '500+' }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,19 +154,6 @@ export default function PublicHomePage() {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {stats.map((stat, index) => (
-              <div key={index}>
-                <div className="text-3xl font-bold text-blue-600 mb-2">{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* Features Section */}
       <div className="py-20 bg-gray-50">
