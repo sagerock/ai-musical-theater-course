@@ -5,25 +5,19 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 
 ## AI Models Configuration
 
-### Supported Models (12 total across 3 providers)
+### Supported Models (4 streamlined models across 4 providers)
 
 #### OpenAI Models
-- GPT-4.1: `gpt-4.1-2025-04-14`
-- GPT-4.1-Mini: `gpt-4.1-mini-2025-04-14`
-- O4-Mini: `o4-mini-2025-04-16`
-- GPT-4o: `gpt-4o-2024-08-06`
-- GPT-Image-1: `gpt-image-1`
+- GPT-4o: `gpt-4o-2024-08-06` (default model)
 
 #### Anthropic Models
-- Claude Opus 4: `claude-opus-4-20250514`
-- Claude Sonnet 4: `claude-sonnet-4-20250514` (default model)
-- Claude Sonnet 3.7: `claude-3-7-sonnet-20250219`
-- Claude Sonnet 3.5: `claude-3-5-sonnet-20241022`
-- Claude Haiku 3.5: `claude-3-5-haiku-20241022`
+- Claude Sonnet 4: `claude-sonnet-4-20250514`
 
 #### Google Models
-- Gemini 2.5 Pro: `gemini-2.0-flash-exp`
-- Gemini 2.5 Flash: `gemini-1.5-flash`
+- Gemini Flash: `gemini-1.5-flash`
+
+#### Perplexity Models
+- Sonar Pro: `sonar-pro`
 
 ## Technical Implementation
 
@@ -32,6 +26,7 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 - `src/services/openaiApi.js` - OpenAI integration
 - `src/services/anthropicApi.js` - Anthropic integration  
 - `src/services/googleApi.js` - Google Gemini integration
+- `src/services/perplexityApi.js` - Perplexity integration
 - `src/components/Chat/ChatMessage.js` - Chat display with markdown rendering
 - `src/components/Chat/MarkdownRenderer.js` - Custom markdown parser
 - `src/components/Layout/Layout.js` - App layout with sidebar
@@ -41,6 +36,7 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 REACT_APP_OPENAI_API_KEY=your_openai_api_key
 REACT_APP_ANTHROPIC_API_KEY=your_anthropic_api_key
 REACT_APP_GOOGLE_API_KEY=your_google_api_key
+REACT_APP_PERPLEXITY_API_KEY=your_perplexity_api_key
 REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
 REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 REACT_APP_FIREBASE_PROJECT_ID=your_project_id
@@ -191,6 +187,57 @@ REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 **Impact:** Improved chat interface usability while maintaining full instructor note functionality when needed.
 
+### Enhanced Educational System Prompt
+**Problem:** AI responses weren't consistently focused on educational best practices across all models.
+
+**Solution Applied:**
+1. Created centralized educational system prompt with comprehensive guidelines
+2. Updated all AI providers (OpenAI, Anthropic, Google) to use the same educational prompt
+3. Prompt emphasizes source citation, clear reasoning, accuracy, and critical thinking
+4. Consistent educational tone across all 12 AI models
+5. Backward compatibility with fallback to previous prompt if needed
+
+**Educational System Prompt:**
+"You are a helpful, curious, and respectful educational assistant designed to support students as they research, write, and learn. Always cite sources when possible, explain your reasoning clearly, and avoid providing false or misleading information. Encourage students to think critically and verify facts."
+
+**Files Modified:**
+- `src/services/aiApi.js`: Added centralized EDUCATIONAL_SYSTEM_PROMPT constant
+- `src/services/openaiApi.js`: Updated to accept and use educational system prompt
+- `src/services/anthropicApi.js`: Updated to accept and use educational system prompt  
+- `src/services/googleApi.js`: Updated to accept and use educational system prompt
+
+**Impact:** All AI interactions now consistently promote educational best practices, source citation, critical thinking, and fact verification across all models and providers.
+
+### AI Model Streamlining
+**Problem:** The application supported 12 different AI models across 3 providers, creating complexity and potential confusion for users.
+
+**Solution Applied:**
+1. Streamlined from 12 models down to 4 focused models across 4 providers:
+   - OpenAI: GPT-4o (set as default)
+   - Anthropic: Claude Sonnet 4
+   - Google: Gemini Flash
+   - Perplexity: Sonar Pro (newly added)
+2. Created dedicated Perplexity API integration for research-focused interactions
+3. Updated all model configurations to use only the streamlined selection
+4. Maintained educational system prompt across all 4 providers
+5. Updated environment variables to include Perplexity API key
+
+**Files Modified:**
+- `src/services/openaiApi.js`: Updated AI_TOOLS to include only 4 selected models
+- `src/services/anthropicApi.js`: Streamlined to only Claude Sonnet 4
+- `src/services/googleApi.js`: Streamlined to only Gemini Flash
+- `src/services/perplexityApi.js`: Created new Perplexity integration
+- `src/services/aiApi.js`: Added Perplexity provider routing and validation
+- `CLAUDE.md`: Updated documentation to reflect streamlined model selection
+
+**Model Selection Rationale:**
+- **GPT-4o**: Latest general-purpose OpenAI model with strong performance
+- **Claude Sonnet 4**: High-quality reasoning and educational responses
+- **Gemini Flash**: Fast Google model with good educational capabilities
+- **Sonar Pro**: Perplexity's research-focused model with web search capabilities
+
+**Impact:** Simplified user experience with focused, high-quality model selection while adding research capabilities through Perplexity integration.
+
 ## Development Commands
 ```bash
 npm install          # Install dependencies
@@ -209,4 +256,4 @@ npm run test        # Run tests
 https://github.com/sagerock/ai-musical-theater-course
 
 ## Last Updated
-January 14, 2025 - Fixed AI interaction course linking, added forgot password feature, restricted tag creation to instructors/admins, and made instructor notes collapsible
+January 14, 2025 - Streamlined AI models from 12 to 4 focused models, added Perplexity integration with Sonar Pro, updated all provider configurations and documentation

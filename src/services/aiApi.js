@@ -1,6 +1,10 @@
 import { openaiApi, AI_TOOLS } from './openaiApi';
 import { anthropicApi, ANTHROPIC_MODELS } from './anthropicApi';
 import { googleApi, GOOGLE_MODELS } from './googleApi';
+import { perplexityApi, PERPLEXITY_MODELS } from './perplexityApi';
+
+// Centralized educational system prompt
+export const EDUCATIONAL_SYSTEM_PROMPT = "You are a helpful, curious, and respectful educational assistant designed to support students as they research, write, and learn. Always cite sources when possible, explain your reasoning clearly, and avoid providing false or misleading information. Encourage students to think critically and verify facts.";
 
 // Helper function to determine provider based on model
 const getProviderFromModel = (tool) => {
@@ -20,6 +24,11 @@ const getProviderFromModel = (tool) => {
     return 'google';
   }
   
+  // Check if it's a Perplexity model
+  if (Object.values(PERPLEXITY_MODELS).includes(modelId)) {
+    return 'perplexity';
+  }
+  
   // Default to OpenAI for other models
   return 'openai';
 };
@@ -27,16 +36,18 @@ const getProviderFromModel = (tool) => {
 // Unified AI API service
 export const aiApi = {
   // Send chat completion request (automatically routes to correct provider)
-  async sendChatCompletion(prompt, tool = 'GPT-4.1', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'GPT-4o', conversationHistory = []) {
     const provider = getProviderFromModel(tool);
     
     try {
       if (provider === 'anthropic') {
-        return await anthropicApi.sendChatCompletion(prompt, tool, conversationHistory);
+        return await anthropicApi.sendChatCompletion(prompt, tool, conversationHistory, EDUCATIONAL_SYSTEM_PROMPT);
       } else if (provider === 'google') {
-        return await googleApi.sendChatCompletion(prompt, tool, conversationHistory);
+        return await googleApi.sendChatCompletion(prompt, tool, conversationHistory, EDUCATIONAL_SYSTEM_PROMPT);
+      } else if (provider === 'perplexity') {
+        return await perplexityApi.sendChatCompletion(prompt, tool, conversationHistory, EDUCATIONAL_SYSTEM_PROMPT);
       } else {
-        return await openaiApi.sendChatCompletion(prompt, tool, conversationHistory);
+        return await openaiApi.sendChatCompletion(prompt, tool, conversationHistory, EDUCATIONAL_SYSTEM_PROMPT);
       }
     } catch (error) {
       console.error(`${provider} API Error:`, error);
@@ -54,7 +65,8 @@ export const aiApi = {
     const results = {
       openai: false,
       anthropic: false,
-      google: false
+      google: false,
+      perplexity: false
     };
 
     try {
@@ -73,6 +85,12 @@ export const aiApi = {
       results.google = await googleApi.validateApiKey();
     } catch (error) {
       console.error('Google validation failed:', error);
+    }
+
+    try {
+      results.perplexity = await perplexityApi.validateApiKey();
+    } catch (error) {
+      console.error('Perplexity validation failed:', error);
     }
 
     return results;
@@ -107,10 +125,19 @@ export const aiApi = {
       });
     });
 
+    // Add Perplexity models (they don't have a list endpoint)
+    Object.entries(PERPLEXITY_MODELS).forEach(([name, id]) => {
+      models.push({
+        id,
+        name,
+        provider: 'perplexity'
+      });
+    });
+
     return models;
   }
 };
 
 // Export everything for backward compatibility
-export { AI_TOOLS, openaiApi, anthropicApi, googleApi, ANTHROPIC_MODELS, GOOGLE_MODELS };
+export { AI_TOOLS, openaiApi, anthropicApi, googleApi, perplexityApi, ANTHROPIC_MODELS, GOOGLE_MODELS, PERPLEXITY_MODELS };
 export default aiApi;

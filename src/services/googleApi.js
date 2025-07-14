@@ -3,18 +3,20 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialize Google Generative AI client
 const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GOOGLE_API_KEY);
 
-// Available Google models
+// Available Google models - Streamlined selection
 export const GOOGLE_MODELS = {
-  'Gemini 2.5 Pro': 'gemini-2.0-flash-exp',
-  'Gemini 2.5 Flash': 'gemini-1.5-flash'
+  'Gemini Flash': 'gemini-1.5-flash'
 };
 
 export const googleApi = {
   // Send chat completion request
-  async sendChatCompletion(prompt, tool = 'Gemini 2.5 Pro', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'Gemini Flash', conversationHistory = [], systemPrompt = null) {
     try {
-      const modelName = GOOGLE_MODELS[tool] || GOOGLE_MODELS['Gemini 2.5 Pro'];
+      const modelName = GOOGLE_MODELS[tool] || GOOGLE_MODELS['Gemini Flash'];
       const model = genAI.getGenerativeModel({ model: modelName });
+      
+      // Use provided system prompt or fallback to default
+      const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';
       
       // Configure generation settings
       const generationConfig = {
@@ -42,7 +44,7 @@ export const googleApi = {
         history: history,
         systemInstruction: {
           role: 'system',
-          parts: [{ text: 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.' }]
+          parts: [{ text: systemPrompt || defaultSystemPrompt }]
         }
       });
 

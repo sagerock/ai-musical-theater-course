@@ -6,36 +6,32 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true // Note: In production, API calls should go through your backend
 });
 
-// Available AI tools/models
+// Available AI tools/models - Streamlined selection
 export const AI_TOOLS = {
-  // OpenAI Models
-  'GPT-4.1': 'gpt-4.1-2025-04-14',
-  'GPT-4.1-Mini': 'gpt-4.1-mini-2025-04-14',
-  'O4-Mini': 'o4-mini-2025-04-16',
+  // OpenAI Model
   'GPT-4o': 'gpt-4o-2024-08-06',
-  'GPT-Image-1': 'gpt-image-1',
-  // Anthropic Models
-  'Claude Opus 4': 'claude-opus-4-20250514',
+  // Anthropic Model
   'Claude Sonnet 4': 'claude-sonnet-4-20250514',
-  'Claude Sonnet 3.7': 'claude-3-7-sonnet-20250219',
-  'Claude Sonnet 3.5': 'claude-3-5-sonnet-20241022',
-  'Claude Haiku 3.5': 'claude-3-5-haiku-20241022',
-  // Google Models
-  'Gemini 2.5 Pro': 'gemini-2.0-flash-exp',
-  'Gemini 2.5 Flash': 'gemini-1.5-flash'
+  // Google Model
+  'Gemini Flash': 'gemini-1.5-flash',
+  // Perplexity Model
+  'Sonar Pro': 'sonar-pro'
 };
 
 export const openaiApi = {
   // Send chat completion request
-  async sendChatCompletion(prompt, tool = 'GPT-4.1', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'GPT-4o', conversationHistory = [], systemPrompt = null) {
     try {
-      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-4.1'];
+      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-4o'];
+      
+      // Use provided system prompt or fallback to default
+      const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';
       
       // Prepare messages array
       const messages = [
         {
           role: 'system',
-          content: 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.'
+          content: systemPrompt || defaultSystemPrompt
         },
         ...conversationHistory.map(chat => [
           { role: 'user', content: chat.prompt },

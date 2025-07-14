@@ -6,20 +6,19 @@ const anthropic = new Anthropic({
   dangerouslyAllowBrowser: true // Note: In production, API calls should go through your backend
 });
 
-// Available Anthropic models
+// Available Anthropic models - Streamlined selection
 export const ANTHROPIC_MODELS = {
-  'Claude Opus 4': 'claude-opus-4-20250514',
-  'Claude Sonnet 4': 'claude-sonnet-4-20250514',
-  'Claude Sonnet 3.7': 'claude-3-7-sonnet-20250219',
-  'Claude Sonnet 3.5': 'claude-3-5-sonnet-20241022',
-  'Claude Haiku 3.5': 'claude-3-5-haiku-20241022'
+  'Claude Sonnet 4': 'claude-sonnet-4-20250514'
 };
 
 export const anthropicApi = {
   // Send chat completion request
-  async sendChatCompletion(prompt, tool = 'Claude Sonnet 4', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'Claude Sonnet 4', conversationHistory = [], systemPrompt = null) {
     try {
       const model = ANTHROPIC_MODELS[tool] || ANTHROPIC_MODELS['Claude Sonnet 4'];
+      
+      // Use provided system prompt or fallback to default
+      const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';
       
       // Prepare messages array
       const messages = [
@@ -39,7 +38,7 @@ export const anthropicApi = {
         model: model,
         max_tokens: 1000,
         temperature: 0.7,
-        system: 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.',
+        system: systemPrompt || defaultSystemPrompt,
         messages: messages
       });
 
