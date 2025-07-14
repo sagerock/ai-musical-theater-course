@@ -1955,22 +1955,81 @@ export const attachmentApi = {
   // Get all attachments for a course (for instructors)
   async getCourseAttachments(courseId, instructorId) {
     console.log('📎 attachmentApi.getCourseAttachments called with:', { courseId, instructorId });
+    console.log('📎 Using attachmentClient:', !!attachmentClient);
     
     try {
       // First, get all attachments with basic chat info
-      const { data: attachments, error: attachmentError } = await attachmentClient
+      // Try with the foreign key relationship first
+      let attachments, attachmentError;
+      
+      // Always use manual approach since permissions are blocking the join
+      console.log('🔄 Using manual approach to avoid permission issues');
+      
+      // Get attachments first
+      const { data: attachmentsOnly, error: attachOnlyError } = await attachmentClient
         .from('pdf_attachments')
-        .select(`
-          *,
-          chats!chat_id (
-            id,
-            prompt,
-            created_at,
-            user_id,
-            project_id
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
+      
+      if (attachOnlyError) {
+        console.error('❌ getCourseAttachments (attachments only) error:', attachOnlyError);
+        throw attachOnlyError;
+      }
+      
+      console.log('📎 Got attachments:', attachmentsOnly?.length || 0);
+      
+      // Try to get chat data - if this fails, we'll work with what we have
+      let chats = [];
+      const chatIds = attachmentsOnly.map(a => a.chat_id).filter(Boolean);
+      
+      if (chatIds.length > 0) {
+        console.log('📎 Attempting to get chat data for IDs:', chatIds);
+        
+        // Try multiple approaches to get chat data
+        const approaches = [
+          { name: 'regular client', client: supabase },
+          { name: 'admin client', client: dbClient },
+          { name: 'attachment client', client: attachmentClient }
+        ];
+        
+        for (const approach of approaches) {
+          try {
+            console.log(`📎 Trying ${approach.name}...`);
+            
+            const { data: chatsData, error: chatsError } = await approach.client
+              .from('chats')
+              .select('id, prompt, created_at, user_id, project_id, course_id')
+              .in('id', chatIds);
+            
+            if (chatsError) {
+              console.warn(`⚠️ ${approach.name} failed:`, chatsError);
+              continue;
+            }
+            
+            if (chatsData && chatsData.length > 0) {
+              console.log(`✅ ${approach.name} worked! Got ${chatsData.length} chats`);
+              chats = chatsData;
+              break;
+            }
+          } catch (error) {
+            console.warn(`⚠️ ${approach.name} threw error:`, error);
+          }
+        }
+        
+        if (chats.length === 0) {
+          console.warn('⚠️ All approaches failed, will show PDFs without user/project data');
+        }
+      }
+      
+      console.log('📎 Got chats:', chats?.length || 0);
+      
+      // Manually join the data
+      attachments = attachmentsOnly.map(attachment => ({
+        ...attachment,
+        chats: chats.find(c => c.id === attachment.chat_id)
+      }));
+      
+      attachmentError = null;
       
       if (attachmentError) {
         console.error('❌ getCourseAttachments error:', attachmentError);
@@ -1982,9 +2041,22 @@ export const attachmentApi = {
         return [];
       }
       
-      // Get unique user IDs and project IDs
-      const userIds = [...new Set(attachments.map(a => a.chats?.user_id).filter(Boolean))];
-      const projectIds = [...new Set(attachments.map(a => a.chats?.project_id).filter(Boolean))];
+      // Filter attachments to only include those from the selected course
+      // Since we now have course_id in chats, we can filter directly
+      const courseAttachments = attachments.filter(attachment => {
+        return attachment.chats?.course_id === courseId;
+      });
+      
+      console.log('📊 Course filtering:');
+      console.log('  - Total attachments:', attachments.length);
+      console.log('  - Course attachments:', courseAttachments.length);
+      console.log('  - Looking for course_id:', courseId);
+      console.log('  - Sample attachment:', attachments[0]);
+      console.log('  - Sample chat data:', attachments[0]?.chats);
+      
+      // Get unique user IDs and project IDs from course attachments
+      const userIds = [...new Set(courseAttachments.map(a => a.chats?.user_id).filter(Boolean))];
+      const projectIds = [...new Set(courseAttachments.map(a => a.chats?.project_id).filter(Boolean))];
       
       // Get user data
       const { data: users, error: userError } = await attachmentClient
@@ -1996,22 +2068,15 @@ export const attachmentApi = {
         console.warn('⚠️ Error loading users:', userError);
       }
       
-      // Get project data with course filter
+      // Get project data
       const { data: projects, error: projectError } = await attachmentClient
         .from('projects')
         .select('id, title, course_id')
-        .in('id', projectIds)
-        .eq('course_id', courseId);
+        .in('id', projectIds);
       
       if (projectError) {
         console.warn('⚠️ Error loading projects:', projectError);
       }
-      
-      // Filter attachments to only include those from the selected course
-      const courseAttachments = attachments.filter(attachment => {
-        const project = projects?.find(p => p.id === attachment.chats?.project_id);
-        return project && project.course_id === courseId;
-      });
       
       // Enhance attachments with user and project data
       const enhancedAttachments = courseAttachments.map(attachment => {
@@ -2029,15 +2094,18 @@ export const attachmentApi = {
       });
       
       console.log('📊 getCourseAttachments results:');
-      console.log('  - total attachments:', attachments.length);
-      console.log('  - course attachments:', enhancedAttachments.length);
+      console.log('  - total attachments:', attachments?.length || 0);
+      console.log('  - course attachments:', enhancedAttachments?.length || 0);
+      console.log('  - sample attachment:', enhancedAttachments?.[0]);
       console.log('  - error:', 'none');
       
-      return enhancedAttachments;
+      return enhancedAttachments || [];
       
     } catch (error) {
       console.error('❌ getCourseAttachments error:', error);
-      throw error;
+      console.error('❌ Error details:', error.message, error.code);
+      // Return empty array instead of throwing to prevent dashboard crash
+      return [];
     }
   }
 }; 

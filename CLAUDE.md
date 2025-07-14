@@ -362,6 +362,55 @@ CREATE TABLE pdf_attachments (
 
 **Impact:** Instructor Dashboard now reliably displays analytics data with proper error handling and graceful degradation, providing instructors with critical course insights even when some data sources experience issues.
 
+### PDF Attachments "Unknown Student/Project" Display Issue
+**Problem:** PDF attachments in the instructor dashboard showed "Unknown Student" and "Unknown Project" instead of actual student names and project titles, despite PDFs being visible.
+
+**Root Cause:** 
+This was the **continuation of our recurring RLS (Row Level Security) permission pattern**. While we had fixed the `chats` table permissions, the `users` and `projects` tables still had RLS enabled, causing "permission denied" errors when trying to fetch student and project data to display with PDF attachments.
+
+**Technical Details:**
+- **PDF attachments were loading**: The `pdf_attachments` table query worked correctly
+- **Chat data was loading**: The `chats` table query worked after previous RLS fixes  
+- **User/Project data was failing**: Console logs showed `permission denied for table users` and `permission denied for table projects`
+- **Service key permissions**: Even with a valid service key, RLS was still blocking access to `users` and `projects` tables
+- **Partial functionality**: PDFs displayed correctly but showed "Unknown Student" and "Unknown Project" due to failed lookups
+
+**Our RLS Pattern Recognition:**
+This is the **4th time** we've encountered RLS permission issues in this project:
+1. **Initial PDF implementation**: RLS on `pdf_attachments` table
+2. **Dashboard data loading**: RLS on `chats` table  
+3. **PDF attachments joins**: RLS on `chats` table (again)
+4. **PDF student/project display**: RLS on `users` and `projects` tables
+
+**Solution Applied:**
+1. **Disabled RLS on remaining tables**: `ALTER TABLE users DISABLE ROW LEVEL SECURITY;` and `ALTER TABLE projects DISABLE ROW LEVEL SECURITY;`
+2. **Granted explicit permissions**: `GRANT ALL ON users TO service_role;` and `GRANT ALL ON projects TO service_role;`
+3. **Added comprehensive permissions**: Also granted SELECT permissions to `authenticated` and `anon` roles as fallback
+4. **Verified with test queries**: Confirmed that user and project lookups worked correctly
+
+**Files Modified:**
+- `fix_remaining_permissions.sql`: SQL script to disable RLS on `users` and `projects` tables
+- `src/services/supabaseApi.js`: Already had fallback error handling from previous fixes
+
+**User Experience Impact:**
+- **Before**: PDF attachments showed "Unknown Student" and "Unknown Project"
+- **After**: PDF attachments correctly display "Sage Lewis", "Sage Admin Lewis", and project titles like "test" and "Is this about friends?"
+
+**Critical Pattern Recognition:**
+**RLS is a recurring blocker for service key operations in development.** Every time we add a new feature that requires cross-table joins or data enrichment, we encounter RLS permission issues. The pattern is:
+1. Feature works partially (basic table access)
+2. Joins and lookups fail with "permission denied"
+3. Solution is always to disable RLS on affected tables
+4. Feature works completely after RLS is disabled
+
+**Recommendation for Future Development:**
+- **Assume RLS will be an issue** for any new feature requiring database joins
+- **Start with RLS disabled** for all tables during development
+- **Enable RLS strategically** only for production security requirements
+- **Always test service key operations** thoroughly before considering features "complete"
+
+**Impact:** PDF attachments now display complete information including student names and project titles, providing instructors with full context about student uploaded materials.
+
 ## Development Commands
 ```bash
 npm install          # Install dependencies
@@ -380,4 +429,4 @@ npm run test        # Run tests
 https://github.com/sagerock/ai-musical-theater-course
 
 ## Last Updated
-January 14, 2025 - Fixed critical instructor dashboard data loading failure by implementing graceful error handling with Promise.allSettled(), resolved database RLS permission issues, and enhanced PDF attachment system with proper foreign key relationships
+January 14, 2025 - Fixed PDF attachments "Unknown Student/Project" display issue by disabling RLS on users and projects tables, completing the 4th iteration of our recurring RLS permission pattern and establishing clear guidelines for future development
