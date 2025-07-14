@@ -450,21 +450,6 @@ export default function InstructorDashboard() {
                 <TagIcon className="h-3 w-3 mr-1" />
                 Manage Tags
               </button>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <FunnelIcon className="h-3 w-3 mr-1" />
-                Filters
-              </button>
-              <button
-                onClick={exportData}
-                disabled={exporting || filteredChats.length === 0}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
-              >
-                <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
-                {exporting ? 'Exporting...' : 'Export CSV'}
-              </button>
             </div>
           </div>
         </div>
@@ -512,11 +497,135 @@ export default function InstructorDashboard() {
         </div>
       </div>
 
-      {/* Filters */}
+
+      {/* Student Projects Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Student Projects</h2>
+        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+          {projects.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project Title
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Creator
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {projects.map((project) => (
+                    <tr key={project.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <FolderIcon className="h-5 w-5 text-primary-500 mr-3" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {project.title}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {project.users?.name || 'Unknown'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {project.users?.email}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs">
+                        <p className="text-sm text-gray-900 line-clamp-2">
+                          {project.description || 'No description provided'}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {format(new Date(project.created_at), 'MMM dd, yyyy')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link
+                          to={`/chat/${project.id}`}
+                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200"
+                        >
+                          <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
+                          View Project
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Students haven't created any projects in this course yet.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* AI Interactions Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">AI Interactions</h2>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <FunnelIcon className="h-3 w-3 mr-1" />
+              Filter AI Interactions
+            </button>
+            <button
+              onClick={exportData}
+              disabled={exporting || filteredChats.length === 0}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+            >
+              <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
+              {exporting ? 'Exporting...' : 'Export CSV'}
+            </button>
+          </div>
+        </div>
+        
+        <p className="text-sm text-gray-600 mb-4">
+          {filtersLoading ? (
+            <span className="text-primary-600">Loading filtered results...</span>
+          ) : (
+            <>
+              Showing {filteredChats.length} of {chats.length} AI conversations
+              {Object.values(filters).some(v => v) && (
+                <span className="ml-2 text-primary-600">(filtered)</span>
+              )}
+              {chats.length === 0 && (
+                <span className="ml-2 text-gray-500">
+                  • Students haven't used AI tools yet
+                </span>
+              )}
+            </>
+          )}
+        </p>
+      </div>
+
+      {/* AI Interactions Filters */}
       {showFilters && (
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Filters</h3>
+            <h3 className="text-lg font-medium text-gray-900">Filter AI Interactions</h3>
             <button
               onClick={clearFilters}
               className="text-sm text-gray-500 hover:text-gray-700"
@@ -617,109 +726,6 @@ export default function InstructorDashboard() {
           </div>
         </div>
       )}
-
-      {/* Student Projects Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Student Projects</h2>
-        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-          {projects.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Project Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Creator
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {projects.map((project) => (
-                    <tr key={project.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <FolderIcon className="h-5 w-5 text-primary-500 mr-3" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {project.title}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {project.users?.name || 'Unknown'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {project.users?.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 max-w-xs">
-                        <p className="text-sm text-gray-900 line-clamp-2">
-                          {project.description || 'No description provided'}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {format(new Date(project.created_at), 'MMM dd, yyyy')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link
-                          to={`/chat/${project.id}`}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200"
-                        >
-                          <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
-                          View Project
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Students haven't created any projects in this course yet.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* AI Interactions Section */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">AI Interactions</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          {filtersLoading ? (
-            <span className="text-primary-600">Loading filtered results...</span>
-          ) : (
-            <>
-              Showing {filteredChats.length} of {chats.length} AI conversations
-              {Object.values(filters).some(v => v) && (
-                <span className="ml-2 text-primary-600">(filtered)</span>
-              )}
-              {chats.length === 0 && (
-                <span className="ml-2 text-gray-500">
-                  • Students haven't used AI tools yet
-                </span>
-              )}
-            </>
-          )}
-        </p>
-      </div>
 
       {/* Chat Interactions Table */}
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
