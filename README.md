@@ -53,6 +53,8 @@ A powerful analytics platform that helps educators understand how students inter
 ```
 src/
 ├── components/
+│   ├── Admin/
+│   │   └── AdminPanel.js            # Admin dashboard and controls
 │   ├── Auth/
 │   │   └── Login.js                 # Authentication component
 │   ├── Chat/
@@ -65,20 +67,41 @@ src/
 │   ├── Instructor/
 │   │   └── InstructorDashboard.js   # Instructor analytics
 │   ├── Layout/
-│   │   └── Layout.js                # Main app layout
-│   └── Projects/
-│       └── Projects.js              # Project management
+│   │   ├── Layout.js                # Main app layout
+│   │   └── Footer.js                # Footer with privacy links
+│   ├── Messaging/
+│   │   ├── AdminMessaging.js        # Admin messaging interface
+│   │   └── InstructorMessaging.js   # Instructor messaging interface
+│   ├── Privacy/
+│   │   └── PrivacyPolicy.js         # Privacy policy page
+│   ├── Projects/
+│   │   └── Projects.js              # Project management
+│   └── Settings/
+│       ├── ProfileSettings.js       # User profile management
+│       └── EmailSettings.js         # Email notification preferences
 ├── config/
 │   ├── firebase.js                  # Firebase configuration
 │   └── supabase.js                  # Supabase configuration
 ├── contexts/
 │   └── AuthContext.js               # Authentication context
 ├── services/
+│   ├── aiApi.js                     # Unified AI service router
 │   ├── openaiApi.js                 # OpenAI API service
+│   ├── anthropicApi.js              # Anthropic API service
+│   ├── googleApi.js                 # Google Gemini API service
+│   ├── perplexityApi.js             # Perplexity API service
+│   ├── emailService.js              # Email notification service
 │   └── supabaseApi.js               # Supabase API functions
 ├── App.js                           # Main app component
 ├── index.js                         # React entry point
 └── index.css                        # Global styles
+
+api/                                 # Vercel serverless functions
+├── send-email.js                    # Email sending endpoint
+└── health.js                        # Health check endpoint
+
+server.js                            # Express server for local development
+vercel.json                          # Vercel deployment configuration
 ```
 
 ## 🚀 Getting Started
@@ -452,6 +475,272 @@ REACT_APP_URL=https://yourdomain.com
 - **Data Retention**: Email sending logs managed according to retention policies
 
 This email system enhances the educational experience by keeping all stakeholders informed while respecting privacy and user preferences.
+
+## 📬 Messaging System Architecture
+
+### Overview
+The AI Engagement Hub features a comprehensive messaging system that enables communication between administrators, instructors, and students. The system uses a modern full-stack architecture with different implementations for local development and production deployment.
+
+### System Components
+
+#### Frontend (React App)
+- **Location**: `src/components/Messaging/`
+- **Components**:
+  - `AdminMessaging.js` - Admin interface for messaging instructors or all users
+  - `InstructorMessaging.js` - Instructor interface for messaging students in their courses
+- **Integration**: Embedded in Admin Panel and Instructor Dashboard
+- **Features**: Role-based messaging, recipient selection, bulk sending, result tracking
+
+#### Backend Architecture
+
+The messaging system uses a **dual-server architecture** that adapts to the deployment environment:
+
+##### Local Development (Two-Server Setup)
+```
+Frontend (Port 3000) → Backend (Port 3001) → SendGrid API → Email Delivered
+```
+
+**Frontend Server** (`npm start`):
+- React development server
+- Runs on `http://localhost:3000`
+- Serves the web application
+- Makes API calls to backend server
+
+**Backend Server** (`node server.js`):
+- Express.js API server
+- Runs on `http://localhost:3001`
+- Handles email sending through SendGrid
+- Bypasses CORS restrictions
+
+##### Production (Vercel Serverless)
+```
+Frontend (Vercel) → Serverless Function (/api/send-email) → SendGrid API → Email Delivered
+```
+
+**Unified Deployment**:
+- Frontend: `https://your-app.vercel.app`
+- Backend: `https://your-app.vercel.app/api/send-email`
+- Single deployment with serverless functions
+
+### Technical Implementation
+
+#### Local Development Setup
+
+1. **Start Backend Server**:
+   ```bash
+   node server.js
+   ```
+   - Loads environment variables from `.env.local`
+   - Starts Express server on port 3001
+   - Provides endpoints:
+     - `/api/send-email` - Email sending
+     - `/api/health` - Health check
+     - `/api/test-config` - Configuration verification
+
+2. **Start Frontend Server**:
+   ```bash
+   npm start
+   ```
+   - React development server on port 3000
+   - Automatically routes email requests to `http://localhost:3001/api/send-email`
+
+3. **Combined Development**:
+   ```bash
+   npm run dev
+   ```
+   - Uses `concurrently` to run both servers simultaneously
+   - Recommended for development workflow
+
+#### Production Deployment (Vercel)
+
+1. **Serverless Functions**:
+   - `api/send-email.js` - Handles email sending
+   - `api/health.js` - Health check endpoint
+   - Automatically deployed with frontend
+
+2. **Environment Variables** (Vercel Dashboard):
+   ```env
+   REACT_APP_SENDGRID_API_KEY=your_sendgrid_api_key
+   REACT_APP_SENDGRID_FROM_EMAIL=your_email@domain.com
+   REACT_APP_URL=https://your-app.vercel.app
+   ```
+
+3. **Automatic Routing**:
+   - Frontend automatically detects production environment
+   - Routes requests to `/api/send-email` (same domain)
+   - No CORS issues in production
+
+### Email Service Logic
+
+The email service (`src/services/emailService.js`) intelligently adapts to the environment:
+
+```javascript
+// Automatic environment detection
+const EMAIL_API_URL = process.env.REACT_APP_EMAIL_API_URL || 
+  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
+
+// Smart API routing
+const apiUrl = EMAIL_API_URL ? `${EMAIL_API_URL}/api/send-email` : '/api/send-email';
+```
+
+**Development Mode**:
+- `EMAIL_API_URL` = `http://localhost:3001`
+- Routes to Express server
+- Full debugging and logging
+
+**Production Mode**:
+- `EMAIL_API_URL` = `` (empty)
+- Routes to `/api/send-email` (same domain)
+- Uses Vercel serverless functions
+
+### CORS Solution
+
+#### The Problem
+Browsers block direct API calls from `localhost:3000` to `api.sendgrid.com` due to CORS (Cross-Origin Resource Sharing) restrictions.
+
+#### The Solution
+**Local Development**:
+- Frontend calls backend server (same-origin allowed)
+- Backend server calls SendGrid (server-to-server, no CORS)
+
+**Production**:
+- Frontend calls serverless function (same-origin)
+- Serverless function calls SendGrid (server-to-server, no CORS)
+
+### Message Types & Templates
+
+#### Admin Messages
+- **Recipients**: Instructors or all platform users
+- **Features**: Priority levels (Normal, High, Urgent)
+- **Template**: Professional admin communication template
+- **Access**: Admin Panel → Admin Messaging
+
+#### Instructor Messages
+- **Recipients**: Students in instructor's courses
+- **Features**: Course selection, student count display
+- **Template**: Course-contextualized messaging template
+- **Access**: Instructor Dashboard → Instructor Messaging
+
+#### Email Templates
+All emails include:
+- **HTML Version**: Professional styling with branding
+- **Text Version**: Plain text fallback
+- **Course Context**: Course name, code, and links
+- **Sender Information**: Name, role, and contact details
+- **Branding**: Consistent AI Engagement Hub design
+
+### Development Workflow
+
+#### Setting Up Local Development
+
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Configure Environment Variables**:
+   ```bash
+   # Add to .env.local
+   REACT_APP_SENDGRID_API_KEY=your_sendgrid_api_key
+   REACT_APP_SENDGRID_FROM_EMAIL=your_email@domain.com
+   REACT_APP_EMAIL_API_URL=http://localhost:3001
+   ```
+
+3. **Start Development Servers**:
+   ```bash
+   # Option 1: Combined (recommended)
+   npm run dev
+   
+   # Option 2: Separate terminals
+   # Terminal 1:
+   node server.js
+   
+   # Terminal 2:
+   npm start
+   ```
+
+4. **Test Email Functionality**:
+   - Frontend: `http://localhost:3000`
+   - Backend health: `http://localhost:3001/api/health`
+   - Use messaging interfaces in Admin Panel or Instructor Dashboard
+
+#### Deploying to Production
+
+1. **Commit Changes**:
+   ```bash
+   git add .
+   git commit -m "Add messaging system"
+   git push
+   ```
+
+2. **Configure Vercel**:
+   - Add environment variables in Vercel dashboard
+   - Vercel automatically detects `/api` folder
+   - Serverless functions deploy automatically
+
+3. **Verify Deployment**:
+   - Frontend: `https://your-app.vercel.app`
+   - Health check: `https://your-app.vercel.app/api/health`
+   - Test messaging functionality
+
+### Error Handling & Fallbacks
+
+#### Development Mode Fallbacks
+- If backend server is unavailable, falls back to email simulation
+- Logs emails to console for testing
+- Provides detailed error messages
+
+#### Production Reliability
+- Vercel serverless functions auto-scale
+- SendGrid provides enterprise-grade email delivery
+- Comprehensive error logging and monitoring
+
+#### User Experience
+- Loading states during email sending
+- Success/failure notifications
+- Retry mechanisms for failed sends
+- Detailed result tracking for bulk sends
+
+### Monitoring & Debugging
+
+#### Development Debugging
+- Console logs for email sending attempts
+- Backend server logs for API calls
+- Health check endpoint for configuration verification
+
+#### Production Monitoring
+- Vercel function logs in dashboard
+- SendGrid delivery analytics
+- Email success/failure tracking
+- Performance monitoring
+
+### Security Considerations
+
+#### API Key Management
+- **Development**: Stored in `.env.local` (not committed)
+- **Production**: Stored in Vercel environment variables
+- **Access**: Server-side only, never exposed to browser
+
+#### Email Security
+- **Authentication**: SendGrid API key authentication
+- **Validation**: Input validation on all email data
+- **Rate Limiting**: Built-in SendGrid rate limiting
+- **Privacy**: User email preferences respected
+
+### Scalability
+
+#### Local Development
+- Single developer workflow
+- Instant feedback and debugging
+- Hot reloading for rapid development
+
+#### Production Scaling
+- **Serverless Functions**: Auto-scale with traffic
+- **SendGrid**: Enterprise email infrastructure
+- **Vercel**: Global CDN and edge computing
+- **Database**: Supabase auto-scaling
+
+This messaging system architecture provides a seamless experience from development to production while maintaining security, scalability, and reliability throughout the deployment lifecycle.
 
 ## 🎯 Usage Guide
 
