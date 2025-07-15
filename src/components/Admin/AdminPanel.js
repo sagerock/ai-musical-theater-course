@@ -4,6 +4,7 @@ import { courseApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import PendingApprovals from '../Instructor/PendingApprovals';
+import AdminMessaging from '../Messaging/AdminMessaging';
 import {
   PlusIcon,
   AcademicCapIcon,
@@ -240,6 +241,11 @@ export default function AdminPanel() {
             Create Course
           </button>
         </div>
+      </div>
+
+      {/* Admin Messaging Section */}
+      <div className="mb-8">
+        <AdminMessaging />
       </div>
 
       {/* Pending Approvals Section */}

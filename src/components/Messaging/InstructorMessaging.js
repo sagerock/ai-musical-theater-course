@@ -1,0 +1,356 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { courseApi } from '../../services/supabaseApi';
+import { emailNotifications } from '../../services/emailService';
+import toast from 'react-hot-toast';
+import {
+  EnvelopeIcon,
+  AcademicCapIcon,
+  UserGroupIcon,
+  PaperAirplaneIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  InformationCircleIcon
+} from '@heroicons/react/24/outline';
+
+export default function InstructorMessaging() {
+  const { currentUser } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendResults, setSendResults] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    courseId: '',
+    subject: '',
+    message: ''
+  });
+
+  const [courses, setCourses] = useState([]);
+  const [selectedCourseStudents, setSelectedCourseStudents] = useState([]);
+
+  useEffect(() => {
+    loadInstructorCourses();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (formData.courseId) {
+      loadCourseStudents(formData.courseId);
+    } else {
+      setSelectedCourseStudents([]);
+    }
+  }, [formData.courseId]);
+
+  const loadInstructorCourses = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      const instructorCourses = await courseApi.getUserCourses(currentUser.uid);
+      
+      // Filter for courses where user is an instructor
+      const instructorOnlyCourses = instructorCourses.filter(
+        membership => membership.role === 'instructor'
+      );
+      
+      setCourses(instructorOnlyCourses);
+    } catch (error) {
+      console.error('Error loading instructor courses:', error);
+      toast.error('Failed to load courses');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCourseStudents = async (courseId) => {
+    try {
+      const courseMembers = await courseApi.getCourseMembers(courseId);
+      
+      // Filter for students only
+      const students = courseMembers.filter(member => member.role === 'student');
+      
+      setSelectedCourseStudents(students);
+    } catch (error) {
+      console.error('Error loading course students:', error);
+      toast.error('Failed to load course students');
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.courseId || !formData.subject.trim() || !formData.message.trim()) {
+      toast.error('Course, subject, and message are required');
+      return;
+    }
+
+    if (selectedCourseStudents.length === 0) {
+      toast.error('No students found in selected course');
+      return;
+    }
+
+    try {
+      setSending(true);
+      setSendResults(null);
+
+      // Get course information
+      const selectedCourse = courses.find(c => c.courses.id === formData.courseId);
+      
+      if (!selectedCourse) {
+        toast.error('Course not found');
+        return;
+      }
+
+      // Format students for email service
+      const formattedStudents = selectedCourseStudents.map(student => ({
+        email: student.users?.email,
+        name: student.users?.display_name || student.users?.email?.split('@')[0] || 'Student'
+      })).filter(student => student.email); // Filter out students without email
+
+      // Send messages
+      const messageData = {
+        students: formattedStudents,
+        subject: formData.subject,
+        messageContent: formData.message.replace(/\n/g, '<br>'),
+        instructorName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor',
+        courseName: selectedCourse.courses.name,
+        courseCode: selectedCourse.courses.course_code,
+        courseId: formData.courseId
+      };
+
+      const results = await emailNotifications.sendInstructorMessage(messageData);
+      setSendResults(results);
+
+      if (results.success) {
+        const successCount = results.results.filter(r => r.success).length;
+        toast.success(`Message sent successfully to ${successCount} students!`);
+        
+        // Clear form
+        setFormData({
+          courseId: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        toast.error('Failed to send messages');
+      }
+    } catch (error) {
+      console.error('Error sending instructor message:', error);
+      toast.error('Failed to send messages');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const getSelectedCourse = () => {
+    return courses.find(c => c.courses.id === formData.courseId);
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-32 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <EnvelopeIcon className="h-5 w-5 mr-2 text-blue-500" />
+            Instructor Messaging
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Send messages to students in your courses
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-4 text-sm text-gray-500">
+          <div className="flex items-center">
+            <AcademicCapIcon className="h-4 w-4 mr-1" />
+            <span>{courses.length} courses</span>
+          </div>
+          <div className="flex items-center">
+            <UserGroupIcon className="h-4 w-4 mr-1" />
+            <span>{selectedCourseStudents.length} students</span>
+          </div>
+        </div>
+      </div>
+
+      {courses.length === 0 ? (
+        <div className="text-center py-8">
+          <AcademicCapIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No courses found where you are an instructor</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSendMessage} className="space-y-6">
+          {/* Course Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Course
+            </label>
+            <select
+              name="courseId"
+              value={formData.courseId}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Choose a course...</option>
+              {courses.map((courseMembership) => (
+                <option key={courseMembership.courses.id} value={courseMembership.courses.id}>
+                  {courseMembership.courses.name} ({courseMembership.courses.course_code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Selected Course Info */}
+          {formData.courseId && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-blue-900">
+                    {getSelectedCourse()?.courses.name}
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    {getSelectedCourse()?.courses.course_code}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-medium">{selectedCourseStudents.length}</span> students
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Subject */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Subject
+            </label>
+            <input
+              type="text"
+              name="subject"
+              value={formData.subject}
+              onChange={handleInputChange}
+              placeholder="Enter message subject"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Message */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Message
+            </label>
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
+              rows={6}
+              placeholder="Enter your message to students..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Send Button */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              {formData.courseId ? (
+                `This message will be sent to ${selectedCourseStudents.length} students`
+              ) : (
+                'Select a course to see student count'
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={sending || !formData.courseId || !formData.subject.trim() || !formData.message.trim()}
+              className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {sending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <PaperAirplaneIcon className="h-4 w-4 mr-2" />
+                  Send Message
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Send Results */}
+      {sendResults && (
+        <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <h4 className="font-medium text-gray-900 mb-3">Send Results</h4>
+          
+          <div className="space-y-2">
+            {sendResults.results.map((result, index) => (
+              <div key={index} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                <div className="flex items-center">
+                  {result.success ? (
+                    <CheckCircleIcon className="h-4 w-4 text-green-500 mr-2" />
+                  ) : (
+                    <XCircleIcon className="h-4 w-4 text-red-500 mr-2" />
+                  )}
+                  <span className="text-sm">{result.name}</span>
+                </div>
+                <span className="text-xs text-gray-500">{result.email}</span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between text-sm">
+              <span>Success Rate:</span>
+              <span className={`font-medium ${
+                sendResults.success ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {sendResults.results.filter(r => r.success).length}/{sendResults.results.length}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Info */}
+      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start">
+          <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
+          <div className="text-sm text-blue-800">
+            <p className="font-medium mb-1">Instructor Messaging Notes</p>
+            <ul className="space-y-1 text-xs">
+              <li>• Messages will be sent to all students in the selected course</li>
+              <li>• Students will receive notifications based on their email preferences</li>
+              <li>• Use course messaging for announcements, reminders, and feedback</li>
+              <li>• All messages include course context and direct links to the course</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

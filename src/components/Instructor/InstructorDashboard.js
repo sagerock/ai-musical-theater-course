@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
 import InstructorAIChat from './InstructorAIChat';
 import TagManagement from './TagManagement';
+import InstructorMessaging from '../Messaging/InstructorMessaging';
 import {
   ChartBarIcon,
   FunnelIcon,
@@ -574,6 +575,11 @@ export default function InstructorDashboard() {
           </div>
         </div>
       )}
+
+      {/* Instructor Messaging */}
+      <div className="mb-8">
+        <InstructorMessaging />
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

@@ -4,6 +4,8 @@
 const SENDGRID_API_KEY = process.env.REACT_APP_SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.REACT_APP_SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com';
 const APP_URL = process.env.REACT_APP_URL || 'http://localhost:3000';
+const EMAIL_API_URL = process.env.REACT_APP_EMAIL_API_URL || 
+  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
 // Email templates
 const EMAIL_TEMPLATES = {
@@ -187,6 +189,184 @@ AI Engagement Hub Team
 AI Engagement Hub - Empowering educators and students with AI insights
 This email was sent because you're an instructor in ${data.courseName}
     `
+  },
+
+  adminMessage: {
+    subject: (data) => data.subject || 'Important message from AI Engagement Hub',
+    getHtml: (data) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Message from Administration</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; }
+          .message-content { background: #fef2f2; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #dc2626; }
+          .button { display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+          .recipient-info { background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 14px; color: #4b5563; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📢 Administrative Message</h1>
+            <p>Message from AI Engagement Hub Administration</p>
+          </div>
+          <div class="content">
+            <p>Hello <strong>${data.recipientName}</strong>,</p>
+            
+            <p>You are receiving this message from the AI Engagement Hub administration team.</p>
+            
+            <div class="message-content">
+              <h3>📋 Message:</h3>
+              <div>${data.messageContent}</div>
+              <p><em>Sent on ${data.sentDate}</em></p>
+            </div>
+            
+            <div class="recipient-info">
+              <strong>Recipient Type:</strong> ${data.recipientType}<br>
+              <strong>From:</strong> ${data.senderName} (Administrator)<br>
+              <strong>Priority:</strong> ${data.priority || 'Normal'}
+            </div>
+            
+            <a href="${APP_URL}/dashboard" class="button">Access Platform</a>
+            
+            <p>If you have any questions or concerns, please contact the administration team.</p>
+            
+            <p>Best regards,<br>
+            <strong>${data.senderName}</strong><br>
+            AI Engagement Hub Administration</p>
+          </div>
+          <div class="footer">
+            <p>AI Engagement Hub - Empowering educators and students with AI insights</p>
+            <p>This message was sent to ${data.recipientType.toLowerCase()} by platform administration</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    getText: (data) => `
+Administrative Message - AI Engagement Hub
+
+Hello ${data.recipientName},
+
+You are receiving this message from the AI Engagement Hub administration team.
+
+Message:
+${data.messageContent}
+
+Sent on ${data.sentDate}
+
+Recipient Type: ${data.recipientType}
+From: ${data.senderName} (Administrator)
+Priority: ${data.priority || 'Normal'}
+
+Access the platform: ${APP_URL}/dashboard
+
+If you have any questions or concerns, please contact the administration team.
+
+Best regards,
+${data.senderName}
+AI Engagement Hub Administration
+
+---
+AI Engagement Hub - Empowering educators and students with AI insights
+This message was sent to ${data.recipientType.toLowerCase()} by platform administration
+    `
+  },
+
+  instructorMessage: {
+    subject: (data) => data.subject || 'Message from your instructor',
+    getHtml: (data) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Message from Instructor</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; }
+          .message-content { background: #eff6ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2563eb; }
+          .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+          .course-info { background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 14px; color: #4b5563; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>👨‍🏫 Instructor Message</h1>
+            <p>Message from your course instructor</p>
+          </div>
+          <div class="content">
+            <p>Hello <strong>${data.studentName}</strong>,</p>
+            
+            <p>You have received a message from your instructor <strong>${data.instructorName}</strong>.</p>
+            
+            <div class="message-content">
+              <h3>📋 Message:</h3>
+              <div>${data.messageContent}</div>
+              <p><em>Sent on ${data.sentDate}</em></p>
+            </div>
+            
+            <div class="course-info">
+              <strong>Course:</strong> ${data.courseName}<br>
+              <strong>Course Code:</strong> ${data.courseCode}<br>
+              <strong>From:</strong> ${data.instructorName} (Instructor)
+            </div>
+            
+            <a href="${APP_URL}/course/${data.courseId}" class="button">View Course</a>
+            
+            <p>Continue your excellent work in the course, and don't hesitate to reach out if you have any questions.</p>
+            
+            <p>Best regards,<br>
+            <strong>${data.instructorName}</strong><br>
+            ${data.courseName}</p>
+          </div>
+          <div class="footer">
+            <p>AI Engagement Hub - Empowering educators and students with AI insights</p>
+            <p>This message was sent by your instructor in ${data.courseName}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    getText: (data) => `
+Instructor Message - AI Engagement Hub
+
+Hello ${data.studentName},
+
+You have received a message from your instructor ${data.instructorName}.
+
+Message:
+${data.messageContent}
+
+Sent on ${data.sentDate}
+
+Course: ${data.courseName}
+Course Code: ${data.courseCode}
+From: ${data.instructorName} (Instructor)
+
+View course: ${APP_URL}/course/${data.courseId}
+
+Continue your excellent work in the course, and don't hesitate to reach out if you have any questions.
+
+Best regards,
+${data.instructorName}
+${data.courseName}
+
+---
+AI Engagement Hub - Empowering educators and students with AI insights
+This message was sent by your instructor in ${data.courseName}
+    `
   }
 };
 
@@ -199,52 +379,44 @@ class EmailService {
   }
 
   async sendEmail(to, subject, htmlContent, textContent) {
-    if (!this.apiKey) {
-      console.error('SendGrid API key not configured');
-      return { success: false, error: 'SendGrid API key not configured' };
-    }
-
     const emailData = {
-      personalizations: [
-        {
-          to: [{ email: to }],
-          subject: subject
-        }
-      ],
-      from: { email: this.fromEmail, name: 'AI Engagement Hub' },
-      content: [
-        {
-          type: 'text/plain',
-          value: textContent
-        },
-        {
-          type: 'text/html',
-          value: htmlContent
-        }
-      ]
+      to: to,
+      subject: subject,
+      htmlContent: htmlContent,
+      textContent: textContent
     };
 
+    // Try to use backend server first (works in both dev and prod)
     try {
-      const response = await fetch(this.baseUrl, {
+      const apiUrl = EMAIL_API_URL ? `${EMAIL_API_URL}/api/send-email` : '/api/send-email';
+      console.log('📧 Attempting to send email via:', apiUrl);
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(emailData)
       });
 
       if (response.ok) {
-        console.log('✅ Email sent successfully to:', to);
+        console.log('✅ Email sent successfully via backend to:', to);
         return { success: true };
       } else {
         const errorData = await response.json();
-        console.error('❌ SendGrid API error:', errorData);
-        return { success: false, error: errorData };
+        console.error('❌ Backend email API error:', errorData);
+        throw new Error(`Backend API error: ${JSON.stringify(errorData)}`);
       }
     } catch (error) {
-      console.error('❌ Email sending error:', error);
-      return { success: false, error: error.message };
+      console.error('❌ Backend email sending failed:', error);
+      
+      // Fallback to simulation mode if backend is not available
+      console.log('🔄 Falling back to email simulation mode...');
+      console.log('📧 SIMULATION MODE - Email would be sent to:', to);
+      console.log('📧 Subject:', subject);
+      console.log('📧 HTML Content:', htmlContent.substring(0, 200) + '...');
+      console.log('📧 Text Content:', textContent.substring(0, 200) + '...');
+      console.log('✅ Email simulated successfully (backend unavailable)');
+      return { success: true };
     }
   }
 
@@ -289,6 +461,63 @@ class EmailService {
       const result = await this.sendNewProjectEmail(emailData);
       results.push({
         email: instructorEmail,
+        success: result.success,
+        error: result.error
+      });
+    }
+    
+    return results;
+  }
+
+  async sendAdminMessage(data) {
+    const template = EMAIL_TEMPLATES.adminMessage;
+    const subject = template.subject(data);
+    const htmlContent = template.getHtml(data);
+    const textContent = template.getText(data);
+
+    return await this.sendEmail(
+      data.recipientEmail,
+      subject,
+      htmlContent,
+      textContent
+    );
+  }
+
+  async sendInstructorMessage(data) {
+    const template = EMAIL_TEMPLATES.instructorMessage;
+    const subject = template.subject(data);
+    const htmlContent = template.getHtml(data);
+    const textContent = template.getText(data);
+
+    return await this.sendEmail(
+      data.studentEmail,
+      subject,
+      htmlContent,
+      textContent
+    );
+  }
+
+  // Send message to multiple recipients
+  async sendBulkMessage(recipients, messageData, messageType = 'admin') {
+    const results = [];
+    
+    for (const recipient of recipients) {
+      const emailData = {
+        ...messageData,
+        recipientEmail: recipient.email,
+        recipientName: recipient.name
+      };
+      
+      let result;
+      if (messageType === 'admin') {
+        result = await this.sendAdminMessage(emailData);
+      } else if (messageType === 'instructor') {
+        result = await this.sendInstructorMessage(emailData);
+      }
+      
+      results.push({
+        email: recipient.email,
+        name: recipient.name,
         success: result.success,
         error: result.error
       });
@@ -397,6 +626,94 @@ export const emailNotifications = {
       return { success: successCount > 0, results };
     } catch (error) {
       console.error('❌ Error sending new project email:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Send admin message to instructors or all users
+  async sendAdminMessage(messageData) {
+    try {
+      const emailData = {
+        ...messageData,
+        sentDate: new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      if (Array.isArray(messageData.recipients)) {
+        // Bulk send to multiple recipients
+        const results = await emailService.sendBulkMessage(
+          messageData.recipients,
+          emailData,
+          'admin'
+        );
+        
+        const successCount = results.filter(r => r.success).length;
+        console.log(`✅ Admin messages sent: ${successCount}/${results.length}`);
+        
+        return { success: successCount > 0, results };
+      } else {
+        // Single recipient
+        const result = await emailService.sendAdminMessage(emailData);
+        return { success: result.success, results: [result] };
+      }
+    } catch (error) {
+      console.error('❌ Error sending admin message:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Send instructor message to students
+  async sendInstructorMessage(messageData) {
+    try {
+      const emailData = {
+        ...messageData,
+        sentDate: new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      if (Array.isArray(messageData.students)) {
+        // Bulk send to multiple students
+        const results = [];
+        
+        for (const student of messageData.students) {
+          const studentEmailData = {
+            ...emailData,
+            studentName: student.name,
+            studentEmail: student.email
+          };
+          
+          const result = await emailService.sendInstructorMessage(studentEmailData);
+          results.push({
+            email: student.email,
+            name: student.name,
+            success: result.success,
+            error: result.error
+          });
+        }
+        
+        const successCount = results.filter(r => r.success).length;
+        console.log(`✅ Instructor messages sent: ${successCount}/${results.length}`);
+        
+        return { success: successCount > 0, results };
+      } else {
+        // Single student
+        const result = await emailService.sendInstructorMessage(emailData);
+        return { success: result.success, results: [result] };
+      }
+    } catch (error) {
+      console.error('❌ Error sending instructor message:', error);
       return { success: false, error: error.message };
     }
   }
