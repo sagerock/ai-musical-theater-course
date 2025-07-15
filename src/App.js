@@ -7,7 +7,7 @@ import Login from './components/Auth/Login';
 import Dashboard from './components/Dashboard/Dashboard';
 import Chat from './components/Chat/Chat';
 import Projects from './components/Projects/Projects';
-import InstructorDashboard from './components/Instructor/InstructorDashboard';
+import InstructorDashboardContainer from './components/Instructor/InstructorDashboardContainer';
 import InstructorNotesList from './components/Instructor/InstructorNotesList';
 import AdminPanel from './components/Admin/AdminPanel';
 import CourseJoin from './components/Course/CourseJoin';
@@ -44,8 +44,8 @@ function App() {
           <Route path="/course/:courseId/instructor-notes" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<InstructorRoute><InstructorNotesList /></InstructorRoute>} />
           </Route>
-          <Route path="/instructor" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<InstructorRoute><InstructorDashboard /></InstructorRoute>} />
+          <Route path="/instructor/*" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route path="*" element={<InstructorRoute><InstructorDashboardContainer /></InstructorRoute>} />
           </Route>
           <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<AdminRoute><AdminPanel /></AdminRoute>} />
