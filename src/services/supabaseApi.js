@@ -84,7 +84,6 @@ export const userApi = {
             )
           `)
           .eq('course_memberships.course_id', courseId)
-          .eq('course_memberships.status', 'approved')
           .order('created_at', { ascending: false });
         
         if (error) {
@@ -93,10 +92,11 @@ export const userApi = {
           // Don't throw error - fall back to manual filtering
         } else {
           // Only use the data if there's no error
-          // Flatten the course_memberships data to add course_role to each user
+          // Flatten the course_memberships data to add course_role and status to each user
           const usersWithCourseRole = data.map(user => ({
             ...user,
-            course_role: user.course_memberships?.[0]?.role || 'student'
+            course_role: user.course_memberships?.[0]?.role || 'student',
+            status: user.course_memberships?.[0]?.status || 'pending'
           }));
           
           console.log('📈 getAllUsers results:');
@@ -132,27 +132,30 @@ export const userApi = {
       // Get course memberships for this course
       const { data: memberships, error: membershipsError } = await supabase
         .from('course_memberships')
-        .select('user_id, role')
-        .eq('course_id', courseId)
-        .eq('status', 'approved');
+        .select('user_id, role, status')
+        .eq('course_id', courseId);
       
       if (membershipsError) {
         console.error('❌ Course memberships error:', membershipsError);
         throw membershipsError;
       }
       
-      // Create a map of user_id -> course_role
+      // Create a map of user_id -> {course_role, status}
       const membershipMap = memberships.reduce((acc, membership) => {
-        acc[membership.user_id] = membership.role;
+        acc[membership.user_id] = {
+          role: membership.role,
+          status: membership.status
+        };
         return acc;
       }, {});
       
-      // Filter users who have course membership and add course_role
+      // Filter users who have course membership and add course_role and status
       const courseUsers = allUsers
         .filter(user => membershipMap[user.id])
         .map(user => ({
           ...user,
-          course_role: membershipMap[user.id]
+          course_role: membershipMap[user.id].role,
+          status: membershipMap[user.id].status
         }));
       
       console.log('📊 Fallback query results:');
@@ -183,9 +186,9 @@ export const userApi = {
     }
   },
 
-  // Remove student from course (instructor only)
-  async removeStudentFromCourse(userId, courseId, instructorId) {
-    console.log('🗑️ API removeStudentFromCourse called:', { userId, courseId, instructorId });
+  // Approve student enrollment
+  async approveStudentEnrollment(userId, courseId, instructorId) {
+    console.log('✅ API approveStudentEnrollment called:', { userId, courseId, instructorId });
     
     try {
       // First, verify the instructor has permission for this course
@@ -206,27 +209,76 @@ export const userApi = {
         throw new Error(errorMsg);
       }
       
-      console.log('✅ Instructor authorized, proceeding with student removal...');
+      console.log('✅ Instructor authorized, proceeding with student approval...');
       
-      // Remove the student's course membership
-      const { error: removeError } = await supabase
+      // Update the student's status to approved
+      const { data, error } = await supabase
+        .from('course_memberships')
+        .update({ 
+          status: 'approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ Error updating student status:', error);
+        throw error;
+      }
+      
+      console.log('✅ Student approved successfully:', data);
+      return data;
+      
+    } catch (error) {
+      console.error('❌ approveStudentEnrollment error:', error);
+      throw error;
+    }
+  },
+
+  // Reject student enrollment
+  async rejectStudentEnrollment(userId, courseId, instructorId) {
+    console.log('❌ API rejectStudentEnrollment called:', { userId, courseId, instructorId });
+    
+    try {
+      // First, verify the instructor has permission for this course
+      console.log('🔍 Checking instructor permissions...');
+      const { data: instructorMembership, error: instructorError } = await supabase
+        .from('course_memberships')
+        .select('role')
+        .eq('user_id', instructorId)
+        .eq('course_id', courseId)
+        .eq('status', 'approved')
+        .single();
+      
+      console.log('👨‍🏫 Instructor membership check result:', { instructorMembership, instructorError });
+      
+      if (instructorError || !instructorMembership || instructorMembership.role !== 'instructor') {
+        const errorMsg = 'Unauthorized: You must be an instructor for this course';
+        console.error('❌ Authorization failed:', errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      console.log('✅ Instructor authorized, proceeding with student rejection...');
+      
+      // Remove the student from the course (reject = remove)
+      const { error } = await supabase
         .from('course_memberships')
         .delete()
         .eq('user_id', userId)
         .eq('course_id', courseId);
       
-      console.log('🗑️ Delete operation result:', { removeError });
-      
-      if (removeError) {
-        console.error('❌ Error removing student from course:', removeError);
-        throw removeError;
+      if (error) {
+        console.error('❌ Error rejecting student:', error);
+        throw error;
       }
       
-      console.log('✅ Student removed from course successfully');
+      console.log('✅ Student rejected successfully');
       return { success: true };
       
     } catch (error) {
-      console.error('❌ removeStudentFromCourse error:', error);
+      console.error('❌ rejectStudentEnrollment error:', error);
       throw error;
     }
   },
@@ -669,91 +721,208 @@ export const chatApi = {
   async getChatsWithFilters(filters = {}) {
     console.log('🔍 chatApi.getChatsWithFilters called with filters:', filters);
     
-    let query = supabase
-      .from('chats')
-      .select(`
-        *,
-        users (name, email),
-        projects (title),
-        chat_tags (
-          tags (id, name)
-        ),
-        reflections (*)
-      `);
-
-    // Apply course filter only if courseId is provided and not null/undefined
-    if (filters.courseId) {
-      console.log('🎯 Applying course filter for courseId:', filters.courseId);
-      
-      // Check if chats table has course_id column
-      try {
-        const testQuery = await supabase.from('chats').select('course_id').limit(1);
-        if (!testQuery.error) {
-          console.log('✅ chats table has course_id column, applying filter');
-          query = query.eq('course_id', filters.courseId);
-        } else {
-          console.log('❌ chats table missing course_id column:', testQuery.error);
-          console.log('🔄 Continuing without course filter');
-        }
-      } catch (error) {
-        console.log('❌ Error checking chats.course_id:', error);
-      }
-    }
-
-    // Apply other filters
-    if (filters.userId) {
-      query = query.eq('user_id', filters.userId);
-    }
-    if (filters.projectId) {
-      query = query.eq('project_id', filters.projectId);
-    }
-    if (filters.toolUsed) {
-      query = query.eq('tool_used', filters.toolUsed);
-    }
-    if (filters.startDate) {
-      query = query.gte('created_at', filters.startDate);
-    }
-    if (filters.endDate) {
-      query = query.lte('created_at', filters.endDate);
-    }
-    // Tag filtering - we'll handle this client-side since it involves joined data
-    // The backend will return all chats and frontend will filter by tags
-
-    query = query.order('created_at', { ascending: false });
-
-    if (filters.limit) {
-      query = query.limit(filters.limit);
-    }
-
-    console.log('📊 Executing getChatsWithFilters query...');
-    const { data, error } = await query;
-    
-    console.log('📈 getChatsWithFilters results:');
-    console.log('  - data length:', data?.length || 0);
-    console.log('  - error:', error?.message || 'none');
-    
-    // Debug: Let's also check all chats without course filter
-    if (data?.length === 0 && filters.courseId) {
-      console.log('🔍 No chats found with course filter. Checking all chats...');
-      const { data: allChats, error: allError } = await supabase
+    try {
+      // First, try the relationship query with nested data
+      let query = supabase
         .from('chats')
-        .select('id, course_id, project_id, created_at')
-        .limit(10);
-      
-      console.log('📊 All chats sample:', allChats?.length || 0, 'chats found');
-      if (allChats?.length > 0) {
-        console.log('📋 Sample chat data:', allChats.slice(0, 3));
-        console.log('🎯 Current course ID we\'re filtering for:', filters.courseId);
-        console.log('🔍 Course IDs in chat data:', allChats.map(chat => chat.course_id));
-        console.log('🔍 Project IDs in chat data:', allChats.map(chat => chat.project_id));
+        .select(`
+          *,
+          users (name, email),
+          projects (title),
+          chat_tags (
+            tags (id, name)
+          ),
+          reflections (*)
+        `);
+
+      // Apply course filter only if courseId is provided and not null/undefined
+      if (filters.courseId) {
+        console.log('🎯 Applying course filter for courseId:', filters.courseId);
+        
+        // Check if chats table has course_id column
+        try {
+          const testQuery = await supabase.from('chats').select('course_id').limit(1);
+          if (!testQuery.error) {
+            console.log('✅ chats table has course_id column, applying filter');
+            query = query.eq('course_id', filters.courseId);
+          } else {
+            console.log('❌ chats table missing course_id column:', testQuery.error);
+            console.log('🔄 Continuing without course filter');
+          }
+        } catch (error) {
+          console.log('❌ Error checking chats.course_id:', error);
+        }
       }
-    }
-    
-    if (error) {
+
+      // Apply other filters
+      if (filters.userId) {
+        query = query.eq('user_id', filters.userId);
+      }
+      if (filters.projectId) {
+        query = query.eq('project_id', filters.projectId);
+      }
+      if (filters.toolUsed) {
+        query = query.eq('tool_used', filters.toolUsed);
+      }
+      if (filters.startDate) {
+        query = query.gte('created_at', filters.startDate);
+      }
+      if (filters.endDate) {
+        query = query.lte('created_at', filters.endDate);
+      }
+
+      query = query.order('created_at', { ascending: false });
+
+      if (filters.limit) {
+        query = query.limit(filters.limit);
+      }
+
+      console.log('📊 Executing getChatsWithFilters query...');
+      const { data, error } = await query;
+      
+      console.log('📈 getChatsWithFilters results:');
+      console.log('  - data length:', data?.length || 0);
+      console.log('  - error:', error?.message || 'none');
+      
+      // If the relationship query failed, try a manual join approach
+      if (error) {
+        console.log('⚠️ Relationship query failed, trying manual join approach...');
+        return await this.getChatsWithManualJoin(filters);
+      }
+      
+      // Debug: Let's also check all chats without course filter
+      if (data?.length === 0 && filters.courseId) {
+        console.log('🔍 No chats found with course filter. Checking all chats...');
+        const { data: allChats, error: allError } = await supabase
+          .from('chats')
+          .select('id, course_id, project_id, created_at')
+          .limit(10);
+        
+        console.log('📊 All chats sample:', allChats?.length || 0, 'chats found');
+        if (allChats?.length > 0) {
+          console.log('📋 Sample chat data:', allChats.slice(0, 3));
+          console.log('🎯 Current course ID we\'re filtering for:', filters.courseId);
+          console.log('🔍 Course IDs in chat data:', allChats.map(chat => chat.course_id));
+          console.log('🔍 Project IDs in chat data:', allChats.map(chat => chat.project_id));
+        }
+      }
+      
+      return data;
+    } catch (error) {
       console.error('❌ getChatsWithFilters error:', error);
+      console.log('⚠️ Trying manual join approach as fallback...');
+      return await this.getChatsWithManualJoin(filters);
+    }
+  },
+
+  // Fallback method for when relationship queries fail due to RLS
+  async getChatsWithManualJoin(filters = {}) {
+    console.log('🔧 chatApi.getChatsWithManualJoin called with filters:', filters);
+    
+    try {
+      // Get basic chat data first
+      let query = supabase
+        .from('chats')
+        .select(`
+          id,
+          user_id,
+          project_id,
+          tool_used,
+          user_message,
+          ai_response,
+          created_at,
+          updated_at,
+          has_reflection,
+          course_id
+        `);
+
+      // Apply the same filters as the main method
+      if (filters.courseId) {
+        try {
+          const testQuery = await supabase.from('chats').select('course_id').limit(1);
+          if (!testQuery.error) {
+            query = query.eq('course_id', filters.courseId);
+          }
+        } catch (error) {
+          console.log('❌ Error checking chats.course_id in manual join:', error);
+        }
+      }
+
+      if (filters.userId) {
+        query = query.eq('user_id', filters.userId);
+      }
+      if (filters.projectId) {
+        query = query.eq('project_id', filters.projectId);
+      }
+      if (filters.toolUsed) {
+        query = query.eq('tool_used', filters.toolUsed);
+      }
+      if (filters.startDate) {
+        query = query.gte('created_at', filters.startDate);
+      }
+      if (filters.endDate) {
+        query = query.lte('created_at', filters.endDate);
+      }
+
+      query = query.order('created_at', { ascending: false });
+
+      if (filters.limit) {
+        query = query.limit(filters.limit);
+      }
+
+      const { data: chats, error: chatsError } = await query;
+      
+      if (chatsError) {
+        console.error('❌ Manual join chats query failed:', chatsError);
+        throw chatsError;
+      }
+
+      if (!chats || chats.length === 0) {
+        console.log('📊 No chats found in manual join');
+        return [];
+      }
+
+      console.log('✅ Manual join got', chats.length, 'chats');
+
+      // Get unique user IDs and project IDs
+      const userIds = [...new Set(chats.map(chat => chat.user_id).filter(Boolean))];
+      const projectIds = [...new Set(chats.map(chat => chat.project_id).filter(Boolean))];
+
+      console.log('🔍 Need to fetch', userIds.length, 'users and', projectIds.length, 'projects');
+
+      // Fetch users and projects in parallel
+      const [usersResult, projectsResult] = await Promise.allSettled([
+        userIds.length > 0 ? supabase.from('users').select('id, name, email').in('id', userIds) : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0 ? supabase.from('projects').select('id, title').in('id', projectIds) : Promise.resolve({ data: [], error: null })
+      ]);
+
+      // Process results
+      const users = usersResult.status === 'fulfilled' && usersResult.value.data ? usersResult.value.data : [];
+      const projects = projectsResult.status === 'fulfilled' && projectsResult.value.data ? projectsResult.value.data : [];
+
+      console.log('📊 Fetched', users.length, 'users and', projects.length, 'projects');
+
+      // Create lookup maps
+      const userMap = new Map(users.map(user => [user.id, user]));
+      const projectMap = new Map(projects.map(project => [project.id, project]));
+
+      // Combine data
+      const enrichedChats = chats.map(chat => ({
+        ...chat,
+        users: chat.user_id ? userMap.get(chat.user_id) || null : null,
+        projects: chat.project_id ? projectMap.get(chat.project_id) || null : null,
+        // Add empty structures for other relationships to match expected format
+        chat_tags: [],
+        reflections: []
+      }));
+
+      console.log('✅ Manual join completed successfully');
+      return enrichedChats;
+
+    } catch (error) {
+      console.error('❌ Manual join failed:', error);
       throw error;
     }
-    return data;
   },
   
   // Update chat
@@ -1638,6 +1807,54 @@ export const courseApi = {
       console.error('Error getting course by ID:', error);
       throw error;
     }
+  },
+
+  // Remove student from course (instructor only)
+  async removeStudentFromCourse(userId, courseId, instructorId) {
+    console.log('🗑️ API removeStudentFromCourse called:', { userId, courseId, instructorId });
+    
+    try {
+      // First, verify the instructor has permission for this course
+      console.log('🔍 Checking instructor permissions...');
+      const { data: instructorMembership, error: instructorError } = await supabase
+        .from('course_memberships')
+        .select('role')
+        .eq('user_id', instructorId)
+        .eq('course_id', courseId)
+        .eq('status', 'approved')
+        .single();
+      
+      console.log('👨‍🏫 Instructor membership check result:', { instructorMembership, instructorError });
+      
+      if (instructorError || !instructorMembership || instructorMembership.role !== 'instructor') {
+        const errorMsg = 'Unauthorized: You must be an instructor for this course';
+        console.error('❌ Authorization failed:', errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      console.log('✅ Instructor authorized, proceeding with student removal...');
+      
+      // Remove the student's course membership
+      const { error: removeError } = await supabase
+        .from('course_memberships')
+        .delete()
+        .eq('user_id', userId)
+        .eq('course_id', courseId);
+      
+      console.log('🗑️ Delete operation result:', { removeError });
+      
+      if (removeError) {
+        console.error('❌ Error removing student from course:', removeError);
+        throw removeError;
+      }
+      
+      console.log('✅ Student removed from course successfully');
+      return { success: true };
+      
+    } catch (error) {
+      console.error('❌ removeStudentFromCourse error:', error);
+      throw error;
+    }
   }
 };
 
@@ -1756,6 +1973,103 @@ export const analyticsApi = {
 
     console.log('📊 Final stats:', stats);
     return stats;
+  },
+
+  // Export chat data as CSV
+  async exportChatData(instructorId, courseId, filters = {}) {
+    console.log('📊 analyticsApi.exportChatData called with:', { instructorId, courseId, filters });
+    
+    try {
+      // Use the existing getChatsWithFilters function to get chat data
+      const chatFilters = {
+        ...filters,
+        courseId: courseId
+      };
+      
+      const chatData = await chatApi.getChatsWithFilters(chatFilters);
+      
+      console.log('📈 Retrieved chat data:', chatData?.length || 0, 'chats');
+      
+      if (!chatData || chatData.length === 0) {
+        console.log('📊 No chat data found for export');
+        return 'Student Name,Student Email,Project Title,Tool Used,Message Preview,Date,Reflection Status,Tags\n';
+      }
+      
+      // Helper function to safely escape CSV values
+      const escapeCsvValue = (value) => {
+        if (value === null || value === undefined) return '';
+        const stringValue = String(value);
+        // If the value contains commas, quotes, or newlines, wrap it in quotes and escape internal quotes
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      };
+      
+      // Helper function to format date
+      const formatDate = (dateString) => {
+        if (!dateString) return '';
+        try {
+          const date = new Date(dateString);
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (error) {
+          return dateString;
+        }
+      };
+      
+      // Helper function to create message preview
+      const createMessagePreview = (prompt) => {
+        if (!prompt) return '';
+        // Remove extra whitespace and limit to 100 characters
+        const cleanPrompt = prompt.replace(/\s+/g, ' ').trim();
+        return cleanPrompt.length > 100 ? cleanPrompt.substring(0, 100) + '...' : cleanPrompt;
+      };
+      
+      // Helper function to format tags
+      const formatTags = (chatTags) => {
+        if (!chatTags || !Array.isArray(chatTags)) return '';
+        return chatTags
+          .map(chatTag => chatTag.tags?.name)
+          .filter(Boolean)
+          .join('; ');
+      };
+      
+      // Create CSV header
+      const csvHeader = 'Student Name,Student Email,Project Title,Tool Used,Message Preview,Date,Reflection Status,Tags\n';
+      
+      // Create CSV rows
+      const csvRows = chatData.map(chat => {
+        const studentName = escapeCsvValue(chat.users?.name || 'Unknown Student');
+        const studentEmail = escapeCsvValue(chat.users?.email || 'Unknown Email');
+        const projectTitle = escapeCsvValue(chat.projects?.title || 'Unknown Project');
+        const toolUsed = escapeCsvValue(chat.tool_used || 'Unknown Tool');
+        const messagePreview = escapeCsvValue(createMessagePreview(chat.prompt));
+        const date = escapeCsvValue(formatDate(chat.created_at));
+        const reflectionStatus = escapeCsvValue(
+          chat.reflections && chat.reflections.length > 0 ? 'Completed' : 'Not Completed'
+        );
+        const tags = escapeCsvValue(formatTags(chat.chat_tags));
+        
+        return `${studentName},${studentEmail},${projectTitle},${toolUsed},${messagePreview},${date},${reflectionStatus},${tags}`;
+      });
+      
+      // Combine header and rows
+      const csvString = csvHeader + csvRows.join('\n');
+      
+      console.log('📊 CSV export complete:', csvRows.length, 'rows generated');
+      
+      return csvString;
+      
+    } catch (error) {
+      console.error('❌ exportChatData error:', error);
+      throw error;
+    }
   }
 };
 
