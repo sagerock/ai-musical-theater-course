@@ -5,11 +5,12 @@ A powerful analytics platform that helps educators understand how students inter
 ## 🌟 Features
 
 ### For Students
-- **AI Chat Interface**: Interact with 12 AI models across OpenAI, Anthropic, and Google
+- **AI Chat Interface**: Interact with 4 streamlined AI models across OpenAI, Anthropic, Google, and Perplexity
 - **Project Organization**: Create and manage projects to organize AI interactions
 - **Smart Tagging**: Apply instructor-curated tags to categorize interactions
 - **Reflection System**: Guided reflection prompts to encourage thoughtful AI usage
 - **Personal Dashboard**: View activity, stats, and interaction history
+- **PDF Upload System**: Upload PDFs, documents, and text files for AI analysis with intelligent large file handling
 - **Trial Access**: Join trial course (TR-SP25) for immediate platform exploration
 
 ### For Instructors
@@ -20,6 +21,7 @@ A powerful analytics platform that helps educators understand how students inter
 - **Student Oversight**: View all student interactions while maintaining educational value
 - **Course Management**: Create courses, manage enrollment, and approve student requests
 - **Tag Governance**: Create and manage course-specific tags for consistent categorization
+- **PDF Attachment Monitoring**: View and download all student PDF uploads with full context
 - **Trial Course Access**: Immediate instructor access for platform evaluation
 
 ### System Features
@@ -38,8 +40,9 @@ A powerful analytics platform that helps educators understand how students inter
 - **Authentication**: Firebase Authentication with forgot password
 - **Real-time Database**: Firebase Firestore
 - **Analytics Database**: Supabase (PostgreSQL)
-- **AI Integration**: OpenAI API, Anthropic Claude API, Google Gemini API
-- **Supported Models**: 12 models across GPT-4.1, Claude Opus/Sonnet, Gemini 2.0
+- **AI Integration**: OpenAI API, Anthropic Claude API, Google Gemini API, Perplexity API
+- **Supported Models**: 4 streamlined models - GPT-4o, Claude Sonnet 4, Gemini Flash, Sonar Pro
+- **File Processing**: PDF.js for document text extraction with intelligent large file handling
 - **Hosting**: Vercel (frontend), Supabase Cloud, Firebase
 - **Icons**: Heroicons
 - **Notifications**: React Hot Toast
@@ -110,6 +113,17 @@ src/
 
    # Google Configuration
    REACT_APP_GOOGLE_API_KEY=your_google_api_key
+   
+   # Perplexity Configuration
+   REACT_APP_PERPLEXITY_API_KEY=your_perplexity_api_key
+   
+   # Supabase Service Key (for PDF uploads)
+   REACT_APP_SUPABASE_SERVICE_KEY=your_supabase_service_key
+   
+   # SendGrid Email Configuration
+   REACT_APP_SENDGRID_API_KEY=your_sendgrid_api_key
+   REACT_APP_SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+   REACT_APP_URL=https://yourdomain.com
    ```
 
 3. **Start the Development Server**
@@ -166,6 +180,7 @@ REACT_APP_FIREBASE_APP_ID=your_app_id
 # Supabase Configuration
 REACT_APP_SUPABASE_URL=your_supabase_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_SUPABASE_SERVICE_KEY=your_supabase_service_key
 
 # OpenAI Configuration
 REACT_APP_OPENAI_API_KEY=your_openai_api_key
@@ -175,6 +190,14 @@ REACT_APP_ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # Google Configuration
 REACT_APP_GOOGLE_API_KEY=your_google_api_key
+
+# Perplexity Configuration
+REACT_APP_PERPLEXITY_API_KEY=your_perplexity_api_key
+
+# SendGrid Email Configuration
+REACT_APP_SENDGRID_API_KEY=your_sendgrid_api_key
+REACT_APP_SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+REACT_APP_URL=https://yourdomain.com
 ```
 
 ### 4. Start Development Server
@@ -196,6 +219,9 @@ The application will open at `http://localhost:3000`.
 - **tags**: Categorization tags
 - **chat_tags**: Many-to-many chat-tag relationships
 - **reflections**: Student reflections on interactions
+- **pdf_attachments**: Document uploads with extracted text and metadata
+- **courses**: Course management and organization
+- **course_memberships**: Student-course relationships with approval workflow
 
 ### Firebase Collections
 
@@ -210,6 +236,222 @@ The application will open at `http://localhost:3000`.
 - **Row Level Security (RLS)** ensures data privacy
 - Students can only see their own data
 - Instructors can view all student interactions
+
+## 📎 PDF Upload & Document Analysis System
+
+### Overview
+The AI Engagement Hub features a sophisticated document upload system that allows students to share PDFs, text files, and other documents with AI models for analysis, discussion, and learning support.
+
+### Supported File Types
+- **PDF files** (.pdf) - Full text extraction and analysis
+- **Text files** (.txt) - Direct text processing
+- **Word documents** (.doc, .docx) - Basic support with guidance for text extraction
+
+### Smart Large File Handling
+The system intelligently handles files of all sizes:
+
+#### Small to Medium Files (< 2MB)
+- **Direct processing** - Full content sent to AI model
+- **Immediate analysis** - Complete document context available
+- **Fast response** - Minimal processing delay
+
+#### Large Files (2MB - 5MB)
+- **Standard processing** with user notification
+- **Progress indicators** - Users informed of processing status
+- **Full content** - Complete document analysis when possible
+
+#### Very Large Files (> 5MB)
+- **Automatic summarization** - Prevents token limit errors
+- **Smart content extraction**:
+  - Document metadata (pages, word count, file size)
+  - First 3 pages preview (8,000 characters)
+  - Key section identification
+  - Structural analysis
+- **Guided interaction** - Instructions for follow-up questions
+- **Error prevention** - Avoids 128k token limit failures
+
+### How It Works
+
+1. **Upload Process**
+   ```
+   Student uploads PDF → File validation → Text extraction → 
+   Size check → Summary (if large) → AI processing → Response
+   ```
+
+2. **Text Extraction**
+   - **PDF.js integration** - Browser-based PDF text extraction
+   - **Page-by-page processing** - Maintains document structure
+   - **Fallback handling** - Graceful degradation for extraction failures
+
+3. **Intelligent Summarization**
+   - **Automatic trigger** - Files > 50,000 characters (~12.5k tokens)
+   - **Context preservation** - Key sections and structure maintained
+   - **User guidance** - Clear instructions for further interaction
+
+4. **Storage & Security**
+   - **Supabase Storage** - Secure cloud file storage
+   - **Access control** - User-specific file access
+   - **Instructor oversight** - Full visibility of student uploads
+
+### User Experience
+
+#### For Students
+- **Drag & drop upload** - Simple file selection
+- **Progress feedback** - Real-time upload status
+- **Size warnings** - Proactive notifications about large files
+- **Smart responses** - AI acknowledges upload and provides guidance
+- **Follow-up support** - Encouraged to ask specific questions
+
+#### For Instructors  
+- **Complete oversight** - View all student PDF uploads
+- **Download access** - Full access to student documents
+- **Context awareness** - See what students are working with
+- **Educational insight** - Understand student research and interests
+
+### Example Workflow
+
+1. **Student uploads 50-page research paper** (large file)
+2. **System automatically summarizes** with:
+   - "Research Paper: climate-change-study.pdf"
+   - "50 pages, ~15,000 words"
+   - "First 3 pages: [content preview]"
+   - "Key sections: Introduction, Methodology, Results..."
+3. **AI response**: "I can see you've uploaded a comprehensive climate change study. I've reviewed the introduction and can help you analyze specific sections. What aspect would you like to explore?"
+4. **Student asks**: "Can you help me understand the methodology section?"
+5. **Student copies/pastes** relevant methodology text for detailed analysis
+
+### Error Handling & Fallbacks
+
+- **Token limit prevention** - Automatic summarization before hitting limits
+- **Extraction failures** - Graceful fallback with user guidance
+- **File corruption** - Clear error messages and retry options
+- **Network issues** - Robust upload retry mechanisms
+
+### Privacy & Security
+
+- **No training data** - Files never used for AI model training
+- **Secure storage** - Enterprise-grade Supabase security
+- **Access control** - Files only accessible to uploading user and instructors
+- **Automatic cleanup** - Configurable retention policies
+
+This system ensures students can work with documents of any size while maintaining optimal AI interaction quality and preventing technical limitations from disrupting the learning experience.
+
+## 📧 Email Notification System
+
+### Overview
+AI Engagement Hub features a comprehensive email notification system that keeps students and instructors informed about important platform activities, built on SendGrid for reliable delivery.
+
+### Notification Types
+
+#### For Students
+- **Instructor Note Notifications**: Receive emails when instructors add notes to your projects
+- **Weekly Summary**: Optional weekly digest of your AI usage and activity
+- **System Updates**: Important platform updates and maintenance notifications
+
+#### For Instructors  
+- **New Project Notifications**: Get notified when students create new projects in your courses
+- **Weekly Summary**: Optional weekly digest of course activity and student engagement
+- **System Updates**: Important platform updates and maintenance notifications
+
+### Email Templates
+
+#### Instructor Note Email (to Students)
+- **Subject**: "New instructor note on your project"
+- **Content**: Project details, instructor message, direct link to project
+- **Design**: Professional, branded template with clear call-to-action
+
+#### New Project Email (to Instructors)
+- **Subject**: "Student started a new project"
+- **Content**: Student info, project details, course statistics, dashboard link
+- **Design**: Clean, informative layout with project metrics
+
+### User Control & Privacy
+
+#### Email Preferences
+- **Master Toggle**: Users can disable all email notifications
+- **Granular Control**: Individual notification types can be enabled/disabled
+- **Role-Based Options**: Different settings available for students vs instructors
+- **Instant Updates**: Changes take effect immediately
+
+#### Privacy Features
+- **Preference Checking**: System checks user preferences before sending emails
+- **Graceful Degradation**: Failed email deliveries don't affect core functionality
+- **Secure Processing**: All emails processed through enterprise-grade SendGrid
+- **Data Protection**: Email content follows same privacy standards as platform data
+
+### Technical Implementation
+
+#### SendGrid Integration
+- **API-Based**: Direct SendGrid API integration for reliable delivery
+- **Template System**: Reusable HTML/text templates for consistent branding
+- **Error Handling**: Comprehensive error handling and fallback mechanisms
+- **Logging**: Detailed logging for debugging and monitoring
+
+#### User Settings Storage
+- **Database Fields**: Email preferences stored in user profile
+- **Default Settings**: Sensible defaults with notifications enabled
+- **Validation**: Server-side validation of email preference updates
+- **Backup**: Settings persist across user sessions
+
+### Configuration
+
+#### Required Environment Variables
+```env
+REACT_APP_SENDGRID_API_KEY=your_sendgrid_api_key
+REACT_APP_SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+REACT_APP_URL=https://yourdomain.com
+```
+
+#### SendGrid Setup Steps
+1. Create SendGrid account and verify domain
+2. Generate API key with mail send permissions
+3. Configure SPF/DKIM records for email authentication
+4. Set up sender identity and verification
+5. Test email delivery with staging environment
+
+### User Experience
+
+#### Settings Interface
+- **Accessible Settings**: Easy-to-find settings page in main navigation
+- **Clear Controls**: Toggle switches for each notification type
+- **Dependency Management**: Master toggle controls all notifications
+- **Immediate Feedback**: Success/error messages for setting changes
+
+#### Email Design
+- **Mobile Responsive**: Templates work on all devices
+- **Professional Branding**: Consistent with platform design
+- **Clear CTAs**: Direct links to relevant platform sections
+- **Accessibility**: High contrast, readable fonts, proper markup
+
+### Error Handling & Reliability
+
+#### Failure Scenarios
+- **API Failures**: SendGrid API errors handled gracefully
+- **User Preference Errors**: Database failures don't prevent email sending
+- **Network Issues**: Retry mechanisms and timeout handling
+- **Invalid Recipients**: Validation and error logging
+
+#### Monitoring & Debugging
+- **Console Logging**: Detailed logs for development and debugging
+- **Success Tracking**: Confirmation of successful email deliveries
+- **Error Reporting**: Comprehensive error reporting for failures
+- **Performance Monitoring**: Track email delivery times and success rates
+
+### Security Considerations
+
+#### Data Protection
+- **API Key Security**: SendGrid API keys stored securely as environment variables
+- **Content Filtering**: Email content sanitized to prevent XSS attacks
+- **User Consent**: All emails respect user notification preferences
+- **Unsubscribe Options**: Clear mechanisms for users to disable notifications
+
+#### Compliance
+- **GDPR Compliance**: User control over email preferences and data
+- **CAN-SPAM Compliance**: Proper sender identification and unsubscribe options
+- **Educational Privacy**: Compliant with educational privacy standards
+- **Data Retention**: Email sending logs managed according to retention policies
+
+This email system enhances the educational experience by keeping all stakeholders informed while respecting privacy and user preferences.
 
 ## 🎯 Usage Guide
 

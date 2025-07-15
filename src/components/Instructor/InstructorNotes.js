@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { instructorNotesApi } from '../../services/supabaseApi';
+import { instructorNotesApi, userApi, projectApi, courseApi } from '../../services/supabaseApi';
 import { useAuth } from '../../contexts/AuthContext';
+import { emailNotifications } from '../../services/emailService';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import {
@@ -80,6 +81,35 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
       setFormData({ title: '', content: '', is_visible_to_student: true });
       setShowCreateForm(false);
       toast.success('Note created successfully!');
+
+      // Send email notification to student if note is visible to them
+      if (formData.is_visible_to_student) {
+        try {
+          // Get student and course information for email
+          const [studentInfo, courseInfo] = await Promise.all([
+            userApi.getUserById(project.user_id),
+            courseApi.getCourseById(courseId)
+          ]);
+
+          if (studentInfo && courseInfo) {
+            await emailNotifications.notifyStudentOfInstructorNote({
+              studentId: project.user_id,
+              studentName: studentInfo.display_name || studentInfo.email?.split('@')[0] || 'Student',
+              studentEmail: studentInfo.email,
+              instructorName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor',
+              projectTitle: project.title,
+              projectId: project.id,
+              noteContent: formData.content.trim(),
+              courseName: courseInfo.name
+            });
+            
+            console.log('✅ Email notification sent to student');
+          }
+        } catch (emailError) {
+          console.error('❌ Failed to send email notification:', emailError);
+          // Don't show error to user - note was created successfully
+        }
+      }
     } catch (error) {
       console.error('Error creating note:', error);
       toast.error('Failed to create note');

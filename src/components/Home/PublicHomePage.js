@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import TrialCourseJoin from '../Course/TrialCourseJoin';
+import Footer from '../Layout/Footer';
 import {
   ChartBarIcon,
   EyeIcon,
@@ -216,9 +217,9 @@ export default function PublicHomePage() {
       {/* Quote Section */}
       <div className="bg-gray-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <blockquote className="text-2xl md:text-3xl font-light mb-8">
-            "Understanding how students engage with AI—intelligently."
-          </blockquote>
+          <h2 className="text-2xl md:text-3xl font-light mb-8">
+            Understanding how students engage with AI—intelligently.
+          </h2>
           <p className="text-lg text-gray-300 mb-12">
             Transform your classroom with data-driven insights into AI usage patterns, 
             student engagement, and learning outcomes.
@@ -268,6 +269,9 @@ export default function PublicHomePage() {
           </div>
         </div>
       </footer>
+      
+      {/* Privacy Footer */}
+      <Footer />
       
       {/* Trial Course Join Modal */}
       {showTrialModal && (

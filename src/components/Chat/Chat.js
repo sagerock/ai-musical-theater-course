@@ -122,7 +122,21 @@ export default function Chat() {
       }
       
       setSelectedFile(file);
-      toast.success(`PDF selected: ${file.name}`);
+      
+      // File size warnings for large files
+      if (file.size > 5 * 1024 * 1024) {
+        toast('Large files may take longer to process and will be automatically summarized', {
+          icon: '⚠️',
+          duration: 4000,
+        });
+      } else if (file.size > 2 * 1024 * 1024) {
+        toast('Medium-sized file detected - processing may take a moment', {
+          icon: 'ℹ️',
+          duration: 3000,
+        });
+      }
+      
+      toast.success(`File selected: ${file.name}`);
     }
   };
 
@@ -178,7 +192,13 @@ export default function Chat() {
           );
           
           pdfContent = `\n\n[PDF Attachment: ${attachment.file_name}]\n${attachment.extracted_text}`;
-          toast.success('PDF uploaded successfully!');
+          
+          // Check if it was summarized (large file)
+          if (attachment.extracted_text.includes('Large PDF Document Summary')) {
+            toast.success('Large PDF uploaded and summarized successfully!');
+          } else {
+            toast.success('PDF uploaded successfully!');
+          }
         } catch (uploadError) {
           console.error('PDF upload failed:', uploadError);
           toast.error('PDF upload failed, but message will be sent without attachment');
@@ -449,7 +469,7 @@ export default function Chat() {
             
             <div className="mt-3 flex items-center text-xs text-gray-500">
               <SparklesIcon className="h-4 w-4 mr-1" />
-              <span>Press Enter to send, Shift+Enter for new line • Upload PDF, TXT, DOC, DOCX up to 10MB</span>
+              <span>Press Enter to send, Shift+Enter for new line • Upload PDF, TXT, DOC, DOCX up to 10MB • Large files auto-summarized</span>
             </div>
           </>
         ) : (

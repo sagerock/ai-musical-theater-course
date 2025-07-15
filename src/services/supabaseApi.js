@@ -229,6 +229,91 @@ export const userApi = {
       console.error('❌ removeStudentFromCourse error:', error);
       throw error;
     }
+  },
+
+  // Get user by ID
+  async getUserById(userId) {
+    try {
+      const { data, error } = await dbClient
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting user by ID:', error);
+      throw error;
+    }
+  },
+
+  // Get user email settings
+  async getUserEmailSettings(userId) {
+    try {
+      const { data, error } = await dbClient
+        .from('users')
+        .select('email_notifications_enabled, instructor_note_emails, new_project_emails, weekly_summary_emails, system_update_emails')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      
+      // Return default settings if user settings don't exist
+      return {
+        email_notifications_enabled: data?.email_notifications_enabled ?? true,
+        instructor_note_emails: data?.instructor_note_emails ?? true,
+        new_project_emails: data?.new_project_emails ?? true,
+        weekly_summary_emails: data?.weekly_summary_emails ?? false,
+        system_update_emails: data?.system_update_emails ?? true
+      };
+    } catch (error) {
+      console.error('Error getting user email settings:', error);
+      // Return default settings on error
+      return {
+        email_notifications_enabled: true,
+        instructor_note_emails: true,
+        new_project_emails: true,
+        weekly_summary_emails: false,
+        system_update_emails: true
+      };
+    }
+  },
+
+  // Update user email settings
+  async updateUserEmailSettings(userId, settings) {
+    try {
+      const { data, error } = await dbClient
+        .from('users')
+        .update({
+          email_notifications_enabled: settings.email_notifications_enabled,
+          instructor_note_emails: settings.instructor_note_emails,
+          new_project_emails: settings.new_project_emails,
+          weekly_summary_emails: settings.weekly_summary_emails,
+          system_update_emails: settings.system_update_emails,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating user email settings:', error);
+      throw error;
+    }
+  },
+
+  // Check if user has email notifications enabled
+  async hasEmailNotificationsEnabled(userId, notificationType = 'email_notifications_enabled') {
+    try {
+      const settings = await this.getUserEmailSettings(userId);
+      return settings.email_notifications_enabled && settings[notificationType];
+    } catch (error) {
+      console.error('Error checking email notification settings:', error);
+      return false; // Fail safe - don't send emails if we can't check settings
+    }
   }
 };
 
@@ -405,6 +490,39 @@ export const projectApi = {
       .eq('id', projectId);
     
     if (error) throw error;
+  },
+
+  // Get user project count for a course
+  async getUserProjectCount(userId, courseId) {
+    try {
+      const { data, error } = await dbClient
+        .from('projects')
+        .select('id', { count: 'exact' })
+        .eq('user_id', userId)
+        .eq('course_id', courseId);
+      
+      if (error) throw error;
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error getting user project count:', error);
+      return 0;
+    }
+  },
+
+  // Get course project count
+  async getCourseProjectCount(courseId) {
+    try {
+      const { data, error } = await dbClient
+        .from('projects')
+        .select('id', { count: 'exact' })
+        .eq('course_id', courseId);
+      
+      if (error) throw error;
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error getting course project count:', error);
+      return 0;
+    }
   }
 };
 
@@ -1435,6 +1553,49 @@ export const courseApi = {
       console.error('❌ Error fixing chat course linkage:', error);
       throw error;
     }
+  },
+
+  // Get instructor emails for a course
+  async getCourseInstructorEmails(courseId) {
+    try {
+      const { data, error } = await dbClient
+        .from('course_memberships')
+        .select(`
+          users:user_id (
+            email
+          )
+        `)
+        .eq('course_id', courseId)
+        .eq('role', 'instructor')
+        .eq('status', 'approved')
+        .not('user_id', 'is', null);
+      
+      if (error) throw error;
+      
+      return data
+        .map(membership => membership.users?.email)
+        .filter(email => email); // Filter out null/undefined emails
+    } catch (error) {
+      console.error('Error getting course instructor emails:', error);
+      return [];
+    }
+  },
+
+  // Get course by ID
+  async getCourseById(courseId) {
+    try {
+      const { data, error } = await dbClient
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting course by ID:', error);
+      throw error;
+    }
   }
 };
 
@@ -1707,6 +1868,50 @@ export const instructorNotesApi = {
   }
 };
 
+// Helper function to create PDF summary for large documents
+function createPDFSummary(fullText, fileName) {
+  const pages = fullText.split(/--- Page \d+ ---/);
+  const totalPages = pages.length - 1; // First split is empty
+  const totalWords = fullText.split(/\s+/).length;
+  
+  // Extract first few pages for context
+  const firstPages = pages.slice(1, 4).join('\n'); // First 3 pages
+  const firstPagePreview = firstPages.substring(0, 8000); // First 8k characters
+  
+  // Try to identify key sections
+  const sections = [];
+  const sectionHeaders = fullText.match(/^[A-Z][A-Z\s]{10,}$/gm) || [];
+  
+  if (sectionHeaders.length > 0) {
+    sections.push('\n**Key Sections Identified:**');
+    sectionHeaders.slice(0, 10).forEach(header => {
+      sections.push(`• ${header.trim()}`);
+    });
+  }
+  
+  // Create summary
+  const summary = `**Large PDF Document Summary**
+File: ${fileName}
+Total Pages: ${totalPages}
+Estimated Words: ${totalWords.toLocaleString()}
+Status: Content was too large for full analysis. This summary includes the first few pages and key sections.
+
+**Document Preview (First 3 Pages):**
+${firstPagePreview}
+
+${sections.join('\n')}
+
+**How to work with this document:**
+• Ask specific questions about topics you want to explore
+• Request analysis of particular sections or concepts
+• I can help you understand and work with the content even with this summary
+• For detailed analysis of specific sections, you can copy and paste relevant text in follow-up messages
+
+This document is available for download, and I can help you navigate and understand its contents based on your specific questions.`;
+
+  return summary;
+}
+
 // Chat Attachments operations
 export const attachmentApi = {
   // Upload PDF file and create attachment record
@@ -1796,6 +2001,13 @@ export const attachmentApi = {
           
           extractedText = fullText.trim();
           console.log('✅ PDF text extraction successful');
+          
+          // Check if content is too large and create a summary
+          if (extractedText.length > 50000) { // ~50k characters = ~12.5k tokens
+            console.log('📄 Large PDF detected, creating summary...');
+            const summary = createPDFSummary(extractedText, file.name);
+            extractedText = summary;
+          }
           
         } else if (file.type.includes('word') || fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
           // Handle Word documents - for now, provide guidance

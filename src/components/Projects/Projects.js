@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, courseApi } from '../../services/supabaseApi';
+import { projectApi, courseApi, userApi } from '../../services/supabaseApi';
+import { emailNotifications } from '../../services/emailService';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -98,6 +99,40 @@ export default function Projects() {
       setShowCreateModal(false);
       setFormData({ title: '', description: '' });
       toast.success('Project created successfully!');
+
+      // Send email notification to instructors if project is in a course
+      if (courseId) {
+        try {
+          // Get course information and instructor emails
+          const [courseInfo, studentProjectCount, courseProjectCount] = await Promise.all([
+            courseApi.getCourseById(courseId),
+            projectApi.getUserProjectCount(currentUser.uid, courseId),
+            projectApi.getCourseProjectCount(courseId)
+          ]);
+
+          if (courseInfo) {
+            // Get instructor emails for this course
+            const instructorEmails = await courseApi.getCourseInstructorEmails(courseId);
+            
+            if (instructorEmails.length > 0) {
+              await emailNotifications.notifyInstructorsOfNewProject({
+                studentName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Student',
+                projectTitle: formData.title.trim(),
+                projectDescription: formData.description.trim(),
+                courseName: courseInfo.name,
+                studentProjectCount,
+                courseProjectCount,
+                instructorEmails
+              });
+              
+              console.log('✅ Email notifications sent to instructors');
+            }
+          }
+        } catch (emailError) {
+          console.error('❌ Failed to send email notifications:', emailError);
+          // Don't show error to user - project was created successfully
+        }
+      }
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project');

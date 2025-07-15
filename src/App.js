@@ -13,6 +13,8 @@ import AdminPanel from './components/Admin/AdminPanel';
 import CourseJoin from './components/Course/CourseJoin';
 import CourseDashboard from './components/Course/CourseDashboard';
 import Layout from './components/Layout/Layout';
+import PrivacyPolicy from './components/Privacy/PrivacyPolicy';
+import SettingsPage from './components/Settings/SettingsPage';
 import TestPDFUpload from './components/TestPDFUpload';
 import TestDirectQuery from './components/TestDirectQuery';
 
@@ -48,6 +50,10 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Route>
+          <Route path="/settings" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<SettingsPage />} />
+          </Route>
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/test-pdf" element={<TestPDFUpload />} />
           <Route path="/test-direct" element={<TestDirectQuery />} />
         </Routes>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/supabaseApi';
+import Footer from './Footer';
 import {
   HomeIcon,
   FolderIcon,
@@ -63,7 +64,8 @@ export default function Layout() {
       : []),
     ...(userRole === 'admin' 
       ? [{ name: 'Admin Panel', href: '/admin', icon: CogIcon }] 
-      : [])
+      : []),
+    { name: 'Settings', href: '/settings', icon: CogIcon }
   ];
 
   // Debug logging
@@ -390,6 +392,9 @@ export default function Layout() {
         <main className="flex-1">
           <Outlet />
         </main>
+        
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );
