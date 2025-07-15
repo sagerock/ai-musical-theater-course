@@ -314,6 +314,48 @@ export const userApi = {
       console.error('Error checking email notification settings:', error);
       return false; // Fail safe - don't send emails if we can't check settings
     }
+  },
+
+  // Update user profile
+  async updateUserProfile(userId, profileData) {
+    try {
+      const updateData = {
+        updated_at: new Date().toISOString(),
+        ...profileData
+      };
+
+      const { data, error } = await dbClient
+        .from('users')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('✅ User profile updated successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error updating user profile:', error);
+      throw error;
+    }
+  },
+
+  // Get user profile
+  async getUserProfile(userId) {
+    try {
+      const { data, error } = await dbClient
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      throw error;
+    }
   }
 };
 

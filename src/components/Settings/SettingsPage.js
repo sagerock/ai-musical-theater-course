@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import EmailSettings from './EmailSettings';
+import ProfileSettings from './ProfileSettings';
 import {
   UserCircleIcon,
   EnvelopeIcon,
@@ -28,50 +29,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* User Profile Summary */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <UserCircleIcon className="h-5 w-5 mr-2 text-gray-600" />
-          Profile Information
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <p className="text-sm text-gray-900">
-              {currentUser?.displayName || 'Not provided'}
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <p className="text-sm text-gray-900">
-              {currentUser?.email}
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Role
-            </label>
-            <p className="text-sm text-gray-900 capitalize">
-              {userRole}
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Account Created
-            </label>
-            <p className="text-sm text-gray-900">
-              {currentUser?.metadata?.creationTime 
-                ? new Date(currentUser.metadata.creationTime).toLocaleDateString()
-                : 'Unknown'
-              }
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Profile Settings */}
+      <ProfileSettings />
 
       {/* Email Settings */}
       <EmailSettings />

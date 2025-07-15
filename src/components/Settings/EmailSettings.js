@@ -233,7 +233,7 @@ export default function EmailSettings() {
             <p className="font-medium mb-1">About Email Notifications</p>
             <ul className="space-y-1 text-xs">
               <li>• Emails are sent from AI Engagement Hub to your registered email address</li>
-              <li>• You can update your email address in your profile settings</li>
+              <li>• You can update your email address in the Profile Settings section above</li>
               <li>• Critical system notifications may still be sent even with notifications disabled</li>
               <li>• Changes take effect immediately after saving</li>
             </ul>
