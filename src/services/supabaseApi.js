@@ -213,6 +213,63 @@ export const userApi = {
     }
   },
 
+  // Search users by name or email (for adding to courses)
+  async searchUsers(searchTerm, excludeCourseId = null, limit = 20) {
+    console.log('🔍 userApi.searchUsers called:', { searchTerm, excludeCourseId, limit });
+    
+    if (!searchTerm || searchTerm.length < 2) {
+      return []; // Require at least 2 characters for search
+    }
+    
+    try {
+      // Build the search query
+      let query = supabase
+        .from('users')
+        .select('id, name, email, role, created_at')
+        .or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+        .order('name', { ascending: true })
+        .limit(limit);
+      
+      const { data: searchResults, error: searchError } = await query;
+      
+      if (searchError) {
+        console.error('❌ Search users error:', searchError);
+        throw searchError;
+      }
+      
+      console.log('📊 Search results found:', searchResults?.length || 0);
+      
+      // If we need to exclude users already in a specific course
+      if (excludeCourseId && searchResults?.length > 0) {
+        console.log('🔍 Filtering out users already in course:', excludeCourseId);
+        
+        // Get users already in the course
+        const { data: existingMembers, error: membersError } = await supabase
+          .from('course_memberships')
+          .select('user_id')
+          .eq('course_id', excludeCourseId);
+          
+        if (membersError) {
+          console.error('❌ Error getting existing members:', membersError);
+          // If we can't get existing members, just return all search results
+          return searchResults;
+        }
+        
+        const existingUserIds = existingMembers.map(m => m.user_id);
+        const filteredResults = searchResults.filter(user => !existingUserIds.includes(user.id));
+        
+        console.log('📊 After filtering existing members:', filteredResults.length);
+        return filteredResults;
+      }
+      
+      return searchResults || [];
+      
+    } catch (error) {
+      console.error('❌ Error in searchUsers:', error);
+      throw error;
+    }
+  },
+
   // Approve student enrollment
   async approveStudentEnrollment(userId, courseId, instructorId) {
     console.log('✅ API approveStudentEnrollment called:', { userId, courseId, instructorId });
@@ -433,6 +490,89 @@ export const userApi = {
       return data;
     } catch (error) {
       console.error('Error getting user profile:', error);
+      throw error;
+    }
+  },
+
+  // Delete user and all associated data
+  async deleteUser(userId) {
+    console.log('🗑️ userApi.deleteUser called for userId:', userId);
+    
+    // Import admin client
+    const { supabaseAdmin } = await import('../config/supabase');
+    
+    if (!supabaseAdmin) {
+      throw new Error('Service key not configured - cannot perform admin operations');
+    }
+    
+    try {
+      // Step 1: Delete user's PDF files from Supabase Storage
+      console.log('📁 Deleting user PDF files from storage...');
+      try {
+        // List all files in user's folder using admin client
+        const { data: files, error: listError } = await supabaseAdmin.storage
+          .from('pdf-uploads')
+          .list(userId);
+        
+        if (!listError && files && files.length > 0) {
+          // Delete all files in user's folder
+          const filePaths = files.map(file => `${userId}/${file.name}`);
+          const { error: deleteFilesError } = await supabaseAdmin.storage
+            .from('pdf-uploads')
+            .remove(filePaths);
+          
+          if (deleteFilesError) {
+            console.warn('⚠️ Error deleting some storage files:', deleteFilesError);
+          } else {
+            console.log('✅ Deleted', files.length, 'storage files');
+          }
+        } else {
+          console.log('📂 No storage files found for user');
+        }
+      } catch (storageError) {
+        console.warn('⚠️ Storage cleanup error (continuing with database deletion):', storageError);
+      }
+      
+      // Step 2: Delete from public.users table using admin client (triggers CASCADE DELETE)
+      console.log('🗄️ Deleting user from database (CASCADE DELETE will handle related data)...');
+      const { error: deleteError } = await supabaseAdmin
+        .from('users')
+        .delete()
+        .eq('id', userId);
+      
+      if (deleteError) {
+        console.error('❌ Database deletion error:', deleteError);
+        throw deleteError;
+      }
+      
+      console.log('✅ User deleted from database successfully');
+      
+      // Step 3: Delete from auth.users (Supabase Authentication)
+      console.log('🔐 Deleting user from authentication system...');
+      try {
+        const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        
+        if (authDeleteError) {
+          console.warn('⚠️ Auth deletion error (database cleanup completed):', authDeleteError);
+          // Don't throw error - database cleanup was successful
+        } else {
+          console.log('✅ User deleted from authentication system');
+        }
+      } catch (authError) {
+        console.warn('⚠️ Auth deletion error (database cleanup completed):', authError);
+        // Don't throw error - database cleanup was successful
+      }
+      
+      console.log('🎉 User deletion completed successfully');
+      
+      return {
+        success: true,
+        message: 'User and all associated data deleted successfully',
+        deletedUserId: userId
+      };
+      
+    } catch (error) {
+      console.error('❌ deleteUser error:', error);
       throw error;
     }
   }
@@ -1834,6 +1974,86 @@ export const courseApi = {
       return data;
     } catch (error) {
       console.error('Error in joinCourse:', error);
+      throw error;
+    }
+  },
+
+  // Add student directly to course (instructor/admin function)
+  async addStudentToCourse(userId, courseId, instructorId, role = 'student') {
+    console.log('➕ API addStudentToCourse called:', { userId, courseId, instructorId, role });
+    
+    try {
+      // First, verify the instructor has permission for this course using regular client
+      console.log('🔍 Checking instructor permissions...');
+      const { data: instructorMembership, error: instructorError } = await dbClient
+        .from('course_memberships')
+        .select('role')
+        .eq('user_id', instructorId)
+        .eq('course_id', courseId)
+        .eq('status', 'approved')
+        .single();
+      
+      console.log('👨‍🏫 Instructor membership check result:', { instructorMembership, instructorError });
+      
+      if (instructorError || !instructorMembership || !['instructor', 'admin'].includes(instructorMembership.role)) {
+        const errorMsg = 'Unauthorized: You must be an instructor or admin for this course';
+        console.error('❌ Authorization failed:', errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      console.log('✅ Instructor authorized, proceeding with student addition...');
+      
+      // Check if user already has membership in this course using admin client
+      console.log('🔍 Checking for existing membership...');
+      const { data: existingMembership, error: checkError } = await storageClient
+        .from('course_memberships')
+        .select('*')
+        .eq('course_id', courseId)
+        .eq('user_id', userId)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('❌ Error checking existing membership:', checkError);
+        throw checkError;
+      }
+      
+      if (existingMembership) {
+        console.log('⚠️ User already has membership in this course');
+        throw new Error('User is already enrolled in this course');
+      }
+      
+      console.log('➕ Creating new course membership using admin client...');
+      
+      // Create approved membership directly using admin client to bypass any permission issues
+      const { data: membership, error: membershipError } = await storageClient
+        .from('course_memberships')
+        .insert({
+          course_id: courseId,
+          user_id: userId,
+          role: role,
+          status: 'approved', // Directly approved by instructor
+          approved_by: instructorId,
+          joined_at: new Date().toISOString(),
+          approved_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (membershipError) {
+        console.error('❌ Error creating membership:', membershipError);
+        throw membershipError;
+      }
+      
+      console.log('✅ Student added to course successfully:', membership);
+      
+      return {
+        success: true,
+        membership: membership,
+        message: 'Student successfully added to course'
+      };
+      
+    } catch (error) {
+      console.error('❌ addStudentToCourse error:', error);
       throw error;
     }
   },

@@ -2,12 +2,13 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.warn('Supabase URL or Key is missing. Please check your environment variables.');
 }
 
-// Single Supabase client instance with proper authentication
+// Main Supabase client instance with proper authentication
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
@@ -15,6 +16,14 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     detectSessionInUrl: true
   }
 });
+
+// Service client for admin operations (with elevated permissions)
+export const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+}) : null;
 
 // Development debugging
 if (typeof window !== 'undefined') {

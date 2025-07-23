@@ -41,6 +41,11 @@ export default function AdminPanel() {
   const [showDeleteUserConfirm, setShowDeleteUserConfirm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [showRemoveFromCourseConfirm, setShowRemoveFromCourseConfirm] = useState(false);
+  const [removalData, setRemovalData] = useState(null); // {user, membershipId, courseName}
+  const [showAddToCourseModal, setShowAddToCourseModal] = useState(false);
+  const [userToAddToCourse, setUserToAddToCourse] = useState(null);
+  const [selectedCourseForAdd, setSelectedCourseForAdd] = useState('');
   const [filterCourse, setFilterCourse] = useState('all');
   const [filterRole, setFilterRole] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -277,6 +282,71 @@ export default function AdminPanel() {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
     }
+  };
+
+  const handleRemoveFromCourse = (user, membership) => {
+    setRemovalData({
+      user: user,
+      membershipId: membership.membershipId,
+      courseName: membership.course
+    });
+    setShowRemoveFromCourseConfirm(true);
+  };
+
+  const confirmRemoveFromCourse = async () => {
+    if (!removalData) return;
+    
+    try {
+      await courseApi.removeMemberFromCourse(removalData.membershipId);
+      toast.success(`${removalData.user.name} removed from ${removalData.courseName}`);
+      setShowRemoveFromCourseConfirm(false);
+      setRemovalData(null);
+      // Reload users to reflect the change
+      loadUsers();
+    } catch (error) {
+      console.error('Error removing user from course:', error);
+      toast.error('Failed to remove user from course');
+    }
+  };
+
+  const handleAddToCourse = (user) => {
+    setUserToAddToCourse(user);
+    setSelectedCourseForAdd('');
+    setShowAddToCourseModal(true);
+  };
+
+  const confirmAddToCourse = async () => {
+    if (!userToAddToCourse || !selectedCourseForAdd) return;
+    
+    try {
+      await courseApi.addStudentToCourse(
+        userToAddToCourse.id, 
+        selectedCourseForAdd, 
+        currentUser.id
+      );
+      
+      const selectedCourseName = courses.find(c => c.id === selectedCourseForAdd)?.title || 'course';
+      toast.success(`${userToAddToCourse.name} added to ${selectedCourseName}`);
+      
+      setShowAddToCourseModal(false);
+      setUserToAddToCourse(null);
+      setSelectedCourseForAdd('');
+      
+      // Reload users to reflect the change
+      loadUsers();
+    } catch (error) {
+      console.error('Error adding user to course:', error);
+      if (error.message.includes('already enrolled')) {
+        toast.error('User is already enrolled in this course');
+      } else {
+        toast.error('Failed to add user to course');
+      }
+    }
+  };
+
+  const getAvailableCoursesForUser = (user) => {
+    const userCourseIds = user.course_memberships?.map(m => m.course_id) || [];
+    return courses.filter(course => !userCourseIds.includes(course.id));
   };
 
   const getFilteredUsers = () => {
@@ -544,18 +614,29 @@ export default function AdminPanel() {
                                 </div>
                                 <div className="mt-1">
                                   {userRoles.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1">
+                                    <div className="space-y-1">
                                       {userRoles.map((membership, index) => (
-                                        <span
+                                        <div
                                           key={membership.membershipId || index}
-                                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                            membership.role === 'instructor'
-                                              ? 'bg-green-100 text-green-800'
-                                              : 'bg-blue-100 text-blue-800'
-                                          }`}
+                                          className="flex items-center justify-between bg-gray-50 rounded-md px-2 py-1"
                                         >
-                                          {membership.role} in {membership.course}
-                                        </span>
+                                          <span
+                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                              membership.role === 'instructor'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-blue-100 text-blue-800'
+                                            }`}
+                                          >
+                                            {membership.role} in {membership.course}
+                                          </span>
+                                          <button
+                                            onClick={() => handleRemoveFromCourse(user, membership)}
+                                            className="ml-2 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                            title={`Remove from ${membership.course}`}
+                                          >
+                                            <TrashIcon className="h-3 w-3" />
+                                          </button>
+                                        </div>
                                       ))}
                                     </div>
                                   ) : (
@@ -568,6 +649,13 @@ export default function AdminPanel() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleAddToCourse(user)}
+                              className="p-2 text-green-400 hover:text-green-600"
+                              title="Add to course"
+                            >
+                              <PlusIcon className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={() => handleEditUser(user)}
                               className="p-2 text-gray-400 hover:text-gray-600"
@@ -1234,6 +1322,125 @@ export default function AdminPanel() {
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
                 >
                   Delete User
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove from Course Confirmation Modal */}
+      {showRemoveFromCourseConfirm && removalData && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowRemoveFromCourseConfirm(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-10 h-10 bg-yellow-100 rounded-full mr-3">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Remove from Course</h3>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-3">
+                  Are you sure you want to remove <strong>{removalData.user.name}</strong> from <strong>{removalData.courseName}</strong>?
+                </p>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <div className="flex">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-blue-400 mr-2" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium">Note:</p>
+                      <p className="mt-1">This will remove the user from the course but will NOT delete their content (projects, chats, etc.). Their data will remain in the system.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowRemoveFromCourseConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRemoveFromCourse}
+                  className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700"
+                >
+                  Remove from Course
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add to Course Modal */}
+      {showAddToCourseModal && userToAddToCourse && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowAddToCourseModal(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mr-3">
+                  <PlusIcon className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Add to Course</h3>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-3">
+                  Add <strong>{userToAddToCourse.name}</strong> to a course:
+                </p>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Course
+                  </label>
+                  <select
+                    value={selectedCourseForAdd}
+                    onChange={(e) => setSelectedCourseForAdd(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Choose a course...</option>
+                    {getAvailableCoursesForUser(userToAddToCourse).map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.title} ({course.course_code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {getAvailableCoursesForUser(userToAddToCourse).length === 0 && (
+                  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <div className="flex">
+                      <ExclamationTriangleIcon className="h-5 w-5 text-blue-400 mr-2" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium">Note:</p>
+                        <p className="mt-1">This user is already enrolled in all available courses.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowAddToCourseModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAddToCourse}
+                  disabled={!selectedCourseForAdd}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add to Course
                 </button>
               </div>
             </div>

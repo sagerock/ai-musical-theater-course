@@ -14,7 +14,8 @@ import {
   XCircleIcon,
   ClockIcon,
   AcademicCapIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
 
 export default function Students({ selectedCourseId, selectedCourse, currentUser }) {
@@ -29,6 +30,10 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   const [rejectLoading, setRejectLoading] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(null);
   const [showApprovalModal, setShowApprovalModal] = useState(null);
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (selectedCourseId) {
@@ -39,6 +44,17 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   useEffect(() => {
     applyFilters();
   }, [students, searchTerm]);
+
+  // Debounced search effect for user search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (showAddStudentModal) {
+        searchUsers(userSearchTerm);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [userSearchTerm, showAddStudentModal, selectedCourseId]);
 
   const loadStudents = async () => {
     try {
@@ -223,6 +239,54 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
     };
   };
 
+  // Search users for adding to course
+  const searchUsers = async (term) => {
+    if (!term || term.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    
+    try {
+      setSearching(true);
+      const results = await userApi.searchUsers(term, selectedCourseId, 20);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      toast.error('Failed to search users');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Handle add student
+  const handleAddStudent = () => {
+    setUserSearchTerm('');
+    setSearchResults([]);
+    setShowAddStudentModal(true);
+  };
+
+  const confirmAddStudent = async (userId) => {
+    if (!selectedCourseId) return;
+    
+    try {
+      await courseApi.addStudentToCourse(userId, selectedCourseId, currentUser.id);
+      const addedUser = searchResults.find(u => u.id === userId);
+      toast.success(`${addedUser.name} added to course`);
+      setShowAddStudentModal(false);
+      setUserSearchTerm('');
+      setSearchResults([]);
+      // Reload students to reflect the change
+      await loadStudents();
+    } catch (error) {
+      console.error('Error adding student to course:', error);
+      if (error.message.includes('already enrolled')) {
+        toast.error('Student is already enrolled in this course');
+      } else {
+        toast.error('Failed to add student to course');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="animate-pulse">
@@ -259,6 +323,13 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
             {students.length} students and {instructors.length} instructors in {selectedCourse.courses?.title || selectedCourse.courses?.name}
           </p>
         </div>
+        <button
+          onClick={handleAddStudent}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          <PlusIcon className="h-4 w-4 mr-1" />
+          Add Student
+        </button>
       </div>
 
       {/* Search */}
@@ -587,6 +658,100 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                   : (rejectLoading === showApprovalModal.student.id ? 'Rejecting...' : 'Reject Student')
                 }
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Student Modal */}
+      {showAddStudentModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowAddStudentModal(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mr-3">
+                  <PlusIcon className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Add Student to Course</h3>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-4">
+                  Search for a student to add to this course:
+                </p>
+                
+                {/* Search Input */}
+                <div className="relative mb-4">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email... (at least 2 characters)"
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                    autoFocus
+                  />
+                  {searching && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Search Results */}
+                {userSearchTerm.length < 2 ? (
+                  <div className="text-center py-8">
+                    <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Start typing to search</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Enter at least 2 characters to search for students by name or email.
+                    </p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {searchResults.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.name || 'No Name'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {user.email}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => confirmAddStudent(user.id)}
+                          className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : !searching && userSearchTerm.length >= 2 ? (
+                  <div className="text-center py-8">
+                    <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      No users found matching "{userSearchTerm}". Try a different search term.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+              
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowAddStudentModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
