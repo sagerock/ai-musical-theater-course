@@ -13,8 +13,12 @@ export default function ResetPassword() {
   useEffect(() => {
     // Handle the password reset flow
     const handlePasswordReset = async () => {
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
+      // Check both URL fragment (hash) and query parameters
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+      
+      console.log('Reset password tokens:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
       
       if (accessToken && refreshToken) {
         // Set the session using the tokens from the URL
@@ -27,9 +31,12 @@ export default function ResetPassword() {
           console.error('Error setting session:', error);
           toast.error('Invalid or expired reset link');
           navigate('/login');
+        } else {
+          toast.success('Ready to set your new password');
         }
       } else {
-        toast.error('Invalid reset link');
+        console.log('No tokens found in URL hash or query params');
+        toast.error('Invalid reset link - missing authentication tokens');
         navigate('/login');
       }
     };

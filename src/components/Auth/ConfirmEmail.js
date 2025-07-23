@@ -12,11 +12,14 @@ export default function ConfirmEmail() {
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       try {
-        // Get parameters from URL
-        const tokenHash = searchParams.get('token_hash');
-        const type = searchParams.get('type');
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
+        // Get parameters from URL - check both hash fragment and query parameters
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const tokenHash = hashParams.get('token_hash') || searchParams.get('token_hash');
+        const type = hashParams.get('type') || searchParams.get('type');
+        const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+        
+        console.log('Confirm email params:', { tokenHash: !!tokenHash, type, accessToken: !!accessToken, refreshToken: !!refreshToken });
 
         // Handle different confirmation flows
         if (tokenHash && type) {
