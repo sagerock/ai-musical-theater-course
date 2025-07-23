@@ -95,8 +95,20 @@ async function syncUserToSupabase(user, role = 'student', displayName = null) {
       .eq('id', user.id)
       .single();
     
-    // Preserve existing admin role, or use provided role, or default to student
-    const finalRole = existingUser?.role === 'admin' ? 'admin' : role;
+    // Role assignment logic:
+    // 1. If user is already admin, keep admin role
+    // 2. If new role is admin or instructor, use it (allows elevation)
+    // 3. Otherwise use existing role, or default to student
+    let finalRole = role; // Start with requested role
+    
+    if (existingUser?.role === 'admin') {
+      // Always preserve admin role
+      finalRole = 'admin';
+    } else if (existingUser && role === 'student' && existingUser.role !== 'student') {
+      // Don't downgrade existing instructor/admin to student unless explicitly requested
+      finalRole = existingUser.role;
+    }
+    
     const isAdmin = existingUser?.is_global_admin || finalRole === 'admin';
     
     console.log('🔍 Existing user role:', existingUser?.role, '-> Final role:', finalRole);
