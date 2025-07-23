@@ -1708,10 +1708,11 @@ export const courseApi = {
           .eq('role', 'instructor')
           .eq('status', 'approved');
 
+        // Import email service dynamically to avoid circular imports
+        const { emailNotifications } = await import('./emailService.js');
+
+        // Send instructor notifications (only if instructors exist)
         if (studentData && instructors && instructors.length > 0) {
-          // Import email service dynamically to avoid circular imports
-          const { emailNotifications } = await import('./emailService.js');
-          
           const instructorEmails = instructors.map(instructor => ({
             name: instructor.users.name,
             email: instructor.users.email
@@ -1740,8 +1741,13 @@ export const courseApi = {
             .catch(emailError => {
               console.warn('⚠️ Error sending course enrollment notification to instructors:', emailError.message);
             });
+        } else {
+          console.log('📧 No existing instructors found - skipping instructor notification');
+        }
 
-          // Send admin notification for ALL enrollment requests (students and instructors)
+        // Send admin notification for ALL enrollment requests (students AND instructors)
+        // This should ALWAYS run regardless of instructor availability
+        if (studentData) {
           console.log(`📧 Sending admin notification for ${role} enrollment request...`);
           
           // Get course statistics for admin context
@@ -1787,10 +1793,11 @@ export const courseApi = {
               .catch(emailError => {
                 console.warn(`⚠️ Error sending admin ${role} enrollment alert:`, emailError.message);
               });
+
           } catch (statsError) {
-            console.warn('⚠️ Could not get course statistics for admin alert, sending basic notification:', statsError.message);
+            console.error('❌ Error gathering course stats for admin alert:', statsError);
             
-            // Fallback to basic notification without statistics
+            // Send basic admin notification without stats
             const basicAdminAlertData = {
               userName: studentData.name || 'Unknown User',
               userEmail: studentData.email,
@@ -1799,7 +1806,7 @@ export const courseApi = {
               requestedRole: role,
               currentInstructorCount: 0,
               currentStudentCount: 0,
-              pendingRequestCount: 0
+              pendingRequestCount: 1
             };
 
             emailNotifications.notifyAdminsOfCourseEnrollmentRequest(basicAdminAlertData)
@@ -1817,7 +1824,7 @@ export const courseApi = {
               });
           }
         } else {
-          console.log('📧 Skipping email notification - missing student data or no instructors found');
+          console.log('❌ Missing student data - cannot send admin notification');
         }
       } catch (emailError) {
         console.warn('⚠️ Non-critical email notification error:', emailError.message);

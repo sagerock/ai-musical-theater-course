@@ -17,6 +17,8 @@ export default function CourseJoin() {
 
   const handleCourseCodeSubmit = async (e) => {
     e.preventDefault();
+    console.log('🎯 CourseJoin: Form submitted');
+    console.log('📝 Course join details:', { courseCode, role, currentUser: currentUser?.id });
     
     if (!courseCode.trim()) {
       toast.error('Please enter a course code');
@@ -25,6 +27,7 @@ export default function CourseJoin() {
 
     // Check if user is logged in first
     if (!currentUser) {
+      console.log('❌ CourseJoin: User not logged in');
       toast.error('Please log in first to join a course');
       // Store course info for after login
       localStorage.setItem('pendingCourseJoin', JSON.stringify({
@@ -35,15 +38,20 @@ export default function CourseJoin() {
       return;
     }
 
+    console.log('✅ CourseJoin: User is logged in, proceeding with enrollment');
     setLoading(true);
     
     try {
+      console.log('🔍 CourseJoin: Looking up course by code');
       // Find the course
       const course = await courseApi.getCourseByCode(courseCode.trim().toUpperCase());
+      console.log('✅ CourseJoin: Course found:', course.title);
       setCourseInfo(course);
       
+      console.log('🚀 CourseJoin: Calling joinCourse API');
       // Join the course directly using existing user data
       await courseApi.joinCourse(courseCode.trim().toUpperCase(), currentUser.id, role);
+      console.log('✅ CourseJoin: joinCourse completed successfully');
       
       toast.success(`Successfully requested to join ${course.title}! ${
         role === 'instructor' 
@@ -51,8 +59,14 @@ export default function CourseJoin() {
           : 'Your request is pending instructor approval.'
       }`);
       
-      // Redirect to appropriate dashboard
-      window.location.href = '/dashboard';
+      console.log('🎉 CourseJoin: Course enrollment completed successfully!');
+      console.log('⏳ CourseJoin: Delaying redirect to show logs...');
+      
+      // Delay redirect to allow logs to be visible
+      setTimeout(() => {
+        console.log('🚀 CourseJoin: Redirecting to dashboard now...');
+        window.location.href = '/dashboard';
+      }, 5000); // 5 second delay to see logs
       
     } catch (error) {
       console.error('Error joining course:', error);

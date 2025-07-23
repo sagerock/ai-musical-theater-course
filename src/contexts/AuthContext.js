@@ -83,9 +83,9 @@ async function checkInstructorStatus(userId) {
 }
 
 // Sync user data to users table after authentication
-async function syncUserToSupabase(user, role = 'student', displayName = null) {
+async function syncUserToSupabase(user, role = null, displayName = null) {
   try {
-    console.log('🔄 Syncing user to Supabase:', user.id, user.email);
+    console.log('🔄 Syncing user to Supabase:', user.id, user.email, 'Requested role:', role);
     const name = displayName || user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
     
     // First check if user already exists and has a role
@@ -97,16 +97,23 @@ async function syncUserToSupabase(user, role = 'student', displayName = null) {
     
     // Role assignment logic:
     // 1. If user is already admin, keep admin role
-    // 2. If new role is admin or instructor, use it (allows elevation)
-    // 3. Otherwise use existing role, or default to student
-    let finalRole = role; // Start with requested role
+    // 2. If new role is explicitly provided and is admin/instructor, use it (allows elevation)
+    // 3. If no role provided, preserve existing role
+    // 4. Default to student only if no existing user and no role provided
+    let finalRole;
     
     if (existingUser?.role === 'admin') {
       // Always preserve admin role
       finalRole = 'admin';
-    } else if (existingUser && role === 'student' && existingUser.role !== 'student') {
-      // Don't downgrade existing instructor/admin to student unless explicitly requested
+    } else if (role && (role === 'admin' || role === 'instructor')) {
+      // Use explicitly provided elevated role
+      finalRole = role;
+    } else if (existingUser?.role) {
+      // Preserve existing role if no explicit role provided
       finalRole = existingUser.role;
+    } else {
+      // Default to student only for new users with no explicit role
+      finalRole = role || 'student';
     }
     
     const isAdmin = existingUser?.is_global_admin || finalRole === 'admin';
@@ -449,7 +456,7 @@ export function AuthProvider({ children }) {
           
           // Sync user to public.users table if needed (non-blocking)
           console.log('🔄 Starting user sync (non-blocking)...');
-          syncUserToSupabase(user, 'student')
+          syncUserToSupabase(user)
             .then(() => console.log('✅ User sync completed'))
             .catch(error => console.warn('⚠️ User sync failed:', error.message));
           
@@ -507,7 +514,7 @@ export function AuthProvider({ children }) {
             
             // Sync user to public.users table if needed (non-blocking)
             console.log('🔄 Starting user sync via state change (non-blocking)...');
-            syncUserToSupabase(user, 'student')
+            syncUserToSupabase(user)
               .then(() => console.log('✅ User sync completed via state change'))
               .catch(error => console.warn('⚠️ User sync failed via state change:', error.message));
             
