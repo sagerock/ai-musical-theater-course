@@ -1728,46 +1728,44 @@ export const courseApi = {
 
           console.log('📧 Sending course enrollment notification to instructors...');
           
-          // Send email notification (don't await - non-blocking)
+          // Send email notification to instructors (don't await - non-blocking)
           emailNotifications.notifyInstructorsOfEnrollmentRequest(enrollmentData)
             .then(result => {
               if (result.success) {
-                console.log('✅ Course enrollment notification sent successfully');
+                console.log('✅ Course enrollment notification sent successfully to instructors');
               } else {
-                console.warn('⚠️ Failed to send course enrollment notification:', result.error);
+                console.warn('⚠️ Failed to send course enrollment notification to instructors:', result.error);
               }
             })
             .catch(emailError => {
-              console.warn('⚠️ Error sending course enrollment notification:', emailError.message);
+              console.warn('⚠️ Error sending course enrollment notification to instructors:', emailError.message);
             });
 
-          // If someone is requesting instructor access, also notify admins
-          if (role === 'instructor') {
-            console.log('🚨 Instructor-level access requested - notifying admins...');
-            
-            const adminAlertData = {
-              instructorName: studentData.name || 'Unknown User',
-              instructorEmail: studentData.email,
-              courseName: course.title,
-              courseCode: course.course_code,
-              requestedRole: role
-            };
+          // Send admin notification for ALL enrollment requests (students and instructors)
+          console.log(`📧 Sending admin notification for ${role} enrollment request...`);
+          
+          const adminAlertData = {
+            userName: studentData.name || 'Unknown User',
+            userEmail: studentData.email,
+            courseName: course.title,
+            courseCode: course.course_code,
+            requestedRole: role
+          };
 
-            // Send admin notification (don't await - non-blocking)
-            emailNotifications.notifyAdminsOfInstructorEnrollmentRequest(adminAlertData)
-              .then(result => {
-                if (result.success) {
-                  console.log('✅ Admin instructor enrollment alert sent successfully');
-                } else if (result.skipped) {
-                  console.log('📧 Admin notification skipped:', result.reason);
-                } else {
-                  console.warn('⚠️ Failed to send admin instructor enrollment alert:', result.error);
-                }
-              })
-              .catch(emailError => {
-                console.warn('⚠️ Error sending admin instructor enrollment alert:', emailError.message);
-              });
-          }
+          // Send admin notification (don't await - non-blocking)
+          emailNotifications.notifyAdminsOfCourseEnrollmentRequest(adminAlertData)
+            .then(result => {
+              if (result.success) {
+                console.log(`✅ Admin ${role} enrollment alert sent successfully`);
+              } else if (result.skipped) {
+                console.log('📧 Admin notification skipped:', result.reason);
+              } else {
+                console.warn(`⚠️ Failed to send admin ${role} enrollment alert:`, result.error);
+              }
+            })
+            .catch(emailError => {
+              console.warn(`⚠️ Error sending admin ${role} enrollment alert:`, emailError.message);
+            });
         } else {
           console.log('📧 Skipping email notification - missing student data or no instructors found');
         }
