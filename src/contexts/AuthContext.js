@@ -231,7 +231,34 @@ export function AuthProvider({ children }) {
   // Logout
   async function logout() {
     try {
+      console.log('🚪 Starting logout process...');
+      
+      // Try normal logout first
       const { error } = await supabase.auth.signOut();
+      
+      // If we get AuthSessionMissingError, clear everything manually
+      if (error && error.message.includes('Auth session missing')) {
+        console.warn('⚠️ Auth session missing during logout, clearing manually');
+        
+        // Clear all auth-related storage
+        localStorage.removeItem('sb-qbkpxtrnseghzsrvqhih-auth-token');
+        sessionStorage.clear();
+        
+        // Clear auth state manually
+        setCurrentUser(null);
+        setUserRole(null);
+        setIsInstructorAnywhere(false);
+        
+        toast.success('Logged out successfully!');
+        
+        // Force page reload to ensure clean state
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 500);
+        
+        return;
+      }
+      
       if (error) throw error;
       
       setCurrentUser(null);
@@ -239,8 +266,21 @@ export function AuthProvider({ children }) {
       setIsInstructorAnywhere(false);
       toast.success('Logged out successfully!');
     } catch (error) {
-      toast.error(error.message);
-      throw error;
+      console.error('Logout error:', error);
+      
+      // Fallback: force logout even if there's an error
+      localStorage.removeItem('sb-qbkpxtrnseghzsrvqhih-auth-token');
+      sessionStorage.clear();
+      setCurrentUser(null);
+      setUserRole(null);
+      setIsInstructorAnywhere(false);
+      
+      toast.success('Logged out successfully!');
+      
+      // Force navigation to login
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 500);
     }
   }
 
