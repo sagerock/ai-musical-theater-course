@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/supabaseApi';
+import { courseApi, userApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import PendingApprovals from '../Instructor/PendingApprovals';
@@ -14,10 +14,16 @@ import {
   PencilIcon,
   TrashIcon,
   XMarkIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  MagnifyingGlassIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminPanel() {
+  // Tab management
+  const [activeTab, setActiveTab] = useState('courses');
+  
+  // Course management state
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -27,9 +33,17 @@ export default function AdminPanel() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [memberToRemove, setMemberToRemove] = useState(null);
-  const [cleaningUp, setCleaningUp] = useState(false);
-  const [testingRLS, setTestingRLS] = useState(false);
-  const [syncingUsers, setSyncingUsers] = useState(false);
+  
+  // User management state
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showDeleteUserConfirm, setShowDeleteUserConfirm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [filterCourse, setFilterCourse] = useState('all');
+  const [filterRole, setFilterRole] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [newCourse, setNewCourse] = useState({
     name: '',
     description: '',
@@ -47,7 +61,10 @@ export default function AdminPanel() {
 
   useEffect(() => {
     loadCourses();
-  }, []);
+    if (activeTab === 'users') {
+      loadUsers();
+    }
+  }, [activeTab]);
 
   const loadCourses = async () => {
     try {
@@ -184,66 +201,158 @@ export default function AdminPanel() {
     }
   };
 
-  const handleCleanupOrphanedData = async () => {
+  // User Management Functions
+  const loadUsers = async () => {
     try {
-      setCleaningUp(true);
-      const result = await courseApi.cleanupOrphanedMemberships();
-      toast.success(result.message);
-      if (result.deleted > 0) {
-        loadCourses(); // Reload to refresh the display
-      }
+      setUsersLoading(true);
+      const usersData = await userApi.getAllUsers();
+      console.log('🔍 Admin Panel - Users data received:', usersData);
+      console.log('🔍 Admin Panel - Detailed user analysis:');
+      usersData.forEach((user, index) => {
+        console.log(`  User ${index + 1}: ${user.name}`);
+        console.log(`    - Global role: ${user.role}`);
+        console.log(`    - Course memberships:`, user.course_memberships);
+        if (user.course_memberships) {
+          user.course_memberships.forEach((membership, mIndex) => {
+            console.log(`      ${mIndex + 1}. ${membership.role} in ${membership.courses?.title || 'Unknown'} (status: ${membership.status})`);
+          });
+        }
+      });
+      setUsers(usersData);
     } catch (error) {
-      console.error('Error cleaning up orphaned data:', error);
-      toast.error('Failed to clean up orphaned data');
+      console.error('Error loading users:', error);
+      toast.error('Failed to load users');
     } finally {
-      setCleaningUp(false);
+      setUsersLoading(false);
     }
   };
 
-  const handleTestRLS = async () => {
+  const handleEditUser = (user) => {
+    setEditingUser({
+      ...user,
+      originalName: user.name,
+      originalEmail: user.email
+    });
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    
     try {
-      setTestingRLS(true);
+      const updateData = {
+        name: editingUser.name,
+        email: editingUser.email,
+        role: editingUser.role
+      };
       
-      // Test current access to projects
-      console.log('🧪 Testing RLS implementation...');
-      
-      // Try to access projects via service API
-      const result = await courseApi.testRLSImplementation();
-      
-      if (result.success) {
-        toast.success('RLS test completed successfully! Check console for details.');
-      } else {
-        toast.error('RLS test encountered issues. Check console for details.');
-      }
-      
+      await userApi.updateUser(editingUser.id, updateData);
+      toast.success('User updated successfully!');
+      setShowEditUserModal(false);
+      setEditingUser(null);
+      loadUsers();
     } catch (error) {
-      console.error('Error testing RLS:', error);
-      toast.error('Failed to test RLS implementation');
-    } finally {
-      setTestingRLS(false);
+      console.error('Error updating user:', error);
+      toast.error('Failed to update user');
     }
   };
 
-  const handleSyncUsers = async () => {
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setShowDeleteUserConfirm(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    
     try {
-      setSyncingUsers(true);
-      
-      console.log('🔄 Starting user sync...');
-      
-      const result = await courseApi.syncAllAuthUsers();
-      
-      if (result.success) {
-        toast.success(result.summary);
-      } else {
-        toast.error(result.summary);
-      }
-      
+      await userApi.deleteUser(userToDelete.id);
+      toast.success('User deleted successfully!');
+      setShowDeleteUserConfirm(false);
+      setUserToDelete(null);
+      loadUsers();
+      // Also reload courses to refresh member counts
+      loadCourses();
     } catch (error) {
-      console.error('Error syncing users:', error);
-      toast.error('Failed to sync users');
-    } finally {
-      setSyncingUsers(false);
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
     }
+  };
+
+  const getFilteredUsers = () => {
+    let filtered = users;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(user => 
+        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by course
+    if (filterCourse !== 'all') {
+      filtered = filtered.filter(user => 
+        user.course_memberships?.some(membership => 
+          membership.course_id === filterCourse && membership.status === 'approved'
+        )
+      );
+    }
+
+    // Filter by role
+    if (filterRole !== 'all') {
+      filtered = filtered.filter(user => 
+        user.course_memberships?.some(membership => 
+          membership.role === filterRole && membership.status === 'approved'
+        )
+      );
+    }
+
+    return filtered;
+  };
+
+  const getUserRoles = (user) => {
+    console.log('🔍 getUserRoles called for user:', user.name, 'memberships:', user.course_memberships);
+    
+    if (!user.course_memberships) {
+      console.log('❌ No course_memberships found for user:', user.name);
+      return [];
+    }
+    
+    const approvedMemberships = user.course_memberships.filter(m => m.status === 'approved');
+    console.log('✅ Approved memberships:', approvedMemberships);
+    
+    // Return each membership individually instead of grouping by role
+    const individualRoles = approvedMemberships.map(membership => {
+      const courseName = membership.courses?.title || 
+                        courses.find(c => c.id === membership.course_id)?.title || 
+                        'Unknown Course';
+      console.log('📋 Processing membership:', membership, 'Course name:', courseName);
+      
+      return {
+        role: membership.role,
+        course: courseName,
+        membershipId: membership.id
+      };
+    });
+    
+    console.log('📊 Final user roles result:', individualRoles);
+    return individualRoles;
+  };
+
+  const getGlobalRoleBadge = (role) => {
+    const roleConfig = {
+      admin: { color: 'bg-purple-100 text-purple-800', label: 'Admin' },
+      instructor: { color: 'bg-green-100 text-green-800', label: 'Instructor' },
+      student: { color: 'bg-blue-100 text-blue-800', label: 'Student' }
+    };
+    
+    const config = roleConfig[role] || roleConfig.student;
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+        {config.label}
+      </span>
+    );
   };
 
   const getMembershipStats = (course) => {
@@ -256,7 +365,7 @@ export default function AdminPanel() {
     return { instructors, students, pending: pending.length };
   };
 
-  if (loading) {
+  if (loading && activeTab === 'courses') {
     return (
       <div className="p-6">
         <div className="animate-pulse">
@@ -280,34 +389,7 @@ export default function AdminPanel() {
             Manage courses, instructors, and system settings
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={handleSyncUsers}
-            disabled={syncingUsers}
-            className="inline-flex items-center px-3 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50"
-            title="Sync authenticated user to database"
-          >
-            <UsersIcon className="h-4 w-4 mr-2" />
-            {syncingUsers ? 'Syncing...' : 'Sync User'}
-          </button>
-          <button
-            onClick={handleTestRLS}
-            disabled={testingRLS}
-            className="inline-flex items-center px-3 py-2 border border-green-300 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-50"
-            title="Test RLS implementation on projects table"
-          >
-            <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-            {testingRLS ? 'Testing...' : 'Test RLS'}
-          </button>
-          <button
-            onClick={handleCleanupOrphanedData}
-            disabled={cleaningUp}
-            className="inline-flex items-center px-3 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
-            title="Remove orphaned data records"
-          >
-            <TrashIcon className="h-4 w-4 mr-2" />
-            {cleaningUp ? 'Cleaning...' : 'Cleanup Data'}
-          </button>
+        {activeTab === 'courses' && (
           <button
             onClick={() => setShowCreateModal(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
@@ -315,120 +397,297 @@ export default function AdminPanel() {
             <PlusIcon className="h-4 w-4 mr-2" />
             Create Course
           </button>
-        </div>
+        )}
       </div>
 
-      {/* Admin Messaging Section */}
-      <div className="mb-8">
-        <AdminMessaging />
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 mb-8">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('courses')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'courses'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <AcademicCapIcon className="h-5 w-5 inline-block mr-2" />
+            Course Management
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'users'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <UsersIcon className="h-5 w-5 inline-block mr-2" />
+            User Management
+          </button>
+        </nav>
       </div>
 
-      {/* Pending Approvals Section */}
-      {courses.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Membership Requests</h2>
-          <div className="space-y-4">
-            {courses.map((course) => (
-              <PendingApprovals 
-                key={course.id}
-                courseId={course.id} 
-                courseName={course.title}
-              />
-            ))}
+      {activeTab === 'courses' && (
+        <>
+          {/* Admin Messaging Section */}
+          <div className="mb-8">
+            <AdminMessaging />
           </div>
-        </div>
-      )}
 
-      {/* Courses Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => {
-          const stats = getMembershipStats(course);
-          return (
-            <div key={course.id} className="bg-white rounded-lg shadow border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {course.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {course.semester} {course.year}
-                  </p>
-                  <div className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-                    Code: {course.course_code}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setSelectedCourse(course)}
-                    className="p-1 text-gray-400 hover:text-gray-600"
-                  >
-                    <EyeIcon className="h-4 w-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleEditCourse(course)}
-                    className="p-1 text-gray-400 hover:text-gray-600"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {course.description && (
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {course.description}
-                </p>
-              )}
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full mx-auto mb-1">
-                    <AcademicCapIcon className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="text-sm font-medium text-gray-900">{stats.instructors}</div>
-                  <div className="text-xs text-gray-500">Instructors</div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full mx-auto mb-1">
-                    <UsersIcon className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="text-sm font-medium text-gray-900">{stats.students}</div>
-                  <div className="text-xs text-gray-500">Students</div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-full mx-auto mb-1">
-                    <ClipboardDocumentListIcon className="h-4 w-4 text-yellow-600" />
-                  </div>
-                  <div className="text-sm font-medium text-gray-900">{stats.pending}</div>
-                  <div className="text-xs text-gray-500">Pending</div>
-                </div>
-              </div>
-
-              <div className="mt-4 text-xs text-gray-500">
-                Created {format(new Date(course.created_at), 'MMM dd, yyyy')}
+          {/* Pending Approvals Section */}
+          {courses.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Membership Requests</h2>
+              <div className="space-y-4">
+                {courses.map((course) => (
+                  <PendingApprovals 
+                    key={course.id}
+                    courseId={course.id} 
+                    courseName={course.title}
+                  />
+                ))}
               </div>
             </div>
-          );
-        })}
-      </div>
+          )}
+        </>
+      )}
 
-      {courses.length === 0 && (
-        <div className="text-center py-12">
-          <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No courses yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Get started by creating your first course.
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Create Course
-            </button>
+      {activeTab === 'users' && (
+        <>
+          {/* User Management Controls */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search */}
+              <div className="relative flex-1">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              {/* Course Filter */}
+              <select
+                value={filterCourse}
+                onChange={(e) => setFilterCourse(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Courses</option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.title}
+                  </option>
+                ))}
+              </select>
+              
+              {/* Role Filter */}
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Roles</option>
+                <option value="student">Students</option>
+                <option value="instructor">Instructors</option>
+              </select>
+            </div>
           </div>
-        </div>
+
+          {/* Users List */}
+          {usersLoading ? (
+            <div className="animate-pulse space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  System Users ({getFilteredUsers().length})
+                </h3>
+                
+                {getFilteredUsers().length === 0 ? (
+                  <div className="text-center py-8">
+                    <UserCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {searchTerm || filterCourse !== 'all' || filterRole !== 'all' 
+                        ? 'Try adjusting your search or filters.' 
+                        : 'No users have been created yet.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {getFilteredUsers().map((user) => {
+                      const userRoles = getUserRoles(user);
+                      return (
+                        <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0">
+                                <UserCircleIcon className="h-10 w-10 text-gray-400" />
+                              </div>
+                              <div className="ml-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {user.name || 'No Name'}
+                                  </div>
+                                  {getGlobalRoleBadge(user.role)}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {user.email}
+                                </div>
+                                <div className="mt-1">
+                                  {userRoles.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {userRoles.map((membership, index) => (
+                                        <span
+                                          key={membership.membershipId || index}
+                                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                            membership.role === 'instructor'
+                                              ? 'bg-green-100 text-green-800'
+                                              : 'bg-blue-100 text-blue-800'
+                                          }`}
+                                        >
+                                          {membership.role} in {membership.course}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                      No course memberships
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEditUser(user)}
+                              className="p-2 text-gray-400 hover:text-gray-600"
+                              title="Edit user"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user)}
+                              className="p-2 text-red-400 hover:text-red-600"
+                              title="Delete user"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'courses' && (
+        <>
+          {/* Courses Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course) => {
+              const stats = getMembershipStats(course);
+              return (
+                <div key={course.id} className="bg-white rounded-lg shadow border border-gray-200 p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        {course.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {course.semester} {course.year}
+                      </p>
+                      <div className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                        Code: {course.course_code}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setSelectedCourse(course)}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleEditCourse(course)}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {course.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      {course.description}
+                    </p>
+                  )}
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full mx-auto mb-1">
+                        <AcademicCapIcon className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div className="text-sm font-medium text-gray-900">{stats.instructors}</div>
+                      <div className="text-xs text-gray-500">Instructors</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full mx-auto mb-1">
+                        <UsersIcon className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div className="text-sm font-medium text-gray-900">{stats.students}</div>
+                      <div className="text-xs text-gray-500">Students</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-full mx-auto mb-1">
+                        <ClipboardDocumentListIcon className="h-4 w-4 text-yellow-600" />
+                      </div>
+                      <div className="text-sm font-medium text-gray-900">{stats.pending}</div>
+                      <div className="text-xs text-gray-500">Pending</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 text-xs text-gray-500">
+                    Created {format(new Date(course.created_at), 'MMM dd, yyyy')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {courses.length === 0 && (
+            <div className="text-center py-12">
+              <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No courses yet</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Get started by creating your first course.
+              </p>
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create Course
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Course Modal */}
@@ -827,6 +1086,154 @@ export default function AdminPanel() {
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
                 >
                   Remove Member
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowEditUserModal(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit User</h3>
+                <button
+                  onClick={() => setShowEditUserModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpdateUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingUser.name || ''}
+                    onChange={(e) => setEditingUser(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={editingUser.email || ''}
+                    onChange={(e) => setEditingUser(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Global Role
+                  </label>
+                  <select
+                    value={editingUser.role || 'student'}
+                    onChange={(e) => setEditingUser(prev => ({ ...prev, role: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="student">Student</option>
+                    <option value="instructor">Instructor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  <div className="flex">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2" />
+                    <div className="text-sm text-yellow-800">
+                      <p className="font-medium">Note:</p>
+                      <p>This updates the user's global role and profile. Course-specific roles are managed separately through course management.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditUserModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                  >
+                    Update User
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {showDeleteUserConfirm && userToDelete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowDeleteUserConfirm(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center mb-4">
+                <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full mr-3">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Delete User</h3>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-3">
+                  Are you sure you want to delete <strong>{userToDelete.name || userToDelete.email}</strong>?
+                </p>
+                
+                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                  <div className="flex">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
+                    <div className="text-sm text-red-800">
+                      <p className="font-medium">This action cannot be undone.</p>
+                      <p className="mt-1">This will permanently delete:</p>
+                      <ul className="mt-1 list-disc list-inside space-y-1">
+                        <li>User profile and account</li>
+                        <li>All course memberships</li>
+                        <li>All chat sessions and AI interactions</li>
+                        <li>All projects and associated data</li>
+                        <li>All uploaded files and attachments</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteUserConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteUser}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  Delete User
                 </button>
               </div>
             </div>

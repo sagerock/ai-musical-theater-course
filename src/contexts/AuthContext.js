@@ -296,6 +296,8 @@ export function AuthProvider({ children }) {
   // Update profile
   async function updateProfile(updates) {
     try {
+      console.log('🔄 Updating profile with:', updates);
+      
       const { error } = await supabase.auth.updateUser({
         data: updates
       });
@@ -304,16 +306,57 @@ export function AuthProvider({ children }) {
 
       // Also update the users table
       if (currentUser) {
+        const dbUpdates = {};
+        
+        // Map display_name to name field in database
+        if (updates.display_name) {
+          dbUpdates.name = updates.display_name;
+        }
+        
+        // Map other fields
+        if (updates.email) {
+          dbUpdates.email = updates.email;  
+        }
+        
+        console.log('📝 Database updates:', dbUpdates);
+        
         const { error: dbError } = await supabase
           .from('users')
-          .update({
-            name: updates.display_name || updates.name,
-            email: updates.email
-          })
+          .update(dbUpdates)
           .eq('id', currentUser.id);
 
         if (dbError) {
           console.error('Error updating user profile in database:', dbError);
+          throw dbError;
+        } else {
+          console.log('✅ Database profile updated successfully');
+          
+          // Refresh the current user data from both auth and database
+          const { data: { user }, error: refreshError } = await supabase.auth.getUser();
+          if (!refreshError && user) {
+            console.log('🔄 Refreshing current user data');
+            
+            // Get updated user data from database
+            const { data: dbUser, error: dbUserError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', user.id)
+              .single();
+            
+            if (!dbUserError && dbUser) {
+              // Merge auth user with database user data
+              const updatedUser = {
+                ...user,
+                name: dbUser.name,
+                role: dbUser.role,
+                is_global_admin: dbUser.is_global_admin
+              };
+              console.log('🔄 Updated user with database data:', updatedUser.name);
+              setCurrentUser(updatedUser);
+            } else {
+              setCurrentUser(user);
+            }
+          }
         }
       }
       

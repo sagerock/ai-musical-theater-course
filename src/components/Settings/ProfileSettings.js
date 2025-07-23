@@ -32,7 +32,7 @@ export default function ProfileSettings() {
   useEffect(() => {
     if (currentUser) {
       const userData = {
-        displayName: currentUser.displayName || '',
+        displayName: currentUser.name || currentUser.displayName || '',
         email: currentUser.email || '',
         bio: '' // We can add bio to the user profile later if needed
       };

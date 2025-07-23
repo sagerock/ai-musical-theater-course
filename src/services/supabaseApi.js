@@ -161,24 +161,55 @@ export const userApi = {
       
       return courseUsers;
     } else {
-      // No courseId, return all users
-      let query = supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // No courseId, return all users with their course memberships
+      console.log('📊 Getting all users with course memberships...');
       
-      console.log('📊 Executing getAllUsers query (no course filter)...');
-      const { data, error } = await query;
-      
-      console.log('📈 getAllUsers results:');
-      console.log('  - data length:', data?.length || 0);
-      console.log('  - error:', error?.message || 'none');
-      
-      if (error) {
-        console.error('❌ getAllUsers error:', error);
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select(`
+            *,
+            course_memberships!user_id (
+              id,
+              role,
+              status,
+              course_id,
+              courses (
+                id,
+                title
+              )
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        console.log('📈 getAllUsers results:');
+        console.log('  - data length:', data?.length || 0);
+        console.log('  - error:', error?.message || 'none');
+        
+        if (error) {
+          console.error('❌ getAllUsers with memberships error:', error);
+          // Fallback to basic user data if the join fails
+          console.log('🔄 Falling back to basic user data...');
+          
+          const { data: basicData, error: basicError } = await supabase
+            .from('users')
+            .select('*')
+            .order('created_at', { ascending: false });
+            
+          if (basicError) {
+            console.error('❌ Basic getAllUsers error:', basicError);
+            throw basicError;
+          }
+          
+          return basicData;
+        }
+        
+        return data;
+        
+      } catch (error) {
+        console.error('❌ Error in getAllUsers:', error);
         throw error;
       }
-      return data;
     }
   },
 
