@@ -5,6 +5,8 @@ import { useAuth } from './contexts/AuthContext';
 import ErrorBoundary from './ErrorBoundary';
 import PublicHomePage from './components/Home/PublicHomePage';
 import Login from './components/Auth/Login';
+import ResetPassword from './components/Auth/ResetPassword';
+import ConfirmEmail from './components/Auth/ConfirmEmail';
 import Dashboard from './components/Dashboard/Dashboard';
 import Chat from './components/Chat/Chat';
 import Projects from './components/Projects/Projects';
@@ -27,6 +29,9 @@ function App() {
           <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/confirm" element={<ConfirmEmail />} />
+          <Route path="/auth/confirm" element={<ConfirmEmail />} />
           <Route path="/join" element={<CourseJoin />} />
           <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
