@@ -247,8 +247,11 @@ export function AuthProvider({ children }) {
   // Reset password
   async function resetPassword(email) {
     try {
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      console.log('Reset password redirect URL:', redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: redirectUrl
       });
 
       if (error) throw error;

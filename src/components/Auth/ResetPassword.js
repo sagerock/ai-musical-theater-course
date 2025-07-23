@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function ResetPassword() {
@@ -9,16 +10,55 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     // Handle the password reset flow
     const handlePasswordReset = async () => {
+      console.log('ResetPassword component loaded');
+      console.log('Current user:', currentUser);
+      console.log('Full URL:', window.location.href);
+      console.log('Hash:', window.location.hash);
+      console.log('Search:', window.location.search);
+      console.log('Hash params raw:', window.location.hash.substring(1));
+      console.log('Search params raw:', window.location.search.substring(1));
+      
+      // If user is authenticated, show the password reset form
+      if (currentUser) {
+        console.log('User authenticated via password recovery, ready to reset password');
+        toast.success('Ready to set your new password');
+        return; // Stay on page to allow password reset
+      }
+      
       // Check both URL fragment (hash) and query parameters
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
       
+      // Check for error parameters
+      const error = hashParams.get('error') || searchParams.get('error');
+      const errorCode = hashParams.get('error_code') || searchParams.get('error_code');
+      const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
+      
       console.log('Reset password tokens:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
+      console.log('Error params:', { error, errorCode, errorDescription });
+      
+      // Handle Supabase errors first
+      if (error) {
+        let errorMessage = 'Password reset failed';
+        
+        if (errorCode === 'otp_expired') {
+          errorMessage = 'Password reset link has expired. Please request a new one.';
+        } else if (error === 'access_denied') {
+          errorMessage = 'Password reset link is invalid or has expired. Please request a new one.';
+        } else if (errorDescription) {
+          errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, ' '));
+        }
+        
+        toast.error(errorMessage);
+        navigate('/login');
+        return;
+      }
       
       if (accessToken && refreshToken) {
         // Set the session using the tokens from the URL
