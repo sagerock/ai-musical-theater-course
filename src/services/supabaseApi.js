@@ -1744,28 +1744,78 @@ export const courseApi = {
           // Send admin notification for ALL enrollment requests (students and instructors)
           console.log(`📧 Sending admin notification for ${role} enrollment request...`);
           
-          const adminAlertData = {
-            userName: studentData.name || 'Unknown User',
-            userEmail: studentData.email,
-            courseName: course.title,
-            courseCode: course.course_code,
-            requestedRole: role
-          };
+          // Get course statistics for admin context
+          try {
+            const courseMembers = await this.getCourseMembers(course.id);
+            const currentInstructors = courseMembers.filter(m => m.role === 'instructor' && m.status === 'approved');
+            const currentStudents = courseMembers.filter(m => m.role === 'student' && m.status === 'approved');
+            const pendingRequests = courseMembers.filter(m => m.status === 'pending');
 
-          // Send admin notification (don't await - non-blocking)
-          emailNotifications.notifyAdminsOfCourseEnrollmentRequest(adminAlertData)
-            .then(result => {
-              if (result.success) {
-                console.log(`✅ Admin ${role} enrollment alert sent successfully`);
-              } else if (result.skipped) {
-                console.log('📧 Admin notification skipped:', result.reason);
-              } else {
-                console.warn(`⚠️ Failed to send admin ${role} enrollment alert:`, result.error);
+            const adminAlertData = {
+              userName: studentData.name || 'Unknown User',
+              userEmail: studentData.email,
+              courseName: course.title,
+              courseCode: course.course_code,
+              requestedRole: role,
+              currentInstructorCount: currentInstructors.length,
+              currentStudentCount: currentStudents.length,
+              pendingRequestCount: pendingRequests.length
+            };
+
+            console.log('📊 Admin alert data prepared:', {
+              user: adminAlertData.userName,
+              role: adminAlertData.requestedRole,
+              course: adminAlertData.courseName,
+              stats: {
+                instructors: adminAlertData.currentInstructorCount,
+                students: adminAlertData.currentStudentCount,
+                pending: adminAlertData.pendingRequestCount
               }
-            })
-            .catch(emailError => {
-              console.warn(`⚠️ Error sending admin ${role} enrollment alert:`, emailError.message);
             });
+
+            // Send admin notification (don't await - non-blocking)
+            emailNotifications.notifyAdminsOfCourseEnrollmentRequest(adminAlertData)
+              .then(result => {
+                if (result.success) {
+                  console.log(`✅ Admin ${role} enrollment alert sent successfully to ${result.results?.length || 0} admins`);
+                } else if (result.skipped) {
+                  console.log('📧 Admin notification skipped:', result.reason);
+                } else {
+                  console.warn(`⚠️ Failed to send admin ${role} enrollment alert:`, result.error);
+                }
+              })
+              .catch(emailError => {
+                console.warn(`⚠️ Error sending admin ${role} enrollment alert:`, emailError.message);
+              });
+          } catch (statsError) {
+            console.warn('⚠️ Could not get course statistics for admin alert, sending basic notification:', statsError.message);
+            
+            // Fallback to basic notification without statistics
+            const basicAdminAlertData = {
+              userName: studentData.name || 'Unknown User',
+              userEmail: studentData.email,
+              courseName: course.title,
+              courseCode: course.course_code,
+              requestedRole: role,
+              currentInstructorCount: 0,
+              currentStudentCount: 0,
+              pendingRequestCount: 0
+            };
+
+            emailNotifications.notifyAdminsOfCourseEnrollmentRequest(basicAdminAlertData)
+              .then(result => {
+                if (result.success) {
+                  console.log(`✅ Basic admin ${role} enrollment alert sent successfully`);
+                } else if (result.skipped) {
+                  console.log('📧 Basic admin notification skipped:', result.reason);
+                } else {
+                  console.warn(`⚠️ Failed to send basic admin ${role} enrollment alert:`, result.error);
+                }
+              })
+              .catch(emailError => {
+                console.warn(`⚠️ Error sending basic admin ${role} enrollment alert:`, emailError.message);
+              });
+          }
         } else {
           console.log('📧 Skipping email notification - missing student data or no instructors found');
         }

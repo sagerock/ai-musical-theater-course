@@ -1108,13 +1108,37 @@ export const emailNotifications = {
   // Send admin alert for any enrollment request (student or instructor)
   async notifyAdminsOfCourseEnrollmentRequest(enrollmentData) {
     try {
+      console.log('🔍 Starting admin notification process...');
+      
       // Get all admin users
       const { userApi } = await import('./supabaseApi.js');
       const allUsers = await userApi.getAllUsers();
+      console.log(`👥 Total users found: ${allUsers.length}`);
+      
+      // Debug user roles
+      const roleBreakdown = {};
+      allUsers.forEach(user => {
+        roleBreakdown[user.role] = (roleBreakdown[user.role] || 0) + 1;
+        if (user.is_global_admin) {
+          roleBreakdown['global_admin'] = (roleBreakdown['global_admin'] || 0) + 1;
+        }
+      });
+      console.log('👥 User role breakdown:', roleBreakdown);
+      
       const adminUsers = allUsers.filter(user => user.role === 'admin' || user.is_global_admin);
+      console.log(`👑 Admin users found: ${adminUsers.length}`);
+      
+      if (adminUsers.length > 0) {
+        console.log('👑 Admin user details:', adminUsers.map(u => ({
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          is_global_admin: u.is_global_admin
+        })));
+      }
 
       if (adminUsers.length === 0) {
-        console.log('📧 No admin users found to notify');
+        console.log('📧 No admin users found to notify - skipping admin notifications');
         return { success: true, skipped: true, reason: 'No admin users found' };
       }
 
