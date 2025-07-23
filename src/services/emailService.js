@@ -280,6 +280,215 @@ This message was sent to ${data.recipientType.toLowerCase()} by platform adminis
     `
   },
 
+  adminInstructorEnrollmentAlert: {
+    subject: 'Instructor enrollment request requires review',
+    getHtml: (data) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Instructor Enrollment Alert</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; }
+          .instructor-info { background: #fef2f2; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #dc2626; }
+          .course-info { background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 14px; color: #4b5563; }
+          .button { display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .button.secondary { background: #6b7280; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+          .actions { text-align: center; margin: 20px 0; }
+          .actions .button { margin: 0 10px; }
+          .alert-badge { background: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🚨 Instructor Enrollment Alert</h1>
+            <p>An instructor-level enrollment request requires administrative review</p>
+          </div>
+          <div class="content">
+            <p>Hello <strong>Administrator</strong>,</p>
+            
+            <div class="alert-badge">High Priority Review Required</div>
+            
+            <p>Someone has requested <strong>instructor-level access</strong> to a course, which requires administrative oversight for security and academic integrity.</p>
+            
+            <div class="instructor-info">
+              <h3>👩‍🏫 Instructor Request Details:</h3>
+              <p><strong>Name:</strong> ${data.instructorName}</p>
+              <p><strong>Email:</strong> ${data.instructorEmail}</p>
+              <p><strong>Requested Role:</strong> <span style="color: #dc2626; font-weight: bold;">${data.requestedRole}</span></p>
+              <p><strong>Request Date:</strong> ${data.requestDate}</p>
+            </div>
+            
+            <div class="course-info">
+              <h3>📚 Course Information:</h3>
+              <p><strong>Course:</strong> ${data.courseName}</p>
+              <p><strong>Course Code:</strong> ${data.courseCode}</p>
+              <p><strong>Current Instructors:</strong> ${data.currentInstructorCount}</p>
+              <p><strong>Total Students:</strong> ${data.currentStudentCount}</p>
+            </div>
+            
+            <p><strong>⚠️ Administrative Action Required:</strong></p>
+            <ul>
+              <li>Verify the requestor's credentials and authorization</li>
+              <li>Confirm they should have instructor-level access</li>
+              <li>Review course enrollment and existing instructor arrangements</li>
+              <li>Approve or deny the request through the admin panel</li>
+            </ul>
+            
+            <div class="actions">
+              <a href="${APP_URL}/admin" class="button">Review in Admin Panel</a>
+              <a href="${APP_URL}/instructor" class="button secondary">View All Courses</a>
+            </div>
+            
+            <p><em>Instructor-level access grants significant permissions including student data access, grade management, and course content control. Please review carefully.</em></p>
+            
+            <p>Best regards,<br>
+            AI Engagement Hub Security System</p>
+          </div>
+          <div class="footer">
+            <p>AI Engagement Hub - Secure Educational AI Platform</p>
+            <p>This is an automated security alert for instructor-level access requests</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    getText: (data) => `
+INSTRUCTOR ENROLLMENT ALERT - AI Engagement Hub
+HIGH PRIORITY REVIEW REQUIRED
+
+Hello Administrator,
+
+Someone has requested INSTRUCTOR-LEVEL ACCESS to a course, which requires administrative oversight for security and academic integrity.
+
+Instructor Request Details:
+- Name: ${data.instructorName}
+- Email: ${data.instructorEmail}
+- Requested Role: ${data.requestedRole}
+- Request Date: ${data.requestDate}
+
+Course Information:
+- Course: ${data.courseName}
+- Course Code: ${data.courseCode}
+- Current Instructors: ${data.currentInstructorCount}
+- Total Students: ${data.currentStudentCount}
+
+ADMINISTRATIVE ACTION REQUIRED:
+- Verify the requestor's credentials and authorization
+- Confirm they should have instructor-level access
+- Review course enrollment and existing instructor arrangements
+- Approve or deny the request through the admin panel
+
+Review in Admin Panel: ${APP_URL}/admin
+View All Courses: ${APP_URL}/instructor
+
+IMPORTANT: Instructor-level access grants significant permissions including student data access, grade management, and course content control. Please review carefully.
+
+Best regards,
+AI Engagement Hub Security System
+
+---
+AI Engagement Hub - Secure Educational AI Platform
+This is an automated security alert for instructor-level access requests
+    `
+  },
+
+  courseEnrollmentRequest: {
+    subject: 'New course enrollment request',
+    getHtml: (data) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Course Enrollment Request</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; }
+          .student-info { background: #fffbeb; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+          .button { display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .button.secondary { background: #6b7280; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+          .actions { text-align: center; margin: 20px 0; }
+          .actions .button { margin: 0 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📋 Course Enrollment Request</h1>
+            <p>A student has requested to join your course</p>
+          </div>
+          <div class="content">
+            <p>Hello <strong>${data.instructorName}</strong>,</p>
+            
+            <p>A student has submitted a request to join your course "<strong>${data.courseName}</strong>".</p>
+            
+            <div class="student-info">
+              <h3>👤 Student Information:</h3>
+              <p><strong>Name:</strong> ${data.studentName}</p>
+              <p><strong>Email:</strong> ${data.studentEmail}</p>
+              <p><strong>Requested Role:</strong> ${data.requestedRole}</p>
+              <p><strong>Course Code:</strong> ${data.courseCode}</p>
+              <p><strong>Request Date:</strong> ${data.requestDate}</p>
+            </div>
+            
+            <p>You can review and approve this request from your instructor dashboard. Once approved, the student will gain access to the course and can begin creating projects and engaging with AI tools.</p>
+            
+            <div class="actions">
+              <a href="${APP_URL}/instructor" class="button">Review Request</a>
+            </div>
+            
+            <p>Students are waiting for your approval to start their AI-enhanced learning journey in your course.</p>
+            
+            <p>Best regards,<br>
+            AI Engagement Hub Team</p>
+          </div>
+          <div class="footer">
+            <p>AI Engagement Hub - Empowering educators and students with AI insights</p>
+            <p>This email was sent because you're an instructor in ${data.courseName}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    getText: (data) => `
+Course Enrollment Request - AI Engagement Hub
+
+Hello ${data.instructorName},
+
+A student has submitted a request to join your course "${data.courseName}".
+
+Student Information:
+- Name: ${data.studentName}
+- Email: ${data.studentEmail}
+- Requested Role: ${data.requestedRole}
+- Course Code: ${data.courseCode}
+- Request Date: ${data.requestDate}
+
+You can review and approve this request from your instructor dashboard: ${APP_URL}/instructor
+
+Once approved, the student will gain access to the course and can begin creating projects and engaging with AI tools.
+
+Students are waiting for your approval to start their AI-enhanced learning journey in your course.
+
+Best regards,
+AI Engagement Hub Team
+
+---
+AI Engagement Hub - Empowering educators and students with AI insights
+This email was sent because you're an instructor in ${data.courseName}
+    `
+  },
+
   instructorMessage: {
     subject: (data) => data.subject || 'Message from your instructor',
     getHtml: (data) => `
@@ -448,6 +657,34 @@ class EmailService {
     );
   }
 
+  async sendCourseEnrollmentRequestEmail(data) {
+    const template = EMAIL_TEMPLATES.courseEnrollmentRequest;
+    const subject = template.subject;
+    const htmlContent = template.getHtml(data);
+    const textContent = template.getText(data);
+
+    return await this.sendEmail(
+      data.instructorEmail,
+      subject,
+      htmlContent,
+      textContent
+    );
+  }
+
+  async sendAdminInstructorEnrollmentAlert(data) {
+    const template = EMAIL_TEMPLATES.adminInstructorEnrollmentAlert;
+    const subject = template.subject;
+    const htmlContent = template.getHtml(data);
+    const textContent = template.getText(data);
+
+    return await this.sendEmail(
+      data.adminEmail,
+      subject,
+      htmlContent,
+      textContent
+    );
+  }
+
   // Send email to multiple instructors for a course
   async sendNewProjectToInstructors(data, instructorEmails) {
     const results = [];
@@ -536,7 +773,7 @@ export const emailNotifications = {
   async notifyStudentOfInstructorNote(noteData) {
     try {
       // Check if student has email notifications enabled
-      const { userApi } = await import('./supabaseApi');
+      const { userApi } = await import('./supabaseApi.js');
       const hasNotificationsEnabled = await userApi.hasEmailNotificationsEnabled(
         noteData.studentId, 
         'instructor_note_emails'
@@ -714,6 +951,136 @@ export const emailNotifications = {
       }
     } catch (error) {
       console.error('❌ Error sending instructor message:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Send admin alert for instructor enrollment requests
+  async notifyAdminsOfInstructorEnrollmentRequest(enrollmentData) {
+    try {
+      // Get all admin users
+      const { userApi } = await import('./supabaseApi.js');
+      const allUsers = await userApi.getAllUsers();
+      const adminUsers = allUsers.filter(user => user.role === 'admin' || user.is_global_admin);
+
+      if (adminUsers.length === 0) {
+        console.log('📧 No admin users found to notify');
+        return { success: true, skipped: true, reason: 'No admin users found' };
+      }
+
+      // Get course statistics
+      const { courseApi } = await import('./supabaseApi.js');
+      const course = await courseApi.getCourseByCode(enrollmentData.courseCode);
+      const courseMembers = await courseApi.getCourseMembers(course.id);
+      
+      const currentInstructors = courseMembers.filter(m => m.role === 'instructor' && m.status === 'approved');
+      const currentStudents = courseMembers.filter(m => m.role === 'student' && m.status === 'approved');
+
+      const emailData = {
+        instructorName: enrollmentData.instructorName,
+        instructorEmail: enrollmentData.instructorEmail,
+        courseName: enrollmentData.courseName,
+        courseCode: enrollmentData.courseCode,
+        requestedRole: enrollmentData.requestedRole,
+        currentInstructorCount: currentInstructors.length,
+        currentStudentCount: currentStudents.length,
+        requestDate: new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      const results = [];
+      
+      for (const admin of adminUsers) {
+        const adminEmailData = {
+          ...emailData,
+          adminEmail: admin.email,
+          adminName: admin.name
+        };
+        
+        const result = await emailService.sendAdminInstructorEnrollmentAlert(adminEmailData);
+        results.push({
+          email: admin.email,
+          name: admin.name,
+          success: result.success,
+          error: result.error
+        });
+      }
+      
+      const successCount = results.filter(r => r.success).length;
+      console.log(`✅ Admin instructor enrollment alerts sent: ${successCount}/${results.length}`);
+      
+      return { success: successCount > 0, results };
+    } catch (error) {
+      console.error('❌ Error sending admin instructor enrollment alert:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Send course enrollment request email to instructors
+  async notifyInstructorsOfEnrollmentRequest(enrollmentData) {
+    try {
+      const emailData = {
+        studentName: enrollmentData.studentName,
+        studentEmail: enrollmentData.studentEmail,
+        instructorName: enrollmentData.instructorName, // Will be overridden for each instructor
+        courseName: enrollmentData.courseName,
+        courseCode: enrollmentData.courseCode,
+        requestedRole: enrollmentData.requestedRole || 'student',
+        requestDate: new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      let results;
+      
+      if (Array.isArray(enrollmentData.instructorEmails)) {
+        // Multiple instructors
+        results = [];
+        
+        for (const instructorInfo of enrollmentData.instructorEmails) {
+          const instructorEmailData = {
+            ...emailData,
+            instructorEmail: instructorInfo.email,
+            instructorName: instructorInfo.name
+          };
+          
+          const result = await emailService.sendCourseEnrollmentRequestEmail(instructorEmailData);
+          results.push({
+            email: instructorInfo.email,
+            name: instructorInfo.name,
+            success: result.success,
+            error: result.error
+          });
+        }
+      } else {
+        // Single instructor
+        emailData.instructorEmail = enrollmentData.instructorEmail;
+        const result = await emailService.sendCourseEnrollmentRequestEmail(emailData);
+        results = [{ 
+          email: enrollmentData.instructorEmail, 
+          name: enrollmentData.instructorName,
+          success: result.success, 
+          error: result.error 
+        }];
+      }
+      
+      const successCount = results.filter(r => r.success).length;
+      console.log(`✅ Course enrollment request emails sent: ${successCount}/${results.length}`);
+      
+      return { success: successCount > 0, results };
+    } catch (error) {
+      console.error('❌ Error sending course enrollment request email:', error);
       return { success: false, error: error.message };
     }
   },

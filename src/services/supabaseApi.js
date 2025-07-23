@@ -1685,6 +1685,97 @@ export const courseApi = {
         .single();
       
       if (error) throw error;
+
+      // Send email notification to instructors (non-blocking)
+      try {
+        // Get student information
+        const { data: studentData } = await dbClient
+          .from('users')
+          .select('name, email')
+          .eq('id', userId)
+          .single();
+
+        // Get course instructors
+        const { data: instructors } = await dbClient
+          .from('course_memberships')
+          .select(`
+            users!user_id (
+              name,
+              email
+            )
+          `)
+          .eq('course_id', course.id)
+          .eq('role', 'instructor')
+          .eq('status', 'approved');
+
+        if (studentData && instructors && instructors.length > 0) {
+          // Import email service dynamically to avoid circular imports
+          const { emailNotifications } = await import('./emailService.js');
+          
+          const instructorEmails = instructors.map(instructor => ({
+            name: instructor.users.name,
+            email: instructor.users.email
+          }));
+
+          const enrollmentData = {
+            studentName: studentData.name || 'Unknown Student',
+            studentEmail: studentData.email,
+            courseName: course.title,
+            courseCode: course.course_code,
+            requestedRole: role,
+            instructorEmails: instructorEmails
+          };
+
+          console.log('📧 Sending course enrollment notification to instructors...');
+          
+          // Send email notification (don't await - non-blocking)
+          emailNotifications.notifyInstructorsOfEnrollmentRequest(enrollmentData)
+            .then(result => {
+              if (result.success) {
+                console.log('✅ Course enrollment notification sent successfully');
+              } else {
+                console.warn('⚠️ Failed to send course enrollment notification:', result.error);
+              }
+            })
+            .catch(emailError => {
+              console.warn('⚠️ Error sending course enrollment notification:', emailError.message);
+            });
+
+          // If someone is requesting instructor access, also notify admins
+          if (role === 'instructor') {
+            console.log('🚨 Instructor-level access requested - notifying admins...');
+            
+            const adminAlertData = {
+              instructorName: studentData.name || 'Unknown User',
+              instructorEmail: studentData.email,
+              courseName: course.title,
+              courseCode: course.course_code,
+              requestedRole: role
+            };
+
+            // Send admin notification (don't await - non-blocking)
+            emailNotifications.notifyAdminsOfInstructorEnrollmentRequest(adminAlertData)
+              .then(result => {
+                if (result.success) {
+                  console.log('✅ Admin instructor enrollment alert sent successfully');
+                } else if (result.skipped) {
+                  console.log('📧 Admin notification skipped:', result.reason);
+                } else {
+                  console.warn('⚠️ Failed to send admin instructor enrollment alert:', result.error);
+                }
+              })
+              .catch(emailError => {
+                console.warn('⚠️ Error sending admin instructor enrollment alert:', emailError.message);
+              });
+          }
+        } else {
+          console.log('📧 Skipping email notification - missing student data or no instructors found');
+        }
+      } catch (emailError) {
+        console.warn('⚠️ Non-critical email notification error:', emailError.message);
+        // Don't throw - email failure shouldn't prevent course enrollment
+      }
+      
       return data;
     } catch (error) {
       console.error('Error in joinCourse:', error);
