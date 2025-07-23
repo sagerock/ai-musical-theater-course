@@ -38,13 +38,14 @@ export default function Layout() {
 
     try {
       setLoadingCourses(true);
-      const courses = await courseApi.getUserCourses(currentUser.uid);
+      const courses = await courseApi.getUserCourses(currentUser.id);
       setUserCourses(courses);
     } catch (error) {
       console.error('Error loading user courses:', error);
       setUserCourses([]);
     } finally {
       setLoadingCourses(false);
+      console.log('✅ Layout: loadUserCourses - finished. Loading Courses:', false);
     }
   };
 
@@ -152,7 +153,7 @@ export default function Layout() {
                             : 'text-gray-400 group-hover:text-gray-500'
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <div className="truncate">{courseMembership.courses.name}</div>
+                          <div className="truncate">{courseMembership.courses.title}</div>
                           <div className="text-xs text-gray-500">
                             {courseMembership.courses.course_code} • {courseMembership.role}
                           </div>
@@ -267,7 +268,7 @@ export default function Layout() {
                               : 'text-gray-400 group-hover:text-gray-500'
                           }`} />
                           <div className="flex-1 min-w-0">
-                            <div className="truncate">{courseMembership.courses.name}</div>
+                            <div className="truncate">{courseMembership.courses.title}</div>
                             <div className="text-xs text-gray-500">
                               {courseMembership.courses.course_code} • {courseMembership.role}
                             </div>

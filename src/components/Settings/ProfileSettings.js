@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../services/supabaseApi';
-import { updateProfile, updateEmail, sendEmailVerification } from 'firebase/auth';
-import { auth } from '../../config/firebase';
 import toast from 'react-hot-toast';
 import {
   UserCircleIcon,
@@ -15,10 +13,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ProfileSettings() {
-  const { currentUser, userRole } = useAuth();
+  const { currentUser, userRole, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   
   const [formData, setFormData] = useState({
     displayName: '',
@@ -61,12 +58,7 @@ export default function ProfileSettings() {
       
       // Update display name if changed
       if (formData.displayName !== originalData.displayName) {
-        await updateProfile(currentUser, {
-          displayName: formData.displayName
-        });
-        
-        // Also update in Supabase
-        await userApi.updateUserProfile(currentUser.uid, {
+        await updateProfile({
           display_name: formData.displayName
         });
       }
@@ -74,17 +66,11 @@ export default function ProfileSettings() {
       // Update email if changed (requires verification)
       if (formData.email !== originalData.email) {
         try {
-          await updateEmail(currentUser, formData.email);
-          
-          // Send verification email
-          await sendEmailVerification(currentUser);
-          setEmailVerificationSent(true);
-          emailChanged = true;
-          
-          // Update in Supabase
-          await userApi.updateUserProfile(currentUser.uid, {
+          await updateProfile({
             email: formData.email
           });
+          
+          emailChanged = true;
           
           toast.success('Email updated! Please check your inbox for verification.');
         } catch (emailError) {
@@ -126,20 +112,8 @@ export default function ProfileSettings() {
   const handleCancel = () => {
     setFormData({ ...originalData });
     setIsEditing(false);
-    setEmailVerificationSent(false);
   };
 
-  const handleResendVerification = async () => {
-    if (!currentUser) return;
-    
-    try {
-      await sendEmailVerification(currentUser);
-      toast.success('Verification email sent! Please check your inbox.');
-    } catch (error) {
-      console.error('Error sending verification email:', error);
-      toast.error('Failed to send verification email. Please try again.');
-    }
-  };
 
   const hasChanges = () => {
     return formData.displayName !== originalData.displayName ||
@@ -241,22 +215,9 @@ export default function ProfileSettings() {
               </p>
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
-              <p className="text-sm text-gray-900">
-                {formData.email}
-              </p>
-              {currentUser?.emailVerified ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <CheckIcon className="h-3 w-3 mr-1" />
-                  Verified
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                  <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
-                  Unverified
-                </span>
-              )}
-            </div>
+            <p className="text-sm text-gray-900 py-2">
+              {formData.email}
+            </p>
           )}
         </div>
 
@@ -276,8 +237,8 @@ export default function ProfileSettings() {
             Account Created
           </label>
           <p className="text-sm text-gray-900 py-2">
-            {currentUser?.metadata?.creationTime 
-              ? new Date(currentUser.metadata.creationTime).toLocaleDateString('en-US', {
+            {currentUser?.created_at 
+              ? new Date(currentUser.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
@@ -293,8 +254,8 @@ export default function ProfileSettings() {
             Last Sign In
           </label>
           <p className="text-sm text-gray-900 py-2">
-            {currentUser?.metadata?.lastSignInTime 
-              ? new Date(currentUser.metadata.lastSignInTime).toLocaleDateString('en-US', {
+            {currentUser?.last_sign_in_at 
+              ? new Date(currentUser.last_sign_in_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -307,51 +268,6 @@ export default function ProfileSettings() {
         </div>
       </div>
 
-      {/* Email Verification Notice */}
-      {emailVerificationSent && (
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-start">
-            <EnvelopeIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
-            <div className="flex-1">
-              <p className="text-sm text-blue-800 font-medium">
-                Verification Email Sent
-              </p>
-              <p className="text-sm text-blue-700 mt-1">
-                We've sent a verification email to your new email address. Please check your inbox and click the verification link.
-              </p>
-              <button
-                onClick={handleResendVerification}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-2"
-              >
-                Resend verification email
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Unverified Email Warning */}
-      {!currentUser?.emailVerified && !emailVerificationSent && (
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-start">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 mt-0.5 mr-3" />
-            <div className="flex-1">
-              <p className="text-sm text-yellow-800 font-medium">
-                Email Not Verified
-              </p>
-              <p className="text-sm text-yellow-700 mt-1">
-                Your email address hasn't been verified yet. Verify your email to ensure you receive important notifications.
-              </p>
-              <button
-                onClick={handleResendVerification}
-                className="text-sm text-yellow-600 hover:text-yellow-700 font-medium mt-2"
-              >
-                Send verification email
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Help Text */}
       <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
@@ -361,7 +277,7 @@ export default function ProfileSettings() {
             <p className="font-medium mb-1">Profile Update Notes</p>
             <ul className="space-y-1 text-xs">
               <li>• Your display name will be shown to instructors and in course interactions</li>
-              <li>• Email changes require verification before taking effect</li>
+              <li>• Email verification is handled automatically during account creation</li>
               <li>• You may need to sign out and back in to change your email address</li>
               <li>• Your role is set by course instructors and cannot be changed here</li>
             </ul>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { tagApi, courseApi } from '../../services/supabaseApi';
 import toast from 'react-hot-toast';
+import TaggedChatsModal from './TaggedChatsModal';
 import {
   TagIcon,
   PlusIcon,
@@ -16,8 +17,9 @@ import {
   EnvelopeIcon
 } from '@heroicons/react/24/outline';
 
-export default function CourseManagement({ selectedCourseId, selectedCourse, currentUser }) {
+export default function CourseManagement({ selectedCourseId, selectedCourse, currentUser, onCourseUpdated }) {
   const [tags, setTags] = useState([]);
+  const [globalTags, setGlobalTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [editingTag, setEditingTag] = useState(null);
@@ -37,6 +39,10 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
     instructor_email: ''
   });
   const [courseSaving, setCourseSaving] = useState(false);
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedTag, setSelectedTag] = useState(null);
 
   const { userRole } = useAuth();
 
@@ -70,7 +76,7 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
   useEffect(() => {
     if (selectedCourse?.courses) {
       setCourseData({
-        name: selectedCourse.courses.name || '',
+        name: selectedCourse.courses.title || '',  // Map title to name for UI consistency
         description: selectedCourse.courses.description || '',
         course_code: selectedCourse.courses.course_code || '',
         semester: selectedCourse.courses.semester || '',
@@ -85,8 +91,13 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
   const loadTags = async () => {
     try {
       setLoading(true);
-      const tagsData = await tagApi.getCourseTags(selectedCourseId);
-      setTags(tagsData);
+      // Load both course-specific and global tags WITH usage counts
+      const [courseTagsData, globalTagsData] = await Promise.all([
+        tagApi.getCourseTagsWithUsage(selectedCourseId),
+        tagApi.getGlobalTagsWithUsage(selectedCourseId)
+      ]);
+      setTags(courseTagsData);
+      setGlobalTags(globalTagsData);
     } catch (error) {
       console.error('Error loading tags:', error);
       toast.error('Failed to load tags');
@@ -108,7 +119,7 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
         course_id: selectedCourseId
       };
 
-      const createdTag = await tagApi.createTag(tagData, userRole);
+      const createdTag = await tagApi.createTag(tagData, null, userRole);
       setTags(prev => [...prev, createdTag]);
       setNewTag({ name: '', color: '#3B82F6' });
       setIsCreating(false);
@@ -188,21 +199,25 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
       }
 
       // Update the course (excluding course_code since it's not editable)
-      await courseApi.updateCourse(selectedCourseId, {
-        name: courseData.name.trim(),
+      const updateData = {
+        title: courseData.name.trim(),  // Map name to title (actual database field)
         description: courseData.description.trim(),
         semester: courseData.semester.trim(),
         year: courseData.year ? parseInt(courseData.year) : null,
         school: courseData.school.trim(),
         instructor: courseData.instructor.trim(),
         instructor_email: courseData.instructor_email.trim()
-      });
+      };
+      
+      await courseApi.updateCourse(selectedCourseId, updateData);
 
       setIsEditingCourse(false);
       toast.success('Course updated successfully');
       
-      // Note: The selectedCourse prop should be updated by the parent component
-      // when it refetches the course data
+      // Refresh course data in parent component
+      if (onCourseUpdated) {
+        await onCourseUpdated();
+      }
       
     } catch (error) {
       console.error('Error updating course:', error);
@@ -216,7 +231,7 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
     // Reset form data to original values
     if (selectedCourse?.courses) {
       setCourseData({
-        name: selectedCourse.courses.name || '',
+        name: selectedCourse.courses.title || '',  // Map title to name for UI consistency
         description: selectedCourse.courses.description || '',
         course_code: selectedCourse.courses.course_code || '',
         semester: selectedCourse.courses.semester || '',
@@ -227,6 +242,18 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
       });
     }
     setIsEditingCourse(false);
+  };
+
+  const handleTagUsageClick = (tag) => {
+    if (tag.usage_count > 0) {
+      setSelectedTag(tag);
+      setModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedTag(null);
   };
 
   if (loading) {
@@ -400,7 +427,7 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Course Name</label>
-              <p className="mt-1 text-sm text-gray-900">{selectedCourse?.courses?.name || 'Not specified'}</p>
+              <p className="mt-1 text-sm text-gray-900">{selectedCourse?.courses?.title || 'Not specified'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Course Code</label>
@@ -565,9 +592,17 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
                         style={{ backgroundColor: tag.color }}
                       />
                       <span className="text-sm font-medium text-gray-900">{tag.name}</span>
-                      <span className="text-xs text-gray-500">
+                      <button
+                        onClick={() => handleTagUsageClick(tag)}
+                        className={`text-xs ${
+                          tag.usage_count > 0 
+                            ? 'text-blue-600 hover:text-blue-800 hover:underline cursor-pointer' 
+                            : 'text-gray-500 cursor-default'
+                        } transition-colors`}
+                        disabled={!tag.usage_count}
+                      >
                         {tag.usage_count || 0} uses
-                      </span>
+                      </button>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
@@ -591,6 +626,46 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
         </div>
       </div>
 
+      {/* Global Default Tags */}
+      {globalTags.length > 0 && (
+        <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 mb-6">
+          <div className="flex items-center mb-4">
+            <TagIcon className="h-5 w-5 text-blue-600 mr-2" />
+            <h3 className="text-lg font-medium text-blue-900">Default Tags (Available in All Courses)</h3>
+          </div>
+          <p className="text-sm text-blue-700 mb-4">
+            These tags are automatically available to students and instructors across all courses.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {globalTags.map(tag => (
+              <div
+                key={tag.id}
+                className="flex items-center space-x-3 p-3 bg-white border border-blue-200 rounded-lg shadow-sm"
+              >
+                <div
+                  className="w-6 h-6 rounded-full border border-gray-300"
+                  style={{ backgroundColor: tag.color }}
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-900">{tag.name}</span>
+                  <button
+                    onClick={() => handleTagUsageClick(tag)}
+                    className={`text-xs ml-2 ${
+                      tag.usage_count > 0 
+                        ? 'text-blue-600 hover:text-blue-800 hover:underline cursor-pointer' 
+                        : 'text-gray-500 cursor-default'
+                    } transition-colors`}
+                    disabled={!tag.usage_count}
+                  >
+                    {tag.usage_count || 0} uses in this course
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tag Usage Statistics */}
       {tags.length > 0 && (
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
@@ -606,13 +681,33 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{tag.name}</p>
-                  <p className="text-xs text-gray-500">{tag.usage_count || 0} interactions</p>
+                  <button
+                    onClick={() => handleTagUsageClick(tag)}
+                    className={`text-xs ${
+                      tag.usage_count > 0 
+                        ? 'text-blue-600 hover:text-blue-800 hover:underline cursor-pointer' 
+                        : 'text-gray-500 cursor-default'
+                    } transition-colors`}
+                    disabled={!tag.usage_count}
+                  >
+                    {tag.usage_count || 0} interactions
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Tagged Chats Modal */}
+      <TaggedChatsModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        tagName={selectedTag?.name}
+        tagId={selectedTag?.id}
+        courseId={selectedCourseId}
+        tagColor={selectedTag?.color}
+      />
     </div>
   );
 }

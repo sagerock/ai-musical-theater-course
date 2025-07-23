@@ -1,0 +1,12 @@
+RESTORE INSTRUCTIONS for backup created: 20250721_202055
+=====================================================
+
+FIXED CONNECTION STRING:
+postgresql://postgres.qbkpxtrnseghzsrvqhih:kjdg%24%24%25%40%23dlkiji499@aws-0-us-east-2.pooler.supabase.com:6543/postgres
+
+TO RESTORE:
+pg_restore --verbose --clean --no-owner --no-privileges \
+  --dbname="postgresql://postgres.qbkpxtrnseghzsrvqhih:kjdg%24%24%25%40%23dlkiji499@aws-0-us-east-2.pooler.supabase.com:6543/postgres" \
+  "database_backups/ai_engagement_hub_backup_20250721_202055.dump"
+
+BACKUP CREATED: Mon Jul 21 20:20:56 EDT 2025

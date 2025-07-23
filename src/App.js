@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
+import ErrorBoundary from './ErrorBoundary';
 import PublicHomePage from './components/Home/PublicHomePage';
 import Login from './components/Auth/Login';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -20,9 +21,10 @@ import TestDirectQuery from './components/TestDirectQuery';
 
 function App() {
   return (
-    <AuthProvider>
-      <div className="App">
-        <Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <div className="App">
+          <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join" element={<CourseJoin />} />
@@ -56,9 +58,10 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/test-pdf" element={<TestPDFUpload />} />
           <Route path="/test-direct" element={<TestDirectQuery />} />
-        </Routes>
-      </div>
-    </AuthProvider>
+          </Routes>
+        </div>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

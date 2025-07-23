@@ -1,0 +1,1 @@
+ALTER DATABASE postgres SET row_security = off;

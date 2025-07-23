@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PaperAirplaneIcon, ChatBubbleLeftRightIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { aiApi } from '../../services/aiApi';
+import { analyticsApi, chatApi, projectApi, userApi, attachmentApi } from '../../services/supabaseApi';
 import MarkdownRenderer from '../Chat/MarkdownRenderer';
 import toast from 'react-hot-toast';
 
@@ -8,15 +9,143 @@ export default function AIAssistant({ selectedCourseId, selectedCourse, currentU
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [studentData, setStudentData] = useState(null);
+  const [dataLoading, setDataLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Load comprehensive student analytics data
+  const loadStudentAnalytics = async () => {
+    if (!selectedCourseId) return null;
+    
+    try {
+      setDataLoading(true);
+      
+      // Get all students in the course
+      const courseMembers = await userApi.getAllUsers(selectedCourseId);
+      const students = courseMembers.filter(user => {
+        const membershipRole = user.course_role || 
+                               user.course_memberships?.[0]?.role || 
+                               user.course_memberships?.role || 
+                               user.role;
+        return membershipRole === 'student';
+      });
+
+      // Get all chats for the course
+      const allChats = await chatApi.getChatsWithFilters({
+        courseId: selectedCourseId,
+        limit: 1000
+      });
+
+      // Get all projects for the course
+      const allProjects = await Promise.all(
+        students.map(student => projectApi.getUserProjects(student.id, selectedCourseId))
+      );
+      const flatProjects = allProjects.flat();
+
+      // Get PDF attachments
+      const attachments = await attachmentApi.getCourseAttachments(selectedCourseId, currentUser.id);
+
+      // Analyze the data
+      const analytics = {
+        courseInfo: {
+          name: selectedCourse.courses?.name,
+          code: selectedCourse.courses?.course_code,
+          totalStudents: students.length,
+          totalInteractions: allChats.length,
+          totalProjects: flatProjects.length,
+          totalAttachments: attachments.length
+        },
+        students: students.map(student => {
+          const studentChats = allChats.filter(chat => chat.user_id === student.id);
+          const studentProjects = flatProjects.filter(project => project.created_by === student.id);
+          const studentAttachments = attachments.filter(att => 
+            att.chats && att.chats.users && att.chats.users.id === student.id
+          );
+          
+          return {
+            id: student.id,
+            name: student.name,
+            email: student.email,
+            interactions: studentChats.length,
+            projects: studentProjects.length,
+            attachments: studentAttachments.length,
+            lastActivity: studentChats.length > 0 
+              ? new Date(Math.max(...studentChats.map(chat => new Date(chat.created_at).getTime())))
+              : new Date(student.created_at),
+            mostUsedTools: [...new Set(studentChats.map(chat => chat.tool_used))].slice(0, 3),
+            projectTitles: studentProjects.map(p => p.title),
+            reflectionRate: studentProjects.length > 0 
+              ? (studentProjects.filter(p => p.reflections && p.reflections.length > 0).length / studentProjects.length * 100).toFixed(1)
+              : 0
+          };
+        }),
+        tools: [...new Set(allChats.map(chat => chat.tool_used))].reduce((acc, tool) => {
+          acc[tool] = allChats.filter(chat => chat.tool_used === tool).length;
+          return acc;
+        }, {}),
+        recentActivity: allChats
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 20)
+          .map(chat => ({
+            studentName: chat.users?.name || 'Unknown',
+            tool: chat.tool_used,
+            date: chat.created_at,
+            project: chat.projects?.title || 'Unknown Project'
+          })),
+        tagAnalysis: allChats.reduce((tags, chat) => {
+          if (chat.chat_tags) {
+            chat.chat_tags.forEach(chatTag => {
+              if (chatTag.tags) {
+                const tagName = chatTag.tags.name;
+                tags[tagName] = (tags[tagName] || 0) + 1;
+              }
+            });
+          }
+          return tags;
+        }, {}),
+        engagementPatterns: {
+          mostActiveStudents: students
+            .map(s => ({
+              name: s.name,
+              interactions: allChats.filter(chat => chat.user_id === s.id).length
+            }))
+            .sort((a, b) => b.interactions - a.interactions)
+            .slice(0, 5),
+          leastActiveStudents: students
+            .map(s => ({
+              name: s.name,
+              interactions: allChats.filter(chat => chat.user_id === s.id).length
+            }))
+            .sort((a, b) => a.interactions - b.interactions)
+            .slice(0, 5)
+        }
+      };
+
+      return analytics;
+    } catch (error) {
+      console.error('Error loading student analytics:', error);
+      return null;
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load student data when course changes
+  useEffect(() => {
+    if (selectedCourseId && selectedCourse) {
+      loadStudentAnalytics().then(data => {
+        setStudentData(data);
+      });
+    }
+  }, [selectedCourseId, selectedCourse]);
 
   // Initialize with welcome message
   useEffect(() => {
@@ -62,8 +191,8 @@ What would you like to know about your students?`,
     setIsLoading(true);
 
     try {
-      // Create context about the course for the AI
-      const courseContext = `You are an AI assistant helping an instructor analyze student data for the course "${selectedCourse.courses?.name}". 
+      // Create comprehensive context with real student data
+      let courseContext = `You are an AI assistant helping an instructor analyze REAL student data for the course "${selectedCourse.courses?.name}". 
       
 Course Information:
 - Course: ${selectedCourse.courses?.name}
@@ -71,7 +200,52 @@ Course Information:
 - Semester: ${selectedCourse.courses?.semester} ${selectedCourse.courses?.year}
 - Description: ${selectedCourse.courses?.description || 'No description available'}
 
-Please provide helpful insights about student engagement, learning patterns, and course analytics based on the instructor's questions. Focus on educational insights that can help improve student outcomes.`;
+REAL STUDENT ANALYTICS DATA:`;
+
+      if (studentData) {
+        courseContext += `
+
+COURSE METRICS:
+- Total Students: ${studentData.courseInfo.totalStudents}
+- Total AI Interactions: ${studentData.courseInfo.totalInteractions}
+- Total Projects: ${studentData.courseInfo.totalProjects}
+- Total File Attachments: ${studentData.courseInfo.totalAttachments}
+
+STUDENT PERFORMANCE DATA:
+${studentData.students.map(student => `
+• ${student.name}:
+  - AI Interactions: ${student.interactions}
+  - Projects Created: ${student.projects}
+  - Files Uploaded: ${student.attachments}
+  - Last Activity: ${student.lastActivity.toLocaleDateString()}
+  - Preferred AI Tools: ${student.mostUsedTools.join(', ') || 'None yet'}
+  - Project Titles: ${student.projectTitles.join(', ') || 'None yet'}
+  - Reflection Completion Rate: ${student.reflectionRate}%`).join('')}
+
+AI TOOL USAGE STATISTICS:
+${Object.entries(studentData.tools).map(([tool, count]) => `- ${tool}: ${count} uses`).join('\n')}
+
+RECENT ACTIVITY (Last 20 interactions):
+${studentData.recentActivity.map(activity => `- ${activity.studentName} used ${activity.tool} in "${activity.project}" on ${new Date(activity.date).toLocaleDateString()}`).join('\n')}
+
+TAG ANALYSIS:
+${Object.entries(studentData.tagAnalysis).map(([tag, count]) => `- "${tag}": used ${count} times`).join('\n')}
+
+ENGAGEMENT PATTERNS:
+Most Active Students:
+${studentData.engagementPatterns.mostActiveStudents.map(s => `- ${s.name}: ${s.interactions} interactions`).join('\n')}
+
+Least Active Students (may need support):
+${studentData.engagementPatterns.leastActiveStudents.map(s => `- ${s.name}: ${s.interactions} interactions`).join('\n')}
+`;
+      } else {
+        courseContext += `
+[Loading student data... Please ask general questions about course analytics while data loads.]`;
+      }
+
+      courseContext += `
+
+Please analyze this REAL data to provide specific, actionable insights about student engagement, learning patterns, and areas for improvement. Reference specific students, metrics, and patterns when possible.`;
 
       const response = await aiApi.sendChatCompletion(
         `${courseContext}\n\nInstructor Question: ${inputMessage}`,
@@ -158,6 +332,17 @@ What would you like to know about your students?`,
           <p className="text-sm text-gray-600">
             Get insights about student engagement and learning patterns in {selectedCourse.courses?.name}
           </p>
+          {dataLoading && (
+            <p className="text-xs text-blue-600 flex items-center mt-1">
+              <SparklesIcon className="h-3 w-3 mr-1 animate-pulse" />
+              Loading student analytics data...
+            </p>
+          )}
+          {studentData && (
+            <p className="text-xs text-green-600 flex items-center mt-1">
+              ✅ Analyzing {studentData.courseInfo.totalStudents} students, {studentData.courseInfo.totalInteractions} interactions
+            </p>
+          )}
         </div>
         <button
           onClick={clearChat}

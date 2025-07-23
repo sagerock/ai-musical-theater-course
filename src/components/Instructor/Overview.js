@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { analyticsApi, chatApi } from '../../services/supabaseApi';
+import { analyticsApi, chatApi, courseApi } from '../../services/supabaseApi';
 import toast from 'react-hot-toast';
 import {
   FolderIcon,
@@ -10,7 +10,9 @@ import {
   ArrowRightIcon,
   ChartBarIcon,
   ClockIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 
 export default function Overview({ selectedCourseId, selectedCourse, currentUser }) {
@@ -21,6 +23,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
     reflectionCompletionRate: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +37,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
       setLoading(true);
       
       // Load stats
-      const statsData = await analyticsApi.getOverallStats(selectedCourseId, currentUser.uid);
+      const statsData = await analyticsApi.getOverallStats(selectedCourseId, currentUser.id);
       setStats(statsData);
       
       // Load recent activity (last 10 interactions)
@@ -43,12 +46,29 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
         limit: 10
       });
       setRecentActivity(recentChats);
+
+      // Load pending approvals
+      const pendingRequests = await courseApi.getPendingApprovals(selectedCourseId, currentUser.id);
+      setPendingApprovals(pendingRequests);
       
     } catch (error) {
       console.error('Error loading overview data:', error);
       toast.error('Failed to load overview data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproval = async (membershipId, status) => {
+    try {
+      await courseApi.updateMembershipStatus(membershipId, status, currentUser.id);
+      toast.success(`Request ${status === 'approved' ? 'approved' : 'rejected'} successfully!`);
+      // Reload pending approvals
+      const updatedRequests = await courseApi.getPendingApprovals(selectedCourseId, currentUser.id);
+      setPendingApprovals(updatedRequests);
+    } catch (error) {
+      console.error('Error updating membership status:', error);
+      toast.error(`Failed to ${status === 'approved' ? 'approve' : 'reject'} request`);
     }
   };
 
@@ -67,6 +87,67 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
 
   return (
     <div className="space-y-6">
+      {/* Pending Approvals Notification */}
+      {pendingApprovals.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <ExclamationTriangleIcon className="h-5 w-5 text-orange-400" />
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-orange-800">
+                Pending Course Requests ({pendingApprovals.length})
+              </h3>
+              <div className="mt-2 text-sm text-orange-700">
+                <p className="mb-3">
+                  {pendingApprovals.length === 1 
+                    ? 'There is 1 person waiting for approval to join this course.'
+                    : `There are ${pendingApprovals.length} people waiting for approval to join this course.`
+                  }
+                </p>
+                <div className="space-y-3">
+                  {pendingApprovals.map(request => (
+                    <div 
+                      key={request.id} 
+                      className="flex items-center justify-between bg-white p-3 rounded border border-orange-200"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <UserPlusIcon className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {request.users?.name || 'Unknown User'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {request.users?.email || 'No email'} • Role: {request.role || 'student'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleApproval(request.id, 'approved')}
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <CheckCircleIcon className="h-3 w-3 mr-1" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleApproval(request.id, 'rejected')}
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">

@@ -79,7 +79,7 @@ export default function CourseDashboard() {
             <AcademicCapIcon className="h-8 w-8 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{course.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
             <div className="flex items-center text-sm text-gray-600 mt-1">
               <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium mr-2">
                 {course.course_code}

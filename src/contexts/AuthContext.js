@@ -1,15 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-  sendPasswordResetEmail
-} from 'firebase/auth';
-import { auth } from '../config/firebase';
 import { supabase } from '../config/supabase';
 import { courseApi } from '../services/supabaseApi';
 import toast from 'react-hot-toast';
@@ -23,6 +12,7 @@ export function useAuth() {
 // Get user role from Supabase (prioritize highest role)
 async function getUserRole(userId) {
   try {
+    console.log('🔍 getUserRole: Querying for userId:', userId);
     // First check global role
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -30,15 +20,19 @@ async function getUserRole(userId) {
       .eq('id', userId)
       .single();
 
+    console.log('🔍 getUserRole: Database response:', { userData, userError });
+
     if (userError) {
-      console.error('Error fetching user role:', userError);
+      console.error('❌ Error fetching user role:', userError);
       return 'student';
     }
 
     const globalRole = userData?.role || 'student';
+    console.log('🔍 getUserRole: Extracted role:', globalRole);
     
     // If they're a global admin, that takes priority
     if (globalRole === 'admin') {
+      console.log('✅ getUserRole: Returning admin role');
       return 'admin';
     }
     
@@ -88,6 +82,99 @@ async function checkInstructorStatus(userId) {
   }
 }
 
+// Sync user data to users table after authentication
+async function syncUserToSupabase(user, role = 'student', displayName = null) {
+  try {
+    console.log('🔄 Syncing user to Supabase:', user.id, user.email);
+    const name = displayName || user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
+    
+    // First check if user already exists and has a role
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('role, is_global_admin')
+      .eq('id', user.id)
+      .single();
+    
+    // Preserve existing admin role, or use provided role, or default to student
+    const finalRole = existingUser?.role === 'admin' ? 'admin' : role;
+    const isAdmin = existingUser?.is_global_admin || finalRole === 'admin';
+    
+    console.log('🔍 Existing user role:', existingUser?.role, '-> Final role:', finalRole);
+    
+    const userData = {
+      id: user.id, // Supabase auth UID
+      name: name,
+      email: user.email,
+      role: finalRole,
+      is_global_admin: isAdmin,
+    };
+    
+    console.log('📝 User data to upsert:', userData);
+    
+    try {
+      // Try to insert the user first
+      console.log('🔄 Attempting to insert user...');
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert(userData);
+      
+      if (!insertError) {
+        console.log('✅ User inserted successfully');
+        return;
+      }
+      
+      // If we get a duplicate key error, try to update instead
+      if (insertError.code === '23505') {
+        console.log('🔄 User exists, attempting update...');
+        
+        // Try updating by ID first
+        const { error: updateByIdError } = await supabase
+          .from('users')
+          .update({
+            name: userData.name,
+            role: userData.role,
+            is_global_admin: userData.is_global_admin
+          })
+          .eq('id', userData.id);
+        
+        if (!updateByIdError) {
+          console.log('✅ User updated by ID successfully');
+          return;
+        }
+        
+        // If that fails, try updating by email
+        console.log('🔄 Update by ID failed, trying update by email...');
+        const { error: updateByEmailError } = await supabase
+          .from('users')
+          .update({
+            id: userData.id,  // Update the ID to match auth user
+            name: userData.name,
+            role: userData.role,
+            is_global_admin: userData.is_global_admin
+          })
+          .eq('email', userData.email);
+        
+        if (!updateByEmailError) {
+          console.log('✅ User updated by email successfully');
+          return;
+        }
+        
+        console.warn('⚠️ Both update methods failed, but user likely exists');
+      } else {
+        console.error('❌ Unexpected error during user insert:', insertError);
+        throw insertError;
+      }
+    } catch (error) {
+      console.error('❌ User sync operation failed:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('❌ Failed to sync user to Supabase:', error);
+    // Don't re-throw - we want auth to continue even if sync fails
+    console.warn('⚠️ Continuing auth initialization despite sync failure');
+  }
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
@@ -97,18 +184,26 @@ export function AuthProvider({ children }) {
   // Sign up with email and password
   async function signup(email, password, displayName, role = 'student') {
     try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update display name in Firebase
-      await updateProfile(result.user, {
-        displayName: displayName
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            display_name: displayName,
+            role: role
+          }
+        }
       });
 
-      // Sync user to Supabase
-      await syncUserToSupabase(result.user, role, displayName);
+      if (error) throw error;
+
+      // Sync user to users table
+      if (data.user) {
+        await syncUserToSupabase(data.user, role, displayName);
+      }
       
-      toast.success('Account created successfully!');
-      return result;
+      toast.success('Account created successfully! Please check your email to verify your account.');
+      return data;
     } catch (error) {
       toast.error(error.message);
       throw error;
@@ -118,45 +213,15 @@ export function AuthProvider({ children }) {
   // Login with email and password
   async function login(email, password) {
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (error) throw error;
+
       toast.success('Logged in successfully!');
-      return result;
-    } catch (error) {
-      toast.error(error.message);
-      throw error;
-    }
-  }
-
-  // Login with Google
-  async function loginWithGoogle() {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      
-      // Check if user exists in Supabase, if not create them
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', result.user.uid)
-        .single();
-
-      if (!existingUser) {
-        await syncUserToSupabase(result.user, 'student');
-      }
-      
-      toast.success('Logged in with Google successfully!');
-      return result;
-    } catch (error) {
-      toast.error(error.message);
-      throw error;
-    }
-  }
-
-  // Reset password
-  async function resetPassword(email) {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast.success('Password reset email sent! Check your inbox.');
+      return data;
     } catch (error) {
       toast.error(error.message);
       throw error;
@@ -166,8 +231,12 @@ export function AuthProvider({ children }) {
   // Logout
   async function logout() {
     try {
-      await signOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setCurrentUser(null);
       setUserRole(null);
+      setIsInstructorAnywhere(false);
       toast.success('Logged out successfully!');
     } catch (error) {
       toast.error(error.message);
@@ -175,162 +244,215 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Sync user data to Supabase
-  async function syncUserToSupabase(user, role = 'student', displayName = null) {
+  // Reset password
+  async function resetPassword(email) {
     try {
-      const userData = {
-        id: user.uid,
-        email: user.email,
-        name: displayName || user.displayName || user.email.split('@')[0],
-        role: role
-      };
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
 
-      const { error } = await supabase
-        .from('users')
-        .upsert(userData, { onConflict: 'id' });
-
-      if (error) {
-        console.error('Error syncing user to Supabase:', error);
-        throw error;
-      }
-
-      // Set Supabase auth to match Firebase UID
-      await setSupabaseAuth(user.uid);
-
-      setUserRole(role);
+      if (error) throw error;
+      
+      toast.success('Password reset email sent!');
     } catch (error) {
-      console.error('Failed to sync user to Supabase:', error);
+      toast.error(error.message);
       throw error;
     }
   }
 
-  // Set Supabase authentication using Firebase UID
-  async function setSupabaseAuth(firebaseUid) {
+  // Resend email verification
+  async function resendVerificationEmail() {
     try {
-      // Get Firebase ID token
-      const user = auth.currentUser;
-      if (user) {
-        const idToken = await user.getIdToken();
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: currentUser.email
+      });
+
+      if (error) throw error;
+      
+      toast.success('Verification email sent! Please check your inbox.');
+    } catch (error) {
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  // Update password
+  async function updatePassword(password) {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      
+      toast.success('Password updated successfully!');
+    } catch (error) {
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  // Update profile
+  async function updateProfile(updates) {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: updates
+      });
+
+      if (error) throw error;
+
+      // Also update the users table
+      if (currentUser) {
+        const { error: dbError } = await supabase
+          .from('users')
+          .update({
+            name: updates.display_name || updates.name,
+            email: updates.email
+          })
+          .eq('id', currentUser.id);
+
+        if (dbError) {
+          console.error('Error updating user profile in database:', dbError);
+        }
+      }
+      
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  // Listen for auth state changes
+  useEffect(() => {
+    let mounted = true;
+
+    async function initializeAuth() {
+      try {
+        console.log('🔄 AuthContext: Initializing auth...');
         
-        // Create a proper authenticated session in Supabase
-        // We'll use sign up with email/password approach for simplicity
-        const email = user.email || `${firebaseUid}@temp.local`;
-        const password = firebaseUid.substring(0, 20); // Use Firebase UID as password
+        // Check for existing session first
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Try to sign in first, if that fails, sign up
-        let { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (signInError && signInError.message.includes('Invalid login credentials')) {
-          // User doesn't exist, create them
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                firebase_uid: firebaseUid
-              }
-            }
-          });
-          
-          if (signUpError) {
-            console.error('Failed to create Supabase user:', signUpError);
-            // Fallback to anonymous if signup fails
-            await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error('❌ Error getting session:', error);
+          if (mounted) {
+            setCurrentUser(null);
+            setUserRole(null);
+            setIsInstructorAnywhere(false);
+            setLoading(false);
           }
-        } else if (signInError) {
-          console.error('Failed to sign in to Supabase:', signInError);
-          // Fallback to anonymous if signin fails
-          await supabase.auth.signInAnonymously();
+          return;
+        }
+
+        console.log('📋 Initial session check:', session?.user?.id ? 'User found' : 'No user');
+        
+        if (session?.user && mounted) {
+          const user = session.user;
+          setCurrentUser(user);
+          
+          // Sync user to public.users table if needed (non-blocking)
+          console.log('🔄 Starting user sync (non-blocking)...');
+          syncUserToSupabase(user, 'student')
+            .then(() => console.log('✅ User sync completed'))
+            .catch(error => console.warn('⚠️ User sync failed:', error.message));
+          
+          // Fetch user role from database (non-blocking)
+          console.log('🔍 AuthContext: Fetching user role from database...');
+          getUserRole(user.id)
+            .then(role => {
+              console.log('✅ AuthContext: Role fetched successfully:', role);
+              setUserRole(role);
+              return checkInstructorStatus(user.id);
+            })
+            .then(isInstructor => {
+              console.log('✅ AuthContext: Instructor status fetched:', isInstructor);
+              setIsInstructorAnywhere(isInstructor);
+            })
+            .catch(error => {
+              console.warn('⚠️ Role fetch failed, using default:', error.message);
+              setUserRole('student');
+              setIsInstructorAnywhere(false);
+            });
+          
+          console.log('✅ User restored from session:', user.email, 'Role will be fetched...');
         }
         
-        // Store Firebase UID in local storage for API calls
-        localStorage.setItem('firebase_uid', firebaseUid);
-      }
-    } catch (error) {
-      console.error('Failed to set Supabase auth:', error);
-      // Fallback to anonymous
-      try {
-        await supabase.auth.signInAnonymously();
-      } catch (fallbackError) {
-        console.error('Even anonymous auth failed:', fallbackError);
+        if (mounted) {
+          setLoading(false);
+          console.log('✅ Auth initialization complete - setting loading to false');
+        }
+      } catch (error) {
+        console.error('❌ Auth initialization failed:', error);
+        if (mounted) {
+          setCurrentUser(null);
+          setUserRole(null);
+          setIsInstructorAnywhere(false);
+          setLoading(false);
+          console.log('❌ Auth initialization failed - setting loading to false', 'Current User ID:', currentUser?.id);
+        }
       }
     }
-  }
 
-  // Update user role (admin function)
-  async function updateUserRole(userId, newRole) {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
+    // Initialize auth immediately
+    initializeAuth();
 
-      if (error) {
-        console.error('Error updating user role:', error);
-        throw error;
+    // Listen for ongoing auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('🔐 Auth state changed:', event, session?.user?.id);
+        
+        try {
+          if (session?.user) {
+            const user = session.user;
+            setCurrentUser(user);
+            
+            // Sync user to public.users table if needed (non-blocking)
+            console.log('🔄 Starting user sync via state change (non-blocking)...');
+            syncUserToSupabase(user, 'student')
+              .then(() => console.log('✅ User sync completed via state change'))
+              .catch(error => console.warn('⚠️ User sync failed via state change:', error.message));
+            
+            // Fetch user role from database (non-blocking)
+            console.log('🔍 AuthContext: Fetching user role from database (state change)...');
+            getUserRole(user.id)
+              .then(role => {
+                console.log('✅ AuthContext: Role fetched successfully (state change):', role);
+                setUserRole(role);
+                return checkInstructorStatus(user.id);
+              })
+              .then(isInstructor => {
+                console.log('✅ AuthContext: Instructor status fetched (state change):', isInstructor);
+                setIsInstructorAnywhere(isInstructor);
+              })
+              .catch(error => {
+                console.warn('⚠️ Role fetch failed (state change), using default:', error.message);
+                setUserRole('student');
+                setIsInstructorAnywhere(false);
+              });
+            
+            console.log('✅ User authenticated via state change:', user.email, 'Role will be fetched...');
+          } else {
+            setCurrentUser(null);
+            setUserRole(null);
+            setIsInstructorAnywhere(false);
+            console.log('🚪 User signed out via state change');
+          }
+        } catch (error) {
+          console.error('❌ Error in auth state change handler:', error);
+          // Still set loading to false even if there's an error
+        } finally {
+          // Always set loading to false, regardless of success or error
+          setLoading(false);
+          console.log('🔐 Auth state change processed - setting loading to false', 'Session User ID:', session?.user?.id);
+        }
       }
+    );
 
-      // If updating current user's role, refresh it
-      if (userId === currentUser?.uid) {
-        setUserRole(newRole);
-      }
-
-      toast.success(`User role updated to ${newRole}`);
-    } catch (error) {
-      console.error('Failed to update user role:', error);
-      toast.error('Failed to update user role');
-      throw error;
-    }
-  }
-
-  // Refresh user role and instructor status
-  async function refreshUserStatus() {
-    if (currentUser) {
-      console.log('🔄 AuthContext: Refreshing user status for:', currentUser.uid);
-      
-      const role = await getUserRole(currentUser.uid);
-      console.log('📊 AuthContext: User role:', role);
-      setUserRole(role);
-      
-      const instructorStatus = await checkInstructorStatus(currentUser.uid);
-      console.log('👨‍🏫 AuthContext: Instructor status:', instructorStatus);
-      setIsInstructorAnywhere(instructorStatus);
-      
-      console.log('✅ AuthContext: User status refresh complete');
-    }
-  }
-
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUser(user);
-        
-        // Set Supabase auth to match Firebase UID
-        await setSupabaseAuth(user.uid);
-        
-        // Get user role from Supabase
-        const role = await getUserRole(user.uid);
-        setUserRole(role);
-        
-        // Check if user is an instructor in any course
-        const instructorStatus = await checkInstructorStatus(user.uid);
-        setIsInstructorAnywhere(instructorStatus);
-      } else {
-        setCurrentUser(null);
-        setUserRole(null);
-        setIsInstructorAnywhere(false);
-        
-        // Clear Supabase auth when Firebase user logs out
-        await supabase.auth.signOut();
-      }
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value = {
@@ -339,13 +461,21 @@ export function AuthProvider({ children }) {
     isInstructorAnywhere,
     signup,
     login,
-    loginWithGoogle,
-    resetPassword,
     logout,
-    syncUserToSupabase,
-    updateUserRole,
-    refreshUserStatus
+    resetPassword,
+    resendVerificationEmail,
+    updatePassword,
+    updateProfile
   };
+
+  // Debug AuthProvider render
+  console.log('🔍 AuthProvider render:', {
+    loading,
+    currentUser: currentUser?.id,
+    userRole,
+    isInstructorAnywhere,
+    renderingChildren: !loading
+  });
 
   return (
     <AuthContext.Provider value={value}>

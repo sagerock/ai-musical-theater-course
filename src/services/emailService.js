@@ -716,7 +716,78 @@ export const emailNotifications = {
       console.error('❌ Error sending instructor message:', error);
       return { success: false, error: error.message };
     }
+  },
+
+  // Send instructor note email to student
+  async sendInstructorNoteEmail(noteData) {
+    try {
+      const template = EMAIL_TEMPLATES.instructorNote;
+      const emailData = {
+        to: noteData.studentEmail,
+        subject: template.subject,
+        html: template.getHtml(noteData),
+        text: template.getText(noteData)
+      };
+
+      const response = await fetch(`${EMAIL_API_URL}/api/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SENDGRID_API_KEY}`
+        },
+        body: JSON.stringify(emailData)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Instructor note email sent successfully');
+        return { success: true, messageId: result.messageId };
+      } else {
+        console.error('❌ Failed to send instructor note email:', result.error);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('❌ Error sending instructor note email:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Send new project email to instructor
+  async sendNewProjectEmail(projectData) {
+    try {
+      const template = EMAIL_TEMPLATES.newProject;
+      const emailData = {
+        to: projectData.instructorEmail,
+        subject: template.subject,
+        html: template.getHtml(projectData),
+        text: template.getText(projectData)
+      };
+
+      const response = await fetch(`${EMAIL_API_URL}/api/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SENDGRID_API_KEY}`
+        },
+        body: JSON.stringify(emailData)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ New project email sent successfully');
+        return { success: true, messageId: result.messageId };
+      } else {
+        console.error('❌ Failed to send new project email:', result.error);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('❌ Error sending new project email:', error);
+      return { success: false, error: error.message };
+    }
   }
 };
+
 
 export default emailService;

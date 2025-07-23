@@ -90,7 +90,7 @@ export default function InstructorDashboard() {
 
   const loadInstructorCourses = async () => {
     try {
-      const userCourses = await courseApi.getUserCourses(currentUser.uid);
+      const userCourses = await courseApi.getUserCourses(currentUser.id);
       const instructorCourses = userCourses.filter(membership => 
         membership.role === 'instructor' && membership.status === 'approved'
       );
@@ -137,7 +137,7 @@ export default function InstructorDashboard() {
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
         tagApi.getAllTags(selectedCourseId),
-        attachmentApi.getCourseAttachments(selectedCourseId, currentUser.uid)
+        attachmentApi.getCourseAttachments(selectedCourseId, currentUser.id)
       ]);
 
       // Extract successful results or defaults
@@ -398,12 +398,12 @@ export default function InstructorDashboard() {
     console.log('🗑️ handleRemoveStudent called with:', {
       student: student,
       selectedCourseId: selectedCourseId,
-      currentUserUid: currentUser.uid
+      currentUserUid: currentUser.id
     });
     
     try {
       console.log('🔄 Calling userApi.removeStudentFromCourse...');
-      await userApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.uid);
+      await userApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.id);
       console.log('✅ Student removed successfully');
       
       // Immediately update local state to remove the student from the UI
@@ -526,7 +526,7 @@ export default function InstructorDashboard() {
             >
               {instructorCourses.map((courseMembership) => (
                 <option key={courseMembership.courses.id} value={courseMembership.courses.id}>
-                  {courseMembership.courses.name} ({courseMembership.courses.course_code})
+                  {courseMembership.courses.title} ({courseMembership.courses.course_code})
                 </option>
               ))}
             </select>
@@ -542,7 +542,7 @@ export default function InstructorDashboard() {
               <AcademicCapIcon className="h-5 w-5 text-primary-600 mr-2" />
               <div>
                 <h3 className="text-sm font-medium text-primary-900">
-                  {selectedCourse.courses.name}
+                  {selectedCourse.courses.title}
                 </h3>
                 <p className="text-xs text-primary-700">
                   {selectedCourse.courses.course_code} • {selectedCourse.courses.semester} {selectedCourse.courses.year}

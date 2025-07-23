@@ -45,7 +45,7 @@ export default function InstructorNotesList() {
   const loadInstructorNotes = async () => {
     try {
       setLoading(true);
-      const notesData = await instructorNotesApi.getNotesForDashboard(currentUser.uid, courseId);
+      const notesData = await instructorNotesApi.getNotesForDashboard(currentUser.id, courseId);
       setNotes(notesData);
     } catch (error) {
       console.error('Error loading instructor notes:', error);

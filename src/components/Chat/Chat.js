@@ -42,9 +42,20 @@ export default function Chat() {
   const [currentChatForModal, setCurrentChatForModal] = useState(null);
 
   // Access control - check if user can send AI messages
-  const isProjectOwner = project?.created_by === currentUser?.uid;
+  const isProjectOwner = project?.created_by === currentUser?.id;
   const isInstructor = userRole === 'instructor' || userRole === 'admin';
-  const canSendAIMessages = isProjectOwner || !isInstructor;
+  // Both instructors and students can send AI messages on their own projects
+  const canSendAIMessages = isProjectOwner;
+  
+  // Debug logging for access control
+  console.log('Chat Access Control Debug:', {
+    currentUserId: currentUser?.id,
+    projectCreatedBy: project?.created_by,
+    isProjectOwner,
+    isInstructor,
+    userRole,
+    canSendAIMessages
+  });
 
   useEffect(() => {
     loadProjectAndChats();
@@ -163,7 +174,7 @@ export default function Chat() {
     try {
       // Get conversation history for context (last 5 messages)
       const recentChats = chats
-        .filter(chat => chat.user_id === currentUser.uid)
+        .filter(chat => chat.user_id === currentUser.id)
         .slice(-5);
 
       // Upload PDF first if selected
@@ -175,11 +186,13 @@ export default function Chat() {
           setUploading(true);
           // Create a temporary chat record to get an ID for the PDF upload
           const tempChatData = {
-            user_id: currentUser.uid,
+            user_id: currentUser.id,
+            created_by: currentUser.id,
             project_id: projectId,
             tool_used: selectedTool,
             prompt: finalPrompt,
-            response: 'Processing PDF...' // Temporary response to satisfy NOT NULL constraint
+            response: 'Processing PDF...', // Temporary response to satisfy NOT NULL constraint
+            title: finalPrompt.length > 50 ? finalPrompt.substring(0, 50) + '...' : finalPrompt
           };
           
           const tempChat = await chatApi.createChat(tempChatData, project?.course_id);
@@ -188,7 +201,7 @@ export default function Chat() {
           const attachment = await attachmentApi.uploadPDFAttachment(
             selectedFile, 
             tempChat.id, 
-            currentUser.uid
+            currentUser.id
           );
           
           pdfContent = `\n\n[PDF Attachment: ${attachment.file_name}]\n${attachment.extracted_text}`;
@@ -225,11 +238,13 @@ export default function Chat() {
       } else {
         // Create a new chat without PDF
         const chatData = {
-          user_id: currentUser.uid,
+          user_id: currentUser.id,
+          created_by: currentUser.id,
           project_id: projectId,
           tool_used: selectedTool,
           prompt: finalPrompt,
-          response: aiResponse.response
+          response: aiResponse.response,
+          title: finalPrompt.length > 50 ? finalPrompt.substring(0, 50) + '...' : finalPrompt
         };
         
         finalChat = await chatApi.createChat(chatData, project?.course_id);
@@ -370,7 +385,7 @@ export default function Chat() {
               chat={chat}
               onTagChat={handleTagChat}
               onReflectOnChat={handleReflectOnChat}
-              currentUserId={currentUser.uid}
+              currentUserId={currentUser.id}
             />
           ))
         )}

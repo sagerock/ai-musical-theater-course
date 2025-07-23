@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { userApi, courseApi } from '../../services/supabaseApi';
+import { userApi, courseApi, chatApi, analyticsApi, projectApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -12,12 +12,16 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ClockIcon
+  ClockIcon,
+  AcademicCapIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 export default function Students({ selectedCourseId, selectedCourse, currentUser }) {
   const [students, setStudents] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
+  const [studentStats, setStudentStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [removeLoading, setRemoveLoading] = useState(null);
@@ -39,24 +43,85 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const studentsData = await userApi.getAllUsers(selectedCourseId);
+      const courseMembers = await userApi.getAllUsers(selectedCourseId);
       
-      // Filter to only show students (not instructors)
-      const studentsOnly = studentsData.filter(user => user.role === 'student');
+      // Separate students and instructors based on their course membership role
+      const studentsOnly = courseMembers.filter(user => {
+        // Handle both fallback (course_role) and normal (course_memberships) data structures
+        const membershipRole = user.course_role || 
+                               user.course_memberships?.[0]?.role || 
+                               user.course_memberships?.role || 
+                               user.role;
+        // console.log(`🔍 Filtering ${user.name}: membershipRole = "${membershipRole}"`);
+        return membershipRole === 'student';
+      });
       
-      // Debug: Log the first student to see data structure
-      if (studentsOnly.length > 0) {
-        console.log('🔍 Student data structure:', studentsOnly[0]);
-        console.log('📊 Student status:', studentsOnly[0].status);
-        console.log('🎯 All student statuses:', studentsOnly.map(s => ({ name: s.name, status: s.status })));
-      }
+      const instructorsOnly = courseMembers.filter(user => {
+        // Handle both fallback (course_role) and normal (course_memberships) data structures
+        const membershipRole = user.course_role || 
+                               user.course_memberships?.[0]?.role || 
+                               user.course_memberships?.role || 
+                               user.role;
+        // console.log(`🎓 Filtering ${user.name}: membershipRole = "${membershipRole}"`);
+        return membershipRole === 'instructor';
+      });
+      
+      console.log('👥 Students found:', studentsOnly.length);
+      console.log('👨‍🏫 Instructors found:', instructorsOnly.length);
       
       setStudents(studentsOnly);
+      setInstructors(instructorsOnly);
+      
+      // Load real statistics for each student
+      await loadStudentStats(studentsOnly);
     } catch (error) {
       console.error('Error loading students:', error);
       toast.error('Failed to load students');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStudentStats = async (students) => {
+    try {
+      const stats = {};
+      
+      // Get statistics for each student
+      for (const student of students) {
+        // Get student's AI interactions in this course
+        const chats = await chatApi.getChatsWithFilters({
+          courseId: selectedCourseId,
+          userId: student.id
+        });
+        
+        // Get student's projects in this course
+        const projects = await projectApi.getUserProjects(student.id, selectedCourseId);
+        
+        // Calculate completion rate (projects with reflections / total projects)
+        const projectsWithReflections = projects.filter(project => 
+          project.reflections && project.reflections.length > 0
+        );
+        const completionRate = projects.length > 0 
+          ? Math.round((projectsWithReflections.length / projects.length) * 100)
+          : 0;
+        
+        // Find most recent activity
+        const lastActivity = chats.length > 0 
+          ? new Date(Math.max(...chats.map(chat => new Date(chat.created_at).getTime())))
+          : new Date(student.created_at);
+        
+        stats[student.id] = {
+          interactions: chats.length,
+          lastActivity,
+          completionRate,
+          projects: projects.length
+        };
+      }
+      
+      setStudentStats(stats);
+    } catch (error) {
+      console.error('Error loading student stats:', error);
+      // Don't show error toast for stats, just use placeholder data
     }
   };
 
@@ -82,7 +147,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       setRemoveLoading(student.id);
       
       // Remove student from course
-      await courseApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.uid);
+      await courseApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.id);
       
       // Update local state
       setStudents(prev => prev.filter(s => s.id !== student.id));
@@ -102,7 +167,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       setApproveLoading(student.id);
       
       // Approve student enrollment
-      await courseApi.approveStudentEnrollment(student.id, selectedCourseId, currentUser.uid);
+      await courseApi.approveStudentEnrollment(student.id, selectedCourseId, currentUser.id);
       
       // Update local state
       setStudents(prev => prev.map(s => 
@@ -126,7 +191,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       setRejectLoading(student.id);
       
       // Reject student enrollment (removes them from course)
-      await courseApi.rejectStudentEnrollment(student.id, selectedCourseId, currentUser.uid);
+      await courseApi.rejectStudentEnrollment(student.id, selectedCourseId, currentUser.id);
       
       // Update local state (remove from list since they're rejected)
       setStudents(prev => prev.filter(s => s.id !== student.id));
@@ -142,11 +207,19 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   };
 
   const getStudentStats = (student) => {
-    // This could be enhanced with actual stats from the database
+    // Return real stats from the database, or default values while loading
+    const stats = studentStats[student.id];
+    
+    if (stats) {
+      return stats;
+    }
+    
+    // Fallback values while stats are loading
     return {
-      interactions: Math.floor(Math.random() * 20) + 1, // Placeholder
-      lastActivity: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Placeholder
-      completionRate: Math.floor(Math.random() * 100) // Placeholder
+      interactions: 0,
+      lastActivity: new Date(student.created_at),
+      completionRate: 0,
+      projects: 0
     };
   };
 
@@ -181,9 +254,9 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Students</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Course Members</h2>
           <p className="text-sm text-gray-600">
-            {filteredStudents.length} of {students.length} students in {selectedCourse.courses?.name}
+            {students.length} students and {instructors.length} instructors in {selectedCourse.courses?.title || selectedCourse.courses?.name}
           </p>
         </div>
       </div>
@@ -202,8 +275,75 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
         </div>
       </div>
 
+      {/* Instructors Section */}
+      {instructors.length > 0 && (
+        <div className="bg-white rounded-lg shadow border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <AcademicCapIcon className="h-5 w-5 text-purple-600 mr-2" />
+              <h3 className="text-lg font-medium text-gray-900">
+                Course Instructors ({instructors.length})
+              </h3>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+            {instructors.map((instructor) => (
+              <div key={instructor.id} className="border border-purple-200 rounded-lg p-4 bg-purple-50 hover:shadow-md transition-shadow">
+                {/* Instructor Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <AcademicCapIcon className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {instructor.name || 'No name provided'}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {instructor.email || 'No email provided'}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          Instructor
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Instructor Info */}
+                <div className="space-y-2">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    Joined {instructor.created_at ? format(new Date(instructor.created_at), 'MMM d, yyyy') : 'Unknown date'}
+                  </div>
+                  <div className="flex items-center text-xs text-gray-500">
+                    <EnvelopeIcon className="h-3 w-3 mr-1" />
+                    {instructor.email || 'No email'}
+                  </div>
+                  {instructor.status && (
+                    <div className="flex items-center text-xs text-gray-500">
+                      <CheckCircleIcon className="h-3 w-3 mr-1" />
+                      Status: {instructor.status}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Students Grid */}
       <div className="bg-white rounded-lg shadow border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center">
+            <UserGroupIcon className="h-5 w-5 text-blue-600 mr-2" />
+            <h3 className="text-lg font-medium text-gray-900">
+              Students ({students.length})
+            </h3>
+          </div>
+        </div>
         {filteredStudents.length === 0 ? (
           <div className="text-center py-12">
             <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />

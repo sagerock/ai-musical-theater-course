@@ -14,7 +14,7 @@ DROP TABLE IF EXISTS users CASCADE;
 
 -- Create users table (with TEXT id for Firebase)
 CREATE TABLE users (
-    id TEXT PRIMARY KEY,  -- Firebase user ID (not UUID)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- Firebase user ID (not UUID)
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'instructor', 'admin')),
@@ -232,7 +232,7 @@ CREATE TRIGGER update_chats_updated_at BEFORE UPDATE ON chats
 CREATE TRIGGER update_reflections_updated_at BEFORE UPDATE ON reflections
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Step 9: Insert your Firebase user
+
 INSERT INTO users (id, email, name, role, created_at)
 VALUES (
   'TJzSQdlPbGQbaLNCZemTFc4DMHp2',

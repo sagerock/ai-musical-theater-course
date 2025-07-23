@@ -42,14 +42,14 @@ export default function Projects() {
     try {
       setLoading(true);
       console.log('📂 Projects: Loading projects...');
-      console.log('  - Current user:', currentUser.uid);
+      console.log('  - Current user:', currentUser.id);
       console.log('  - Course ID:', courseId);
       console.log('  - Current URL:', window.location.pathname);
       
       // Load projects based on whether we're in a course context or not
       const userProjects = courseId 
-        ? await projectApi.getUserProjects(currentUser.uid, courseId)
-        : await projectApi.getUserProjects(currentUser.uid);
+        ? await projectApi.getUserProjects(currentUser.id, courseId)
+        : await projectApi.getUserProjects(currentUser.id);
       
       console.log('  - Projects loaded:', userProjects.length);
       console.log('  - Projects:', userProjects.map(p => ({ id: p.id, title: p.title, course_id: p.course_id, created_at: p.created_at })));
@@ -94,7 +94,7 @@ export default function Projects() {
 
     try {
       setCreating(true);
-      const newProject = await projectApi.createProject(formData, currentUser.uid, courseId);
+      const newProject = await projectApi.createProject(formData, currentUser.id, courseId);
       setProjects([newProject, ...projects]);
       setShowCreateModal(false);
       setFormData({ title: '', description: '' });
@@ -103,30 +103,21 @@ export default function Projects() {
       // Send email notification to instructors if project is in a course
       if (courseId) {
         try {
-          // Get course information and instructor emails
-          const [courseInfo, studentProjectCount, courseProjectCount] = await Promise.all([
-            courseApi.getCourseById(courseId),
-            projectApi.getUserProjectCount(currentUser.uid, courseId),
-            projectApi.getCourseProjectCount(courseId)
-          ]);
+          // Get course information 
+          const courseInfo = await courseApi.getCourseById(courseId);
 
           if (courseInfo) {
-            // Get instructor emails for this course
-            const instructorEmails = await courseApi.getCourseInstructorEmails(courseId);
+            await emailNotifications.notifyInstructorOfNewProject({
+              studentId: currentUser.id,
+              studentName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Student',
+              projectTitle: formData.title.trim(),
+              projectDescription: formData.description.trim(),
+              projectId: newProject.id,
+              courseName: courseInfo.name,
+              courseId: courseId
+            });
             
-            if (instructorEmails.length > 0) {
-              await emailNotifications.notifyInstructorsOfNewProject({
-                studentName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Student',
-                projectTitle: formData.title.trim(),
-                projectDescription: formData.description.trim(),
-                courseName: courseInfo.name,
-                studentProjectCount,
-                courseProjectCount,
-                instructorEmails
-              });
-              
-              console.log('✅ Email notifications sent to instructors');
-            }
+            console.log('✅ Email notifications sent to instructors');
           }
         } catch (emailError) {
           console.error('❌ Failed to send email notifications:', emailError);
@@ -151,7 +142,7 @@ export default function Projects() {
     
     try {
       setDeleting(true);
-      await projectApi.deleteProject(projectToDelete.id, currentUser.uid);
+      await projectApi.deleteProject(projectToDelete.id, currentUser.id);
       setProjects(projects.filter(p => p.id !== projectToDelete.id));
       toast.success('Project deleted successfully!');
       setShowDeleteModal(false);
@@ -165,7 +156,7 @@ export default function Projects() {
   };
 
   const isProjectOwner = (project) => {
-    return project.created_by === currentUser.uid;
+    return project.created_by === currentUser.id;
   };
 
   if (loading) {

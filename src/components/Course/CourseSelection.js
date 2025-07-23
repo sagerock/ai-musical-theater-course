@@ -25,7 +25,7 @@ export default function CourseSelection({ onCourseSelect }) {
   const loadUserCourses = async () => {
     try {
       setLoading(true);
-      const courses = await courseApi.getUserCourses(currentUser.uid);
+      const courses = await courseApi.getUserCourses(currentUser.id);
       setUserCourses(courses);
       
       // If user has only one approved course, auto-select it
@@ -130,7 +130,7 @@ export default function CourseSelection({ onCourseSelect }) {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h4 className="text-lg font-semibold text-gray-900 mb-1">
-                        {courseMembership.courses.name}
+                        {courseMembership.courses.title}
                       </h4>
                       <p className="text-sm text-gray-600 mb-2">
                         {courseMembership.courses.semester} {courseMembership.courses.year}
@@ -176,7 +176,7 @@ export default function CourseSelection({ onCourseSelect }) {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h4 className="text-lg font-semibold text-gray-700 mb-1">
-                        {courseMembership.courses.name}
+                        {courseMembership.courses.title}
                       </h4>
                       <p className="text-sm text-gray-500 mb-2">
                         {courseMembership.courses.semester} {courseMembership.courses.year}

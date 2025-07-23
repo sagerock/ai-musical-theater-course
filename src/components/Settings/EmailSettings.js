@@ -31,7 +31,7 @@ export default function EmailSettings() {
     
     try {
       setLoading(true);
-      const userSettings = await userApi.getUserEmailSettings(currentUser.uid);
+      const userSettings = await userApi.getUserEmailSettings(currentUser.id);
       
       if (userSettings) {
         setSettings(userSettings);
@@ -56,7 +56,7 @@ export default function EmailSettings() {
     
     try {
       setSaving(true);
-      await userApi.updateUserEmailSettings(currentUser.uid, settings);
+      await userApi.updateUserEmailSettings(currentUser.id, settings);
       toast.success('Email settings updated successfully!');
     } catch (error) {
       console.error('Error saving email settings:', error);

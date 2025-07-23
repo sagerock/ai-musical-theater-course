@@ -12,7 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Step 3: Create tables with ABSOLUTELY NO ambiguous type relationships
 
--- Users table: TEXT id only (Firebase)
+
 CREATE TABLE users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,

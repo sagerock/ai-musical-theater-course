@@ -28,7 +28,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Step 5: Create completely fresh tables with proper data types
 
--- Users table - TEXT id for Firebase compatibility
+
 CREATE TABLE users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,

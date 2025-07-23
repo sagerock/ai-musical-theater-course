@@ -63,7 +63,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       setLoading(true);
       
       const results = await Promise.allSettled([
-        analyticsApi.getOverallStats(selectedCourseId, currentUser.uid),
+        analyticsApi.getOverallStats(selectedCourseId, currentUser.id),
         chatApi.getChatsWithFilters({
           courseId: selectedCourseId,
           userId: filters.userId,
@@ -74,7 +74,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
         }),
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
-        tagApi.getCourseTags(selectedCourseId)
+        tagApi.getAllTags(selectedCourseId)
       ]);
 
       // Handle chats
@@ -111,7 +111,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     // Apply tag filter
     if (filters.tagId) {
       filtered = filtered.filter(chat => 
-        chat.chat_tags?.some(tag => tag.tag_id === filters.tagId)
+        chat.chat_tags?.some(tag => tag.tags?.id === filters.tagId)
       );
     }
 
@@ -149,7 +149,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const handleExport = async () => {
     try {
       setExporting(true);
-      const csvData = await analyticsApi.exportChatData(currentUser.uid, selectedCourseId, filters);
+      const csvData = await analyticsApi.exportChatData(currentUser.id, selectedCourseId, filters);
       
       // Create and download CSV file
       const blob = new Blob([csvData], { type: 'text/csv' });

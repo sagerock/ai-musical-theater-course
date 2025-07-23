@@ -27,23 +27,48 @@ export default function Dashboard() {
     recentChats: 0
   });
   const [loading, setLoading] = useState(true);
-  const { currentUser } = useAuth();
+  const { currentUser, userRole, loading: authLoading } = useAuth();
+  
+  console.log('🔍 Dashboard render - Auth state:', {
+    currentUser: currentUser?.id,
+    email: currentUser?.email,
+    userRole,
+    authLoading
+  });
 
   useEffect(() => {
-    loadDashboardData();
+    if (currentUser) {
+      console.log('🔄 Dashboard: useEffect triggered, calling loadDashboardData');
+      loadDashboardData();
+    } else {
+      console.log('⚠️ Dashboard: useEffect triggered but no currentUser, skipping data load');
+      setLoading(false);
+    }
   }, [currentUser]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       
+      console.log('📊 Dashboard: Starting data load...');
+      console.log('  - currentUser:', currentUser?.id, currentUser?.email);
+      
+      if (!currentUser) {
+        console.warn('⚠️ Dashboard: No currentUser available, cannot load data');
+        setLoading(false);
+        return;
+      }
+      
       // Get user's courses first
-      const userCourses = await courseApi.getUserCourses(currentUser.uid);
+      console.log('📊 Dashboard: Getting user courses...');
+      const userCourses = await courseApi.getUserCourses(currentUser.id);
+      console.log('📊 Dashboard: Raw user courses:', userCourses);
+      
       const approvedCourses = userCourses.filter(membership => 
         membership.status === 'approved'
       );
       
-      console.log('📊 Dashboard: User courses:', approvedCourses.length);
+      console.log('📊 Dashboard: Approved courses:', approvedCourses.length);
       
       // Aggregate projects and chats across all user's courses
       let allProjects = [];
@@ -52,22 +77,22 @@ export default function Dashboard() {
       if (approvedCourses.length > 0) {
         // Load projects from all courses
         const projectPromises = approvedCourses.map(membership =>
-          projectApi.getUserProjects(currentUser.uid, membership.courses.id)
+          projectApi.getUserProjects(currentUser.id, membership.courses.id)
         );
         const projectResults = await Promise.all(projectPromises);
         allProjects = projectResults.flat();
         
         // Load chats from all courses
         const chatPromises = approvedCourses.map(membership =>
-          chatApi.getUserChats(currentUser.uid, membership.courses.id, 1000)
+          chatApi.getUserChats(currentUser.id, membership.courses.id, 1000)
         );
         const chatResults = await Promise.all(chatPromises);
         allChats = chatResults.flat();
       } else {
         // Fallback: Load projects and chats without course filter (legacy data)
         console.log('📊 Dashboard: No courses found, loading legacy data');
-        allProjects = await projectApi.getUserProjects(currentUser.uid);
-        allChats = await chatApi.getUserChats(currentUser.uid, null, 1000);
+        allProjects = await projectApi.getUserProjects(currentUser.id);
+        allChats = await chatApi.getUserChats(currentUser.id, null, 1000);
       }
       
       console.log('📊 Dashboard data loaded:');
@@ -96,26 +121,51 @@ export default function Dashboard() {
       });
 
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('❌ Dashboard: Error loading dashboard data:', error);
+      console.error('❌ Dashboard: Error details:', error.message, error.code);
+      
+      // Set default empty data so UI doesn't crash
+      setRecentProjects([]);
+      setRecentChats([]);
+      setStats({
+        totalProjects: 0,
+        totalChats: 0,
+        recentChats: 0
+      });
     } finally {
+      console.log('📊 Dashboard: Data loading complete, setting loading to false');
       setLoading(false);
     }
   };
 
-  if (loading) {
+  // Debug loading state
+  console.log('🔍 Dashboard render state:', {
+    loading,
+    authLoading,
+    currentUser: currentUser?.id,
+    userRole,
+    recentProjectsLength: recentProjects.length,
+    recentChatsLength: recentChats.length
+  });
+
+  if (loading || authLoading) {
+    console.log('📊 Dashboard: Showing loading spinner', { loading, authLoading });
     return (
       <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-64 bg-gray-200 rounded-lg"></div>
-            <div className="h-64 bg-gray-200 rounded-lg"></div>
-          </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    console.log('⚠️ Dashboard: No currentUser, this should not happen in protected route');
+    return (
+      <div className="p-6">
+        <div className="text-center py-8">
+          <p className="text-red-600">Authentication error. Please refresh the page.</p>
         </div>
       </div>
     );
@@ -125,6 +175,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
+      
       {isNewUser ? (
         // New user welcome section
         <div className="mb-8">

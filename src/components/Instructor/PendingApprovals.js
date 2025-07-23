@@ -27,7 +27,7 @@ export default function PendingApprovals({ courseId, courseName }) {
   const loadPendingRequests = async () => {
     try {
       setLoading(true);
-      const requests = await courseApi.getPendingApprovals(courseId, currentUser.uid);
+      const requests = await courseApi.getPendingApprovals(courseId, currentUser.id);
       setPendingRequests(requests);
     } catch (error) {
       console.error('Error loading pending requests:', error);
@@ -41,7 +41,7 @@ export default function PendingApprovals({ courseId, courseName }) {
     setProcessing(prev => ({ ...prev, [membershipId]: true }));
     
     try {
-      await courseApi.updateMembershipStatus(membershipId, status, currentUser.uid);
+      await courseApi.updateMembershipStatus(membershipId, status, currentUser.id);
       
       toast.success(
         `${userName} has been ${status === 'approved' ? 'approved' : 'rejected'}`

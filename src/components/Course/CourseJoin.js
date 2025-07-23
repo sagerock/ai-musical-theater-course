@@ -43,9 +43,9 @@ export default function CourseJoin() {
       setCourseInfo(course);
       
       // Join the course directly using existing user data
-      await courseApi.joinCourse(courseCode.trim().toUpperCase(), currentUser.uid, role);
+      await courseApi.joinCourse(courseCode.trim().toUpperCase(), currentUser.id, role);
       
-      toast.success(`Successfully requested to join ${course.name}! ${
+      toast.success(`Successfully requested to join ${course.title}! ${
         role === 'instructor' 
           ? 'Your request is pending admin approval.' 
           : 'Your request is pending instructor approval.'

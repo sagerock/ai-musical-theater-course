@@ -6,7 +6,9 @@ export default function CourseSelector({
   selectedCourseId, 
   onCourseChange, 
   selectedCourse, 
-  loading 
+  loading,
+  onExportData,
+  onManageTags 
 }) {
   if (loading) {
     return (
@@ -30,7 +32,7 @@ export default function CourseSelector({
             >
               {courses.map((courseMembership) => (
                 <option key={courseMembership.courses.id} value={courseMembership.courses.id}>
-                  {courseMembership.courses.name} ({courseMembership.courses.course_code})
+                  {courseMembership.courses.title} ({courseMembership.courses.course_code})
                 </option>
               ))}
             </select>
@@ -46,7 +48,7 @@ export default function CourseSelector({
               <AcademicCapIcon className="h-5 w-5 text-blue-600 mr-2" />
               <div>
                 <h3 className="text-sm font-medium text-blue-900">
-                  {selectedCourse.courses.name}
+                  {selectedCourse.courses.title}
                 </h3>
                 <p className="text-xs text-blue-700">
                   {selectedCourse.courses.course_code} • {selectedCourse.courses.semester} {selectedCourse.courses.year}
@@ -57,14 +59,14 @@ export default function CourseSelector({
             {/* Quick Actions */}
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => {/* Handle export */}}
+                onClick={onExportData}
                 className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
               >
                 <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
                 Export Data
               </button>
               <button
-                onClick={() => {/* Handle tags */}}
+                onClick={onManageTags}
                 className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
               >
                 <TagIcon className="h-3 w-3 mr-1" />

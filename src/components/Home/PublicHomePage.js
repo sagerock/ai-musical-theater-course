@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import TrialCourseJoin from '../Course/TrialCourseJoin';
 import Footer from '../Layout/Footer';
+import InfoRequestModal from './InfoRequestModal';
 import {
   ChartBarIcon,
   EyeIcon,
@@ -17,7 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function PublicHomePage() {
-  const [showTrialModal, setShowTrialModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   
   const features = [
     {
@@ -113,10 +113,10 @@ export default function PublicHomePage() {
                 Sign In
               </Link>
               <button
-                onClick={() => setShowTrialModal(true)}
+                onClick={() => setShowInfoModal(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
               >
-                Try Demo
+                Get Info
               </button>
             </div>
           </div>
@@ -138,10 +138,10 @@ export default function PublicHomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => setShowTrialModal(true)}
+                onClick={() => setShowInfoModal(true)}
                 className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
               >
-                Try Demo Course
+                Get More Information
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
               </button>
               <Link
@@ -226,10 +226,10 @@ export default function PublicHomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => setShowTrialModal(true)}
+              onClick={() => setShowInfoModal(true)}
               className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50"
             >
-              Try Demo Course
+              Get More Information
               <ArrowRightIcon className="ml-2 h-5 w-5" />
             </button>
             <Link
@@ -257,10 +257,10 @@ export default function PublicHomePage() {
                 Sign In
               </Link>
               <button
-                onClick={() => setShowTrialModal(true)}
+                onClick={() => setShowInfoModal(true)}
                 className="text-gray-600 hover:text-gray-900"
               >
-                Try Demo
+                Get Info
               </button>
             </div>
           </div>
@@ -273,10 +273,8 @@ export default function PublicHomePage() {
       {/* Privacy Footer */}
       <Footer />
       
-      {/* Trial Course Join Modal */}
-      {showTrialModal && (
-        <TrialCourseJoin onClose={() => setShowTrialModal(false)} />
-      )}
+      {/* Information Request Modal */}
+      {showInfoModal && <InfoRequestModal onClose={() => setShowInfoModal(false)} />}
     </div>
   );
 }

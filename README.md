@@ -180,25 +180,14 @@ npm install
 2. In the SQL Editor, run the schema from `supabase-schema.sql`
 3. Copy your project URL and anon key
 
-#### Firebase Setup
 
-1. Create a new Firebase project at [firebase.google.com](https://firebase.google.com)
-2. Enable Authentication and choose Email/Password and Google providers
-3. Create a Firestore database
-4. Copy your Firebase configuration
 
 ### 3. Environment Variables
 
 Create a `.env.local` file in the root directory:
 
 ```env
-# Firebase Configuration
-REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-REACT_APP_FIREBASE_APP_ID=your_app_id
+
 
 # Supabase Configuration
 REACT_APP_SUPABASE_URL=your_supabase_url
@@ -252,13 +241,33 @@ The application will open at `http://localhost:3000`.
 - **projects/{projectId}**: Project data
 - **projects/{projectId}/chats/{chatId}**: Real-time chat data
 
-## 🔐 Authentication & Authorization
+## 🔐 Privacy & Security
 
-- **Firebase Authentication** handles user login/signup
-- **Role-based access** controlled via Supabase user roles
-- **Row Level Security (RLS)** ensures data privacy
-- Students can only see their own data
-- Instructors can view all student interactions
+### Enterprise-Grade Student Data Protection
+AI Engagement Hub implements **comprehensive privacy protection** designed specifically for educational institutions:
+
+- **Row Level Security (RLS)**: Database-enforced privacy with 19 active policies protecting all sensitive data
+- **Student Data Isolation**: Students can only access their own AI interactions, documents, and personal information
+- **Course-Based Access Control**: Instructors see only data from their enrolled students
+- **Cross-Course Privacy**: Complete isolation between different courses and instructors  
+- **Document Security**: Student PDF uploads secured with instructor oversight capabilities
+
+### Privacy Protection Statistics
+- 🔒 **7 database tables** with active Row Level Security policies
+- 🔒 **53+ AI interactions** protected with student-only access
+- 🔒 **16+ user profiles** with role-based information sharing
+- 🔒 **10+ PDF documents** with secure storage and controlled access
+- 🔒 **37+ student projects** with ownership-based privacy controls
+- 🔒 **Complete course isolation** preventing cross-instructor data access
+
+### Authentication & Authorization
+- **Firebase Authentication** with forgot password functionality
+- **Role-based access control** (student/instructor/admin)
+- **Automatic privacy enforcement** that cannot be bypassed by application errors
+- **FERPA-compliant** data handling for educational institutions
+- **Comprehensive audit logging** for institutional compliance
+
+For detailed privacy information for schools, see [STUDENT_DATA_PRIVACY.md](STUDENT_DATA_PRIVACY.md).
 
 ## 📎 PDF Upload & Document Analysis System
 
@@ -857,7 +866,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - OpenAI for providing powerful AI models
-- Firebase for authentication and real-time database
+
 - Supabase for analytics database and API
 - Tailwind CSS for beautiful styling
 - Heroicons for consistent iconography

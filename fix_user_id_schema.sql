@@ -120,7 +120,7 @@ DROP POLICY "Users can update own reflections" ON reflections;
 CREATE POLICY "Users can update own reflections" ON reflections
     FOR UPDATE USING (user_id = auth.uid());
 
--- Step 5: Now insert your Firebase user
+
 INSERT INTO users (id, email, name, role, created_at)
 VALUES (
   'TJzSQdlPbGQbaLNCZemTFc4DMHp2',

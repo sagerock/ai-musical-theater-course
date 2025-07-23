@@ -70,7 +70,7 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
     try {
       const newNote = await instructorNotesApi.createNote({
         project_id: project.id,
-        instructor_id: currentUser.uid,
+        instructor_id: currentUser.id,
         course_id: courseId,
         title: formData.title.trim(),
         content: formData.content.trim(),
@@ -132,7 +132,7 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
           content: formData.content.trim(),
           is_visible_to_student: formData.is_visible_to_student
         },
-        currentUser.uid
+        currentUser.id
       );
 
       setNotes(notes.map(note => 
@@ -149,7 +149,7 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
 
   const handleDeleteNote = async (note) => {
     try {
-      await instructorNotesApi.deleteNote(note.id, currentUser.uid);
+      await instructorNotesApi.deleteNote(note.id, currentUser.id);
       setNotes(notes.filter(n => n.id !== note.id));
       setDeletingNote(null);
       toast.success('Note deleted successfully!');

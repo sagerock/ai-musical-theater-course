@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/supabaseApi';
+import { supabase } from '../../config/supabase'; // Import supabase client
 import toast from 'react-hot-toast';
 import {
   AcademicCapIcon,
@@ -13,11 +14,12 @@ import {
 // Export for debugging
 window.debugJoinTrialCourse = async (userRole = 'instructor') => {
   try {
-    const { courseApi } = await import('../../services/supabaseApi');
-    const currentUser = JSON.parse(localStorage.getItem('firebase_uid'));
+    // This is a debug function, so we get the user directly from supabase
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (!currentUser) {
-      console.error('No current user found');
+    if (error || !user) {
+      console.error('Debug: No logged in user found.', error);
+      toast.error('You must be logged in to use this debug function.');
       return;
     }
     
@@ -25,13 +27,15 @@ window.debugJoinTrialCourse = async (userRole = 'instructor') => {
     const course = await courseApi.getCourseByCode('TR-SP25');
     console.log('✅ Found course:', course);
     
-    const membership = await courseApi.joinTrialCourse('TR-SP25', currentUser, userRole);
+    const membership = await courseApi.joinTrialCourse('TR-SP25', user.id, userRole);
     console.log('✅ Created membership:', membership);
     
+    toast.success('Debug join successful! Refreshing...');
     // Refresh the page
     window.location.reload();
   } catch (error) {
     console.error('❌ Debug join failed:', error);
+    toast.error(`Debug join failed: ${error.message}`);
   }
 };
 
@@ -50,7 +54,7 @@ export default function TrialCourseJoin({ onClose }) {
   const handleRoleSelection = async (selectedRole) => {
     setRole(selectedRole);
     
-    console.log('🔄 Role selection - Current user:', currentUser?.uid);
+    console.log('🔄 Role selection - Current user:', currentUser?.id);
     console.log('🔄 Role selection - Selected role:', selectedRole);
     
     if (!currentUser) {
@@ -74,13 +78,13 @@ export default function TrialCourseJoin({ onClose }) {
       // Create account
       const result = await signup(accountData.email, accountData.password, accountData.displayName, role);
       console.log('✅ Account created successfully');
-      console.log('📊 New user:', result.user.uid);
+      console.log('📊 New user:', result.user.id);
       
       // Wait for auth context to update
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Get the newly created user directly from the result
-      const newUserId = result.user.uid;
+      const newUserId = result.user.id;
       console.log('🔄 Using new user ID for trial course join:', newUserId);
       
       // Join the trial course directly with the new user ID
@@ -100,7 +104,7 @@ export default function TrialCourseJoin({ onClose }) {
     
     try {
       console.log('🔄 Starting trial course join process...');
-      console.log('  - User ID:', currentUser?.uid);
+      console.log('  - User ID:', currentUser?.id);
       console.log('  - Role:', userRole);
       
       // Find the trial course
@@ -108,10 +112,10 @@ export default function TrialCourseJoin({ onClose }) {
       console.log('✅ Found trial course:', course);
       
       // Join the trial course with auto-approval
-      const membership = await courseApi.joinTrialCourse('TR-SP25', currentUser?.uid, userRole);
+      const membership = await courseApi.joinTrialCourse('TR-SP25', currentUser?.id, userRole);
       console.log('✅ Created membership:', membership);
       
-      toast.success(`Successfully joined ${course.name} as ${userRole}! You now have access to all features.`);
+      toast.success(`Successfully joined ${course.title} as ${userRole}! You now have access to all features.`);
       
       // Refresh user status to update instructor permissions
       console.log('🔄 Refreshing user status...');
@@ -159,7 +163,7 @@ export default function TrialCourseJoin({ onClose }) {
       const membership = await courseApi.joinTrialCourse('TR-SP25', userId, userRole);
       console.log('✅ Created membership:', membership);
       
-      toast.success(`Successfully joined ${course.name} as ${userRole}! You now have access to all features.`);
+      toast.success(`Successfully joined ${course.title} as ${userRole}! You now have access to all features.`);
       
       // Redirect to dashboard
       window.location.href = '/dashboard';
@@ -288,7 +292,7 @@ export default function TrialCourseJoin({ onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-.center mb-6">
           <h3 className="text-xl font-semibold text-gray-900">
             Try AI Engagement Hub
           </h3>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/supabaseApi';
+import { courseApi, analyticsApi } from '../../services/supabaseApi';
+import { format } from 'date-fns';
 import InstructorNavigation from './InstructorNavigation';
 import CourseSelector from './CourseSelector';
 import Overview from './Overview';
@@ -18,6 +19,7 @@ export default function InstructorDashboardContainer() {
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [courseLoading, setCourseLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
   const { currentUser, isInstructorAnywhere } = useAuth();
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ export default function InstructorDashboardContainer() {
   const loadInstructorCourses = async () => {
     try {
       setLoading(true);
-      const userCourses = await courseApi.getUserCourses(currentUser.uid);
+      const userCourses = await courseApi.getUserCourses(currentUser.id);
       const instructorCourses = userCourses.filter(membership => 
         membership.role === 'instructor' && membership.status === 'approved'
       );
@@ -62,6 +64,44 @@ export default function InstructorDashboardContainer() {
     setSelectedCourseId(courseId);
     // Small delay to show loading state
     setTimeout(() => setCourseLoading(false), 300);
+  };
+
+  const handleExportData = async () => {
+    if (!selectedCourseId) return;
+    
+    try {
+      setExporting(true);
+      
+      // Use the existing exportChatData function from analyticsApi
+      const csvContent = await analyticsApi.exportChatData(currentUser.id, selectedCourseId);
+      
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `course-data-${selectedCourse?.courses?.title || 'export'}-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleManageTags = () => {
+    navigate('/instructor/course-settings');
+  };
+
+  const handleCourseUpdated = async () => {
+    // Refresh course data after course changes
+    await loadInstructorCourses();
   };
 
   const selectedCourse = instructorCourses.find(c => c.courses.id === selectedCourseId);
@@ -127,6 +167,8 @@ export default function InstructorDashboardContainer() {
         onCourseChange={handleCourseChange}
         selectedCourse={selectedCourse}
         loading={courseLoading}
+        onExportData={handleExportData}
+        onManageTags={handleManageTags}
       />
 
       {/* Navigation */}
@@ -176,6 +218,7 @@ export default function InstructorDashboardContainer() {
                 selectedCourseId={selectedCourseId}
                 selectedCourse={selectedCourse}
                 currentUser={currentUser}
+                onCourseUpdated={handleCourseUpdated}
               />
             } />
             <Route path="ai-assistant" element={
@@ -188,6 +231,7 @@ export default function InstructorDashboardContainer() {
           </Routes>
         )}
       </div>
+
     </div>
   );
 }

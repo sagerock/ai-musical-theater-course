@@ -46,7 +46,7 @@ export default function InstructorMessaging() {
     
     try {
       setLoading(true);
-      const instructorCourses = await courseApi.getUserCourses(currentUser.uid);
+      const instructorCourses = await courseApi.getUserCourses(currentUser.id);
       
       // Filter for courses where user is an instructor
       const instructorOnlyCourses = instructorCourses.filter(
@@ -121,7 +121,7 @@ export default function InstructorMessaging() {
         subject: formData.subject,
         messageContent: formData.message.replace(/\n/g, '<br>'),
         instructorName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor',
-        courseName: selectedCourse.courses.name,
+        courseName: selectedCourse.courses.title,
         courseCode: selectedCourse.courses.course_code,
         courseId: formData.courseId
       };
@@ -215,7 +215,7 @@ export default function InstructorMessaging() {
               <option value="">Choose a course...</option>
               {courses.map((courseMembership) => (
                 <option key={courseMembership.courses.id} value={courseMembership.courses.id}>
-                  {courseMembership.courses.name} ({courseMembership.courses.course_code})
+                  {courseMembership.courses.title} ({courseMembership.courses.course_code})
                 </option>
               ))}
             </select>
@@ -227,7 +227,7 @@ export default function InstructorMessaging() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium text-blue-900">
-                    {getSelectedCourse()?.courses.name}
+                    {getSelectedCourse()?.courses.title}
                   </h4>
                   <p className="text-sm text-blue-700">
                     {getSelectedCourse()?.courses.course_code}

@@ -125,7 +125,7 @@ CREATE TRIGGER update_chats_updated_at BEFORE UPDATE ON chats
 CREATE TRIGGER update_reflections_updated_at BEFORE UPDATE ON reflections
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Step 8: Insert your Firebase user
+
 INSERT INTO users (id, email, name, role)
 VALUES (
   'TJzSQdlPbGQbaLNCZemTFc4DMHp2',

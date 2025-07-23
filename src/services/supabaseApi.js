@@ -1,39 +1,35 @@
-import { supabase, supabaseAdmin } from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { createClient } from '@supabase/supabase-js';
 
-// Use admin client only for development - switch to regular client for production
-const isDevelopment = process.env.NODE_ENV === 'development';
-const hasServiceKey = !!process.env.REACT_APP_SUPABASE_SERVICE_KEY;
-const dbClient = (isDevelopment && hasServiceKey) ? supabaseAdmin : supabase;
+// Use single supabase client with proper authentication
+const dbClient = supabase;
 
-// DIRECT ADMIN CLIENT - bypasses any configuration issues
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+// Create a service client for storage operations (bypasses RLS)
 const serviceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY;
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 
-const directAdminClient = createClient(supabaseUrl, serviceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-    detectSessionInUrl: false
+let storageClient = supabase; // Default to regular client
+
+if (serviceKey && supabaseUrl) {
+  try {
+    storageClient = createClient(supabaseUrl, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+    console.log('✅ Storage client using service key for bypassing RLS');
+  } catch (error) {
+    console.warn('⚠️ Failed to create storage client with service key, using regular client');
+    storageClient = supabase;
   }
-});
+} else {
+  console.warn('⚠️ Service key not available, using regular client for storage');
+}
 
-// For attachments, use direct admin client to bypass RLS issues
-const attachmentClient = directAdminClient;
+// For attachments, use the storage client that can bypass RLS
+const attachmentClient = storageClient;
 
-// IMMEDIATE DEBUG - This will run when the file loads
-console.log('🚀 SUPABASE API MODULE LOADED');
-console.log('🚀 DIRECT ADMIN CLIENT CREATED');
-console.log('  - URL:', supabaseUrl);
-console.log('  - Service key starts with:', serviceKey.substring(0, 20) + '...');
-console.log('  - Client created successfully:', !!directAdminClient);
-console.log('🔐 ATTACHMENT CLIENT VERIFICATION:');
-console.log('  - Using direct admin client:', attachmentClient === directAdminClient);
-console.log('  - Ready for PDF operations');
-
-// Helper function to get current Firebase UID for API calls
-function getCurrentFirebaseUID() {
-  return localStorage.getItem('firebase_uid') || null;
+// Helper function to get current authenticated user ID
+function getCurrentUserId() {
+  return supabase.auth.getUser().then(({ data: { user } }) => user?.id || null);
 }
 
 // User operations
@@ -415,29 +411,55 @@ export const userApi = {
 export const projectApi = {
   // Create project
   async createProject(projectData, userId, courseId) {
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .insert({
-        ...projectData,
-        created_by: userId,
-        course_id: courseId
-      })
-      .select()
-      .single();
+    console.log('📝 projectApi.createProject called with:', { 
+      projectData, 
+      userId, 
+      courseId 
+    });
     
-    if (projectError) throw projectError;
+    // Skip user verification - the AuthContext already handles user sync
+    // and RLS policies should handle permissions
+    console.log('📝 Creating project directly (user sync handled by AuthContext)...');
+    
+    try {
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .insert({
+          ...projectData,
+          created_by: userId,
+          course_id: courseId
+        })
+        .select()
+        .single();
+      
+      if (projectError) {
+        console.error('❌ Project creation error:', projectError);
+        throw projectError;
+      }
 
-    // Add creator as project admin
-    const { error: memberError } = await supabase
-      .from('project_members')
-      .insert({
-        project_id: project.id,
-        user_id: userId,
-        role: 'admin'
-      });
-    
-    if (memberError) throw memberError;
-    return project;
+      console.log('✅ Project created successfully:', project.title);
+
+      // Add creator as project admin
+      const { error: memberError } = await supabase
+        .from('project_members')
+        .insert({
+          project_id: project.id,
+          user_id: userId,
+          role: 'admin'
+        });
+      
+      if (memberError) {
+        console.warn('⚠️ Failed to add project member (project still created):', memberError);
+        // Don't throw error - project was created successfully
+      } else {
+        console.log('✅ Project member added successfully');
+      }
+      
+      return project;
+    } catch (error) {
+      console.error('❌ Project creation failed:', error);
+      throw error;
+    }
   },
 
   // Get user's projects (within a specific course)
@@ -645,7 +667,7 @@ export const chatApi = {
       .from('chats')
       .select(`
         *,
-        users (name, email),
+        users:user_id (name, email),
         chat_tags (
           tags (id, name)
         ),
@@ -680,7 +702,7 @@ export const chatApi = {
         ),
         reflections (*)
       `)
-      .eq('user_id', userId);
+      .eq('created_by', userId);
 
     // Only filter by course_id if courseId is provided and not null/undefined
     if (courseId) {
@@ -703,7 +725,7 @@ export const chatApi = {
       .from('chats')
       .select(`
         *,
-        users (name, email),
+        users:user_id (name, email),
         projects (title),
         chat_tags (
           tags (id, name)
@@ -727,7 +749,7 @@ export const chatApi = {
         .from('chats')
         .select(`
           *,
-          users (name, email),
+          users!chats_created_by_fkey (name, email),
           projects (title),
           chat_tags (
             tags (id, name)
@@ -756,7 +778,7 @@ export const chatApi = {
 
       // Apply other filters
       if (filters.userId) {
-        query = query.eq('user_id', filters.userId);
+        query = query.eq('created_by', filters.userId);
       }
       if (filters.projectId) {
         query = query.eq('project_id', filters.projectId);
@@ -825,7 +847,7 @@ export const chatApi = {
         .from('chats')
         .select(`
           id,
-          user_id,
+          created_by,
           project_id,
           tool_used,
           user_message,
@@ -885,7 +907,7 @@ export const chatApi = {
       console.log('✅ Manual join got', chats.length, 'chats');
 
       // Get unique user IDs and project IDs
-      const userIds = [...new Set(chats.map(chat => chat.user_id).filter(Boolean))];
+      const userIds = [...new Set(chats.map(chat => chat.created_by).filter(Boolean))];
       const projectIds = [...new Set(chats.map(chat => chat.project_id).filter(Boolean))];
 
       console.log('🔍 Need to fetch', userIds.length, 'users and', projectIds.length, 'projects');
@@ -909,7 +931,7 @@ export const chatApi = {
       // Combine data
       const enrichedChats = chats.map(chat => ({
         ...chat,
-        users: chat.user_id ? userMap.get(chat.user_id) || null : null,
+        users: chat.created_by ? userMap.get(chat.created_by) || null : null,
         projects: chat.project_id ? projectMap.get(chat.project_id) || null : null,
         // Add empty structures for other relationships to match expected format
         chat_tags: [],
@@ -982,6 +1004,28 @@ export const tagApi = {
     return data;
   },
 
+  // Get global tags (available to all courses)
+  async getGlobalTags() {
+    console.log('🏷️ tagApi.getGlobalTags called');
+    
+    const { data, error } = await supabase
+      .from('tags')
+      .select('*')
+      .is('course_id', null)
+      .eq('is_global', true)
+      .order('name');
+    
+    console.log('📊 getGlobalTags results:');
+    console.log('  - data length:', data?.length || 0);
+    console.log('  - error:', error?.message || 'none');
+    
+    if (error) {
+      console.error('❌ getGlobalTags error:', error);
+      throw error;
+    }
+    return data;
+  },
+
   // Get course-specific tags for management (instructors only)
   async getCourseTags(courseId) {
     console.log('🏷️ tagApi.getCourseTags called with courseId:', courseId);
@@ -1003,6 +1047,108 @@ export const tagApi = {
     return data;
   },
 
+  // Get course-specific tags with usage counts
+  async getCourseTagsWithUsage(courseId) {
+    console.log('🏷️ tagApi.getCourseTagsWithUsage called with courseId:', courseId);
+    
+    try {
+      // First get all course-specific tags
+      const { data: courseTags, error: courseTagsError } = await supabase
+        .from('tags')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('name');
+      
+      if (courseTagsError) throw courseTagsError;
+      
+      // Get usage counts by joining with chat_tags and chats tables
+      const { data: usageCounts, error: usageError } = await supabase
+        .from('chat_tags')
+        .select(`
+          tag_id,
+          chats!inner (
+            course_id
+          )
+        `)
+        .eq('chats.course_id', courseId);
+      
+      if (usageError) throw usageError;
+      
+      // Count usage per tag
+      const usageMap = {};
+      usageCounts?.forEach(item => {
+        usageMap[item.tag_id] = (usageMap[item.tag_id] || 0) + 1;
+      });
+      
+      // Add usage counts to tags
+      const tagsWithUsage = courseTags.map(tag => ({
+        ...tag,
+        usage_count: usageMap[tag.id] || 0
+      }));
+      
+      console.log('📊 getCourseTagsWithUsage results:', tagsWithUsage.length, 'tags');
+      return tagsWithUsage;
+      
+    } catch (error) {
+      console.error('❌ getCourseTagsWithUsage error:', error);
+      throw error;
+    }
+  },
+
+  // Get global tags with usage counts for a specific course
+  async getGlobalTagsWithUsage(courseId = null) {
+    console.log('🏷️ tagApi.getGlobalTagsWithUsage called with courseId:', courseId);
+    
+    try {
+      // Get all global tags
+      const { data: globalTags, error: globalTagsError } = await supabase
+        .from('tags')
+        .select('*')
+        .is('course_id', null)
+        .eq('is_global', true)
+        .order('name');
+      
+      if (globalTagsError) throw globalTagsError;
+      
+      if (!courseId) {
+        // No course context - return tags without usage counts
+        return globalTags.map(tag => ({ ...tag, usage_count: 0 }));
+      }
+      
+      // Get usage counts for this specific course
+      const { data: usageCounts, error: usageError } = await supabase
+        .from('chat_tags')
+        .select(`
+          tag_id,
+          chats!inner (
+            course_id
+          )
+        `)
+        .eq('chats.course_id', courseId);
+      
+      if (usageError) throw usageError;
+      
+      // Count usage per tag
+      const usageMap = {};
+      usageCounts?.forEach(item => {
+        usageMap[item.tag_id] = (usageMap[item.tag_id] || 0) + 1;
+      });
+      
+      // Add usage counts to global tags
+      const tagsWithUsage = globalTags.map(tag => ({
+        ...tag,
+        usage_count: usageMap[tag.id] || 0
+      }));
+      
+      console.log('📊 getGlobalTagsWithUsage results:', tagsWithUsage.length, 'tags');
+      return tagsWithUsage;
+      
+    } catch (error) {
+      console.error('❌ getGlobalTagsWithUsage error:', error);
+      throw error;
+    }
+  },
+
   // Create tag (course-specific or global)
   async createTag(tagData, courseId = null, userRole = null) {
     console.log('🏷️ tagApi.createTag called with:', { tagData, courseId, userRole });
@@ -1012,9 +1158,13 @@ export const tagApi = {
       throw new Error('Students are not allowed to create tags. Only instructors and admins can create tags.');
     }
     
+    // Only include valid database columns
     const insertData = {
-      ...tagData,
-      ...(courseId && { course_id: courseId })
+      name: tagData.name,
+      color: tagData.color || '#3B82F6',
+      course_id: tagData.course_id || courseId || null,
+      created_by: tagData.created_by || null,
+      is_global: tagData.is_global || false
     };
 
     const { data, error } = await supabase
@@ -1152,6 +1302,97 @@ export const tagApi = {
     }
     
     return data;
+  },
+
+  // Get chats that have a specific tag with student and project details
+  async getTaggedChats(tagId, courseId) {
+    console.log('🏷️ tagApi.getTaggedChats called with:', { tagId, courseId });
+    
+    try {
+      // First, get the basic chat data with this tag
+      const { data: taggedChats, error: chatsError } = await supabase
+        .from('chat_tags')
+        .select(`
+          chats!inner (
+            id,
+            title,
+            prompt,
+            created_at,
+            course_id,
+            user_id,
+            project_id
+          )
+        `)
+        .eq('tag_id', tagId)
+        .eq('chats.course_id', courseId);
+      
+      if (chatsError) throw chatsError;
+      
+      if (!taggedChats || taggedChats.length === 0) {
+        return [];
+      }
+      
+      // Get unique user IDs and project IDs
+      const userIds = [...new Set(taggedChats.map(item => item.chats.user_id).filter(Boolean))];
+      const projectIds = [...new Set(taggedChats.map(item => item.chats.project_id).filter(Boolean))];
+      
+      // Get user data
+      let users = [];
+      if (userIds.length > 0) {
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .in('id', userIds);
+        
+        if (usersError) {
+          console.warn('Could not load users:', usersError);
+        } else {
+          users = usersData || [];
+        }
+      }
+      
+      // Get project data
+      let projects = [];
+      if (projectIds.length > 0) {
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('id, title, description')
+          .in('id', projectIds);
+        
+        if (projectsError) {
+          console.warn('Could not load projects:', projectsError);
+        } else {
+          projects = projectsData || [];
+        }
+      }
+      
+      // Create lookup maps
+      const userMap = users.reduce((acc, user) => ({ ...acc, [user.id]: user }), {});
+      const projectMap = projects.reduce((acc, project) => ({ ...acc, [project.id]: project }), {});
+      
+      // Transform the data to include user and project information
+      const formattedChats = taggedChats.map(item => ({
+        id: item.chats.id,
+        title: item.chats.title,
+        user_prompt: item.chats.prompt,  // Map prompt to user_prompt for consistency
+        created_at: item.chats.created_at,
+        course_id: item.chats.course_id,
+        user_id: item.chats.user_id,
+        project_id: item.chats.project_id,
+        student: userMap[item.chats.user_id] || null,
+        project: projectMap[item.chats.project_id] || null
+      }));
+      
+      // Sort by created_at descending (newest first)
+      formattedChats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      console.log('📊 getTaggedChats results:', formattedChats.length, 'chats');
+      return formattedChats;
+      
+    } catch (error) {
+      console.error('❌ getTaggedChats error:', error);
+      throw error;
+    }
   }
 };
 
@@ -1166,6 +1407,15 @@ export const reflectionApi = {
       .single();
     
     if (error) throw error;
+    
+    // Update the chat to mark it as having a reflection
+    if (data) {
+      await supabase
+        .from('chats')
+        .update({ has_reflection: true })
+        .eq('id', reflectionData.chat_id);
+    }
+    
     return data;
   },
 
@@ -1196,12 +1446,36 @@ export const reflectionApi = {
 
   // Delete reflection
   async deleteReflection(reflectionId) {
+    // First get the reflection to know which chat it belongs to
+    const { data: reflection, error: fetchError } = await supabase
+      .from('reflections')
+      .select('chat_id')
+      .eq('id', reflectionId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    // Delete the reflection
     const { error } = await supabase
       .from('reflections')
       .delete()
       .eq('id', reflectionId);
     
     if (error) throw error;
+    
+    // Check if there are any other reflections for this chat
+    const { data: remainingReflections, error: countError } = await supabase
+      .from('reflections')
+      .select('id')
+      .eq('chat_id', reflection.chat_id);
+    
+    if (countError) throw countError;
+    
+    // Update the chat's has_reflection field based on whether there are still reflections
+    await supabase
+      .from('chats')
+      .update({ has_reflection: remainingReflections.length > 0 })
+      .eq('id', reflection.chat_id);
   }
 };
 
@@ -1308,7 +1582,8 @@ export const courseApi = {
   // Get user's courses
   async getUserCourses(userId) {
     try {
-      // Get user's approved memberships
+      console.log('🔍 courseApi.getUserCourses: Starting for userId:', userId);
+      
       const { data: memberships, error: membershipsError } = await dbClient
         .from('course_memberships')
         .select('*')
@@ -1316,18 +1591,21 @@ export const courseApi = {
         .eq('status', 'approved')
         .order('joined_at', { ascending: false });
       
-      if (membershipsError) throw membershipsError;
-      
       if (!memberships || memberships.length === 0) {
+        console.log('🔍 courseApi.getUserCourses: No memberships found, returning empty array');
         return [];
       }
       
       // Get course data
       const courseIds = memberships.map(m => m.course_id);
+      console.log('🔍 courseApi.getUserCourses: Getting courses for IDs:', courseIds);
+      
       const { data: courses, error: coursesError } = await dbClient
         .from('courses')
         .select('*')
         .in('id', courseIds);
+      
+      console.log('🔍 courseApi.getUserCourses: Courses result:', { courses, error: coursesError });
       
       if (coursesError) throw coursesError;
       
@@ -1337,6 +1615,7 @@ export const courseApi = {
         courses: courses.find(course => course.id === membership.course_id)
       }));
       
+      console.log('✅ courseApi.getUserCourses: Completed successfully, returning:', result.length, 'courses');
       return result;
     } catch (error) {
       console.error('Error in getUserCourses:', error);
@@ -1500,7 +1779,7 @@ export const courseApi = {
       // Get course data
       const { data: course, error: courseError } = await dbClient
         .from('courses')
-        .select('name')
+        .select('title')
         .eq('id', courseId)
         .single();
       
@@ -1607,7 +1886,7 @@ export const courseApi = {
           role: role,
           status: 'approved',
           approved_at: new Date().toISOString(),
-          approved_by: getCurrentFirebaseUID()
+          approved_by: (await getCurrentUserId()) || 'system'
         })
         .select()
         .single();
@@ -1855,6 +2134,224 @@ export const courseApi = {
       console.error('❌ removeStudentFromCourse error:', error);
       throw error;
     }
+  },
+
+  // Test RLS implementation (Phase 1 - Projects table)
+  async testRLSImplementation() {
+    console.log('🧪 Starting RLS implementation test...');
+    const results = {
+      success: false,
+      tests: {},
+      issues: [],
+      summary: ''
+    };
+    
+    try {
+      // Test 1: Check if we can access projects with service client
+      console.log('🔍 Test 1: Service client project access');
+      const { data: serviceProjects, error: serviceError } = await dbClient
+        .from('projects')
+        .select('id, title, created_by')
+        .limit(5);
+        
+      results.tests.serviceAccess = {
+        success: !serviceError,
+        error: serviceError?.message,
+        data: serviceProjects?.length || 0
+      };
+      
+      console.log('📊 Service access result:', results.tests.serviceAccess);
+      
+      // Test 2: Check anonymous access (should be limited after RLS)
+      console.log('🔍 Test 2: Anonymous client project access');
+      const anonClient = supabase; // This uses the anon key
+      const { data: anonProjects, error: anonError } = await anonClient
+        .from('projects')
+        .select('id, title, created_by')
+        .limit(5);
+        
+      results.tests.anonAccess = {
+        success: !anonError,
+        restricted: anonError ? true : false,
+        error: anonError?.message,
+        data: anonProjects?.length || 0
+      };
+      
+      console.log('📊 Anonymous access result:', results.tests.anonAccess);
+      
+      // Test 3: Try authenticated access (should work with proper policies)
+      console.log('🔍 Test 3: Authenticated user access');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: userProjects, error: userError } = await supabase
+            .from('projects')
+            .select('id, title, created_by')
+            .eq('created_by', user.id)
+            .limit(5);
+            
+          results.tests.authenticatedAccess = {
+            success: !userError,
+            error: userError?.message,
+            data: userProjects?.length || 0,
+            userId: user.id
+          };
+        } else {
+          results.tests.authenticatedAccess = {
+            success: false,
+            error: 'No authenticated user found',
+            data: 0
+          };
+        }
+      } catch (error) {
+        results.tests.authenticatedAccess = {
+          success: false,
+          error: error.message,
+          data: 0
+        };
+      }
+      
+      console.log('📊 Authenticated access result:', results.tests.authenticatedAccess);
+      
+      // Analyze results and provide next steps
+      if (results.tests.serviceAccess.success && results.tests.serviceAccess.data > 0) {
+        console.log('✅ Service access working correctly');
+      } else {
+        results.issues.push('Service client cannot access projects table');
+      }
+      
+      if (results.tests.anonAccess.restricted && results.tests.anonAccess.error) {
+        console.log('✅ RLS appears to be working - anonymous access restricted');
+        if (results.tests.anonAccess.error.includes('permission denied')) {
+          console.log('🔒 RLS is enabled and blocking anonymous access');
+        }
+      } else if (results.tests.anonAccess.success && results.tests.anonAccess.data > 0) {
+        console.log('⚠️ RLS may not be enabled - anonymous access still works');
+        results.issues.push('Anonymous users can still access projects - RLS not enabled yet');
+      }
+      
+      // Generate summary with next steps
+      const totalTests = Object.keys(results.tests).length;
+      const successfulTests = Object.values(results.tests).filter(test => test.success).length;
+      
+      results.success = results.issues.length === 0;
+      
+      if (results.issues.length === 0) {
+        results.summary = `✅ Phase 1 Complete! RLS working on projects table. (${successfulTests}/${totalTests} tests passed)`;
+      } else if (results.tests.anonAccess.success) {
+        results.summary = `⚠️ Ready for Phase 1: Need to enable RLS on projects table. Run the SQL commands in enable_projects_rls_correct.sql`;
+      } else {
+        results.summary = `❌ Issues detected: ${results.issues.join(', ')}`;
+      }
+      
+      console.log('🎯 Test Summary:', results.summary);
+      console.log('🔍 Issues:', results.issues);
+      
+      return results;
+      
+    } catch (error) {
+      console.error('❌ testRLSImplementation error:', error);
+      results.tests.error = { error: error.message };
+      results.summary = `Test failed with error: ${error.message}`;
+      return results;
+    }
+  },
+
+  // Sync authenticated users to public.users table (admin function)
+  async syncAllAuthUsers() {
+    console.log('🔄 Starting auth user sync...');
+    const results = {
+      success: false,
+      synced: 0,
+      errors: [],
+      summary: ''
+    };
+    
+    try {
+      // Get current authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('No authenticated user found');
+      }
+      
+      console.log('👤 Current user:', user.email, user.id);
+      
+      // Check if user exists in public.users table
+      const { data: existingUser, error: checkError } = await dbClient
+        .from('users')
+        .select('id, name, email')
+        .eq('id', user.id)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = not found
+        throw checkError;
+      }
+      
+      if (existingUser) {
+        console.log('✅ User already exists in public.users:', existingUser);
+        results.summary = `User ${user.email} already exists in database`;
+      } else {
+        // Sync user to database
+        const userData = {
+          id: user.id,
+          name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'User',
+          email: user.email,
+          role: 'student', // Default role
+          is_global_admin: false,
+          created_at: new Date().toISOString()
+        };
+        
+        console.log('💾 Syncing user data:', userData);
+        
+        const { error: insertError } = await dbClient
+          .from('users')
+          .insert(userData);
+        
+        if (insertError) {
+          throw insertError;
+        }
+        
+        results.synced = 1;
+        console.log('✅ User synced successfully');
+        results.summary = `Successfully synced user ${user.email} to database`;
+      }
+      
+      results.success = true;
+      return results;
+      
+    } catch (error) {
+      console.error('❌ syncAllAuthUsers error:', error);
+      results.errors.push(error.message);
+      results.summary = `Sync failed: ${error.message}`;
+      return results;
+    }
+  },
+
+  // Get contact requests for admin
+  async getContactRequests() {
+    const { data, error } = await supabase
+      .from('contact_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Update contact request status
+  async updateContactRequestStatus(id, status) {
+    const updateData = { status };
+    if (status === 'contacted') {
+      updateData.contacted_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('contact_requests')
+      .update(updateData)
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 };
 
@@ -2205,11 +2702,12 @@ export const instructorNotesApi = {
         projects!project_id (
           title,
           created_by,
+          course_id,
           users!created_by (name, email)
         )
       `)
       .eq('instructor_id', instructorId)
-      .eq('course_id', courseId)
+      .eq('projects.course_id', courseId)
       .order('created_at', { ascending: false });
     
     console.log('📊 getNotesForDashboard results:');
@@ -2393,6 +2891,7 @@ export const attachmentApi = {
       // Create attachment record in database
       const attachmentData = {
         chat_id: chatId,
+        user_id: userId,  // Add the missing user_id field
         file_name: file.name,
         file_size: file.size,
         file_type: file.type,

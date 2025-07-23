@@ -28,6 +28,8 @@ export default function AdminPanel() {
   const [editingCourse, setEditingCourse] = useState(null);
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [cleaningUp, setCleaningUp] = useState(false);
+  const [testingRLS, setTestingRLS] = useState(false);
+  const [syncingUsers, setSyncingUsers] = useState(false);
   const [newCourse, setNewCourse] = useState({
     name: '',
     description: '',
@@ -73,9 +75,12 @@ export default function AdminPanel() {
 
       // Create course
       const courseData = {
-        ...newCourse,
+        title: newCourse.name,  // Map name to title for database
+        description: newCourse.description,
+        semester: newCourse.semester,
+        year: newCourse.year,
         course_code: courseCode,
-        created_by: currentUser.uid
+        created_by: currentUser.id
       };
 
       await courseApi.createCourse(courseData);
@@ -101,7 +106,7 @@ export default function AdminPanel() {
   const handleEditCourse = (course) => {
     setEditingCourse(course);
     setEditCourse({
-      name: course.name,
+      name: course.title,  // Map title to name for the form
       description: course.description || '',
       semester: course.semester,
       year: course.year
@@ -113,7 +118,13 @@ export default function AdminPanel() {
     e.preventDefault();
     
     try {
-      await courseApi.updateCourse(editingCourse.id, editCourse);
+      const updateData = {
+        title: editCourse.name,  // Map name back to title for database
+        description: editCourse.description,
+        semester: editCourse.semester,
+        year: editCourse.year
+      };
+      await courseApi.updateCourse(editingCourse.id, updateData);
       toast.success('Course updated successfully!');
       setShowEditModal(false);
       setEditingCourse(null);
@@ -189,6 +200,52 @@ export default function AdminPanel() {
     }
   };
 
+  const handleTestRLS = async () => {
+    try {
+      setTestingRLS(true);
+      
+      // Test current access to projects
+      console.log('🧪 Testing RLS implementation...');
+      
+      // Try to access projects via service API
+      const result = await courseApi.testRLSImplementation();
+      
+      if (result.success) {
+        toast.success('RLS test completed successfully! Check console for details.');
+      } else {
+        toast.error('RLS test encountered issues. Check console for details.');
+      }
+      
+    } catch (error) {
+      console.error('Error testing RLS:', error);
+      toast.error('Failed to test RLS implementation');
+    } finally {
+      setTestingRLS(false);
+    }
+  };
+
+  const handleSyncUsers = async () => {
+    try {
+      setSyncingUsers(true);
+      
+      console.log('🔄 Starting user sync...');
+      
+      const result = await courseApi.syncAllAuthUsers();
+      
+      if (result.success) {
+        toast.success(result.summary);
+      } else {
+        toast.error(result.summary);
+      }
+      
+    } catch (error) {
+      console.error('Error syncing users:', error);
+      toast.error('Failed to sync users');
+    } finally {
+      setSyncingUsers(false);
+    }
+  };
+
   const getMembershipStats = (course) => {
     const memberships = course.course_memberships || [];
     const approved = memberships.filter(m => m.status === 'approved');
@@ -225,6 +282,24 @@ export default function AdminPanel() {
         </div>
         <div className="flex items-center space-x-3">
           <button
+            onClick={handleSyncUsers}
+            disabled={syncingUsers}
+            className="inline-flex items-center px-3 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50"
+            title="Sync authenticated user to database"
+          >
+            <UsersIcon className="h-4 w-4 mr-2" />
+            {syncingUsers ? 'Syncing...' : 'Sync User'}
+          </button>
+          <button
+            onClick={handleTestRLS}
+            disabled={testingRLS}
+            className="inline-flex items-center px-3 py-2 border border-green-300 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-50"
+            title="Test RLS implementation on projects table"
+          >
+            <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+            {testingRLS ? 'Testing...' : 'Test RLS'}
+          </button>
+          <button
             onClick={handleCleanupOrphanedData}
             disabled={cleaningUp}
             className="inline-flex items-center px-3 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
@@ -257,7 +332,7 @@ export default function AdminPanel() {
               <PendingApprovals 
                 key={course.id}
                 courseId={course.id} 
-                courseName={course.name}
+                courseName={course.title}
               />
             ))}
           </div>
@@ -273,7 +348,7 @@ export default function AdminPanel() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {course.name}
+                    {course.title}
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">
                     {course.semester} {course.year}

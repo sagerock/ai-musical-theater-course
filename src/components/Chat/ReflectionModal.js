@@ -42,7 +42,7 @@ export default function ReflectionModal({ chat, onClose, onReflectionUpdated }) 
         // Create new reflection
         reflection = await reflectionApi.createReflection({
           chat_id: chat.id,
-          user_id: currentUser.uid,
+          user_id: currentUser.id,
           content: content.trim()
         });
       }

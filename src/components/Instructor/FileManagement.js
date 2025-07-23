@@ -31,7 +31,7 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
   const loadAttachments = async () => {
     try {
       setLoading(true);
-      const attachmentsData = await attachmentApi.getCourseAttachments(selectedCourseId, currentUser.uid);
+      const attachmentsData = await attachmentApi.getCourseAttachments(selectedCourseId, currentUser.id);
       
       // Map the data structure to match what the component expects
       const mappedAttachments = attachmentsData.map(attachment => ({
@@ -64,10 +64,18 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
     // Apply sorting
     switch (sortBy) {
       case 'newest':
-        filtered.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
+        filtered.sort((a, b) => {
+          const dateA = a.uploaded_at ? new Date(a.uploaded_at) : new Date(0);
+          const dateB = b.uploaded_at ? new Date(b.uploaded_at) : new Date(0);
+          return dateB - dateA;
+        });
         break;
       case 'oldest':
-        filtered.sort((a, b) => new Date(a.uploaded_at) - new Date(b.uploaded_at));
+        filtered.sort((a, b) => {
+          const dateA = a.uploaded_at ? new Date(a.uploaded_at) : new Date(0);
+          const dateB = b.uploaded_at ? new Date(b.uploaded_at) : new Date(0);
+          return dateA - dateB;
+        });
         break;
       case 'filename':
         filtered.sort((a, b) => a.file_name.localeCompare(b.file_name));
@@ -210,7 +218,10 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
                         <div className="flex items-center space-x-1">
                           <ClockIcon className="h-4 w-4" />
                           <span>
-                            {format(new Date(attachment.uploaded_at), 'MMM dd, yyyy')}
+                            {attachment.uploaded_at 
+                              ? format(new Date(attachment.uploaded_at), 'MMM dd, yyyy')
+                              : 'Unknown date'
+                            }
                           </span>
                         </div>
                       </div>
