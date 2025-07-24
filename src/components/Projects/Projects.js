@@ -46,6 +46,25 @@ export default function Projects() {
       console.log('  - Course ID:', courseId);
       console.log('  - Current URL:', window.location.pathname);
       
+      // If accessing a specific course, verify the user is enrolled and approved
+      if (courseId) {
+        console.log('🔍 Projects: Verifying course membership for courseId:', courseId);
+        const userCourses = await courseApi.getUserCourses(currentUser.id);
+        const isEnrolledAndApproved = userCourses.some(membership => 
+          membership.courses.id === courseId && membership.status === 'approved'
+        );
+        
+        if (!isEnrolledAndApproved) {
+          console.log('❌ Projects: User not enrolled or approved for course:', courseId);
+          toast.error('Access denied: You are not enrolled in this course');
+          setProjects([]);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('✅ Projects: User verified for course access');
+      }
+      
       // Load projects based on whether we're in a course context or not
       const userProjects = courseId 
         ? await projectApi.getUserProjects(currentUser.id, courseId)
@@ -86,10 +105,21 @@ export default function Projects() {
       return;
     }
 
-    // If we're in a course context, require courseId for project creation
-    if (courseId && !courseId) {
-      toast.error('Course context required to create project');
-      return;
+    // If we're in a course context, verify the user is still enrolled and approved before creating project
+    if (courseId) {
+      console.log('🔍 Projects: Verifying course membership before project creation for courseId:', courseId);
+      const userCourses = await courseApi.getUserCourses(currentUser.id);
+      const isEnrolledAndApproved = userCourses.some(membership => 
+        membership.courses.id === courseId && membership.status === 'approved'
+      );
+      
+      if (!isEnrolledAndApproved) {
+        console.log('❌ Projects: User not enrolled or approved for course project creation:', courseId);
+        toast.error('Access denied: You cannot create projects for this course');
+        return;
+      }
+      
+      console.log('✅ Projects: User verified for course project creation');
     }
 
     try {

@@ -44,8 +44,9 @@ export default function Chat() {
   // Access control - check if user can send AI messages
   const isProjectOwner = project?.created_by === currentUser?.id;
   const isInstructor = userRole === 'instructor' || userRole === 'admin';
-  // Both instructors and students can send AI messages on their own projects
-  const canSendAIMessages = isProjectOwner;
+  // Students can send AI messages on their own projects (verified course enrollment happens in loadProjectAndChats)
+  // Instructors can send AI messages on any project (they have broader access)
+  const canSendAIMessages = isProjectOwner || isInstructor;
   
   // Debug logging for access control
   console.log('Chat Access Control Debug:', {
@@ -82,6 +83,31 @@ export default function Chat() {
       
       // Load project details
       const projectData = await projectApi.getProjectById(projectId);
+      console.log('🔍 Chat: Loaded project data:', {
+        projectId: projectData.id,
+        courseId: projectData.course_id,
+        createdBy: projectData.created_by,
+        currentUserId: currentUser?.id
+      });
+      
+      // If this project belongs to a course, verify the user is still enrolled and approved
+      if (projectData.course_id) {
+        console.log('🔍 Chat: Verifying course membership for courseId:', projectData.course_id);
+        const userCourses = await courseApi.getUserCourses(currentUser.id);
+        const isEnrolledAndApproved = userCourses.some(membership => 
+          membership.courses.id === projectData.course_id && membership.status === 'approved'
+        );
+        
+        if (!isEnrolledAndApproved) {
+          console.log('❌ Chat: User not enrolled or approved for course:', projectData.course_id);
+          toast.error('Access denied: You are no longer enrolled in this course');
+          navigate('/projects');
+          return;
+        }
+        
+        console.log('✅ Chat: User verified for course access');
+      }
+      
       setProject(projectData);
 
       // Load project chats
