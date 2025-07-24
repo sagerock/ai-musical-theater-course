@@ -452,7 +452,25 @@ export function AuthProvider({ children }) {
         
         if (session?.user && mounted) {
           const user = session.user;
-          setCurrentUser(user);
+          
+          // Fetch database user data to merge with session user
+          console.log('🔄 Fetching database user data for session restoration...');
+          const { data: dbUser, error: dbUserError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          // Merge auth user with database user data (similar to updateProfile)
+          const mergedUser = dbUserError || !dbUser ? user : {
+            ...user,
+            name: dbUser.name,
+            role: dbUser.role,
+            is_global_admin: dbUser.is_global_admin
+          };
+          
+          console.log('🔄 Setting merged user data:', mergedUser.name || 'No name from DB');
+          setCurrentUser(mergedUser);
           
           // Sync user to public.users table if needed (non-blocking)
           console.log('🔄 Starting user sync (non-blocking)...');
