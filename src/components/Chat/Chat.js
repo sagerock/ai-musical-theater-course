@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi, attachmentApi } from '../../services/supabaseApi';
+import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi, attachmentApi, courseApi } from '../../services/supabaseApi';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
