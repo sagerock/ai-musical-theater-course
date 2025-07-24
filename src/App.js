@@ -18,6 +18,7 @@ import CourseDashboard from './components/Course/CourseDashboard';
 import Layout from './components/Layout/Layout';
 import PrivacyPolicy from './components/Privacy/PrivacyPolicy';
 import SettingsPage from './components/Settings/SettingsPage';
+import Help from './components/Help/Help';
 import TestPDFUpload from './components/TestPDFUpload';
 import TestDirectQuery from './components/TestDirectQuery';
 
@@ -59,6 +60,9 @@ function App() {
           </Route>
           <Route path="/settings" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<SettingsPage />} />
+          </Route>
+          <Route path="/help" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<Help />} />
           </Route>
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/test-pdf" element={<TestPDFUpload />} />

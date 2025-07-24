@@ -14,7 +14,8 @@ import {
   ArrowRightOnRectangleIcon,
   CogIcon,
   AcademicCapIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
@@ -66,7 +67,8 @@ export default function Layout() {
     ...(userRole === 'admin' 
       ? [{ name: 'Admin Panel', href: '/admin', icon: CogIcon }] 
       : []),
-    { name: 'Settings', href: '/settings', icon: CogIcon }
+    { name: 'Settings', href: '/settings', icon: CogIcon },
+    { name: 'Help', href: '/help', icon: QuestionMarkCircleIcon }
   ];
 
   // Debug logging
