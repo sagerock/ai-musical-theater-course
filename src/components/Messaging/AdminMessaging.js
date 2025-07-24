@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../services/supabaseApi';
-import { emailNotifications } from '../../services/emailService';
+import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import toast from 'react-hot-toast';
 import {
   EnvelopeIcon,
@@ -95,7 +95,7 @@ export default function AdminMessaging() {
       // Format recipients for email service
       const formattedRecipients = recipients.map(user => ({
         email: user.email,
-        name: user.display_name || user.email?.split('@')[0] || 'User'
+        name: getDisplayNameForEmail(user, user.role)
       }));
 
       // Send messages
@@ -103,7 +103,7 @@ export default function AdminMessaging() {
         recipients: formattedRecipients,
         subject: formData.subject,
         messageContent: formData.message.replace(/\n/g, '<br>'),
-        senderName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrator',
+        senderName: getDisplayNameForEmail(currentUser, 'administrator'),
         recipientType: formData.recipientType === 'instructors' ? 'Instructors' : 'All Users',
         priority: formData.priority
       };

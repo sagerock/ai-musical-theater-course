@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { instructorNotesApi, userApi, projectApi, courseApi } from '../../services/supabaseApi';
 import { useAuth } from '../../contexts/AuthContext';
-import { emailNotifications } from '../../services/emailService';
+import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import {
@@ -94,9 +94,9 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
           if (studentInfo && courseInfo) {
             await emailNotifications.notifyStudentOfInstructorNote({
               studentId: project.user_id,
-              studentName: studentInfo.display_name || studentInfo.email?.split('@')[0] || 'Student',
+              studentName: getDisplayNameForEmail(studentInfo, 'student'),
               studentEmail: studentInfo.email,
-              instructorName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor',
+              instructorName: getDisplayNameForEmail(currentUser, 'instructor'),
               projectTitle: project.title,
               projectId: project.id,
               noteContent: formData.content.trim(),

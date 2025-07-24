@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { projectApi, courseApi, userApi } from '../../services/supabaseApi';
-import { emailNotifications } from '../../services/emailService';
+import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -139,7 +139,7 @@ export default function Projects() {
           if (courseInfo) {
             await emailNotifications.notifyInstructorOfNewProject({
               studentId: currentUser.id,
-              studentName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Student',
+              studentName: getDisplayNameForEmail(currentUser, 'student'),
               projectTitle: formData.title.trim(),
               projectDescription: formData.description.trim(),
               projectId: newProject.id,

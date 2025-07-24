@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/supabaseApi';
-import { emailNotifications } from '../../services/emailService';
+import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import toast from 'react-hot-toast';
 import {
   EnvelopeIcon,
@@ -112,7 +112,7 @@ export default function InstructorMessaging() {
       // Format students for email service
       const formattedStudents = selectedCourseStudents.map(student => ({
         email: student.users?.email,
-        name: student.users?.display_name || student.users?.email?.split('@')[0] || 'Student'
+        name: getDisplayNameForEmail(student.users, 'student')
       })).filter(student => student.email); // Filter out students without email
 
       // Send messages
@@ -120,7 +120,7 @@ export default function InstructorMessaging() {
         students: formattedStudents,
         subject: formData.subject,
         messageContent: formData.message.replace(/\n/g, '<br>'),
-        instructorName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor',
+        instructorName: getDisplayNameForEmail(currentUser, 'instructor'),
         courseName: selectedCourse.courses.title,
         courseCode: selectedCourse.courses.course_code,
         courseId: formData.courseId

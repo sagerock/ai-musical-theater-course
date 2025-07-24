@@ -7,6 +7,46 @@ const APP_URL = process.env.REACT_APP_URL || 'http://localhost:3000';
 const EMAIL_API_URL = process.env.REACT_APP_EMAIL_API_URL || 
   (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
+// Helper function to extract proper display name with role fallback
+export const getDisplayNameForEmail = (user, role = null) => {
+  if (!user) return role ? role : 'User';
+  
+  // Try to get first name from full name
+  if (user.name && user.name.trim()) {
+    const firstName = user.name.trim().split(' ')[0];
+    return firstName;
+  }
+  
+  // Try display_name field
+  if (user.display_name && user.display_name.trim()) {
+    const firstName = user.display_name.trim().split(' ')[0];
+    return firstName;
+  }
+  
+  // Try displayName field
+  if (user.displayName && user.displayName.trim()) {
+    const firstName = user.displayName.trim().split(' ')[0];
+    return firstName;
+  }
+  
+  // Fallback to role-based greeting
+  if (role) {
+    const roleMap = {
+      'student': 'Student',
+      'instructor': 'Instructor', 
+      'admin': 'Administrator'
+    };
+    return roleMap[role.toLowerCase()] || role;
+  }
+  
+  // Final fallback to email prefix or generic
+  if (user.email) {
+    return user.email.split('@')[0];
+  }
+  
+  return 'User';
+};
+
 // Email templates
 const EMAIL_TEMPLATES = {
   instructorNote: {
