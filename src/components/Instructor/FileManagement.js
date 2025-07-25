@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { attachmentApi } from '../../services/supabaseApi';
+import { attachmentApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {

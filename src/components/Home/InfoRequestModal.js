@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '../../config/supabase';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 import { sendContactNotification } from '../../services/contactEmailService';
 import {
   XMarkIcon,
@@ -45,27 +46,19 @@ export default function InfoRequestModal({ onClose }) {
     try {
       setIsSubmitting(true);
       
-      // Save contact request to database
-      const { data, error } = await supabase
-        .from('contact_requests')
-        .insert([
-          {
-            name: formData.name.trim(),
-            email: formData.email.trim().toLowerCase(),
-            organization: formData.organization.trim(),
-            role: formData.role || null,
-            message: formData.message.trim() || null,
-            status: 'new'
-          }
-        ])
-        .select();
+      // Save contact request to Firebase Firestore
+      const docRef = await addDoc(collection(db, 'contactRequests'), {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        organization: formData.organization.trim(),
+        role: formData.role || null,
+        message: formData.message.trim() || null,
+        status: 'new',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
       
-      if (error) {
-        console.error('Database error:', error);
-        throw new Error('Failed to save contact request. Please try again.');
-      }
-      
-      console.log('📝 Contact request saved successfully:', data[0]);
+      console.log('📝 Contact request saved successfully:', docRef.id);
       
       // Log success and show instructions for email notification
       console.log('📧 Contact request ready for notification - run: node send_contact_notifications.js');

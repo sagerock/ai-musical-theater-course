@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { tagApi, courseApi } from '../../services/supabaseApi';
+import { tagApi, courseApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import TaggedChatsModal from './TaggedChatsModal';
 import {
@@ -119,7 +119,7 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
         course_id: selectedCourseId
       };
 
-      const createdTag = await tagApi.createTag(tagData, null, userRole);
+      const createdTag = await tagApi.createTag(tagData, selectedCourseId, userRole);
       setTags(prev => [...prev, createdTag]);
       setNewTag({ name: '', color: '#3B82F6' });
       setIsCreating(false);

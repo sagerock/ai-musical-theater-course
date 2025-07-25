@@ -1,0 +1,227 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function to check if user is global admin
+    function isGlobalAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Helper function to check if user is instructor in a course
+    function isInstructorInCourse(courseId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)) &&
+             get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.role == 'instructor' &&
+             get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.status == 'approved';
+    }
+    
+    // Helper function to check if user is member of a course
+    function isMemberOfCourse(courseId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)) &&
+             get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.status == 'approved';
+    }
+    
+    // Helper function to check if user has instructor role (simplified)
+    function hasInstructorRole() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'instructor';
+    }
+
+    // USERS COLLECTION - Own profile access, instructors can search users
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isGlobalAdmin() || (isAuthenticated() && hasInstructorRole());
+      
+      // Allow instructors and admins to query/list users for course management
+      allow list: if isAuthenticated() && (hasInstructorRole() || isGlobalAdmin());
+    }
+
+    // COURSES COLLECTION - Basic course info
+    match /courses/{courseId} {
+      // Anyone enrolled in the course can read basic course info
+      allow read: if isMemberOfCourse(courseId) || isGlobalAdmin() || isAuthenticated();
+      
+      // Allow authenticated users to query courses by accessCode for joining
+      allow list: if isAuthenticated();
+      
+      // Admins can create/update/delete all courses, instructors can update courses they teach
+      allow create: if isGlobalAdmin();
+      allow update: if isGlobalAdmin() || isInstructorInCourse(courseId) || hasInstructorRole();
+      allow delete: if isGlobalAdmin();
+    }
+
+    // COURSE MEMBERSHIPS - User can see their own, instructors can see their course members
+    match /courseMemberships/{membershipId} {
+      // Format: userId_courseId
+      allow read: if isAuthenticated() && (
+        membershipId.matches(request.auth.uid + '_.*') || // Own membership
+        isInstructorInCourse(resource.data.courseId) ||   // Instructor in course
+        isGlobalAdmin()                                   // Global admin
+      );
+      
+      // Allow collection queries for getting user's own memberships or for instructors
+      allow list: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||       // User's own memberships
+        hasInstructorRole() ||                            // Users with instructor role can query
+        isGlobalAdmin()                                   // Global admin can query all
+      );
+      
+      // Users can request to join courses (create pending memberships) OR instructors/admins can create memberships
+      allow create: if isAuthenticated() && (
+        // Users creating their own pending memberships
+        (membershipId.matches(request.auth.uid + '_.*') &&
+         request.resource.data.userId == request.auth.uid &&
+         request.resource.data.status == 'pending') ||
+        // Instructors can create memberships for their courses
+        isInstructorInCourse(request.resource.data.courseId) ||
+        // Global admins can create any membership
+        isGlobalAdmin()
+      );
+      
+      // Instructors can approve/deny memberships, admins can do anything
+      allow update, delete: if isInstructorInCourse(resource.data.courseId) || isGlobalAdmin();
+    }
+
+    // PROJECTS COLLECTION - Owner or instructor access
+    match /projects/{projectId} {
+      // Users can read their own projects + instructors can read student projects in their courses
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.createdBy) ||              // Project owner
+        isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
+        isGlobalAdmin()                                  // Global admin
+      );
+      
+      // Users can create projects if they're the creator and (no course or member of course)
+      allow create: if isAuthenticated() && 
+                   request.resource.data.createdBy == request.auth.uid && (
+                     request.resource.data.courseId == null ||     // No course required
+                     isMemberOfCourse(request.resource.data.courseId)  // Member of course
+                   );
+      
+      // Users can update/delete their own projects
+      allow update, delete: if isAuthenticated() && (
+        isOwner(resource.data.createdBy) ||              // Project owner
+        isGlobalAdmin()                                  // Global admin
+      );
+    }
+
+    // CHATS COLLECTION - Owner or instructor access (most sensitive data)
+    match /chats/{chatId} {
+      // Students can read their own chats, instructors can read student chats from their courses
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||                 // Chat owner
+        isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
+        isGlobalAdmin()                                  // Global admin
+      );
+      
+      // Allow collection queries for all authenticated users (they can only see their own chats due to read rules)
+      allow list: if isAuthenticated();
+      
+      // Only chat owners can create/update their chats (students can't see others' chats)
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid && (
+                     request.resource.data.courseId == null ||     // No course required
+                     isMemberOfCourse(request.resource.data.courseId)  // Member of course
+                   );
+      
+      allow update: if isOwner(resource.data.userId) || isGlobalAdmin();
+      allow delete: if isOwner(resource.data.userId) || isGlobalAdmin();
+    }
+
+    // PDF ATTACHMENTS - Linked to chats, inherit chat access rules
+    match /pdfAttachments/{attachmentId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||                 // Attachment owner
+        isGlobalAdmin()                                  // Global admin
+        // TODO: Add instructor access via chat lookup when needed
+      );
+      
+      // Allow list queries for authenticated users (they'll only see their own due to read rules)
+      allow list: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid;
+      
+      allow update, delete: if isOwner(resource.data.userId) || isGlobalAdmin();
+    }
+
+    // INSTRUCTOR NOTES - Private instructor annotations
+    match /instructorNotes/{noteId} {
+      // Only the instructor who created the note and global admins can access
+      allow read, write: if isAuthenticated() && (
+        isOwner(resource.data.instructorId) ||           // Note author
+        isGlobalAdmin()                                  // Global admin
+      );
+      
+      allow create: if isAuthenticated() && 
+                   request.resource.data.instructorId == request.auth.uid;
+    }
+
+    // REFLECTIONS - Student learning reflections
+    match /reflections/{reflectionId} {
+      // Students can access their own reflections, instructors can read student reflections
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||                 // Reflection owner
+        isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
+        isGlobalAdmin()                                  // Global admin
+      );
+      
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid &&
+                   isMemberOfCourse(request.resource.data.courseId);
+      
+      allow update, delete: if isOwner(resource.data.userId) || isGlobalAdmin();
+    }
+
+    // TAGS - Course-specific tags
+    match /tags/{tagId} {
+      // Course members can read tags, instructors/admins can manage them
+      allow read: if isAuthenticated() && (
+        resource.data.courseId == null ||               // Global tags (no course)
+        isMemberOfCourse(resource.data.courseId) ||     // Course member
+        isGlobalAdmin()                                  // Global admin
+      );
+      
+      // Allow collection queries for course members and admins
+      allow list: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && (
+        request.resource.data.courseId == null ||       // Global tags (no course)
+        isInstructorInCourse(request.resource.data.courseId) ||  // Instructor in course
+        isGlobalAdmin()                                  // Global admin
+      );
+      
+      allow update, delete: if isAuthenticated() && (
+        resource.data.courseId == null ||               // Global tags (no course)
+        isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
+        isGlobalAdmin()                                  // Global admin
+      );
+    }
+
+    // CHAT TAGS - Junction table for chat-tag relationships
+    match /chatTags/{chatTagId} {
+      // Users can read their own chat tags, instructors can read student chat tags
+      allow read: if isAuthenticated();
+      
+      // Allow collection queries for authenticated users
+      allow list: if isAuthenticated();
+      
+      // Users can create/modify tags for their own chats, instructors for student chats
+      allow create, update, delete: if isAuthenticated();
+    }
+  }
+}

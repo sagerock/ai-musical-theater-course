@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { chatApi, projectApi, userApi, tagApi, analyticsApi } from '../../services/supabaseApi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { chatApi, projectApi, userApi, tagApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
@@ -40,30 +40,13 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const [selectedChat, setSelectedChat] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (selectedCourseId) {
-      loadDashboardData();
-    }
-  }, [selectedCourseId]);
 
-  useEffect(() => {
-    // Reload data when significant filters change to optimize backend queries
-    if (selectedCourseId) {
-      setFiltersLoading(true);
-      loadDashboardData().finally(() => setFiltersLoading(false));
-    }
-  }, [filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [chats, filters.tagId, filters.hasReflection]); // Only apply client-side for tag and reflection filters
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       
-      const results = await Promise.allSettled([
-        analyticsApi.getOverallStats(selectedCourseId, currentUser.id),
+      const promises = [
+        Promise.resolve({ totalChats: 0, totalUsers: 0, totalProjects: 0, reflectionCompletionRate: 0 }), // Default stats for Firebase
         chatApi.getChatsWithFilters({
           courseId: selectedCourseId,
           userId: filters.userId,
@@ -75,7 +58,9 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
         tagApi.getAllTags(selectedCourseId)
-      ]);
+      ];
+      
+      const results = await Promise.allSettled(promises);
 
       // Handle chats
       if (results[1].status === 'fulfilled') {
@@ -103,9 +88,9 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCourseId, currentUser?.id, filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate]);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...chats];
 
     // Apply tag filter
@@ -124,7 +109,26 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     }
 
     setFilteredChats(filtered);
-  };
+  }, [chats, filters.tagId, filters.hasReflection]);
+
+  useEffect(() => {
+    if (selectedCourseId && currentUser?.id) {
+      loadDashboardData();
+    }
+  }, [selectedCourseId, currentUser?.id, loadDashboardData]);
+
+  useEffect(() => {
+    // Reload data when significant filters change to optimize backend queries
+    if (selectedCourseId && currentUser?.id) {
+      setFiltersLoading(true);
+      loadDashboardData().finally(() => setFiltersLoading(false));
+    }
+  }, [filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate, selectedCourseId, currentUser?.id, loadDashboardData]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]); // Only apply client-side for tag and reflection filters
+
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -149,21 +153,9 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const handleExport = async () => {
     try {
       setExporting(true);
-      const csvData = await analyticsApi.exportChatData(currentUser.id, selectedCourseId, filters);
       
-      // Create and download CSV file
-      const blob = new Blob([csvData], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `chat-data-${selectedCourse?.courses?.name || 'course'}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast.success('Data exported successfully');
+      // Firebase users don't have analytics export functionality yet
+      toast.error('Data export is not yet available. Please contact support.');
     } catch (error) {
       console.error('Error exporting data:', error);
       toast.error('Failed to export data');
@@ -382,7 +374,16 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
                       
                       {/* Date */}
                       <div className="text-sm text-gray-500">
-                        {format(new Date(chat.created_at), 'MMM dd, yyyy')}
+                        {(() => {
+                          if (!chat.created_at) return 'Unknown date';
+                          
+                          // Handle Firestore timestamp
+                          const date = chat.created_at?.toDate ? chat.created_at.toDate() : new Date(chat.created_at);
+                          
+                          if (isNaN(date)) return 'Unknown date';
+                          
+                          return format(date, 'MMM dd, yyyy');
+                        })()}
                       </div>
                     </div>
                     

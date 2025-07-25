@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/supabaseApi';
+import { courseApi as supabaseCourseApi } from '../../services/supabaseApi';
+import { courseApi as firebaseCourseApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -25,6 +26,13 @@ export default function CourseSelection({ onCourseSelect }) {
   const loadUserCourses = async () => {
     try {
       setLoading(true);
+      
+      // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
+      const isFirebaseUser = currentUser?.id && !currentUser.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      
+      // Select appropriate API based on user type
+      const courseApi = isFirebaseUser ? firebaseCourseApi : supabaseCourseApi;
+      
       const courses = await courseApi.getUserCourses(currentUser.id);
       setUserCourses(courses);
       

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, analyticsApi } from '../../services/supabaseApi';
+import { courseApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import InstructorNavigation from './InstructorNavigation';
 import CourseSelector from './CourseSelector';
 import Overview from './Overview';
@@ -25,22 +26,10 @@ export default function InstructorDashboardContainer() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    if (isInstructorAnywhere) {
-      loadInstructorCourses();
-    }
-  }, [currentUser, isInstructorAnywhere]);
-
-  // Auto-navigate to overview if on base instructor route
-  useEffect(() => {
-    if (location.pathname === '/instructor') {
-      navigate('/instructor/overview');
-    }
-  }, [location.pathname, navigate]);
-
-  const loadInstructorCourses = async () => {
+  const loadInstructorCourses = useCallback(async () => {
     try {
       setLoading(true);
+      
       const userCourses = await courseApi.getUserCourses(currentUser.id);
       const instructorCourses = userCourses.filter(membership => 
         membership.role === 'instructor' && membership.status === 'approved'
@@ -57,7 +46,20 @@ export default function InstructorDashboardContainer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser?.id, selectedCourseId]);
+
+  useEffect(() => {
+    if (isInstructorAnywhere && currentUser?.id) {
+      loadInstructorCourses();
+    }
+  }, [currentUser?.id, isInstructorAnywhere, loadInstructorCourses]);
+
+  // Auto-navigate to overview if on base instructor route
+  useEffect(() => {
+    if (location.pathname === '/instructor') {
+      navigate('/instructor/overview');
+    }
+  }, [location.pathname, navigate]);
 
   const handleCourseChange = (courseId) => {
     setCourseLoading(true);
@@ -72,20 +74,8 @@ export default function InstructorDashboardContainer() {
     try {
       setExporting(true);
       
-      // Use the existing exportChatData function from analyticsApi
-      const csvContent = await analyticsApi.exportChatData(currentUser.id, selectedCourseId);
-      
-
-      // Download CSV
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `course-data-${selectedCourse?.courses?.title || 'export'}-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Firebase users don't have analytics export functionality yet
+      toast.error('Data export is not yet available. Please contact support.');
       
     } catch (error) {
       console.error('Error exporting data:', error);

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, userApi } from '../../services/supabaseApi';
+import { courseApi, userApi, tagApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import PendingApprovals from '../Instructor/PendingApprovals';
-import AdminMessaging from '../Messaging/AdminMessaging';
 import {
   PlusIcon,
   AcademicCapIcon,
@@ -46,9 +44,13 @@ export default function AdminPanel() {
   const [showAddToCourseModal, setShowAddToCourseModal] = useState(false);
   const [userToAddToCourse, setUserToAddToCourse] = useState(null);
   const [selectedCourseForAdd, setSelectedCourseForAdd] = useState('');
+  const [selectedRoleForAdd, setSelectedRoleForAdd] = useState('student');
   const [filterCourse, setFilterCourse] = useState('all');
   const [filterRole, setFilterRole] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Global tags state
+  const [creatingGlobalTags, setCreatingGlobalTags] = useState(false);
   const [newCourse, setNewCourse] = useState({
     name: '',
     description: '',
@@ -63,6 +65,9 @@ export default function AdminPanel() {
   });
 
   const { currentUser } = useAuth();
+
+  // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
+  const isFirebaseUser = currentUser?.id && !currentUser.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 
   useEffect(() => {
     loadCourses();
@@ -102,7 +107,7 @@ export default function AdminPanel() {
         semester: newCourse.semester,
         year: newCourse.year,
         course_code: courseCode,
-        created_by: currentUser.id
+        createdBy: currentUser.id  // Firebase uses createdBy
       };
 
       await courseApi.createCourse(courseData);
@@ -284,6 +289,30 @@ export default function AdminPanel() {
     }
   };
 
+  // Create global educational tags
+  const handleCreateGlobalTags = async () => {
+    try {
+      setCreatingGlobalTags(true);
+      toast.loading('Creating global educational tags...');
+      
+      const createdTags = await tagApi.createGlobalEducationalTags();
+      
+      toast.dismiss();
+      if (createdTags.length > 0) {
+        toast.success(`Created ${createdTags.length} new global tags!`);
+      } else {
+        toast.success('All global educational tags already exist');
+      }
+      
+    } catch (error) {
+      console.error('Error creating global tags:', error);
+      toast.dismiss();
+      toast.error('Failed to create global tags');
+    } finally {
+      setCreatingGlobalTags(false);
+    }
+  };
+
   const handleRemoveFromCourse = (user, membership) => {
     setRemovalData({
       user: user,
@@ -312,6 +341,7 @@ export default function AdminPanel() {
   const handleAddToCourse = (user) => {
     setUserToAddToCourse(user);
     setSelectedCourseForAdd('');
+    setSelectedRoleForAdd('student'); // Default to student
     setShowAddToCourseModal(true);
   };
 
@@ -319,18 +349,21 @@ export default function AdminPanel() {
     if (!userToAddToCourse || !selectedCourseForAdd) return;
     
     try {
-      await courseApi.addStudentToCourse(
+      await courseApi.addUserToCourse(
         userToAddToCourse.id, 
         selectedCourseForAdd, 
+        selectedRoleForAdd, // Pass the selected role
         currentUser.id
       );
       
       const selectedCourseName = courses.find(c => c.id === selectedCourseForAdd)?.title || 'course';
-      toast.success(`${userToAddToCourse.name} added to ${selectedCourseName}`);
+      const roleText = selectedRoleForAdd === 'instructor' ? 'instructor' : 'student';
+      toast.success(`${userToAddToCourse.name} added to ${selectedCourseName} as ${roleText}`);
       
       setShowAddToCourseModal(false);
       setUserToAddToCourse(null);
       setSelectedCourseForAdd('');
+      setSelectedRoleForAdd('student');
       
       // Reload users to reflect the change
       loadUsers();
@@ -435,6 +468,7 @@ export default function AdminPanel() {
     return { instructors, students, pending: pending.length };
   };
 
+
   if (loading && activeTab === 'courses') {
     return (
       <div className="p-6">
@@ -460,13 +494,32 @@ export default function AdminPanel() {
           </p>
         </div>
         {activeTab === 'courses' && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Create Course
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Create Course
+            </button>
+            <button
+              onClick={handleCreateGlobalTags}
+              disabled={creatingGlobalTags}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            >
+              {creatingGlobalTags ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <ClipboardDocumentListIcon className="h-4 w-4 mr-2" />
+                  Create Global Tags
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
 
@@ -498,30 +551,6 @@ export default function AdminPanel() {
         </nav>
       </div>
 
-      {activeTab === 'courses' && (
-        <>
-          {/* Admin Messaging Section */}
-          <div className="mb-8">
-            <AdminMessaging />
-          </div>
-
-          {/* Pending Approvals Section */}
-          {courses.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Membership Requests</h2>
-              <div className="space-y-4">
-                {courses.map((course) => (
-                  <PendingApprovals 
-                    key={course.id}
-                    courseId={course.id} 
-                    courseName={course.title}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
 
       {activeTab === 'users' && (
         <>
@@ -688,6 +717,8 @@ export default function AdminPanel() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => {
               const stats = getMembershipStats(course);
+              const createdDate = course.createdAt?.toDate ? course.createdAt.toDate() : new Date(course.createdAt);
+              
               return (
                 <div key={course.id} className="bg-white rounded-lg shadow border border-gray-200 p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -750,7 +781,7 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="mt-4 text-xs text-gray-500">
-                    Created {format(new Date(course.created_at), 'MMM dd, yyyy')}
+                    Created {format(createdDate, 'MMM dd, yyyy')}
                   </div>
                 </div>
               );
@@ -1397,22 +1428,38 @@ export default function AdminPanel() {
                   Add <strong>{userToAddToCourse.name}</strong> to a course:
                 </p>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Course
-                  </label>
-                  <select
-                    value={selectedCourseForAdd}
-                    onChange={(e) => setSelectedCourseForAdd(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
-                  >
-                    <option value="">Choose a course...</option>
-                    {getAvailableCoursesForUser(userToAddToCourse).map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.title} ({course.course_code})
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Course
+                    </label>
+                    <select
+                      value={selectedCourseForAdd}
+                      onChange={(e) => setSelectedCourseForAdd(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="">Choose a course...</option>
+                      {getAvailableCoursesForUser(userToAddToCourse).map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.title} ({course.course_code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Role
+                    </label>
+                    <select
+                      value={selectedRoleForAdd}
+                      onChange={(e) => setSelectedRoleForAdd(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="student">Student</option>
+                      <option value="instructor">Instructor</option>
+                    </select>
+                  </div>
                 </div>
                 
                 {getAvailableCoursesForUser(userToAddToCourse).length === 0 && (
@@ -1437,10 +1484,10 @@ export default function AdminPanel() {
                 </button>
                 <button
                   onClick={confirmAddToCourse}
-                  disabled={!selectedCourseForAdd}
+                  disabled={!selectedCourseForAdd || !selectedRoleForAdd}
                   className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add to Course
+                  Add as {selectedRoleForAdd === 'instructor' ? 'Instructor' : 'Student'}
                 </button>
               </div>
             </div>

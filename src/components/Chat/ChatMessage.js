@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import MarkdownRenderer from './MarkdownRenderer';
-import { attachmentApi } from '../../services/supabaseApi';
+import { useAuth } from '../../contexts/AuthContext';
+import { attachmentApi } from '../../services/firebaseApi';
 import {
   UserIcon,
   ComputerDesktopIcon,
@@ -13,11 +14,15 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentUserId }) {
+  const { currentUser } = useAuth();
   const isCurrentUser = chat.user_id === currentUserId;
   const hasReflection = chat.reflections && chat.reflections.length > 0;
   const hasTags = chat.chat_tags && chat.chat_tags.length > 0;
   const [attachments, setAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(true);
+
+  // Detect if this is a Firebase user (Firebase UIDs don't follow UUID format)
+  // Using Firebase API
 
   // Load attachments when component mounts
   useEffect(() => {

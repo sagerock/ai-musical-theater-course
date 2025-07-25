@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { userApi } from '../../services/supabaseApi';
+import { userApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   EnvelopeIcon,
@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function EmailSettings() {
+  const { currentUser, userRole } = useAuth();
   const [settings, setSettings] = useState({
     email_notifications_enabled: true,
     instructor_note_emails: true,
@@ -19,15 +20,27 @@ export default function EmailSettings() {
     system_update_emails: true
   });
   const [loading, setLoading] = useState(true);
+
+  // Detect if this is a Firebase user (Firebase UIDs don't follow UUID format)
+  // Using Firebase API
   const [saving, setSaving] = useState(false);
-  const { currentUser, userRole } = useAuth();
 
   useEffect(() => {
     loadEmailSettings();
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const loadEmailSettings = async () => {
     if (!currentUser) return;
+    
+    // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
+    const isFirebaseUser = currentUser.id && !currentUser.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    
+    if (isFirebaseUser) {
+      console.log('🔥 EmailSettings: Firebase user detected, using default settings');
+      // For Firebase users, just use default settings without querying Supabase
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -53,6 +66,14 @@ export default function EmailSettings() {
 
   const handleSaveSettings = async () => {
     if (!currentUser) return;
+    
+    // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
+    const isFirebaseUser = currentUser.id && !currentUser.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    
+    if (isFirebaseUser) {
+      toast.success('Email settings saved locally (Firebase user)');
+      return;
+    }
     
     try {
       setSaving(true);

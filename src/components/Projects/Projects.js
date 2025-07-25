@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, courseApi, userApi } from '../../services/supabaseApi';
+import { projectApi, courseApi } from '../../services/firebaseApi';
 import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -38,13 +38,15 @@ export default function Projects() {
     }
   }, [currentUser, courseId]);
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       setLoading(true);
       console.log('📂 Projects: Loading projects...');
       console.log('  - Current user:', currentUser.id);
       console.log('  - Course ID:', courseId);
       console.log('  - Current URL:', window.location.pathname);
+      
+      console.log('📂 Projects: Firebase user, loading data...');
       
       // If accessing a specific course, verify the user is enrolled and approved
       if (courseId) {
@@ -80,16 +82,19 @@ export default function Projects() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, courseId]);
 
-  const loadCourseInfo = async () => {
+  const loadCourseInfo = useCallback(async () => {
     try {
+      // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
+      console.log('🔍 Projects: Loading course info using Firebase API');
+      
       const courseData = await courseApi.getCourseById(courseId);
       setCourse(courseData);
     } catch (error) {
       console.error('Error loading course info:', error);
     }
-  };
+  }, [currentUser, courseId]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -104,6 +109,10 @@ export default function Projects() {
       toast.error('Project title is required');
       return;
     }
+
+    // Firebase project creation - temporarily disabled
+    // toast.error('Project creation is not yet available for new accounts. Please contact support.');
+    // return;
 
     // If we're in a course context, verify the user is still enrolled and approved before creating project
     if (courseId) {
@@ -169,6 +178,9 @@ export default function Projects() {
 
   const confirmDeleteProject = async () => {
     if (!projectToDelete) return;
+    
+    // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
+    // Using Firebase API
     
     try {
       setDeleting(true);
@@ -267,7 +279,7 @@ export default function Projects() {
                 <div className="mt-4">
                   <div className="flex items-center text-sm text-gray-500">
                     <UserIcon className="h-4 w-4 mr-2" />
-                    Created {format(new Date(project.created_at), 'MMM dd, yyyy')}
+                    Created {project.created_at ? format(new Date(project.created_at), 'MMM dd, yyyy') : 'Unknown date'}
                   </div>
                 </div>
 

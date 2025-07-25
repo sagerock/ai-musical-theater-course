@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../../config/supabase';
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -8,84 +9,64 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [validCode, setValidCode] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    // Handle the password reset flow
-    const handlePasswordReset = async () => {
-      console.log('ResetPassword component loaded');
+    // Handle Firebase password reset flow
+    const handleFirebasePasswordReset = async () => {
+      console.log('Firebase ResetPassword component loaded');
       console.log('Current user:', currentUser);
-      console.log('Full URL:', window.location.href);
-      console.log('Hash:', window.location.hash);
-      console.log('Search:', window.location.search);
-      console.log('Hash params raw:', window.location.hash.substring(1));
-      console.log('Search params raw:', window.location.search.substring(1));
       
-      // If user is authenticated, show the password reset form
-      if (currentUser) {
-        console.log('User authenticated via password recovery, ready to reset password');
-        toast.success('Ready to set your new password');
-        return; // Stay on page to allow password reset
-      }
+      // Get the action code from URL parameters (Firebase uses 'oobCode')
+      const actionCode = searchParams.get('oobCode');
+      const mode = searchParams.get('mode');
       
-      // Check both URL fragment (hash) and query parameters
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+      console.log('Firebase reset params:', { actionCode: !!actionCode, mode });
       
-      // Check for error parameters
-      const error = hashParams.get('error') || searchParams.get('error');
-      const errorCode = hashParams.get('error_code') || searchParams.get('error_code');
-      const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
-      
-      console.log('Reset password tokens:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
-      console.log('Error params:', { error, errorCode, errorDescription });
-      
-      // Handle Supabase errors first
-      if (error) {
-        let errorMessage = 'Password reset failed';
-        
-        if (errorCode === 'otp_expired') {
-          errorMessage = 'Password reset link has expired. Please request a new one.';
-        } else if (error === 'access_denied') {
-          errorMessage = 'Password reset link is invalid or has expired. Please request a new one.';
-        } else if (errorDescription) {
-          errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, ' '));
-        }
-        
-        toast.error(errorMessage);
+      if (!actionCode || mode !== 'resetPassword') {
+        console.log('Missing or invalid Firebase reset parameters');
+        toast.error('Invalid password reset link');
         navigate('/login');
         return;
       }
       
-      if (accessToken && refreshToken) {
-        // Set the session using the tokens from the URL
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
+      try {
+        // Verify the password reset code
+        await verifyPasswordResetCode(auth, actionCode);
+        console.log('Firebase password reset code verified successfully');
+        setValidCode(true);
+        toast.success('Reset link verified. Enter your new password below.');
+      } catch (error) {
+        console.error('Firebase password reset verification error:', error);
         
-        if (error) {
-          console.error('Error setting session:', error);
-          toast.error('Invalid or expired reset link');
-          navigate('/login');
-        } else {
-          toast.success('Ready to set your new password');
+        let errorMessage = 'Invalid or expired reset link';
+        if (error.code === 'auth/invalid-action-code') {
+          errorMessage = 'This password reset link is invalid or has already been used.';
+        } else if (error.code === 'auth/expired-action-code') {
+          errorMessage = 'This password reset link has expired. Please request a new one.';
         }
-      } else {
-        console.log('No tokens found in URL hash or query params');
-        toast.error('Invalid reset link - missing authentication tokens');
+        
+        toast.error(errorMessage);
         navigate('/login');
+      } finally {
+        setVerifying(false);
       }
     };
 
-    handlePasswordReset();
-  }, [searchParams, navigate]);
+    handleFirebasePasswordReset();
+  }, [searchParams, navigate, currentUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validCode) {
+      toast.error('Invalid reset code');
+      return;
+    }
     
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
@@ -100,19 +81,27 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success('Password updated successfully!');
-      navigate('/dashboard');
+      const actionCode = searchParams.get('oobCode');
+      
+      // Confirm the password reset with Firebase
+      await confirmPasswordReset(auth, actionCode, password);
+      
+      console.log('Firebase password reset completed successfully');
+      toast.success('Password updated successfully! Please sign in with your new password.');
+      navigate('/login');
     } catch (error) {
       console.error('Error updating password:', error);
-      toast.error(error.message || 'Failed to update password');
+      
+      let errorMessage = 'Failed to update password';
+      if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.code === 'auth/invalid-action-code') {
+        errorMessage = 'This reset link is invalid or has expired.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -135,8 +124,14 @@ export default function ResetPassword() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="bg-white p-8 rounded-xl shadow-lg space-y-6">
+        {verifying ? (
+          <div className="bg-white p-8 rounded-xl shadow-lg text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Verifying reset link...</p>
+          </div>
+        ) : validCode ? (
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <div className="bg-white p-8 rounded-xl shadow-lg space-y-6">
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 New Password
@@ -203,6 +198,23 @@ export default function ResetPassword() {
             </div>
           </div>
         </form>
+        ) : (
+          <div className="bg-white p-8 rounded-xl shadow-lg text-center">
+            <div className="mx-auto h-12 w-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Invalid Reset Link</h3>
+            <p className="text-gray-600 mb-4">This password reset link is invalid or has expired.</p>
+            <button
+              onClick={() => navigate('/login')}
+              className="bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

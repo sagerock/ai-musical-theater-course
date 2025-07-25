@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi, attachmentApi, courseApi } from '../../services/supabaseApi';
+import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi, attachmentApi, courseApi } from '../../services/firebaseApi';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -81,6 +81,8 @@ export default function Chat() {
     try {
       setLoading(true);
       
+      console.log('🔍 Chat: Firebase user, loading data...');
+      
       // Load project details
       const projectData = await projectApi.getProjectById(projectId);
       console.log('🔍 Chat: Loaded project data:', {
@@ -125,12 +127,55 @@ export default function Chat() {
 
   const loadTags = async () => {
     try {
+      console.log('🏷️ Loading tags for Chat component...');
+      
       // Get courseId from project if available
       const courseId = project?.course_id || null;
-      const tags = await tagApi.getAllTags(courseId);
-      setAvailableTags(tags);
+      
+      // Always try to load global tags first (they should be available to all users)
+      const globalTags = await tagApi.getGlobalTagsWithUsage(courseId).catch(error => {
+        console.log('❌ Error loading global tags:', error);
+        return [];
+      });
+      
+      let courseTags = [];
+      if (courseId) {
+        // If this is a course project, also load course-specific tags
+        courseTags = await tagApi.getCourseTagsWithUsage(courseId).catch(error => {
+          console.log('❌ Error loading course tags:', error);
+          return [];
+        });
+      }
+      
+      // Combine global and course tags, removing duplicates
+      const allTags = [...globalTags, ...courseTags];
+      const uniqueTags = allTags.filter((tag, index, self) => 
+        index === self.findIndex(t => t.id === tag.id)
+      );
+      
+      console.log(`✅ Loaded ${globalTags.length} global tags and ${courseTags.length} course tags (${uniqueTags.length} total)`);
+      
+      // If no tags found at all, try to ensure global tags exist
+      if (uniqueTags.length === 0) {
+        console.log('⚠️ No tags found, attempting to create global educational tags...');
+        try {
+          await tagApi.createGlobalEducationalTags();
+          console.log('✅ Global tags created, reloading...');
+          
+          // Retry loading global tags
+          const retryGlobalTags = await tagApi.getGlobalTagsWithUsage(courseId).catch(() => []);
+          setAvailableTags(retryGlobalTags);
+          console.log(`✅ Reloaded ${retryGlobalTags.length} global tags after creation`);
+        } catch (createError) {
+          console.log('❌ Could not create global tags:', createError);
+          setAvailableTags([]);
+        }
+      } else {
+        setAvailableTags(uniqueTags);
+      }
     } catch (error) {
       console.error('Error loading tags:', error);
+      setAvailableTags([]);
     }
   };
 
@@ -186,6 +231,8 @@ export default function Chat() {
     
     if ((!prompt.trim() && !selectedFile) || sending) return;
 
+    // Using Firebase APIs
+
     const userPrompt = prompt.trim();
     let finalPrompt = userPrompt;
     
@@ -217,7 +264,7 @@ export default function Chat() {
             project_id: projectId,
             tool_used: selectedTool,
             prompt: finalPrompt,
-            response: 'Processing PDF...', // Temporary response to satisfy NOT NULL constraint
+            response: 'Extracting text from PDF...', // Temporary response to satisfy NOT NULL constraint
             title: finalPrompt.length > 50 ? finalPrompt.substring(0, 50) + '...' : finalPrompt
           };
           

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, chatApi, courseApi } from '../../services/supabaseApi';
+import { projectApi, chatApi, courseApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import {
   FolderIcon,
@@ -12,9 +12,6 @@ import {
   ChartBarIcon,
   EyeIcon,
   AcademicCapIcon,
-  ShieldCheckIcon,
-  UserGroupIcon,
-  CogIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
 
@@ -29,24 +26,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const { currentUser, userRole, loading: authLoading } = useAuth();
   
-  console.log('🔍 Dashboard render - Auth state:', {
-    currentUser: currentUser?.id,
-    email: currentUser?.email,
-    userRole,
-    authLoading
-  });
+  // Removed excessive debug logging
 
-  useEffect(() => {
-    if (currentUser) {
-      console.log('🔄 Dashboard: useEffect triggered, calling loadDashboardData');
-      loadDashboardData();
-    } else {
-      console.log('⚠️ Dashboard: useEffect triggered but no currentUser, skipping data load');
-      setLoading(false);
-    }
-  }, [currentUser]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -58,6 +40,8 @@ export default function Dashboard() {
         setLoading(false);
         return;
       }
+      
+      console.log('📊 Dashboard: Firebase user, loading data...');
       
       // Get user's courses first
       console.log('📊 Dashboard: Getting user courses...');
@@ -82,17 +66,45 @@ export default function Dashboard() {
         const projectResults = await Promise.all(projectPromises);
         allProjects = projectResults.flat();
         
-        // Load chats from all courses
-        const chatPromises = approvedCourses.map(membership =>
-          chatApi.getUserChats(currentUser.id, membership.courses.id, 1000)
-        );
-        const chatResults = await Promise.all(chatPromises);
-        allChats = chatResults.flat();
+        // Load chats - RLS policies handle course-based filtering automatically
+        console.log('📊 Dashboard: Loading chats for userRole:', userRole);
+        
+        if (userRole === 'instructor' || userRole === 'admin') {
+          console.log('📊 Dashboard: Loading instructor chats from their courses');
+          // Instructors see chats from courses they teach
+          const instructorCourses = approvedCourses.filter(membership => 
+            membership.role === 'instructor'
+          );
+          
+          if (instructorCourses.length > 0) {
+            const chatPromises = instructorCourses.map(membership =>
+              chatApi.getChatsWithFilters({ courseId: membership.courses.id })
+            );
+            const chatResults = await Promise.all(chatPromises);
+            allChats = chatResults.flat();
+          }
+        } else {
+          console.log('📊 Dashboard: Loading student chats from all courses');
+          // Students see only their own chats across all courses
+          const chatPromises = approvedCourses.map(membership => 
+            chatApi.getUserChats(currentUser.id, membership.courses.id, 1000)
+          );
+          const chatResults = await Promise.all(chatPromises);
+          allChats = chatResults.flat();
+        }
       } else {
         // Fallback: Load projects and chats without course filter (legacy data)
         console.log('📊 Dashboard: No courses found, loading legacy data');
         allProjects = await projectApi.getUserProjects(currentUser.id);
-        allChats = await chatApi.getUserChats(currentUser.id, null, 1000);
+        
+        if (userRole === 'instructor' || userRole === 'admin') {
+          // For legacy data: instructors without courses can't see other chats
+          console.log('📊 Dashboard: No courses - instructors see no legacy chats for privacy');
+          allChats = [];
+        } else {
+          // Students see only their own chats
+          allChats = await chatApi.getUserChats(currentUser.id, null, 1000);
+        }
       }
       
       console.log('📊 Dashboard data loaded:');
@@ -136,17 +148,22 @@ export default function Dashboard() {
       console.log('📊 Dashboard: Data loading complete, setting loading to false');
       setLoading(false);
     }
-  };
+  }, [currentUser?.id, userRole]);
 
-  // Debug loading state
-  console.log('🔍 Dashboard render state:', {
-    loading,
-    authLoading,
-    currentUser: currentUser?.id,
-    userRole,
-    recentProjectsLength: recentProjects.length,
-    recentChatsLength: recentChats.length
-  });
+  useEffect(() => {
+    if (currentUser && userRole !== null) {
+      console.log('🔄 Dashboard: useEffect triggered, calling loadDashboardData');
+      loadDashboardData();
+    } else {
+      console.log('⚠️ Dashboard: useEffect triggered but missing requirements:', {
+        hasCurrentUser: !!currentUser,
+        userRole: userRole
+      });
+      setLoading(false);
+    }
+  }, [currentUser?.id, userRole, loadDashboardData]);
+
+  // Removed excessive debug logging
 
   if (loading || authLoading) {
     console.log('📊 Dashboard: Showing loading spinner', { loading, authLoading });
@@ -362,7 +379,8 @@ export default function Dashboard() {
                         <span className="text-xs text-gray-500">{chat.tool_used}</span>
                       </div>
                       <span className="text-xs text-gray-500">
-                        {format(new Date(chat.created_at), 'MMM dd, HH:mm')}
+                        {chat.created_at && !isNaN(new Date(chat.created_at)) ? 
+                          format(new Date(chat.created_at), 'MMM dd, HH:mm') : 'Unknown'}
                       </span>
                     </div>
                     <p className="text-sm text-gray-900 mt-1 line-clamp-2">

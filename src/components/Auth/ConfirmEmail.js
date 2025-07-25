@@ -1,80 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../../config/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function ConfirmEmail() {
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('Confirming your email...');
+  const [message, setMessage] = useState('Processing...');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    const handleEmailConfirmation = async () => {
+    const handleFirebaseEmailFlow = async () => {
       try {
-        // Get parameters from URL - check both hash fragment and query parameters
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const tokenHash = hashParams.get('token_hash') || searchParams.get('token_hash');
-        const type = hashParams.get('type') || searchParams.get('type');
-        const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+        // Firebase handles email verification automatically through the authentication flow
+        // This component is primarily for handling redirect after email verification
         
-        console.log('Confirm email params:', { tokenHash: !!tokenHash, type, accessToken: !!accessToken, refreshToken: !!refreshToken });
-
-        // Handle different confirmation flows
-        if (tokenHash && type) {
-          // New PKCE flow with token_hash
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: type
-          });
-
-          if (error) {
-            throw error;
-          }
-
-          if (type === 'invite') {
-            setMessage('Invite accepted successfully! Redirecting...');
-            toast.success('Welcome! Your account has been activated.');
-          } else {
-            setMessage('Email confirmed successfully! Redirecting...');
-            toast.success('Email confirmed! You can now sign in.');
-          }
-
-          // Redirect after short delay
+        console.log('Firebase email confirmation page loaded');
+        console.log('Current user:', currentUser);
+        
+        // Check if user is now authenticated after email verification
+        if (currentUser) {
+          setMessage('Email verified successfully! Redirecting to dashboard...');
+          toast.success('Welcome! Your email has been verified.');
+          
           setTimeout(() => {
             navigate('/dashboard');
           }, 2000);
-
-        } else if (accessToken && refreshToken) {
-          // Legacy flow with access_token and refresh_token
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-
-          if (error) {
-            throw error;
-          }
-
-          setMessage('Email confirmed successfully! Redirecting...');
-          toast.success('Email confirmed! Welcome back.');
-
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 2000);
-
         } else {
-          // No valid parameters found
-          throw new Error('Invalid confirmation link - missing required parameters');
+          // User not authenticated, likely need to sign in
+          setMessage('Please sign in with your verified email address.');
+          toast.info('Please sign in to continue.');
+          
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
         }
-
+        
       } catch (error) {
         console.error('Email confirmation error:', error);
-        setMessage('Confirmation failed. Please try again or contact support.');
-        toast.error(error.message || 'Email confirmation failed');
+        setMessage('Something went wrong. Please try signing in.');
+        toast.error('Please try signing in again.');
         
-        // Redirect to login after delay
         setTimeout(() => {
           navigate('/login');
         }, 3000);
@@ -83,8 +50,8 @@ export default function ConfirmEmail() {
       }
     };
 
-    handleEmailConfirmation();
-  }, [searchParams, navigate]);
+    handleFirebaseEmailFlow();
+  }, [currentUser, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

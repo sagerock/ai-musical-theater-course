@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/supabaseApi';
+import { courseApi, userApi } from '../../services/firebaseApi';
 import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import toast from 'react-hot-toast';
 import {
@@ -29,23 +29,13 @@ export default function InstructorMessaging() {
   const [courses, setCourses] = useState([]);
   const [selectedCourseStudents, setSelectedCourseStudents] = useState([]);
 
-  useEffect(() => {
-    loadInstructorCourses();
-  }, [currentUser]);
 
-  useEffect(() => {
-    if (formData.courseId) {
-      loadCourseStudents(formData.courseId);
-    } else {
-      setSelectedCourseStudents([]);
-    }
-  }, [formData.courseId]);
-
-  const loadInstructorCourses = async () => {
+  const loadInstructorCourses = useCallback(async () => {
     if (!currentUser) return;
     
     try {
       setLoading(true);
+      
       const instructorCourses = await courseApi.getUserCourses(currentUser.id);
       
       // Filter for courses where user is an instructor
@@ -60,21 +50,41 @@ export default function InstructorMessaging() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser?.id]);
 
-  const loadCourseStudents = async (courseId) => {
+  const loadCourseStudents = useCallback(async (courseId) => {
     try {
-      const courseMembers = await courseApi.getCourseMembers(courseId);
+      const courseMembers = await userApi.getAllUsers(courseId);
       
-      // Filter for students only
-      const students = courseMembers.filter(member => member.role === 'student');
+      // Filter for students only - handle different data structures
+      const students = courseMembers.filter(member => {
+        const memberRole = member.course_role || 
+                           member.course_memberships?.[0]?.role || 
+                           member.course_memberships?.role || 
+                           member.role;
+        return memberRole === 'student';
+      });
       
       setSelectedCourseStudents(students);
     } catch (error) {
       console.error('Error loading course students:', error);
       toast.error('Failed to load course students');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      loadInstructorCourses();
+    }
+  }, [currentUser?.id, loadInstructorCourses]);
+
+  useEffect(() => {
+    if (formData.courseId) {
+      loadCourseStudents(formData.courseId);
+    } else {
+      setSelectedCourseStudents([]);
+    }
+  }, [formData.courseId, loadCourseStudents]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

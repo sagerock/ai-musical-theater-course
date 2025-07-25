@@ -16,7 +16,7 @@ export default function Login() {
   });
   const [resetEmail, setResetEmail] = useState('');
 
-  const { login, signup, resetPassword, currentUser } = useAuth();
+  const { signIn, signUp, resetPassword, currentUser } = useAuth();
 
   // Redirect if already logged in
   if (currentUser) {
@@ -36,12 +36,33 @@ export default function Login() {
 
     try {
       if (isSignUp) {
-        await signup(formData.email, formData.password, formData.displayName, formData.role);
+        await signUp(formData.email, formData.password, formData.displayName);
+        toast.success('Account created successfully! Welcome to AI Engagement Hub.');
       } else {
-        await login(formData.email, formData.password);
+        await signIn(formData.email, formData.password);
+        toast.success('Welcome back!');
       }
     } catch (error) {
       console.error('Authentication error:', error);
+      
+      // Firebase-specific error handling
+      let errorMessage = 'Authentication failed. Please try again.';
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password. Please try again.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters long.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -58,10 +79,22 @@ export default function Login() {
     setResetLoading(true);
     try {
       await resetPassword(resetEmail);
+      toast.success('Password reset email sent! Check your inbox.');
       setShowForgotPassword(false);
       setResetEmail('');
     } catch (error) {
       console.error('Password reset error:', error);
+      
+      let errorMessage = 'Failed to send password reset email.';
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setResetLoading(false);
     }

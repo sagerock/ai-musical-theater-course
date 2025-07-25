@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { analyticsApi, chatApi, courseApi } from '../../services/supabaseApi';
+import { chatApi, courseApi, projectApi, userApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   FolderIcon,
@@ -26,38 +26,91 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (selectedCourseId) {
-      loadOverviewData();
-    }
-  }, [selectedCourseId]);
-
-  const loadOverviewData = async () => {
+  const loadOverviewData = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('🔄 Loading overview data for course:', selectedCourseId);
       
-      // Load stats
-      const statsData = await analyticsApi.getOverallStats(selectedCourseId, currentUser.id);
-      setStats(statsData);
+      // Load all data in parallel for better performance
+      const [chats, projects, users, pendingRequests] = await Promise.all([
+        chatApi.getChatsWithFilters({
+          courseId: selectedCourseId,
+          limit: 1000  // Get all chats for accurate count
+        }).catch(error => {
+          console.log('❌ Error loading chats:', error);
+          return [];
+        }),
+        projectApi.getAllProjects(selectedCourseId).catch(error => {
+          console.log('❌ Error loading projects:', error);
+          return [];
+        }),
+        userApi.getAllUsers(selectedCourseId).catch(error => {
+          console.log('❌ Error loading users:', error);
+          return [];
+        }),
+        courseApi.getPendingApprovals(selectedCourseId, currentUser.id).catch(error => {
+          console.log('❌ Error loading pending approvals:', error);
+          return [];
+        })
+      ]);
       
-      // Load recent activity (last 10 interactions)
-      const recentChats = await chatApi.getChatsWithFilters({
-        courseId: selectedCourseId,
-        limit: 10
+      // Debug logging
+      console.log('🔍 Debug data loaded:', {
+        selectedCourseId,
+        chatsCount: chats.length,
+        projectsCount: projects.length,
+        usersCount: users.length,
+        pendingRequestsCount: pendingRequests.length,
+        sampleProjects: projects.slice(0, 3).map(p => ({ id: p.id, title: p.title, courseId: p.courseId }))
       });
-      setRecentActivity(recentChats);
-
-      // Load pending approvals
-      const pendingRequests = await courseApi.getPendingApprovals(selectedCourseId, currentUser.id);
+      
+      // Calculate statistics
+      const totalChats = chats.length;
+      const totalProjects = projects.length;
+      // Count only approved students (not instructors)
+      const totalUsers = users.filter(user => 
+        user.course_role === 'student' && user.status === 'approved'
+      ).length;
+      
+      // Calculate reflection completion rate
+      const chatsWithReflections = chats.filter(chat => chat.has_reflection).length;
+      const reflectionCompletionRate = totalChats > 0 ? 
+        Math.round((chatsWithReflections / totalChats) * 100) : 0;
+      
+      const calculatedStats = {
+        totalChats,
+        totalUsers,
+        totalProjects,
+        reflectionCompletionRate
+      };
+      
+      console.log('📊 Calculated overview stats:', calculatedStats);
+      setStats(calculatedStats);
+      
+      // Set recent activity (limit to 10 most recent)
+      setRecentActivity(chats.slice(0, 10));
       setPendingApprovals(pendingRequests);
       
     } catch (error) {
       console.error('Error loading overview data:', error);
       toast.error('Failed to load overview data');
+      // Set fallback stats
+      setStats({
+        totalChats: 0,
+        totalUsers: 0,
+        totalProjects: 0,
+        reflectionCompletionRate: 0
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCourseId, currentUser?.id]);
+
+  useEffect(() => {
+    if (selectedCourseId && currentUser?.id) {
+      loadOverviewData();
+    }
+  }, [selectedCourseId, currentUser?.id, loadOverviewData]);
 
   const handleApproval = async (membershipId, status) => {
     try {
@@ -75,8 +128,8 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[...Array(3)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
             <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
           ))}
         </div>
@@ -149,7 +202,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-md">
@@ -206,6 +259,26 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
               className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
             >
               View students <ArrowRightIcon className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-2 bg-orange-100 rounded-md">
+              <DocumentTextIcon className="h-6 w-6 text-orange-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Reflection Rate</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.reflectionCompletionRate}%</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Link 
+              to="/instructor/activity"
+              className="text-sm text-orange-600 hover:text-orange-700 flex items-center"
+            >
+              View reflections <ArrowRightIcon className="h-4 w-4 ml-1" />
             </Link>
           </div>
         </div>
@@ -293,7 +366,12 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
                   <p className="text-sm text-gray-600 truncate">{chat.user_message?.substring(0, 100)}...</p>
                   <div className="flex items-center space-x-2 mt-1">
                     <span className="text-xs text-gray-500">
-                      {new Date(chat.created_at).toLocaleDateString()}
+                      {(() => {
+                        if (!chat.created_at) return 'Unknown date';
+                        const date = chat.created_at?.toDate ? chat.created_at.toDate() : new Date(chat.created_at);
+                        if (isNaN(date)) return 'Unknown date';
+                        return date.toLocaleDateString();
+                      })()}
                     </span>
                     <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
                       {chat.tool_used || 'Unknown Tool'}

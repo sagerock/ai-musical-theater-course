@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/supabaseApi';
+import { courseApi, projectApi, chatApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import {
   AcademicCapIcon,
@@ -15,29 +15,109 @@ export default function CourseDashboard() {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [courseMembers, setCourseMembers] = useState([]);
+  const [courseStats, setCourseStats] = useState({
+    instructorCount: 0,
+    studentCount: 0,
+    projectCount: 0,
+    conversationCount: 0
+  });
   const [loading, setLoading] = useState(true);
-  const { currentUser } = useAuth();
+  const { currentUser, userRole, isInstructorAnywhere } = useAuth();
 
   useEffect(() => {
     loadCourseData();
   }, [courseId]);
 
+
   const loadCourseData = async () => {
     try {
       setLoading(true);
       
-      // Get course info by ID
+      // Get course info by ID  
       const courseData = await courseApi.getCourseById(courseId);
+      console.log('✅ Course data loaded:', courseData);
       setCourse(courseData);
       
-      // Get course members
-      const members = await courseApi.getCourseMembers(courseId);
-      setCourseMembers(members);
+      // Store course data in a variable so loadCourseStats can access it
+      // Load course statistics (available to both students and instructors)
+      await loadCourseStatsWithCourse(courseData);
+      
+      // Only get detailed course members if user is instructor
+      if (userRole === 'instructor' || isInstructorAnywhere) {
+        try {
+          const members = await courseApi.getCourseMembers(courseId);
+          setCourseMembers(members);
+        } catch (error) {
+          console.warn('Could not load course members (instructor access required):', error);
+          setCourseMembers([]);
+        }
+      } else {
+        setCourseMembers([]);
+      }
       
     } catch (error) {
       console.error('Error loading course data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCourseStatsWithCourse = async (courseData) => {
+    try {
+      console.log('🔄 Loading course statistics for:', courseId);
+      
+      // Load projects and chats (these should be accessible to course members)
+      const [projects, chats] = await Promise.all([
+        projectApi.getAllProjects(courseId).catch((error) => {
+          console.log('❌ Error getting projects:', error);
+          return [];
+        }),
+        chatApi.getChatsWithFilters({ courseId, limit: 1000 }).catch((error) => {
+          console.log('❌ Error getting chats:', error);
+          return [];
+        })
+      ]);
+
+      // Try to get member counts - this may fail for students due to permissions
+      let instructorCount = 0;
+      let studentCount = 0;
+      
+      if (userRole === 'instructor' || isInstructorAnywhere) {
+        try {
+          const members = await courseApi.getCourseMembers(courseId);
+          console.log('✅ Got course members:', members.length);
+          instructorCount = members.filter(m => m.role === 'instructor' && m.status === 'approved').length;
+          studentCount = members.filter(m => m.role === 'student' && m.status === 'approved').length;
+        } catch (error) {
+          console.log('❌ Error getting course members (instructor access required):', error);
+          // For instructors, if we can't get members, try to get basic counts from course document
+          if (courseData) {
+            instructorCount = courseData.instructorCount || 0;
+            studentCount = courseData.studentCount || 0;
+          }
+        }
+      } else {
+        // For students, use cached counts from course document if available
+        if (courseData) {
+          instructorCount = courseData.instructorCount || 0;
+          studentCount = courseData.studentCount || 0;
+        }
+        console.log('📊 Using cached member counts from course document:', { instructorCount, studentCount });
+      }
+
+      const newStats = {
+        instructorCount,
+        studentCount,
+        projectCount: projects.length,
+        conversationCount: chats.length
+      };
+
+      console.log('📊 Final course statistics:', newStats);
+      setCourseStats(newStats);
+
+    } catch (error) {
+      console.error('❌ Error loading course stats:', error);
+      // Keep default stats of 0
     }
   };
 
@@ -101,7 +181,7 @@ export default function CourseDashboard() {
               <AcademicCapIcon className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-semibold text-gray-900">{instructors.length}</p>
+              <p className="text-2xl font-semibold text-gray-900">{courseStats.instructorCount}</p>
               <p className="text-sm text-gray-600">Instructors</p>
             </div>
           </div>
@@ -113,7 +193,7 @@ export default function CourseDashboard() {
               <UsersIcon className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-semibold text-gray-900">{students.length}</p>
+              <p className="text-2xl font-semibold text-gray-900">{courseStats.studentCount}</p>
               <p className="text-sm text-gray-600">Students</p>
             </div>
           </div>
@@ -125,7 +205,7 @@ export default function CourseDashboard() {
               <FolderIcon className="h-8 w-8 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-semibold text-gray-900">0</p>
+              <p className="text-2xl font-semibold text-gray-900">{courseStats.projectCount}</p>
               <p className="text-sm text-gray-600">Projects</p>
             </div>
           </div>
@@ -137,15 +217,16 @@ export default function CourseDashboard() {
               <ChatBubbleLeftRightIcon className="h-8 w-8 text-orange-600" />
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-semibold text-gray-900">0</p>
+              <p className="text-2xl font-semibold text-gray-900">{courseStats.conversationCount}</p>
               <p className="text-sm text-gray-600">Conversations</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Course Members */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Course Members - Only show detailed lists to instructors */}
+      {(userRole === 'instructor' || isInstructorAnywhere) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Instructors */}
         <div className="bg-white rounded-lg shadow border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -213,12 +294,22 @@ export default function CourseDashboard() {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Course Info */}
       <div className="mt-6 bg-gray-50 rounded-lg p-4">
         <div className="text-xs text-gray-500">
-          Course created {format(new Date(course.created_at), 'MMMM dd, yyyy')}
+          Course created {(() => {
+            if (!course.created_at) return 'Unknown date';
+            
+            // Handle Firestore timestamp
+            const date = course.created_at?.toDate ? course.created_at.toDate() : new Date(course.created_at);
+            
+            if (isNaN(date)) return 'Unknown date';
+            
+            return format(date, 'MMMM dd, yyyy');
+          })()}
         </div>
       </div>
     </div>

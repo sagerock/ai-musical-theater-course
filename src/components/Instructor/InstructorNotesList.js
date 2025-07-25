@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { instructorNotesApi } from '../../services/supabaseApi';
+import { instructorNotesApi } from '../../services/firebaseApi';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';

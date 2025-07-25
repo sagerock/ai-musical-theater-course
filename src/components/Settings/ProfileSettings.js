@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { userApi } from '../../services/supabaseApi';
+import { userApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   UserCircleIcon,
@@ -16,6 +16,8 @@ export default function ProfileSettings() {
   const { currentUser, userRole, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Using Firebase API
   
   const [formData, setFormData] = useState({
     displayName: '',
@@ -31,15 +33,21 @@ export default function ProfileSettings() {
 
   useEffect(() => {
     if (currentUser) {
+      // Using Firebase user data
+      
       const userData = {
         displayName: currentUser.name || currentUser.displayName || '',
         email: currentUser.email || '',
         bio: '' // We can add bio to the user profile later if needed
       };
-      setFormData(userData);
-      setOriginalData(userData);
+      
+      // Only update if data has actually changed to prevent infinite loops
+      if (JSON.stringify(userData) !== JSON.stringify(formData)) {
+        setFormData(userData);
+        setOriginalData(userData);
+      }
     }
-  }, [currentUser]);
+  }, [currentUser?.id, currentUser?.email, currentUser?.displayName, currentUser?.name]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -963,7 +963,7 @@ export const emailNotifications = {
   async notifyStudentOfInstructorNote(noteData) {
     try {
       // Check if student has email notifications enabled
-      const { userApi } = await import('./supabaseApi.js');
+      const { userApi } = await import('./firebaseApi.js');
       const hasNotificationsEnabled = await userApi.hasEmailNotificationsEnabled(
         noteData.studentId, 
         'instructor_note_emails'
@@ -1151,7 +1151,7 @@ export const emailNotifications = {
       console.log('🔍 Starting admin notification process...');
       
       // Get all admin users
-      const { userApi } = await import('./supabaseApi.js');
+      const { userApi } = await import('./firebaseApi.js');
       const allUsers = await userApi.getAllUsers();
       console.log(`👥 Total users found: ${allUsers.length}`);
       
@@ -1183,7 +1183,7 @@ export const emailNotifications = {
       }
 
       // Get course statistics
-      const { courseApi } = await import('./supabaseApi.js');
+      const { courseApi } = await import('./firebaseApi.js');
       const course = await courseApi.getCourseByCode(enrollmentData.courseCode);
       const courseMembers = await courseApi.getCourseMembers(course.id);
       
@@ -1242,7 +1242,7 @@ export const emailNotifications = {
   async notifyAdminsOfInstructorEnrollmentRequest(enrollmentData) {
     try {
       // Get all admin users
-      const { userApi } = await import('./supabaseApi.js');
+      const { userApi } = await import('./firebaseApi.js');
       const allUsers = await userApi.getAllUsers();
       const adminUsers = allUsers.filter(user => user.role === 'admin' || user.is_global_admin);
 
@@ -1252,7 +1252,7 @@ export const emailNotifications = {
       }
 
       // Get course statistics
-      const { courseApi } = await import('./supabaseApi.js');
+      const { courseApi } = await import('./firebaseApi.js');
       const course = await courseApi.getCourseByCode(enrollmentData.courseCode);
       const courseMembers = await courseApi.getCourseMembers(course.id);
       

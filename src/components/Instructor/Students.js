@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { userApi, courseApi, chatApi, analyticsApi, projectApi } from '../../services/supabaseApi';
+import { userApi, courseApi, chatApi, projectApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -35,11 +35,12 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [searching, setSearching] = useState(false);
 
+
   useEffect(() => {
-    if (selectedCourseId) {
+    if (selectedCourseId && currentUser?.id) {
       loadStudents();
     }
-  }, [selectedCourseId]);
+  }, [selectedCourseId, currentUser?.id]);
 
   useEffect(() => {
     applyFilters();
@@ -59,6 +60,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   const loadStudents = async () => {
     try {
       setLoading(true);
+      
       const courseMembers = await userApi.getAllUsers(selectedCourseId);
       
       // Separate students and instructors based on their course membership role
@@ -248,6 +250,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
     
     try {
       setSearching(true);
+      
       const results = await userApi.searchUsers(term, selectedCourseId, 20);
       setSearchResults(results);
     } catch (error) {
@@ -496,7 +499,8 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                         <span>Last Activity</span>
                       </div>
                       <span className="text-gray-900">
-                        {format(stats.lastActivity, 'MMM dd')}
+                        {stats.lastActivity && !isNaN(new Date(stats.lastActivity)) ? 
+                          format(new Date(stats.lastActivity), 'MMM dd') : 'No activity'}
                       </span>
                     </div>
                     
@@ -522,7 +526,8 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                         {student.status === 'approved' ? 'Active' : 'Pending'}
                       </span>
                       <span className="text-xs text-gray-500">
-                        Joined {format(new Date(student.joined_at || student.created_at), 'MMM dd, yyyy')}
+                        Joined {(student.joined_at || student.created_at) && !isNaN(new Date(student.joined_at || student.created_at)) ? 
+                          format(new Date(student.joined_at || student.created_at), 'MMM dd, yyyy') : 'Unknown date'}
                       </span>
                     </div>
                   </div>

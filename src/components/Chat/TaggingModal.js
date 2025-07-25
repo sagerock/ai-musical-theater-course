@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { tagApi } from '../../services/supabaseApi';
+import { useAuth } from '../../contexts/AuthContext';
+import { tagApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   XMarkIcon,
@@ -9,10 +10,14 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function TaggingModal({ chat, availableTags, onClose, onTagsUpdated, courseId, userRole }) {
+  const { currentUser } = useAuth();
   const [selectedTags, setSelectedTags] = useState([]);
   const [newTagName, setNewTagName] = useState('');
   const [creatingTag, setCreatingTag] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Detect if this is a Firebase user (Firebase UIDs don't follow UUID format)
+  // Using Firebase API
 
   useEffect(() => {
     // Initialize with existing tags

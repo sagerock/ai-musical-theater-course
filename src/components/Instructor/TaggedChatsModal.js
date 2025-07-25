@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { tagApi } from '../../services/supabaseApi';
+import { tagApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import {
   XMarkIcon,

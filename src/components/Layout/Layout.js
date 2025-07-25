@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/supabaseApi';
+import { courseApi } from '../../services/firebaseApi';
 import Footer from './Footer';
 import {
   HomeIcon,
   FolderIcon,
-  ChatBubbleLeftRightIcon,
   ChartBarIcon,
   Bars3Icon,
   XMarkIcon,
@@ -21,34 +20,31 @@ import {
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userCourses, setUserCourses] = useState([]);
-  const [loadingCourses, setLoadingCourses] = useState(true);
   const { currentUser, userRole, isInstructorAnywhere, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadUserCourses();
-  }, [currentUser]);
-
-  const loadUserCourses = async () => {
-    if (!currentUser) {
+  const loadUserCourses = useCallback(async () => {
+    if (!currentUser?.id) {
       setUserCourses([]);
-      setLoadingCourses(false);
       return;
     }
 
     try {
-      setLoadingCourses(true);
+      console.log('🔥 Layout: Firebase user, loading courses from Firebase');
       const courses = await courseApi.getUserCourses(currentUser.id);
+      
+      console.log('📋 Layout: Loaded courses:', courses.length);
       setUserCourses(courses);
     } catch (error) {
       console.error('Error loading user courses:', error);
       setUserCourses([]);
-    } finally {
-      setLoadingCourses(false);
-      console.log('✅ Layout: loadUserCourses - finished. Loading Courses:', false);
     }
-  };
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    loadUserCourses();
+  }, [currentUser?.id, loadUserCourses]);
 
   const handleLogout = async () => {
     try {
@@ -71,14 +67,7 @@ export default function Layout() {
     { name: 'Help', href: '/help', icon: QuestionMarkCircleIcon }
   ];
 
-  // Debug logging
-  console.log('🔍 Layout: Auth status:', {
-    currentUser: currentUser?.uid,
-    userRole,
-    isInstructorAnywhere,
-    navigationItems: navigation.length,
-    userCoursesCount: userCourses.length
-  });
+  // Removed excessive debug logging
 
   const isActivePath = (path) => {
     if (path === '/dashboard') {
@@ -141,6 +130,7 @@ export default function Layout() {
                     <div key={courseMembership.id}>
                       {/* Course Overview Link */}
                       <Link
+                        key={`course-link-${courseMembership.courses.id}`}
                         to={`/course/${courseMembership.courses.id}`}
                         onClick={() => setSidebarOpen(false)}
                         className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -163,7 +153,7 @@ export default function Layout() {
                       </Link>
                       
                       {/* Course Sub-navigation */}
-                      <div className="ml-8 mt-1 space-y-1">
+                      <div key={`course-subnav-${courseMembership.courses.id}`} className="ml-8 mt-1 space-y-1">
                         <Link
                           to={`/course/${courseMembership.courses.id}/projects`}
                           onClick={() => setSidebarOpen(false)}
@@ -257,6 +247,7 @@ export default function Layout() {
                       <div key={courseMembership.id}>
                         {/* Course Overview Link */}
                         <Link
+                          key={`course-link-desktop-${courseMembership.courses.id}`}
                           to={`/course/${courseMembership.courses.id}`}
                           className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                             location.pathname === `/course/${courseMembership.courses.id}`
@@ -278,7 +269,7 @@ export default function Layout() {
                         </Link>
                         
                         {/* Course Sub-navigation */}
-                        <div className="ml-8 mt-1 space-y-1">
+                        <div key={`course-subnav-desktop-${courseMembership.courses.id}`} className="ml-8 mt-1 space-y-1">
                           <Link
                             to={`/course/${courseMembership.courses.id}/projects`}
                             className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${

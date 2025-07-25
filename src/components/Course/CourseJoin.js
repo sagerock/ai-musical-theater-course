@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/supabaseApi';
+import { courseApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   AcademicCapIcon,
@@ -41,8 +41,12 @@ export default function CourseJoin() {
     console.log('✅ CourseJoin: User is logged in, proceeding with enrollment');
     setLoading(true);
     
+    // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
+    // Using Firebase API
+    
     try {
       console.log('🔍 CourseJoin: Looking up course by code');
+      
       // Find the course
       const course = await courseApi.getCourseByCode(courseCode.trim().toUpperCase());
       console.log('✅ CourseJoin: Course found:', course.title);
@@ -50,7 +54,7 @@ export default function CourseJoin() {
       
       console.log('🚀 CourseJoin: Calling joinCourse API');
       // Join the course directly using existing user data
-      await courseApi.joinCourse(courseCode.trim().toUpperCase(), currentUser.id, role);
+      await courseApi.joinCourse(currentUser.id, course.id, courseCode.trim().toUpperCase());
       console.log('✅ CourseJoin: joinCourse completed successfully');
       
       toast.success(`Successfully requested to join ${course.title}! ${

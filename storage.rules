@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the file
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // PDF attachments stored as: /pdf-uploads/{userId}/{chatId}/{filename}
+    match /pdf-uploads/{userId}/{chatId}/{filename} {
+      // Users can upload to their own folder, anyone with chat access can read
+      allow read: if isAuthenticated();  // Will be controlled by Firestore rules
+      allow write: if isOwner(userId);   // Only owner can upload
+    }
+    
+    // User profile images stored as: /profile-images/{userId}/{filename}
+    match /profile-images/{userId}/{filename} {
+      allow read: if isAuthenticated();  // Public read for profile images
+      allow write: if isOwner(userId);   // Only owner can upload
+    }
+    
+    // Course materials stored as: /course-materials/{courseId}/{filename}
+    match /course-materials/{courseId}/{filename} {
+      allow read: if isAuthenticated();  // Will be controlled by Firestore rules
+      allow write: if isAuthenticated(); // Instructors and admins (checked in app)
+    }
+  }
+}

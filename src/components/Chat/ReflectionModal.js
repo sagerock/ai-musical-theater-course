@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { reflectionApi } from '../../services/supabaseApi';
+import { reflectionApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   XMarkIcon,
@@ -13,6 +13,9 @@ export default function ReflectionModal({ chat, onClose, onReflectionUpdated }) 
   const [saving, setSaving] = useState(false);
   const [existingReflection, setExistingReflection] = useState(null);
   const { currentUser } = useAuth();
+
+  // Detect if this is a Firebase user (Firebase UIDs don't follow UUID format)
+  // Using Firebase API
 
   useEffect(() => {
     // Load existing reflection if it exists
