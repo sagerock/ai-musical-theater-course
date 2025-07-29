@@ -267,5 +267,23 @@ service cloud.firestore {
       // Users can create/modify tags for their own chats, instructors for student chats
       allow create, update, delete: if isAuthenticated();
     }
+
+    // COURSE ANALYTICS - Server-side computed analytics data
+    match /courseAnalytics/{courseId} {
+      // Only instructors and admins can read course analytics
+      allow read: if isAuthenticated() && (
+        isInstructorInCourse(courseId) ||                    // Instructor in course
+        isGlobalAdmin()                                      // Global admin
+      );
+      
+      // Allow collection queries for instructors and admins
+      allow list: if isAuthenticated() && (
+        hasInstructorRole() ||                               // Users with instructor role
+        isGlobalAdmin()                                      // Global admin
+      );
+      
+      // Only Cloud Functions should write analytics data (or admins for manual operations)
+      allow write: if isGlobalAdmin();
+    }
   }
 }

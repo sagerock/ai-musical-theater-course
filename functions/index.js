@@ -211,21 +211,70 @@ exports.generateCourseAnalytics = onCall({
 
   // Security: Check if caller is instructor or admin for this course
   try {
-    const membershipDoc = await db.collection('courseMemberships')
-      .doc(`${callerUid}_${courseId}`)
-      .get();
+    logger.info('🔐 Checking permissions for user:', callerUid, 'course:', courseId);
     
-    if (!membershipDoc.exists()) {
-      throw new HttpsError('permission-denied', 'Not enrolled in this course');
-    }
-
-    const membership = membershipDoc.data();
-    if (membership.role !== 'instructor' && membership.role !== 'admin') {
-      throw new HttpsError('permission-denied', 'Only instructors and admins can generate analytics');
+    // First check if user is global admin
+    const userDoc = await db.collection('users').doc(callerUid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      logger.info('👤 User data:', { role: userData.role, email: userData.email });
+      
+      // Allow global admins
+      if (userData.role === 'admin') {
+        logger.info('✅ User is global admin, allowing access');
+        // Continue to analytics generation
+      } else {
+        // Check course membership for non-admins
+        const membershipDoc = await db.collection('courseMemberships')
+          .doc(`${callerUid}_${courseId}`)
+          .get();
+        
+        logger.info('📋 Membership check:', {
+          exists: membershipDoc.exists,
+          docId: `${callerUid}_${courseId}`
+        });
+        
+        if (!membershipDoc.exists) {
+          // Try alternative query in case the document ID format is different
+          const membershipQuery = await db.collection('courseMemberships')
+            .where('userId', '==', callerUid)
+            .where('courseId', '==', courseId)
+            .get();
+          
+          logger.info('🔍 Alternative membership query found:', membershipQuery.size, 'documents');
+          
+          if (membershipQuery.empty) {
+            throw new HttpsError('permission-denied', 'Not enrolled in this course');
+          }
+          
+          // Use the first found membership
+          const membership = membershipQuery.docs[0].data();
+          logger.info('📋 Found membership via query:', membership);
+          
+          if (membership.role !== 'instructor' && membership.role !== 'admin') {
+            throw new HttpsError('permission-denied', 'Only instructors and admins can generate analytics');
+          }
+        } else {
+          const membership = membershipDoc.data();
+          logger.info('📋 Direct membership data:', membership);
+          
+          if (membership.role !== 'instructor' && membership.role !== 'admin') {
+            throw new HttpsError('permission-denied', 'Only instructors and admins can generate analytics');
+          }
+        }
+      }
+    } else {
+      throw new HttpsError('permission-denied', 'User not found');
     }
   } catch (error) {
     logger.error('❌ Error checking course permissions:', error);
-    throw new HttpsError('permission-denied', 'Unable to verify course permissions');
+    
+    // Don't wrap HttpsError - re-throw as-is
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    
+    throw new HttpsError('permission-denied', 'Unable to verify course permissions: ' + error.message);
   }
 
   try {
@@ -233,7 +282,7 @@ exports.generateCourseAnalytics = onCall({
 
     // Get course information
     const courseDoc = await db.collection('courses').doc(courseId).get();
-    const courseData = courseDoc.exists() ? courseDoc.data() : {};
+    const courseData = courseDoc.exists ? courseDoc.data() : {};
 
     // Get all students in the course
     const membershipsQuery = db.collection('courseMemberships')
