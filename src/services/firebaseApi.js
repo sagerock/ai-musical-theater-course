@@ -2716,4 +2716,189 @@ export const realtimeApi = {
   }
 };
 
+// Analytics API - Server-side analytics with caching
+export const analyticsApi = {
+  /**
+   * Generate comprehensive course analytics using Cloud Function
+   * This computes metrics server-side and caches them for performance
+   */
+  async generateCourseAnalytics(courseId) {
+    console.log('📊 generateCourseAnalytics:', courseId);
+    
+    try {
+      const generateAnalytics = httpsCallable(functions, 'generateCourseAnalytics');
+      const result = await generateAnalytics({ courseId });
+      
+      console.log('✅ Course analytics generated:', result.data);
+      return result.data;
+    } catch (error) {
+      console.error('❌ Error generating course analytics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get cached course analytics from Firestore
+   * Falls back to generating analytics if cache is stale or missing
+   */
+  async getCourseAnalytics(courseId, forceRefresh = false) {
+    console.log('📊 getCourseAnalytics:', courseId, { forceRefresh });
+    
+    try {
+      // Check for cached analytics
+      if (!forceRefresh) {
+        const analyticsDoc = await getDoc(doc(db, 'courseAnalytics', courseId));
+        
+        if (analyticsDoc.exists()) {
+          const analyticsData = analyticsDoc.data();
+          const lastUpdated = analyticsData.lastUpdated?.toDate?.() || new Date(analyticsData.lastUpdated);
+          const isStale = analyticsData.stale || false;
+          
+          // Consider analytics fresh if updated within last hour and not marked stale
+          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+          const isFresh = lastUpdated > oneHourAgo && !isStale;
+          
+          if (isFresh) {
+            console.log('✅ Using cached analytics (fresh)');
+            return {
+              ...analyticsData,
+              cached: true,
+              lastUpdated: lastUpdated
+            };
+          } else {
+            console.log('⚠️ Analytics cache is stale, will refresh');
+          }
+        } else {
+          console.log('ℹ️ No cached analytics found, will generate');
+        }
+      }
+
+      // Generate fresh analytics
+      const result = await this.generateCourseAnalytics(courseId);
+      
+      // Return the cached version (will be fresh now)
+      const freshAnalyticsDoc = await getDoc(doc(db, 'courseAnalytics', courseId));
+      if (freshAnalyticsDoc.exists()) {
+        const analyticsData = freshAnalyticsDoc.data();
+        return {
+          ...analyticsData,
+          cached: false,
+          lastUpdated: analyticsData.lastUpdated?.toDate?.() || new Date(analyticsData.lastUpdated)
+        };
+      }
+      
+      throw new Error('Failed to retrieve generated analytics');
+      
+    } catch (error) {
+      console.error('❌ Error getting course analytics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get lightweight analytics summary for quick display
+   * Returns only essential metrics without detailed breakdowns
+   */
+  async getCourseAnalyticsSummary(courseId) {
+    console.log('📊 getCourseAnalyticsSummary:', courseId);
+    
+    try {
+      const analytics = await this.getCourseAnalytics(courseId);
+      
+      return {
+        courseInfo: analytics.courseInfo,
+        summary: {
+          totalStudents: analytics.courseInfo.totalStudents,
+          totalInteractions: analytics.courseInfo.totalInteractions,
+          totalProjects: analytics.courseInfo.totalProjects,
+          averageInteractionsPerStudent: analytics.engagementPatterns.averageInteractionsPerStudent,
+          topTool: Object.entries(analytics.toolUsage || {})
+            .sort(([,a], [,b]) => b - a)[0]?.[0] || 'None',
+          lastUpdated: analytics.lastUpdated
+        },
+        cached: analytics.cached
+      };
+    } catch (error) {
+      console.error('❌ Error getting analytics summary:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Force refresh of course analytics
+   * Useful when you know data has changed significantly
+   */
+  async refreshCourseAnalytics(courseId) {
+    console.log('🔄 refreshCourseAnalytics:', courseId);
+    
+    try {
+      // Mark current analytics as stale first
+      const analyticsRef = doc(db, 'courseAnalytics', courseId);
+      const analyticsDoc = await getDoc(analyticsRef);
+      
+      if (analyticsDoc.exists()) {
+        await updateDoc(analyticsRef, {
+          stale: true,
+          lastUpdated: serverTimestamp()
+        });
+      }
+      
+      // Generate fresh analytics
+      return await this.getCourseAnalytics(courseId, true);
+    } catch (error) {
+      console.error('❌ Error refreshing course analytics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Check if analytics exist for a course
+   */
+  async hasAnalytics(courseId) {
+    console.log('📊 hasAnalytics:', courseId);
+    
+    try {
+      const analyticsDoc = await getDoc(doc(db, 'courseAnalytics', courseId));
+      return analyticsDoc.exists();
+    } catch (error) {
+      console.error('❌ Error checking analytics existence:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Get analytics status for debugging
+   */
+  async getAnalyticsStatus(courseId) {
+    console.log('📊 getAnalyticsStatus:', courseId);
+    
+    try {
+      const analyticsDoc = await getDoc(doc(db, 'courseAnalytics', courseId));
+      
+      if (!analyticsDoc.exists()) {
+        return { exists: false };
+      }
+      
+      const data = analyticsDoc.data();
+      const lastUpdated = data.lastUpdated?.toDate?.() || new Date(data.lastUpdated);
+      const isStale = data.stale || false;
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const isFresh = lastUpdated > oneHourAgo && !isStale;
+      
+      return {
+        exists: true,
+        lastUpdated,
+        isStale,
+        isFresh,
+        studentCount: data.courseInfo?.totalStudents || 0,
+        interactionCount: data.courseInfo?.totalInteractions || 0,
+        projectCount: data.courseInfo?.totalProjects || 0
+      };
+    } catch (error) {
+      console.error('❌ Error getting analytics status:', error);
+      return { exists: false, error: error.message };
+    }
+  }
+};
+
 console.log('🔥 Firebase API initialized');
