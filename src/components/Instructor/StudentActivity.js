@@ -66,28 +66,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     try {
       setLoading(true);
       
-      const promises = [
-        projectApi.getAllProjects(selectedCourseId),
-        userApi.getAllUsers(selectedCourseId),
-        tagApi.getAllTags(selectedCourseId)
-      ];
-      
-      const results = await Promise.allSettled(promises);
-
-      // Handle projects
-      if (results[0].status === 'fulfilled') {
-        setProjects(results[0].value);
-      }
-
-      // Handle users
-      if (results[1].status === 'fulfilled') {
-        setUsers(results[1].value);
-      }
-
-      // Handle tags
-      if (results[2].status === 'fulfilled') {
-        setTags(results[2].value);
-      }
+      // Users, projects, and tags will all be extracted from chats
 
       // Set available AI tools from system configuration
       // Use actual database values that might exist in chats
@@ -141,6 +120,80 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       setLoading(false);
     }
   }, [selectedCourseId, getToolDisplayName]);
+
+  // Load all chats without filters to populate user, project, and tag dropdowns
+  const loadAllChatsForFilters = useCallback(async () => {
+    try {
+      console.log('👥📁🏷️ Loading all chats to extract users, projects, and tags for filter dropdowns');
+      
+      const allChats = await chatApi.getChatsWithFilters({
+        courseId: selectedCourseId
+        // No filters to get all chats
+      });
+      
+      // Extract unique users from all chats
+      const uniqueUsers = [];
+      const seenUserIds = new Set();
+      
+      // Extract unique projects from all chats
+      const uniqueProjects = [];
+      const seenProjectIds = new Set();
+      
+      // Extract unique tags from all chats
+      const uniqueTags = [];
+      const seenTagIds = new Set();
+      
+      allChats.forEach(chat => {
+        // Extract users
+        if (chat.users && chat.userId && !seenUserIds.has(chat.userId)) {
+          seenUserIds.add(chat.userId);
+          uniqueUsers.push({
+            id: chat.userId,
+            name: chat.users.name || chat.users.displayName || 'Unknown User',
+            email: chat.users.email || 'No email'
+          });
+        }
+        
+        // Extract projects
+        if (chat.projects && chat.projectId && !seenProjectIds.has(chat.projectId)) {
+          seenProjectIds.add(chat.projectId);
+          uniqueProjects.push({
+            id: chat.projectId,
+            title: chat.projects.title || 'Untitled Project',
+            description: chat.projects.description || ''
+          });
+        }
+        
+        // Extract tags from chat_tags
+        if (chat.chat_tags && Array.isArray(chat.chat_tags)) {
+          chat.chat_tags.forEach(chatTag => {
+            if (chatTag.tags && chatTag.tags.id && !seenTagIds.has(chatTag.tags.id)) {
+              seenTagIds.add(chatTag.tags.id);
+              uniqueTags.push({
+                id: chatTag.tags.id,
+                name: chatTag.tags.name || 'Unnamed Tag',
+                color: chatTag.tags.color || '#3B82F6'
+              });
+            }
+          });
+        }
+      });
+      
+      console.log('👥 Extracted unique users from chats:', uniqueUsers.length);
+      console.log('📁 Extracted unique projects from chats:', uniqueProjects.length);
+      console.log('🏷️ Extracted unique tags from chats:', uniqueTags.length);
+      
+      setUsers(uniqueUsers.sort((a, b) => a.name.localeCompare(b.name)));
+      setProjects(uniqueProjects.sort((a, b) => a.title.localeCompare(b.title)));
+      setTags(uniqueTags.sort((a, b) => a.name.localeCompare(b.name)));
+      
+    } catch (error) {
+      console.error('Error loading all chats for filters:', error);
+      setUsers([]);
+      setProjects([]);
+      setTags([]);
+    }
+  }, [selectedCourseId]);
 
   const loadChatsWithFilters = useCallback(async () => {
     try {
@@ -197,12 +250,14 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     setFilteredChats(filtered);
   }, [chats, filters.tagId, filters.hasReflection]);
 
-  // Load initial data (projects, users, tags) once when component mounts
+  // Load initial data (AI tools) and extract users/projects/tags from chats when component mounts
   useEffect(() => {
     if (selectedCourseId && currentUser?.id) {
       loadInitialData();
+      // Load all chats to populate user, project, and tag dropdowns with only active items
+      loadAllChatsForFilters();
     }
-  }, [selectedCourseId, currentUser?.id, loadInitialData]);
+  }, [selectedCourseId, currentUser?.id, loadInitialData, loadAllChatsForFilters]);
 
   // Load chats when filters change (server-side filtering)
   useEffect(() => {
