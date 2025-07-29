@@ -103,7 +103,7 @@ export default function Chat() {
         if (!isEnrolledAndApproved) {
           console.log('❌ Chat: User not enrolled or approved for course:', projectData.course_id);
           toast.error('Access denied: You are no longer enrolled in this course');
-          navigate('/projects');
+          navigate(`/course/${projectData.course_id}/projects`);
           return;
         }
         
@@ -119,7 +119,8 @@ export default function Chat() {
     } catch (error) {
       console.error('Error loading project data:', error);
       toast.error('Failed to load project');
-      navigate('/projects');
+      // Navigate to dashboard as fallback since we don't have course info in error case
+      navigate('/dashboard');
     } finally {
       setLoading(false);
     }
@@ -398,10 +399,10 @@ export default function Chat() {
           <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-red-500" />
           <p className="mt-4 text-gray-900 font-medium">Project not found</p>
           <button
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/dashboard')}
             className="mt-2 text-primary-600 hover:text-primary-500"
           >
-            Back to Projects
+            Back to Dashboard
           </button>
         </div>
       </div>
@@ -415,7 +416,13 @@ export default function Chat() {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button
-              onClick={() => navigate('/projects')}
+              onClick={() => {
+                if (project?.course_id) {
+                  navigate(`/course/${project.course_id}/projects`);
+                } else {
+                  navigate('/dashboard');
+                }
+              }}
               className="mr-4 p-2 text-gray-400 hover:text-gray-600 rounded-md"
             >
               <ArrowLeftIcon className="h-5 w-5" />
@@ -465,13 +472,14 @@ export default function Chat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Instructor Notes Section - Compact */}
-      {project && (
+      {/* Instructor Notes Section - For instructors and project owners */}
+      {project && (isInstructor || isProjectOwner) && (
         <div className="px-6 py-2">
           <InstructorNotes 
             project={project} 
             courseId={project.course_id}
             isInstructorView={isInstructor && !isProjectOwner}
+            isStudentView={isProjectOwner && !isInstructor}
           />
         </div>
       )}

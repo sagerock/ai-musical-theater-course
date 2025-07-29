@@ -21,6 +21,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [tags, setTags] = useState([]);
+  const [availableTools, setAvailableTools] = useState([]);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -40,21 +41,32 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const [selectedChat, setSelectedChat] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Helper function to display user-friendly AI tool names
+  const getToolDisplayName = useCallback((toolName) => {
+    if (!toolName) return 'Unknown Tool';
+    
+    const toolMap = {
+      'gpt-4o-2024-08-06': 'GPT-4o',
+      'gpt-4o': 'GPT-4o',
+      'claude-sonnet-4-20250514': 'Claude Sonnet 4',
+      'claude-sonnet-4': 'Claude Sonnet 4',
+      'gemini-1.5-flash': 'Gemini Flash',
+      'gemini-flash': 'Gemini Flash',
+      'sonar-pro': 'Sonar Pro',
+      'Claude Sonnet 4': 'Claude Sonnet 4',
+      'GPT-4o': 'GPT-4o',
+      'Gemini Flash': 'Gemini Flash',
+      'Sonar Pro': 'Sonar Pro'
+    };
+    
+    return toolMap[toolName] || toolName;
+  }, []);
 
-  const loadDashboardData = useCallback(async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
       
       const promises = [
-        Promise.resolve({ totalChats: 0, totalUsers: 0, totalProjects: 0, reflectionCompletionRate: 0 }), // Default stats for Firebase
-        chatApi.getChatsWithFilters({
-          courseId: selectedCourseId,
-          userId: filters.userId,
-          projectId: filters.projectId,
-          toolUsed: filters.toolUsed,
-          startDate: filters.startDate,
-          endDate: filters.endDate
-        }),
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
         tagApi.getAllTags(selectedCourseId)
@@ -62,33 +74,107 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       
       const results = await Promise.allSettled(promises);
 
-      // Handle chats
-      if (results[1].status === 'fulfilled') {
-        setChats(results[1].value);
-      }
-
       // Handle projects
-      if (results[2].status === 'fulfilled') {
-        setProjects(results[2].value);
+      if (results[0].status === 'fulfilled') {
+        setProjects(results[0].value);
       }
 
       // Handle users
-      if (results[3].status === 'fulfilled') {
-        setUsers(results[3].value);
+      if (results[1].status === 'fulfilled') {
+        setUsers(results[1].value);
       }
 
       // Handle tags
-      if (results[4].status === 'fulfilled') {
-        setTags(results[4].value);
+      if (results[2].status === 'fulfilled') {
+        setTags(results[2].value);
+      }
+
+      // Set available AI tools from system configuration
+      // Use actual database values that might exist in chats
+      const allConfiguredTools = [
+        'gpt-4o-2024-08-06',
+        'claude-sonnet-4-20250514', 
+        'gemini-1.5-flash',
+        'sonar-pro',
+        'Claude Sonnet 4', // Legacy format that might exist in database
+        'GPT-4o',          // Legacy format that might exist in database
+        'Gemini Flash',    // Legacy format that might exist in database
+        'Sonar Pro'        // Legacy format that might exist in database
+      ];
+      
+      // Remove duplicates based on display name but keep one representative value
+      const uniqueTools = [];
+      const seenDisplayNames = new Set();
+      
+      for (const tool of allConfiguredTools) {
+        const displayName = getToolDisplayName(tool);
+        if (!seenDisplayNames.has(displayName)) {
+          seenDisplayNames.add(displayName);
+          uniqueTools.push(tool);
+        }
+      }
+      
+      setAvailableTools(uniqueTools);
+      console.log('📊 Available AI tools (unique):', uniqueTools);
+      
+      // Debug: Load all chats to see what tool values actually exist in the database
+      try {
+        const allChatsForDebug = await chatApi.getChatsWithFilters({ courseId: selectedCourseId, limit: 100 });
+        const actualToolsInDB = [...new Set(allChatsForDebug.map(chat => chat.tool_used).filter(Boolean))];
+        console.log('🔍 Debug: Actual tools in database:', actualToolsInDB);
+        console.log('🔍 Debug: Sample chat with tool_used:', allChatsForDebug.find(chat => chat.tool_used));
+        console.log('🔍 Debug: Sample chat full data:', allChatsForDebug[0]);
+        
+        // Update available tools to match what's actually in the database
+        if (actualToolsInDB.length > 0) {
+          console.log('🔄 Updating available tools to match database values');
+          setAvailableTools(actualToolsInDB);
+        }
+      } catch (debugError) {
+        console.log('Debug query failed:', debugError);
       }
 
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-      toast.error('Failed to load dashboard data');
+      console.error('Error loading initial data:', error);
+      toast.error('Failed to load initial data');
     } finally {
       setLoading(false);
     }
-  }, [selectedCourseId, currentUser?.id, filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate]);
+  }, [selectedCourseId, getToolDisplayName]);
+
+  const loadChatsWithFilters = useCallback(async () => {
+    try {
+      setFiltersLoading(true);
+      console.log('📊 Loading chats with filters:', filters);
+      
+      const chatsData = await chatApi.getChatsWithFilters({
+        courseId: selectedCourseId,
+        userId: filters.userId || undefined,
+        projectId: filters.projectId || undefined,
+        toolUsed: filters.toolUsed || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined
+      });
+      
+      console.log('📊 Loaded chats:', chatsData.length);
+      
+      // Debug: Show what tool values are actually in the database
+      if (filters.toolUsed) {
+        console.log('🔍 Debug: Looking for tool:', filters.toolUsed);
+        console.log('🔍 Debug: Actual tool values in results:', chatsData.map(chat => chat.tool_used));
+        console.log('🔍 Debug: Unique tool values:', [...new Set(chatsData.map(chat => chat.tool_used))]);
+      }
+      
+      setChats(chatsData);
+      
+    } catch (error) {
+      console.error('Error loading chats:', error);
+      toast.error('Failed to load chat data');
+      setChats([]);
+    } finally {
+      setFiltersLoading(false);
+    }
+  }, [selectedCourseId, filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...chats];
@@ -111,23 +197,24 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     setFilteredChats(filtered);
   }, [chats, filters.tagId, filters.hasReflection]);
 
+  // Load initial data (projects, users, tags) once when component mounts
   useEffect(() => {
     if (selectedCourseId && currentUser?.id) {
-      loadDashboardData();
+      loadInitialData();
     }
-  }, [selectedCourseId, currentUser?.id, loadDashboardData]);
+  }, [selectedCourseId, currentUser?.id, loadInitialData]);
 
+  // Load chats when filters change (server-side filtering)
   useEffect(() => {
-    // Reload data when significant filters change to optimize backend queries
     if (selectedCourseId && currentUser?.id) {
-      setFiltersLoading(true);
-      loadDashboardData().finally(() => setFiltersLoading(false));
+      loadChatsWithFilters();
     }
-  }, [filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate, selectedCourseId, currentUser?.id, loadDashboardData]);
+  }, [selectedCourseId, currentUser?.id, loadChatsWithFilters]);
 
+  // Apply client-side filters (tags and reflection status)
   useEffect(() => {
     applyFilters();
-  }, [applyFilters]); // Only apply client-side for tag and reflection filters
+  }, [applyFilters]);
 
 
   const handleFilterChange = (e) => {
@@ -153,12 +240,93 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const handleExport = async () => {
     try {
       setExporting(true);
+      console.log('🔽 Export started, chats data:', chats.length, 'items');
       
-      // Firebase users don't have analytics export functionality yet
-      toast.error('Data export is not yet available. Please contact support.');
+      if (chats.length === 0) {
+        toast.error('No data to export');
+        return;
+      }
+      
+      // Create CSV content from the chat data
+      const csvHeaders = [
+        'Date',
+        'Student Name',
+        'Student Email', 
+        'Project Title',
+        'AI Model',
+        'Conversation Length',
+        'Reflection Status',
+        'Tags',
+        'Chat ID'
+      ];
+      
+      const csvRows = chats.map(chat => {
+        const user = users.find(u => u.id === chat.userId);
+        const project = projects.find(p => p.id === chat.projectId);
+        const chatTags = tags.filter(tag => 
+          chat.tags && chat.tags.includes(tag.id)
+        ).map(tag => tag.name).join('; ');
+        
+        // Handle Firestore timestamp - it might be a Timestamp object or ISO string
+        let dateString = 'Unknown Date';
+        try {
+          if (chat.createdAt) {
+            if (chat.createdAt.toDate) {
+              // Firestore Timestamp object
+              dateString = format(chat.createdAt.toDate(), 'yyyy-MM-dd HH:mm:ss');
+            } else {
+              // ISO string or Date object
+              dateString = format(new Date(chat.createdAt), 'yyyy-MM-dd HH:mm:ss');
+            }
+          }
+        } catch (dateError) {
+          console.warn('Date formatting error for chat:', chat.id, dateError);
+          dateString = 'Invalid Date';
+        }
+        
+        return [
+          dateString,
+          user?.displayName || user?.name || 'Unknown User',
+          user?.email || 'N/A',
+          project?.title || 'Unknown Project',
+          chat.tool_used || 'Unknown',
+          chat.conversationLength || 0,
+          chat.reflection_status || 'No Reflection',
+          chatTags || 'None',
+          chat.id
+        ];
+      });
+      
+      console.log('🔽 CSV rows created:', csvRows.length);
+      
+      // Combine headers and rows
+      const csvContent = [csvHeaders, ...csvRows]
+        .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+      
+      console.log('🔽 CSV content length:', csvContent.length, 'characters');
+      
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const fileName = `${selectedCourse?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'course'}_student_activity_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      console.log('🔽 Downloading file:', fileName);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Successfully exported ${chats.length} student interactions to CSV`);
+      console.log('🔽 Export completed successfully');
     } catch (error) {
-      console.error('Error exporting data:', error);
-      toast.error('Failed to export data');
+      console.error('❌ Error exporting data:', error);
+      toast.error(`Failed to export data: ${error.message}`);
     } finally {
       setExporting(false);
     }
@@ -169,7 +337,6 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     setIsModalOpen(true);
   };
 
-  const uniqueTools = [...new Set(chats.map(chat => chat.tool_used).filter(Boolean))];
 
   if (loading) {
     return (
@@ -185,17 +352,33 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Student Activity</h2>
-          <p className="text-sm text-gray-600">
-            {filteredChats.length} of {chats.length} interactions
-          </p>
+          <div className="text-sm text-gray-600">
+            {filtersLoading ? (
+              <span className="flex items-center">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500 mr-2"></div>
+                Loading filtered results...
+              </span>
+            ) : (
+              `${filteredChats.length} of ${chats.length} interactions`
+            )}
+          </div>
         </div>
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className={`inline-flex items-center px-3 py-2 border rounded-md shadow-sm text-sm font-medium ${
+              Object.values(filters).some(value => value) 
+                ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100' 
+                : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+            }`}
           >
             <FunnelIcon className="h-4 w-4 mr-2" />
             Filters
+            {Object.values(filters).some(value => value) && (
+              <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {Object.values(filters).filter(value => value).length}
+              </span>
+            )}
           </button>
           <button
             onClick={handleExport}
@@ -255,9 +438,9 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Tools</option>
-                {uniqueTools.map(tool => (
+                {availableTools.map(tool => (
                   <option key={tool} value={tool}>
-                    {tool}
+                    {getToolDisplayName(tool)}
                   </option>
                 ))}
               </select>
@@ -400,7 +583,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
                       {/* AI Tool */}
                       <div className="flex items-center space-x-1">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {chat.tool_used || 'Unknown'}
+                          {getToolDisplayName(chat.tool_used)}
                         </span>
                       </div>
                       

@@ -99,10 +99,10 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/projects"
+                to="/join"
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
               >
-                Get Started
+                Get Started - Join a Course
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
               </Link>
               <Link
@@ -185,7 +185,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/projects"
+              to="/join"
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50"
             >
               Start Using AI Engagement Hub

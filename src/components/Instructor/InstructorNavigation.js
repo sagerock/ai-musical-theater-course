@@ -15,7 +15,7 @@ const navigationItems = [
     name: 'Overview',
     href: '/instructor/overview',
     icon: ChartBarIcon,
-    description: 'Course statistics and quick metrics'
+    description: 'Statistics for the currently selected course'
   },
   {
     name: 'Student Activity',

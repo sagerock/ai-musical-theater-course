@@ -16,10 +16,10 @@ import {
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 
-export default function InstructorNotes({ project, courseId, isInstructorView = false }) {
+export default function InstructorNotes({ project, courseId, isInstructorView = false, isStudentView = false }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(true); // Start collapsed by default
+  const [isCollapsed, setIsCollapsed] = useState(isStudentView); // Students start collapsed, instructors start expanded
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [deletingNote, setDeletingNote] = useState(null);
@@ -31,6 +31,7 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
 
   const { currentUser, userRole } = useAuth();
   const isInstructor = userRole === 'instructor' || userRole === 'admin';
+
 
   useEffect(() => {
     if (project?.id) {
@@ -45,7 +46,12 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
       setNotes(notesData);
     } catch (error) {
       console.error('Error loading instructor notes:', error);
-      toast.error('Failed to load instructor notes');
+      // Check if this is an index building error
+      if (error.message && error.message.includes('query requires an index')) {
+        toast.error('Instructor notes are still setting up. Please try again in a few minutes.');
+      } else {
+        toast.error('Failed to load instructor notes');
+      }
     } finally {
       setLoading(false);
     }
@@ -87,13 +93,13 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
         try {
           // Get student and course information for email
           const [studentInfo, courseInfo] = await Promise.all([
-            userApi.getUserById(project.user_id),
+            userApi.getUserById(project.createdBy || project.created_by),
             courseApi.getCourseById(courseId)
           ]);
 
           if (studentInfo && courseInfo) {
             await emailNotifications.notifyStudentOfInstructorNote({
-              studentId: project.user_id,
+              studentId: project.createdBy || project.created_by,
               studentName: getDisplayNameForEmail(studentInfo, 'student'),
               studentEmail: studentInfo.email,
               instructorName: getDisplayNameForEmail(currentUser, 'instructor'),
@@ -203,9 +209,11 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
           >
             <DocumentTextIcon className="h-5 w-5 text-primary-600 mr-2" />
             <h3 className="text-lg font-medium text-gray-900 mr-2">
-              {isInstructorView ? 'Your Notes' : 'Instructor Notes'}
+              {isStudentView ? 'Instructor Feedback' : (isInstructorView ? 'Your Notes' : 'Instructor Notes')}
             </h3>
-            <span className="text-sm text-gray-500 mr-2">({notes.length})</span>
+            <span className="text-sm text-gray-500 mr-2">
+              ({isStudentView ? notes.filter(note => note.is_visible_to_student).length : notes.length})
+            </span>
             {isCollapsed ? (
               <ChevronDownIcon className="h-4 w-4 text-gray-400" />
             ) : (
@@ -297,9 +305,11 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
         )}
 
         {/* Notes List */}
-        {notes.length > 0 ? (
-          <div className="space-y-4">
-            {notes.map((note) => (
+        {(() => {
+          const visibleNotes = notes.filter(note => isStudentView ? note.is_visible_to_student : true);
+          return visibleNotes.length > 0 ? (
+            <div className="space-y-4">
+              {visibleNotes.map((note) => (
               <div key={note.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -334,7 +344,12 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
                         {note.users && (
                           <span>By: {note.users.name}</span>
                         )}
-                        <span>{format(new Date(note.created_at), 'MMM dd, yyyy at h:mm a')}</span>
+                        <span>{(() => {
+                          if (!note.created_at) return 'Unknown date';
+                          const date = note.created_at?.toDate ? note.created_at.toDate() : new Date(note.created_at);
+                          if (isNaN(date)) return 'Unknown date';
+                          return format(date, 'MMM dd, yyyy at h:mm a');
+                        })()}</span>
                       </div>
                       {!note.is_visible_to_student && isInstructorView && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -351,16 +366,20 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
           <div className="text-center py-8">
             <DocumentTextIcon className="mx-auto h-8 w-8 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
-              {isInstructorView ? 'No notes yet' : 'No instructor notes'}
+              {isStudentView ? 'No feedback yet' : (isInstructorView ? 'No notes yet' : 'No instructor notes')}
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {isInstructorView 
-                ? 'Create your first note for this student project.'
-                : 'Your instructor hasn\'t added any notes for this project yet.'
+              {isStudentView
+                ? 'Your instructor hasn\'t provided any feedback for this project yet.'
+                : (isInstructorView 
+                  ? 'Create your first note for this student project.'
+                  : 'Your instructor hasn\'t added any notes for this project yet.'
+                )
               }
             </p>
           </div>
-        )}
+          );
+        })()}
         </div>
       )}
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { format } from 'date-fns';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import MarkdownRenderer from '../Chat/MarkdownRenderer';
+import InstructorNotes from './InstructorNotes';
 
 export default function SessionDetailModal({ chat, isOpen, onClose }) {
   if (!isOpen || !chat) return null;
@@ -44,7 +45,12 @@ export default function SessionDetailModal({ chat, isOpen, onClose }) {
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Date</h4>
                   <p className="text-sm text-gray-600">
-                    {format(new Date(chat.created_at), 'MMM dd, yyyy HH:mm')}
+                    {(() => {
+                      if (!chat.created_at) return 'Unknown date';
+                      const date = chat.created_at?.toDate ? chat.created_at.toDate() : new Date(chat.created_at);
+                      if (isNaN(date)) return 'Unknown date';
+                      return format(date, 'MMM dd, yyyy HH:mm');
+                    })()}
                   </p>
                 </div>
               </div>
@@ -98,8 +104,25 @@ export default function SessionDetailModal({ chat, isOpen, onClose }) {
                   {chat.reflections[0].content}
                 </div>
                 <p className="text-xs text-purple-600 mt-2">
-                  Submitted: {format(new Date(chat.reflections[0].created_at), 'MMM dd, yyyy HH:mm')}
+                  Submitted: {(() => {
+                    const reflection = chat.reflections[0];
+                    if (!reflection?.created_at) return 'Unknown date';
+                    const date = reflection.created_at?.toDate ? reflection.created_at.toDate() : new Date(reflection.created_at);
+                    if (isNaN(date)) return 'Unknown date';
+                    return format(date, 'MMM dd, yyyy HH:mm');
+                  })()}
                 </p>
+              </div>
+            )}
+
+            {/* Instructor Notes */}
+            {chat.projects && (
+              <div className="mt-6">
+                <InstructorNotes 
+                  project={chat.projects} 
+                  courseId={chat.course_id}
+                  isInstructorView={true}
+                />
               </div>
             )}
           </div>

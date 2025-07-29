@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -28,6 +29,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 
 // Development debugging
 if (typeof window !== 'undefined') {
@@ -37,7 +39,7 @@ if (typeof window !== 'undefined') {
   console.log('📦 Storage Bucket:', firebaseConfig.storageBucket);
   
   // Global debugging helpers
-  window.firebase = { auth, db, storage };
+  window.firebase = { auth, db, storage, functions };
 }
 
 export default app;

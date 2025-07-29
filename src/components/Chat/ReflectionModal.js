@@ -44,8 +44,9 @@ export default function ReflectionModal({ chat, onClose, onReflectionUpdated }) 
       } else {
         // Create new reflection
         reflection = await reflectionApi.createReflection({
-          chat_id: chat.id,
-          user_id: currentUser.id,
+          chatId: chat.id,
+          userId: currentUser.id,
+          courseId: chat.course_id, // Include course for security rules
           content: content.trim()
         });
       }

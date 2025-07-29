@@ -32,6 +32,8 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
   const loadAttachments = async () => {
     try {
       const chatAttachments = await attachmentApi.getChatAttachments(chat.id);
+      console.log('📎 Loaded attachments for chat:', chat.id, chatAttachments);
+      console.log('📎 Sample attachment data:', chatAttachments[0]);
       setAttachments(chatAttachments);
     } catch (error) {
       console.error('Error loading attachments:', error);
@@ -190,7 +192,15 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
                   {chat.reflections[0].content}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Reflected on {format(new Date(chat.reflections[0].created_at), 'MMM dd, yyyy')}
+                  Reflected on {(() => {
+                    const reflection = chat.reflections[0];
+                    if (!reflection?.created_at) return 'Unknown date';
+                    
+                    const date = reflection.created_at?.toDate ? reflection.created_at.toDate() : new Date(reflection.created_at);
+                    if (isNaN(date)) return 'Unknown date';
+                    
+                    return format(date, 'MMM dd, yyyy');
+                  })()}
                 </p>
               </div>
             ) : (

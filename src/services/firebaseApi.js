@@ -21,7 +21,8 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { db, storage, functions } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { extractTextFromPDF, isPDFFile } from '../utils/pdfExtractor';
 
 // Helper function to convert Firestore timestamp to Date
@@ -197,38 +198,60 @@ export const userApi = {
   },
 
   async deleteUser(userId) {
-    console.log('🔥 deleteUser:', userId);
+    console.log('🔥 deleteUser (calling cloud function):', userId);
     
-    // First, delete all course memberships
-    const membershipsQuery = query(
-      collection(db, 'courseMemberships'),
-      where('userId', '==', userId)
-    );
-    
-    const membershipsSnapshot = await getDocs(membershipsQuery);
-    const batch = writeBatch(db);
-    
-    // Track courses that need member count updates
-    const coursesToUpdate = new Set();
-    
-    membershipsSnapshot.forEach((doc) => {
-      const membership = doc.data();
-      coursesToUpdate.add(membership.courseId);
-      batch.delete(doc.ref);
-    });
-    
-    // Delete the user
-    batch.delete(doc(db, 'users', userId));
-    
-    await batch.commit();
-    
-    // Update member counts for affected courses
-    for (const courseId of coursesToUpdate) {
-      await courseApi.updateCourseMemberCounts(courseId);
+    try {
+      // Call the cloud function to handle complete user deletion
+      const deleteUserCompletely = httpsCallable(functions, 'deleteUserCompletely');
+      const result = await deleteUserCompletely({ userId });
+      
+      console.log('✅ User deletion completed via cloud function:', result.data);
+      
+      // Return the detailed results for admin feedback
+      return {
+        success: true,
+        message: result.data.message,
+        deletedData: result.data.deletedData
+      };
+      
+    } catch (error) {
+      console.error('❌ Error calling deleteUserCompletely function:', error);
+      
+      // Provide user-friendly error messages
+      if (error.code === 'functions/permission-denied') {
+        throw new Error('Permission denied. Only admins can delete users.');
+      } else if (error.code === 'functions/unauthenticated') {
+        throw new Error('You must be logged in to delete users.');
+      } else if (error.code === 'functions/invalid-argument') {
+        throw new Error('Invalid user ID provided.');
+      } else {
+        throw new Error(`Failed to delete user: ${error.message}`);
+      }
     }
+  },
+
+  async hasEmailNotificationsEnabled(userId, notificationType = 'instructor_note_emails') {
+    console.log('🔥 hasEmailNotificationsEnabled:', userId, notificationType);
     
-    console.log('✅ User and memberships deleted successfully');
-    return true;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (!userDoc.exists()) {
+        console.log('⚠️ User not found, defaulting to notifications enabled');
+        return true; // Default to enabled if user not found
+      }
+      
+      const userData = userDoc.data();
+      const emailSettings = userData.emailSettings || {};
+      
+      // Default to true if not specified
+      const isEnabled = emailSettings[notificationType] !== false;
+      
+      console.log('✅ Email notifications enabled:', isEnabled);
+      return isEnabled;
+    } catch (error) {
+      console.error('❌ Error checking email notification settings:', error);
+      return true; // Default to enabled on error
+    }
   }
 };
 
@@ -236,14 +259,21 @@ export const userApi = {
 export const courseApi = {
   async createCourse(courseData) {
     console.log('🔥 createCourse:', courseData);
+    
+    // Ensure accessCode is set for student enrollment
+    const accessCode = courseData.accessCode || courseData.course_code;
+    
     const docRef = await addDoc(collection(db, 'courses'), {
       ...courseData,
+      accessCode: accessCode, // Set accessCode for student joining
       memberCount: 0,
       instructorCount: 0,
       studentCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    
+    console.log('✅ Course created with accessCode:', accessCode);
     return this.getCourseById(docRef.id);
   },
 
@@ -361,6 +391,45 @@ export const courseApi = {
     }
   },
 
+  // Fix existing courses that might be missing accessCode
+  async fixMissingAccessCodes() {
+    console.log('🔧 Checking for courses missing accessCode...');
+    
+    try {
+      const coursesQuery = query(collection(db, 'courses'));
+      const coursesSnapshot = await getDocs(coursesQuery);
+      
+      let fixedCount = 0;
+      const batch = writeBatch(db);
+      
+      coursesSnapshot.docs.forEach((courseDoc) => {
+        const courseData = courseDoc.data();
+        
+        // If course has course_code but no accessCode, fix it
+        if (courseData.course_code && !courseData.accessCode) {
+          console.log(`🔧 Adding accessCode to course: ${courseData.title} (${courseData.course_code})`);
+          batch.update(courseDoc.ref, {
+            accessCode: courseData.course_code,
+            updatedAt: serverTimestamp()
+          });
+          fixedCount++;
+        }
+      });
+      
+      if (fixedCount > 0) {
+        await batch.commit();
+        console.log(`✅ Fixed ${fixedCount} courses with missing accessCode`);
+      } else {
+        console.log('✅ All courses already have accessCode');
+      }
+      
+      return fixedCount;
+    } catch (error) {
+      console.error('❌ Error fixing missing access codes:', error);
+      throw error;
+    }
+  },
+
   // Add user to course with specified role
   async addUserToCourse(userId, courseId, role = 'student', addedBy) {
     console.log('🔥 addUserToCourse:', userId, courseId, role);
@@ -374,7 +443,20 @@ export const courseApi = {
     
     const existingSnapshot = await getDocs(existingQuery);
     if (!existingSnapshot.empty) {
-      throw new Error('User is already enrolled in this course');
+      const existingMembership = existingSnapshot.docs[0].data();
+      
+      // If user is already an instructor and trying to add as student, prevent downgrade
+      if (existingMembership.role === 'instructor' && role === 'student') {
+        throw new Error('User is already an instructor for this course. Cannot downgrade instructor to student role.');
+      }
+      
+      // If trying to add with same role, just return success
+      if (existingMembership.role === role) {
+        return true;
+      }
+      
+      // Otherwise, this is upgrading student to instructor or changing roles
+      throw new Error(`User is already enrolled in this course as ${existingMembership.role}`);
     }
     
     const membershipDoc = {
@@ -453,6 +535,55 @@ export const courseApi = {
     return true;
   },
 
+  // Restore instructor role for a user in a course (admin function)
+  async restoreInstructorRole(userId, courseId, adminId) {
+    console.log('🔥 restoreInstructorRole:', userId, courseId, adminId);
+    
+    try {
+      // Find the existing membership
+      const membershipId = `${userId}_${courseId}`;
+      const membershipRef = doc(db, 'courseMemberships', membershipId);
+      const membershipSnap = await getDoc(membershipRef);
+      
+      if (membershipSnap.exists()) {
+        // Update existing membership to instructor role
+        await updateDoc(membershipRef, {
+          role: 'instructor',
+          status: 'approved',
+          restoredBy: adminId,
+          restoredAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        
+        console.log('✅ Existing membership updated to instructor role');
+      } else {
+        // Create new instructor membership
+        const membershipDoc = {
+          userId,
+          courseId,
+          role: 'instructor',
+          status: 'approved',
+          addedBy: adminId,
+          restoredBy: adminId,
+          joinedAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        
+        await setDoc(membershipRef, membershipDoc);
+        console.log('✅ New instructor membership created');
+      }
+      
+      // Update course member counts
+      await this.updateCourseMemberCounts(courseId);
+      
+      return { success: true, message: 'Instructor role restored successfully' };
+    } catch (error) {
+      console.error('❌ Error restoring instructor role:', error);
+      throw error;
+    }
+  },
+
   // Update course member counts
   async updateCourseMemberCounts(courseId) {
     try {
@@ -529,8 +660,29 @@ export const courseApi = {
       throw new Error('Invalid access code');
     }
     
-    // Create membership with composite ID: userId_courseId
+    // Check for existing membership to preserve instructor roles
     const membershipId = `${userId}_${courseId}`;
+    const existingMembershipDoc = await getDoc(doc(db, 'courseMemberships', membershipId));
+    
+    if (existingMembershipDoc.exists()) {
+      const existingMembership = existingMembershipDoc.data();
+      
+      // If user is already an instructor, don't allow downgrade to student
+      if (existingMembership.role === 'instructor') {
+        throw new Error('You are already an instructor for this course. Instructors cannot join as students.');
+      }
+      
+      // If user is already a student, just update status if needed
+      if (existingMembership.role === 'student') {
+        await updateDoc(doc(db, 'courseMemberships', membershipId), {
+          status: 'pending',
+          updatedAt: serverTimestamp()
+        });
+        return { success: true };
+      }
+    }
+    
+    // Create new student membership if no existing membership
     await setDoc(doc(db, 'courseMemberships', membershipId), {
       userId,
       courseId,
@@ -842,13 +994,85 @@ export const courseApi = {
       console.error('❌ updateCourseAccessCode error:', error);
       throw error;
     }
+  },
+
+  async cleanupOrphanedChats(courseId = null, dryRun = true) {
+    console.log('🔥 cleanupOrphanedChats:', { courseId, dryRun });
+    
+    try {
+      let chatsQuery;
+      if (courseId) {
+        chatsQuery = query(collection(db, 'chats'), where('courseId', '==', courseId));
+      } else {
+        chatsQuery = query(collection(db, 'chats'));
+      }
+      
+      const chatsSnapshot = await getDocs(chatsQuery);
+      const orphanedChats = [];
+      
+      console.log(`🔍 Checking ${chatsSnapshot.docs.length} chats for orphaned user references...`);
+      
+      for (const chatDoc of chatsSnapshot.docs) {
+        const chatData = chatDoc.data();
+        
+        if (chatData.userId) {
+          // Check if user still exists
+          const userDoc = await getDoc(doc(db, 'users', chatData.userId));
+          if (!userDoc.exists()) {
+            orphanedChats.push({
+              chatId: chatDoc.id,
+              userId: chatData.userId,
+              projectId: chatData.projectId,
+              courseId: chatData.courseId,
+              createdAt: chatData.createdAt
+            });
+          }
+        }
+      }
+      
+      console.log(`🔍 Found ${orphanedChats.length} orphaned chats`);
+      
+      if (dryRun) {
+        console.log('🔍 DRY RUN - Would delete these chats:', orphanedChats);
+        return {
+          orphanedCount: orphanedChats.length,
+          orphanedChats: orphanedChats,
+          deleted: 0,
+          message: `Found ${orphanedChats.length} orphaned chats. Run with dryRun=false to delete them.`
+        };
+      } else {
+        // Actually delete the orphaned chats
+        let deleted = 0;
+        for (const orphan of orphanedChats) {
+          await deleteDoc(doc(db, 'chats', orphan.chatId));
+          deleted++;
+          console.log(`🗑️ Deleted orphaned chat: ${orphan.chatId}`);
+        }
+        
+        console.log(`✅ Cleanup complete: ${deleted} orphaned chats deleted`);
+        return {
+          orphanedCount: orphanedChats.length,
+          deleted: deleted,
+          message: `Successfully deleted ${deleted} orphaned chats`
+        };
+      }
+    } catch (error) {
+      console.error('❌ cleanupOrphanedChats error:', error);
+      throw error;
+    }
   }
 };
 
 // PROJECTS API
 export const projectApi = {
-  async createProject(projectData, userId, courseId = null) {
+  async createProject(projectData, userId, courseId) {
     console.log('🔥 createProject:', { projectData, userId, courseId });
+    
+    // SECURITY: All projects must be associated with a course
+    if (!courseId) {
+      throw new Error('Projects must be created within a course. CourseId is required.');
+    }
+    
     const docRef = await addDoc(collection(db, 'projects'), {
       title: projectData.title,
       description: projectData.description || '',
@@ -1105,6 +1329,30 @@ export const chatApi = {
       queryConstraints.unshift(where('courseId', '==', filters.courseId));
     }
     
+    if (filters.userId) {
+      queryConstraints.unshift(where('userId', '==', filters.userId));
+    }
+    
+    if (filters.projectId) {
+      queryConstraints.unshift(where('projectId', '==', filters.projectId));
+    }
+    
+    if (filters.toolUsed) {
+      // Database field is tool_used (snake_case)
+      queryConstraints.unshift(where('tool_used', '==', filters.toolUsed));
+    }
+    
+    if (filters.startDate) {
+      queryConstraints.unshift(where('createdAt', '>=', new Date(filters.startDate)));
+    }
+    
+    if (filters.endDate) {
+      // Add one day to end date to include the entire end date
+      const endDate = new Date(filters.endDate);
+      endDate.setDate(endDate.getDate() + 1);
+      queryConstraints.unshift(where('createdAt', '<', endDate));
+    }
+    
     if (filters.limit) {
       queryConstraints.push(limit(filters.limit));
     }
@@ -1126,21 +1374,32 @@ export const chatApi = {
       chatData.course_id = chatData.courseId;
       chatData.user_message = chatData.userMessage;
       chatData.ai_response = chatData.aiResponse;
-      chatData.tool_used = chatData.toolUsed;
+      // Handle both possible field names for tool_used
+      chatData.tool_used = chatData.tool_used || chatData.toolUsed;
       
       // Fetch user information
       try {
         if (chatData.userId) {
           const userDoc = await getDoc(doc(db, 'users', chatData.userId));
           if (userDoc.exists()) {
-            chatData.users = { id: userDoc.id, ...userDoc.data() };
+            const userData = userDoc.data();
+            chatData.users = { id: userDoc.id, ...userData };
           } else {
-            console.warn('User not found for chat:', chatData.userId);
-            chatData.users = { name: 'Unknown User', email: 'No email' };
+            // Log orphaned chats only once per session to reduce console noise
+            if (!window.loggedOrphanedChats) window.loggedOrphanedChats = new Set();
+            if (!window.loggedOrphanedChats.has(chatData.userId)) {
+              console.warn(`⚠️ Orphaned chat found - User ${chatData.userId} no longer exists (chat: ${chatData.id})`);
+              window.loggedOrphanedChats.add(chatData.userId);
+            }
+            
+            chatData.users = { name: 'Deleted User', email: 'User no longer exists' };
           }
+        } else {
+          console.warn(`❌ No userId found for chat ${chatData.id}`);
+          chatData.users = { name: 'Unknown User', email: 'No email' };
         }
       } catch (error) {
-        console.warn('Error fetching user for chat:', chatData.userId, error);
+        console.error(`❌ Error fetching user for chat ${chatData.id}:`, error);
         chatData.users = { name: 'Unknown User', email: 'No email' };
       }
       
@@ -1158,6 +1417,30 @@ export const chatApi = {
       } catch (error) {
         console.warn('Error fetching project for chat:', chatData.projectId, error);
         chatData.projects = { title: 'Untitled Project' };
+      }
+      
+      // Load reflections for this chat if it has any
+      try {
+        if (chatData.has_reflection) {
+          console.log(`🔍 Loading reflection for chat ${chatData.id}`);
+          const reflection = await reflectionApi.getReflectionByChat(chatData.id);
+          chatData.reflections = reflection ? [reflection] : [];
+          console.log(`✅ Loaded reflection for chat ${chatData.id}:`, reflection ? 'Found' : 'Not found');
+        } else {
+          chatData.reflections = [];
+        }
+      } catch (error) {
+        console.warn('❌ Error loading reflection for chat:', chatData.id, error);
+        chatData.reflections = [];
+      }
+      
+      // Load tags for this chat
+      try {
+        const chatTags = await tagApi.getChatTags(chatData.id);
+        chatData.chat_tags = chatTags;
+      } catch (error) {
+        console.warn('❌ Error loading tags for chat:', chatData.id, error);
+        chatData.chat_tags = [];
       }
       
       chats.push(chatData);
@@ -1179,6 +1462,183 @@ export const chatApi = {
   async deleteChat(chatId) {
     console.log('🔥 deleteChat:', chatId);
     await deleteDoc(doc(db, 'chats', chatId));
+  },
+
+  async fixMissingToolUsed(courseId = null) {
+    console.log('🔧 fixMissingToolUsed - Starting migration for courseId:', courseId);
+    
+    try {
+      // Build query to get all chats for the course
+      let queryConstraints = [];
+      
+      // If courseId specified, filter by course
+      if (courseId) {
+        queryConstraints.push(where('courseId', '==', courseId));
+      }
+      
+      // Query for all chats, then filter for missing tool_used in JavaScript
+      const chatsQuery = query(collection(db, 'chats'), ...queryConstraints);
+      const chatsSnapshot = await getDocs(chatsQuery);
+      
+      console.log(`🔧 Found ${chatsSnapshot.docs.length} total chats to check`);
+      
+      // Filter for chats with missing or empty tool_used
+      const chatsToFix = [];
+      chatsSnapshot.docs.forEach((chatDoc) => {
+        const chatData = chatDoc.data();
+        const toolUsed = chatData.tool_used;
+        
+        // Check if tool_used is missing, null, empty string, or undefined
+        if (!toolUsed || toolUsed === '' || toolUsed === null) {
+          chatsToFix.push(chatDoc);
+        }
+      });
+      
+      console.log(`🔧 Found ${chatsToFix.length} chats with missing tool_used`);
+      
+      if (chatsToFix.length === 0) {
+        return { fixed: 0, message: 'No chats found with missing tool_used' };
+      }
+      
+      // Set default tool_used based on creation date
+      // Newer chats (after 2024) likely used Claude Sonnet 4 (default)
+      // Older chats might have used GPT-4o or other tools
+      const batch = writeBatch(db);
+      let fixCount = 0;
+      
+      chatsToFix.forEach((chatDoc) => {
+        const chatData = chatDoc.data();
+        const createdAt = chatData.createdAt?.toDate?.() || new Date(chatData.createdAt || Date.now());
+        
+        // Default to Claude Sonnet 4 for recent chats, GPT-4o for older ones
+        const defaultTool = createdAt > new Date('2024-06-01') ? 'Claude Sonnet 4' : 'GPT-4o';
+        
+        console.log(`🔧 Fixing chat ${chatDoc.id}: setting tool_used to "${defaultTool}"`);
+        
+        batch.update(doc(db, 'chats', chatDoc.id), {
+          tool_used: defaultTool,
+          updatedAt: serverTimestamp()
+        });
+        
+        fixCount++;
+      });
+      
+      // Execute the batch update
+      await batch.commit();
+      
+      console.log(`✅ Successfully fixed ${fixCount} chats with missing tool_used`);
+      return { 
+        fixed: fixCount, 
+        message: `Fixed ${fixCount} chats with missing AI tool data` 
+      };
+      
+    } catch (error) {
+      console.error('❌ Error fixing missing tool_used:', error);
+      throw new Error(`Failed to fix missing tool_used: ${error.message}`);
+    }
+  },
+
+  async fixOrphanedChats(courseId = null) {
+    console.log('🔧 fixOrphanedChats - Starting repair for courseId:', courseId);
+    
+    try {
+      // Build query to get all chats for the course
+      let queryConstraints = [];
+      
+      // If courseId specified, filter by course
+      if (courseId) {
+        queryConstraints.push(where('courseId', '==', courseId));
+      }
+      
+      const chatsQuery = query(collection(db, 'chats'), ...queryConstraints);
+      const chatsSnapshot = await getDocs(chatsQuery);
+      
+      console.log(`🔧 Found ${chatsSnapshot.docs.length} total chats to check`);
+      
+      // Get all users to create a lookup map
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersByEmail = new Map();
+      const usersById = new Map();
+      
+      usersSnapshot.docs.forEach(userDoc => {
+        const userData = userDoc.data();
+        usersById.set(userDoc.id, userData);
+        if (userData.email) {
+          usersByEmail.set(userData.email.toLowerCase(), { id: userDoc.id, ...userData });
+        }
+      });
+      
+      console.log(`📋 Found ${usersById.size} users in database`);
+      
+      const batch = writeBatch(db);
+      let fixedCount = 0;
+      let orphanedCount = 0;
+      
+      for (const chatDoc of chatsSnapshot.docs) {
+        const chatData = chatDoc.data();
+        const currentUserId = chatData.userId;
+        
+        // Check if user exists
+        if (currentUserId && usersById.has(currentUserId)) {
+          // User exists, no fix needed
+          continue;
+        }
+        
+        // User not found - try to fix by matching email or other criteria
+        console.log(`🔧 Attempting to fix orphaned chat ${chatDoc.id} with userId: ${currentUserId}`);
+        
+        // For now, we'll mark these as orphaned and potentially match by project owner
+        if (chatData.projectId) {
+          try {
+            const projectDoc = await getDoc(doc(db, 'projects', chatData.projectId));
+            if (projectDoc.exists()) {
+              const projectData = projectDoc.data();
+              const projectOwnerId = projectData.createdBy;
+              
+              if (projectOwnerId && usersById.has(projectOwnerId)) {
+                console.log(`✅ Fixing chat ${chatDoc.id}: linking to project owner ${projectOwnerId}`);
+                batch.update(doc(db, 'chats', chatDoc.id), {
+                  userId: projectOwnerId,
+                  fixedOrphan: true,
+                  fixedAt: serverTimestamp(),
+                  originalUserId: currentUserId,
+                  updatedAt: serverTimestamp()
+                });
+                fixedCount++;
+              } else {
+                orphanedCount++;
+              }
+            } else {
+              orphanedCount++;
+            }
+          } catch (error) {
+            console.warn(`Failed to fix chat ${chatDoc.id}:`, error);
+            orphanedCount++;
+          }
+        } else {
+          orphanedCount++;
+        }
+      }
+      
+      if (fixedCount > 0) {
+        await batch.commit();
+        console.log(`✅ Successfully fixed ${fixedCount} orphaned chats`);
+      }
+      
+      if (orphanedCount > 0) {
+        console.log(`⚠️ Found ${orphanedCount} chats that couldn't be automatically fixed`);
+      }
+      
+      return { 
+        fixed: fixedCount, 
+        orphaned: orphanedCount,
+        message: `Fixed ${fixedCount} orphaned chats. ${orphanedCount} chats still need manual attention.` 
+      };
+      
+    } catch (error) {
+      console.error('❌ Error fixing orphaned chats:', error);
+      throw new Error(`Failed to fix orphaned chats: ${error.message}`);
+    }
   }
 };
 
@@ -1242,10 +1702,18 @@ export const attachmentApi = {
     );
     
     const attachmentsSnapshot = await getDocs(attachmentsQuery);
-    return attachmentsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    return attachmentsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Normalize field names for consistent access
+        file_name: data.fileName || data.file_name || 'Unknown File',
+        file_size: data.fileSize || data.file_size || 0,
+        storage_path: data.storageRef || data.storage_path || data.downloadURL,
+        extracted_text: data.extractedText || data.extracted_text || ''
+      };
+    });
   },
 
   async getAttachmentDownloadUrl(storagePath) {
@@ -1357,21 +1825,47 @@ export const tagApi = {
   async getAllTags(courseId = null) {
     console.log('🔥 getAllTags:', courseId);
     
-    let tagsQuery = query(collection(db, 'tags'), orderBy('name'));
-    
     if (courseId) {
-      tagsQuery = query(
-        collection(db, 'tags'),
-        where('courseId', '==', courseId),
-        orderBy('name')
-      );
+      // Load both global tags (no courseId) and course-specific tags
+      const [globalTags, courseTags] = await Promise.all([
+        // Global tags (courseId is null or undefined)
+        getDocs(query(
+          collection(db, 'tags'),
+          where('courseId', '==', null),
+          orderBy('name')
+        )),
+        // Course-specific tags
+        getDocs(query(
+          collection(db, 'tags'),
+          where('courseId', '==', courseId),
+          orderBy('name')
+        ))
+      ]);
+      
+      const allTags = [
+        ...globalTags.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          isGlobal: true
+        })),
+        ...courseTags.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          isGlobal: false
+        }))
+      ];
+      
+      // Sort combined tags alphabetically
+      return allTags.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      // Load all tags when no courseId is specified
+      const tagsQuery = query(collection(db, 'tags'), orderBy('name'));
+      const tagsSnapshot = await getDocs(tagsQuery);
+      return tagsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
     }
-    
-    const tagsSnapshot = await getDocs(tagsQuery);
-    return tagsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
   },
 
   async createTag(tagData, courseId, userRole) {
@@ -1418,19 +1912,43 @@ export const tagApi = {
         ...doc.data()
       }));
 
-      // Get usage counts for each tag by counting chat_tags
+      // Get usage counts by directly querying chats in this course, then counting tags
+      // This is more efficient and avoids permission issues
       const tagsWithUsage = [];
       for (const tag of courseTags) {
         try {
-          const chatTagsQuery = query(
-            collection(db, 'chatTags'),
-            where('tagId', '==', tag.id)
+          // Get chats in this course that are tagged with this tag
+          // We'll use a more efficient approach by getting chats first, then filtering by tags
+          const chatsInCourseQuery = query(
+            collection(db, 'chats'),
+            where('courseId', '==', courseId)
           );
-          const chatTagsSnapshot = await getDocs(chatTagsQuery);
+          const chatsSnapshot = await getDocs(chatsInCourseQuery);
+          
+          // Now count how many of these chats have this tag
+          let courseSpecificUsageCount = 0;
+          const chatIds = chatsSnapshot.docs.map(doc => doc.id);
+          
+          if (chatIds.length > 0) {
+            // Get all chatTags for this tag that reference chats in this course
+            const chatTagsQuery = query(
+              collection(db, 'chatTags'),
+              where('tagId', '==', tag.id)
+            );
+            const chatTagsSnapshot = await getDocs(chatTagsQuery);
+            
+            // Count only those that reference chats in this course
+            for (const chatTagDoc of chatTagsSnapshot.docs) {
+              const chatTag = chatTagDoc.data();
+              if (chatIds.includes(chatTag.chatId)) {
+                courseSpecificUsageCount++;
+              }
+            }
+          }
           
           tagsWithUsage.push({
             ...tag,
-            usage_count: chatTagsSnapshot.size
+            usage_count: courseSpecificUsageCount
           });
         } catch (error) {
           console.warn('Error getting usage for tag:', tag.id, error);
@@ -1441,7 +1959,7 @@ export const tagApi = {
         }
       }
 
-      console.log('🔥 Course tags with usage:', tagsWithUsage.length);
+      console.log('🔥 Course tags with usage (course-specific):', tagsWithUsage.length);
       return tagsWithUsage;
       
     } catch (error) {
@@ -1467,19 +1985,47 @@ export const tagApi = {
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(tag => !tag.courseId || tag.isGlobal === true);
 
-      // Get usage counts for each global tag
+      // Get usage counts by querying chats in this course first
+      // This is more efficient and avoids permission issues
       const tagsWithUsage = [];
+      
+      // Get all chats in this course once
+      let chatsInCourse = [];
+      try {
+        const chatsInCourseQuery = query(
+          collection(db, 'chats'),
+          where('courseId', '==', courseId)
+        );
+        const chatsSnapshot = await getDocs(chatsInCourseQuery);
+        chatsInCourse = chatsSnapshot.docs.map(doc => doc.id);
+      } catch (error) {
+        console.warn('Could not load chats for course:', courseId, error);
+      }
+
       for (const tag of globalTags) {
         try {
-          const chatTagsQuery = query(
-            collection(db, 'chatTags'),
-            where('tagId', '==', tag.id)
-          );
-          const chatTagsSnapshot = await getDocs(chatTagsQuery);
+          let courseSpecificUsageCount = 0;
+          
+          if (chatsInCourse.length > 0) {
+            // Get all chatTags for this tag
+            const chatTagsQuery = query(
+              collection(db, 'chatTags'),
+              where('tagId', '==', tag.id)
+            );
+            const chatTagsSnapshot = await getDocs(chatTagsQuery);
+            
+            // Count only those that reference chats in this course
+            for (const chatTagDoc of chatTagsSnapshot.docs) {
+              const chatTag = chatTagDoc.data();
+              if (chatsInCourse.includes(chatTag.chatId)) {
+                courseSpecificUsageCount++;
+              }
+            }
+          }
           
           tagsWithUsage.push({
             ...tag,
-            usage_count: chatTagsSnapshot.size
+            usage_count: courseSpecificUsageCount
           });
         } catch (error) {
           console.warn('Error getting usage for global tag:', tag.id, error);
@@ -1490,7 +2036,7 @@ export const tagApi = {
         }
       }
 
-      console.log('🔥 Global tags with usage:', tagsWithUsage.length);
+      console.log('🔥 Global tags with usage (course-specific):', tagsWithUsage.length);
       return tagsWithUsage;
       
     } catch (error) {
@@ -1584,75 +2130,116 @@ export const tagApi = {
     console.log('🔥 getTaggedChats:', tagId, courseId);
     
     try {
+      // More efficient approach: Get chats in the course first, then filter by tag
+      // This avoids permission issues and is more performant
+      const chatsInCourseQuery = query(
+        collection(db, 'chats'),
+        where('courseId', '==', courseId)
+      );
+      const chatsSnapshot = await getDocs(chatsInCourseQuery);
+      
+      if (chatsSnapshot.empty) {
+        console.log('No chats found in course:', courseId);
+        return [];
+      }
+      
       // Get all chat-tag relationships for this tag
       const chatTagsQuery = query(
         collection(db, 'chatTags'),
         where('tagId', '==', tagId)
       );
-      
       const chatTagsSnapshot = await getDocs(chatTagsQuery);
-      const chatIds = chatTagsSnapshot.docs.map(doc => doc.data().chatId);
+      const taggedChatIds = new Set(chatTagsSnapshot.docs.map(doc => doc.data().chatId));
       
-      if (chatIds.length === 0) {
-        return [];
-      }
+      console.log('Tagged chat IDs for tag:', tagId, Array.from(taggedChatIds));
       
-      // Get chats by IDs
-      const chats = [];
-      for (const chatId of chatIds) {
-        try {
-          const chatDoc = await getDoc(doc(db, 'chats', chatId));
+      // Filter chats to only those that are tagged with this tag
+      const taggedChats = [];
+      for (const chatDoc of chatsSnapshot.docs) {
+        if (taggedChatIds.has(chatDoc.id)) {
+          const chatData = { id: chatDoc.id, ...chatDoc.data() };
           
-          if (chatDoc.exists()) {
-            const chatData = chatDoc.data();
-            
-            // Filter by course if specified
-            if (courseId && chatData.courseId !== courseId) {
-              continue;
-            }
-            
-            const chat = { id: chatDoc.id, ...chatData };
-            
-            // Get user details
-            if (chat.userId) {
-              try {
-                const userDoc = await getDoc(doc(db, 'users', chat.userId));
-                if (userDoc.exists()) {
-                  chat.users = { id: userDoc.id, ...userDoc.data() };
-                }
-              } catch (error) {
-                console.warn('User not found:', chat.userId);
+          // Enrich with user details
+          if (chatData.userId) {
+            try {
+              const userDoc = await getDoc(doc(db, 'users', chatData.userId));
+              if (userDoc.exists()) {
+                chatData.users = { id: userDoc.id, ...userDoc.data() };
+                console.log('✅ User loaded for chat:', chatData.id, chatData.users.name || chatData.users.displayName);
+              } else {
+                console.warn('❌ User not found for chat:', chatData.userId);
+                chatData.users = { 
+                  id: chatData.userId, 
+                  name: 'Deleted User', 
+                  email: 'User no longer exists',
+                  displayName: 'Deleted User'
+                };
+                console.log('✅ Fallback user data set for chat:', chatData.id);
               }
+            } catch (error) {
+              console.warn('❌ Error loading user:', chatData.userId, error);
+              chatData.users = { 
+                id: chatData.userId, 
+                name: 'Deleted User', 
+                email: 'User no longer exists',
+                displayName: 'Deleted User'
+              };
+              console.log('✅ Fallback user data set for chat (error):', chatData.id);
             }
-            
-            // Get project details
-            if (chat.projectId) {
-              try {
-                const projectDoc = await getDoc(doc(db, 'projects', chat.projectId));
-                if (projectDoc.exists()) {
-                  chat.projects = { id: projectDoc.id, ...projectDoc.data() };
-                }
-              } catch (error) {
-                console.warn('Project not found:', chat.projectId);
-              }
-            }
-            
-            chats.push({
-              ...chat,
-              created_at: convertTimestamp(chat.createdAt),
-              updated_at: convertTimestamp(chat.updatedAt)
-            });
+          } else {
+            // Chat has no userId at all
+            chatData.users = { 
+              id: 'unknown', 
+              name: 'Anonymous User', 
+              email: 'No user ID',
+              displayName: 'Anonymous User'
+            };
+            console.log('✅ Anonymous user data set for chat:', chatData.id);
           }
-        } catch (error) {
-          console.warn('Chat not found:', chatId, error);
+          
+          // Enrich with project details
+          if (chatData.projectId) {
+            try {
+              const projectDoc = await getDoc(doc(db, 'projects', chatData.projectId));
+              if (projectDoc.exists()) {
+                chatData.projects = { id: projectDoc.id, ...projectDoc.data() };
+                console.log('✅ Project loaded for chat:', chatData.id, chatData.projects.title);
+              } else {
+                console.warn('❌ Project not found for chat:', chatData.projectId);
+                chatData.projects = {
+                  id: chatData.projectId,
+                  title: 'Deleted Project',
+                  description: 'Project no longer exists'
+                };
+                console.log('✅ Fallback project data set for chat:', chatData.id);
+              }
+            } catch (error) {
+              console.warn('❌ Error loading project:', chatData.projectId, error);
+              chatData.projects = {
+                id: chatData.projectId,
+                title: 'Deleted Project',
+                description: 'Project no longer exists'
+              };
+              console.log('✅ Fallback project data set for chat (error):', chatData.id);
+            }
+          } else {
+            console.log('ℹ️ Chat has no project linked:', chatData.id);
+          }
+          
+          // Add formatted dates
+          chatData.created_at = convertTimestamp(chatData.createdAt);
+          chatData.updated_at = convertTimestamp(chatData.updatedAt);
+          
+          taggedChats.push(chatData);
         }
       }
       
       // Sort by creation date (most recent first)
-      chats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      taggedChats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       
-      console.log('✅ getTaggedChats result:', chats.length, 'chats');
-      return chats;
+      console.log('✅ getTaggedChats result:', taggedChats.length, 'tagged chats found');
+      console.log('Sample chat data:', taggedChats[0]);
+      return taggedChats;
       
     } catch (error) {
       console.error('❌ Error getting tagged chats:', error);
@@ -1751,39 +2338,329 @@ export const tagApi = {
   }
 };
 
-// REFLECTION API (Stub - not implemented in Firebase yet)
+// REFLECTION API
 export const reflectionApi = {
   async createReflection(reflectionData) {
-    console.log('🔥 Reflection API not implemented in Firebase yet');
-    return { id: 'stub-id', ...reflectionData };
+    console.log('🔥 createReflection:', reflectionData);
+    
+    const docRef = await addDoc(collection(db, 'reflections'), {
+      content: reflectionData.content,
+      chatId: reflectionData.chatId,
+      userId: reflectionData.userId,
+      courseId: reflectionData.courseId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update the chat to mark it as having a reflection
+    if (reflectionData.chatId) {
+      try {
+        await updateDoc(doc(db, 'chats', reflectionData.chatId), {
+          has_reflection: true,
+          updatedAt: serverTimestamp()
+        });
+        console.log('✅ Chat marked as having reflection');
+      } catch (error) {
+        console.warn('Failed to update chat reflection status:', error);
+      }
+    }
+    
+    return this.getReflectionById(docRef.id);
+  },
+  
+  async getReflectionById(reflectionId) {
+    console.log('🔥 getReflectionById:', reflectionId);
+    const reflectionDoc = await getDoc(doc(db, 'reflections', reflectionId));
+    if (reflectionDoc.exists()) {
+      const data = reflectionDoc.data();
+      return {
+        id: reflectionDoc.id,
+        ...data,
+        created_at: convertTimestamp(data.createdAt),
+        updated_at: convertTimestamp(data.updatedAt)
+      };
+    }
+    throw new Error('Reflection not found');
   },
   
   async getReflectionByChat(chatId) {
-    console.log('🔥 Reflection API not implemented in Firebase yet');
-    return null;
+    console.log('🔥 getReflectionByChat:', chatId);
+    
+    try {
+      const reflectionsQuery = query(
+        collection(db, 'reflections'),
+        where('chatId', '==', chatId)
+      );
+      
+      const reflectionsSnapshot = await getDocs(reflectionsQuery);
+      console.log(`🔍 Found ${reflectionsSnapshot.docs.length} reflections for chat ${chatId}`);
+      
+      if (reflectionsSnapshot.empty) {
+        console.log(`⚠️ No reflections found for chat ${chatId}`);
+        return null;
+      }
+      
+      // Return the first (and should be only) reflection for this chat
+      const reflectionDoc = reflectionsSnapshot.docs[0];
+      const data = reflectionDoc.data();
+      
+      const reflection = {
+        id: reflectionDoc.id,
+        ...data,
+        created_at: convertTimestamp(data.createdAt),
+        updated_at: convertTimestamp(data.updatedAt)
+      };
+      
+      console.log(`✅ Loaded reflection for chat ${chatId}:`, reflection);
+      return reflection;
+    } catch (error) {
+      console.error(`❌ Error in getReflectionByChat for chat ${chatId}:`, error);
+      throw error;
+    }
   },
   
-  async updateReflection(id, updates) {
-    console.log('🔥 Reflection API not implemented in Firebase yet');
-    return { id, ...updates };
+  async updateReflection(reflectionId, updates) {
+    console.log('🔥 updateReflection:', reflectionId, updates);
+    
+    await updateDoc(doc(db, 'reflections', reflectionId), {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+    
+    return this.getReflectionById(reflectionId);
+  },
+  
+  async deleteReflection(reflectionId) {
+    console.log('🔥 deleteReflection:', reflectionId);
+    
+    // Get reflection data to find associated chat
+    const reflection = await this.getReflectionById(reflectionId);
+    
+    // Delete the reflection
+    await deleteDoc(doc(db, 'reflections', reflectionId));
+    
+    // Update chat to mark as not having reflection
+    if (reflection.chatId) {
+      try {
+        await updateDoc(doc(db, 'chats', reflection.chatId), {
+          has_reflection: false,
+          updatedAt: serverTimestamp()
+        });
+        console.log('✅ Chat marked as not having reflection');
+      } catch (error) {
+        console.warn('Failed to update chat reflection status:', error);
+      }
+    }
+    
+    console.log('✅ Reflection deleted successfully');
+    return true;
+  },
+  
+  async getCourseReflections(courseId) {
+    console.log('🔥 getCourseReflections:', courseId);
+    
+    const reflectionsQuery = query(
+      collection(db, 'reflections'),
+      where('courseId', '==', courseId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const reflectionsSnapshot = await getDocs(reflectionsQuery);
+    
+    return reflectionsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        created_at: convertTimestamp(data.createdAt),
+        updated_at: convertTimestamp(data.updatedAt)
+      };
+    });
   }
 };
 
-// INSTRUCTOR NOTES API (Stub - not implemented in Firebase yet)
+// INSTRUCTOR NOTES API
 export const instructorNotesApi = {
   async createNote(noteData) {
-    console.log('🔥 Instructor Notes API not implemented in Firebase yet');
-    return { id: 'stub-id', ...noteData };
+    console.log('🔥 createNote:', noteData);
+    
+    const note = {
+      projectId: noteData.project_id,
+      instructorId: noteData.instructor_id,
+      courseId: noteData.course_id,
+      title: noteData.title,
+      content: noteData.content,
+      is_visible_to_student: noteData.is_visible_to_student,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    
+    const docRef = await addDoc(collection(db, 'instructorNotes'), note);
+    
+    // Return note with generated ID and proper timestamp format
+    const now = new Date();
+    return {
+      id: docRef.id,
+      ...note,
+      createdAt: now,
+      updatedAt: now,
+      created_at: now, // For compatibility with existing component
+      updated_at: now
+    };
   },
   
   async getNotesByChat(chatId) {
-    console.log('🔥 Instructor Notes API not implemented in Firebase yet');
-    return [];
+    console.log('🔥 getNotesByChat:', chatId);
+    
+    // First get the chat to find project and course
+    const chatDoc = await getDoc(doc(db, 'chats', chatId));
+    if (!chatDoc.exists()) {
+      throw new Error('Chat not found');
+    }
+    
+    const chat = chatDoc.data();
+    const projectId = chat.projectId;
+    
+    if (!projectId) {
+      return [];
+    }
+    
+    // Get notes for this project
+    const notesQuery = query(
+      collection(db, 'instructorNotes'),
+      where('projectId', '==', projectId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const notesSnapshot = await getDocs(notesQuery);
+    return notesSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: convertTimestamp(doc.data().createdAt),
+      updatedAt: convertTimestamp(doc.data().updatedAt)
+    }));
   },
 
   async getProjectNotes(projectId) {
-    console.log('🔥 Instructor Notes API not implemented in Firebase yet');
-    return [];
+    console.log('🔥 getProjectNotes:', projectId);
+    
+    const notesQuery = query(
+      collection(db, 'instructorNotes'),
+      where('projectId', '==', projectId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const notesSnapshot = await getDocs(notesQuery);
+    return notesSnapshot.docs.map(doc => {
+      const data = doc.data();
+      const createdAt = convertTimestamp(data.createdAt);
+      const updatedAt = convertTimestamp(data.updatedAt);
+      return {
+        id: doc.id,
+        ...data,
+        createdAt,
+        updatedAt,
+        created_at: createdAt, // For compatibility with existing component
+        updated_at: updatedAt
+      };
+    });
+  },
+
+  async getNotesForDashboard(instructorId, courseId) {
+    console.log('🔥 getNotesForDashboard:', instructorId, courseId);
+    
+    const notesQuery = query(
+      collection(db, 'instructorNotes'),
+      where('instructorId', '==', instructorId),
+      where('courseId', '==', courseId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const notesSnapshot = await getDocs(notesQuery);
+    const notes = [];
+    
+    // Get project and user details for each note
+    for (const noteDoc of notesSnapshot.docs) {
+      const note = { id: noteDoc.id, ...noteDoc.data() };
+      
+      // Convert timestamps
+      note.createdAt = convertTimestamp(note.createdAt);
+      note.updatedAt = convertTimestamp(note.updatedAt);
+      note.created_at = note.createdAt; // For compatibility with existing component
+      note.updated_at = note.updatedAt;
+      
+      // Get project details
+      try {
+        const projectDoc = await getDoc(doc(db, 'projects', note.projectId));
+        if (projectDoc.exists()) {
+          note.projects = { id: projectDoc.id, ...projectDoc.data() };
+          
+          // Get user details for the project
+          if (note.projects.createdBy) {
+            const userDoc = await getDoc(doc(db, 'users', note.projects.createdBy));
+            if (userDoc.exists()) {
+              note.projects.users = { id: userDoc.id, ...userDoc.data() };
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Error loading project for note:', note.id, error);
+      }
+      
+      notes.push(note);
+    }
+    
+    return notes;
+  },
+
+  async updateNote(noteId, updates, instructorId) {
+    console.log('🔥 updateNote:', noteId, updates);
+    
+    // Verify note belongs to instructor
+    const noteDoc = await getDoc(doc(db, 'instructorNotes', noteId));
+    if (!noteDoc.exists()) {
+      throw new Error('Note not found');
+    }
+    
+    const noteData = noteDoc.data();
+    if (noteData.instructorId !== instructorId) {
+      throw new Error('Unauthorized to update this note');
+    }
+    
+    const updateData = {
+      ...updates,
+      updatedAt: serverTimestamp()
+    };
+    
+    await updateDoc(doc(db, 'instructorNotes', noteId), updateData);
+    
+    // Return updated note with proper timestamp format
+    const now = new Date();
+    return {
+      id: noteId,
+      ...noteData,
+      ...updates,
+      updatedAt: now,
+      updated_at: now // For compatibility with existing component
+    };
+  },
+
+  async deleteNote(noteId, instructorId) {
+    console.log('🔥 deleteNote:', noteId);
+    
+    // Verify note belongs to instructor
+    const noteDoc = await getDoc(doc(db, 'instructorNotes', noteId));
+    if (!noteDoc.exists()) {
+      throw new Error('Note not found');
+    }
+    
+    const noteData = noteDoc.data();
+    if (noteData.instructorId !== instructorId) {
+      throw new Error('Unauthorized to delete this note');
+    }
+    
+    await deleteDoc(doc(db, 'instructorNotes', noteId));
+    return { success: true };
   }
 };
 

@@ -245,8 +245,8 @@ export default function ProfileSettings() {
             Account Created
           </label>
           <p className="text-sm text-gray-900 py-2">
-            {currentUser?.created_at 
-              ? new Date(currentUser.created_at).toLocaleDateString('en-US', {
+            {currentUser?.metadata?.creationTime 
+              ? new Date(currentUser.metadata.creationTime).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
@@ -262,8 +262,8 @@ export default function ProfileSettings() {
             Last Sign In
           </label>
           <p className="text-sm text-gray-900 py-2">
-            {currentUser?.last_sign_in_at 
-              ? new Date(currentUser.last_sign_in_at).toLocaleDateString('en-US', {
+            {currentUser?.metadata?.lastSignInTime 
+              ? new Date(currentUser.metadata.lastSignInTime).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',

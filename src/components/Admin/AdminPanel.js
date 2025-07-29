@@ -14,7 +14,8 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminPanel() {
@@ -49,8 +50,14 @@ export default function AdminPanel() {
   const [filterRole, setFilterRole] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Pending approvals state
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [approvalsLoading, setApprovalsLoading] = useState(false);
+  const [processingApproval, setProcessingApproval] = useState({});
+  
   // Global tags state
   const [creatingGlobalTags, setCreatingGlobalTags] = useState(false);
+  const [fixingAccessCodes, setFixingAccessCodes] = useState(false);
   const [newCourse, setNewCourse] = useState({
     name: '',
     description: '',
@@ -73,6 +80,8 @@ export default function AdminPanel() {
     loadCourses();
     if (activeTab === 'users') {
       loadUsers();
+    } else if (activeTab === 'approvals') {
+      loadPendingApprovals();
     }
   }, [activeTab]);
 
@@ -276,8 +285,25 @@ export default function AdminPanel() {
     if (!userToDelete) return;
     
     try {
-      await userApi.deleteUser(userToDelete.id);
-      toast.success('User deleted successfully!');
+      const result = await userApi.deleteUser(userToDelete.id);
+      
+      // Show detailed success message
+      if (result.success && result.deletedData) {
+        const { deletedData } = result;
+        const details = [];
+        
+        if (deletedData.courseMemberships > 0) details.push(`${deletedData.courseMemberships} course memberships`);
+        if (deletedData.chatSessions > 0) details.push(`${deletedData.chatSessions} chat sessions`);
+        if (deletedData.projects > 0) details.push(`${deletedData.projects} projects`);
+        if (deletedData.instructorNotes > 0) details.push(`${deletedData.instructorNotes} instructor notes`);
+        if (deletedData.reflections > 0) details.push(`${deletedData.reflections} reflections`);
+        
+        const detailsText = details.length > 0 ? ` (${details.join(', ')})` : '';
+        toast.success(`User and all data deleted completely${detailsText}`);
+      } else {
+        toast.success('User deleted successfully!');
+      }
+      
       setShowDeleteUserConfirm(false);
       setUserToDelete(null);
       loadUsers();
@@ -285,7 +311,7 @@ export default function AdminPanel() {
       loadCourses();
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast.error('Failed to delete user');
+      toast.error(error.message || 'Failed to delete user');
     }
   };
 
@@ -310,6 +336,31 @@ export default function AdminPanel() {
       toast.error('Failed to create global tags');
     } finally {
       setCreatingGlobalTags(false);
+    }
+  };
+
+  const handleFixAccessCodes = async () => {
+    try {
+      setFixingAccessCodes(true);
+      toast.loading('Checking courses for missing access codes...');
+      
+      const fixedCount = await courseApi.fixMissingAccessCodes();
+      
+      toast.dismiss();
+      if (fixedCount > 0) {
+        toast.success(`Fixed ${fixedCount} courses with missing access codes!`);
+        // Reload courses to show the updated data
+        loadCourses();
+      } else {
+        toast.success('All courses already have access codes');
+      }
+      
+    } catch (error) {
+      console.error('Error fixing access codes:', error);
+      toast.dismiss();
+      toast.error('Failed to fix access codes');
+    } finally {
+      setFixingAccessCodes(false);
     }
   };
 
@@ -369,17 +420,128 @@ export default function AdminPanel() {
       loadUsers();
     } catch (error) {
       console.error('Error adding user to course:', error);
-      if (error.message.includes('already enrolled')) {
-        toast.error('User is already enrolled in this course');
+      if (error.message.includes('already enrolled') || error.message.includes('already an instructor')) {
+        toast.error(error.message);
       } else {
         toast.error('Failed to add user to course');
       }
     }
   };
 
+  const handleRestoreInstructorRole = async (userId, courseId, courseName) => {
+    try {
+      await courseApi.restoreInstructorRole(userId, courseId, currentUser.id);
+      toast.success(`Instructor role restored for ${courseName}`);
+      // Reload users to reflect the change
+      loadUsers();
+    } catch (error) {
+      console.error('Error restoring instructor role:', error);
+      toast.error('Failed to restore instructor role');
+    }
+  };
+
+  // Pending Approvals Functions
+  const loadPendingApprovals = async () => {
+    try {
+      setApprovalsLoading(true);
+      console.log('🔥 Admin loading all pending approvals across all courses');
+      
+      // Get all pending approvals across all courses
+      const allApprovals = [];
+      
+      for (const course of courses) {
+        try {
+          const courseApprovals = await courseApi.getPendingApprovals(course.id, currentUser.id);
+          // Add course info to each approval
+          courseApprovals.forEach(approval => {
+            approval.courseName = course.title;
+            approval.courseCode = course.course_code;
+          });
+          allApprovals.push(...courseApprovals);
+        } catch (error) {
+          console.warn(`Failed to load approvals for course ${course.title}:`, error);
+        }
+      }
+      
+      console.log(`✅ Loaded ${allApprovals.length} total pending approvals`);
+      setPendingApprovals(allApprovals);
+    } catch (error) {
+      console.error('Error loading pending approvals:', error);
+      toast.error('Failed to load pending approvals');
+    } finally {
+      setApprovalsLoading(false);
+    }
+  };
+
+  const handleApprovalAction = async (membershipId, status, userName, courseName) => {
+    setProcessingApproval(prev => ({ ...prev, [membershipId]: true }));
+    
+    try {
+      await courseApi.updateMembershipStatus(membershipId, status, currentUser.id);
+      
+      toast.success(
+        `${userName} has been ${status === 'approved' ? 'approved' : 'rejected'} for ${courseName}`
+      );
+      
+      // Remove from pending list
+      setPendingApprovals(prev => 
+        prev.filter(approval => approval.id !== membershipId)
+      );
+      
+      // Also reload users and courses to reflect changes
+      loadUsers();
+      loadCourses();
+      
+    } catch (error) {
+      console.error('Error updating membership status:', error);
+      toast.error(`Failed to ${status} member`);
+    } finally {
+      setProcessingApproval(prev => ({ ...prev, [membershipId]: false }));
+    }
+  };
+
+  const handleFixInstructorRole = async (membershipId, userName, courseName) => {
+    setProcessingApproval(prev => ({ ...prev, [membershipId]: true }));
+    
+    try {
+      // First approve the membership, then change role to instructor
+      await courseApi.updateMembershipStatus(membershipId, 'approved', currentUser.id);
+      
+      // Get the membership to find userId and courseId
+      const approval = pendingApprovals.find(a => a.id === membershipId);
+      if (approval) {
+        // Update role to instructor using our existing function
+        await courseApi.updateMemberRole(membershipId, 'instructor');
+        
+        toast.success(`${userName} has been approved as instructor for ${courseName}`);
+        
+        // Remove from pending list
+        setPendingApprovals(prev => 
+          prev.filter(approval => approval.id !== membershipId)
+        );
+        
+        // Reload data
+        loadUsers();
+        loadCourses();
+      }
+      
+    } catch (error) {
+      console.error('Error fixing instructor role:', error);
+      toast.error('Failed to fix instructor role');
+    } finally {
+      setProcessingApproval(prev => ({ ...prev, [membershipId]: false }));
+    }
+  };
+
   const getAvailableCoursesForUser = (user) => {
-    const userCourseIds = user.course_memberships?.map(m => m.course_id) || [];
+    const userCourseIds = user.course_memberships?.map(m => m.course_id || courses.find(c => c.title === m.course)?.id) || [];
     return courses.filter(course => !userCourseIds.includes(course.id));
+  };
+
+  const getUserMembershipInCourse = (user, courseId) => {
+    return user.course_memberships?.find(m => 
+      m.course_id === courseId || courses.find(c => c.title === m.course)?.id === courseId
+    );
   };
 
   const getFilteredUsers = () => {
@@ -519,6 +681,24 @@ export default function AdminPanel() {
                 </>
               )}
             </button>
+            
+            <button
+              onClick={handleFixAccessCodes}
+              disabled={fixingAccessCodes}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            >
+              {fixingAccessCodes ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                  Fixing...
+                </>
+              ) : (
+                <>
+                  <ClipboardDocumentListIcon className="h-4 w-4 mr-2" />
+                  Fix Access Codes
+                </>
+              )}
+            </button>
           </div>
         )}
       </div>
@@ -547,6 +727,22 @@ export default function AdminPanel() {
           >
             <UsersIcon className="h-5 w-5 inline-block mr-2" />
             User Management
+          </button>
+          <button
+            onClick={() => setActiveTab('approvals')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'approvals'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <ClipboardDocumentListIcon className="h-5 w-5 inline-block mr-2" />
+            Pending Approvals
+            {pendingApprovals.length > 0 && (
+              <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                {pendingApprovals.length}
+              </span>
+            )}
           </button>
         </nav>
       </div>
@@ -658,13 +854,24 @@ export default function AdminPanel() {
                                           >
                                             {membership.role} in {membership.course}
                                           </span>
-                                          <button
-                                            onClick={() => handleRemoveFromCourse(user, membership)}
-                                            className="ml-2 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                            title={`Remove from ${membership.course}`}
-                                          >
-                                            <TrashIcon className="h-3 w-3" />
-                                          </button>
+                                          <div className="ml-2 flex items-center space-x-1">
+                                            {membership.role === 'student' && (
+                                              <button
+                                                onClick={() => handleRestoreInstructorRole(user.id, membership.course_id || courses.find(c => c.title === membership.course)?.id, membership.course)}
+                                                className="p-1 text-green-400 hover:text-green-600 hover:bg-green-50 rounded"
+                                                title={`Restore as instructor in ${membership.course}`}
+                                              >
+                                                <AcademicCapIcon className="h-3 w-3" />
+                                              </button>
+                                            )}
+                                            <button
+                                              onClick={() => handleRemoveFromCourse(user, membership)}
+                                              className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                              title={`Remove from ${membership.course}`}
+                                            >
+                                              <TrashIcon className="h-3 w-3" />
+                                            </button>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
@@ -703,6 +910,153 @@ export default function AdminPanel() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'approvals' && (
+        <>
+          {/* Pending Approvals Management */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                Pending Course Approvals ({pendingApprovals.length})
+              </h3>
+              <button
+                onClick={loadPendingApprovals}
+                disabled={approvalsLoading}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                {approvalsLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                    Refreshing...
+                  </>
+                ) : (
+                  'Refresh'
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-sm text-gray-600">
+              Manage student and instructor enrollment requests across all courses
+            </p>
+          </div>
+
+          {/* Pending Approvals List */}
+          {approvalsLoading ? (
+            <div className="animate-pulse space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                {pendingApprovals.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ClipboardDocumentListIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No pending approvals</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      All course enrollment requests have been processed.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingApprovals.map((approval) => (
+                      <div key={approval.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                                approval.role === 'instructor' 
+                                  ? 'bg-green-100' 
+                                  : 'bg-blue-100'
+                              }`}>
+                                {approval.role === 'instructor' ? (
+                                  <AcademicCapIcon className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <UsersIcon className="h-5 w-5 text-blue-600" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {approval.users?.name || 'Unknown User'}
+                                </div>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  approval.role === 'instructor' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {approval.role}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {approval.users?.email}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                <strong>Course:</strong> {approval.courseName} ({approval.courseCode})
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                Requested {format(new Date(approval.joinedAt?.toDate ? approval.joinedAt.toDate() : approval.joinedAt || approval.createdAt?.toDate ? approval.createdAt.toDate() : approval.createdAt), 'MMM dd, yyyy HH:mm')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {approval.role === 'student' && (
+                            <button
+                              onClick={() => handleFixInstructorRole(approval.id, approval.users?.name || 'Unknown User', approval.courseName)}
+                              disabled={processingApproval[approval.id]}
+                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                              title="Approve as Instructor (fixes lost instructor role)"
+                            >
+                              {processingApproval[approval.id] ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                              ) : (
+                                <>
+                                  <AcademicCapIcon className="h-3 w-3 mr-1" />
+                                  Fix as Instructor
+                                </>
+                              )}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleApprovalAction(approval.id, 'rejected', approval.users?.name || 'Unknown User', approval.courseName)}
+                            disabled={processingApproval[approval.id]}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                          >
+                            {processingApproval[approval.id] ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
+                            ) : (
+                              <>
+                                <XMarkIcon className="h-3 w-3 mr-1" />
+                                Reject
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleApprovalAction(approval.id, 'approved', approval.users?.name || 'Unknown User', approval.courseName)}
+                            disabled={processingApproval[approval.id]}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                          >
+                            {processingApproval[approval.id] ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                            ) : (
+                              <>
+                                <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                Approve as {approval.role === 'instructor' ? 'Instructor' : 'Student'}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1439,11 +1793,22 @@ export default function AdminPanel() {
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
                     >
                       <option value="">Choose a course...</option>
-                      {getAvailableCoursesForUser(userToAddToCourse).map((course) => (
-                        <option key={course.id} value={course.id}>
-                          {course.title} ({course.course_code})
-                        </option>
-                      ))}
+                      {courses.map((course) => {
+                        const membership = getUserMembershipInCourse(userToAddToCourse, course.id);
+                        const isAlreadyMember = !!membership;
+                        const isInstructor = membership?.role === 'instructor';
+                        
+                        return (
+                          <option 
+                            key={course.id} 
+                            value={course.id}
+                            disabled={isAlreadyMember}
+                          >
+                            {course.title} ({course.course_code})
+                            {isInstructor ? ' - Already Instructor' : isAlreadyMember ? ' - Already Member' : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -1462,13 +1827,35 @@ export default function AdminPanel() {
                   </div>
                 </div>
                 
-                {getAvailableCoursesForUser(userToAddToCourse).length === 0 && (
+                {selectedCourseForAdd && userToAddToCourse && (() => {
+                  const membership = getUserMembershipInCourse(userToAddToCourse, selectedCourseForAdd);
+                  const isInstructor = membership?.role === 'instructor';
+                  const selectedCourseName = courses.find(c => c.id === selectedCourseForAdd)?.title;
+                  
+                  if (isInstructor && selectedRoleForAdd === 'student') {
+                    return (
+                      <div className="mt-3 bg-red-50 border border-red-200 rounded-md p-3">
+                        <div className="flex">
+                          <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
+                          <div className="text-sm text-red-800">
+                            <p className="font-medium">Warning:</p>
+                            <p className="mt-1">This user is already an instructor in {selectedCourseName}. Cannot downgrade instructor to student role.</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return null;
+                })()}
+                
+                {courses.filter(course => !getUserMembershipInCourse(userToAddToCourse, course.id)).length === 0 && (
                   <div className="mt-3 bg-blue-50 border border-blue-200 rounded-md p-3">
                     <div className="flex">
                       <ExclamationTriangleIcon className="h-5 w-5 text-blue-400 mr-2" />
                       <div className="text-sm text-blue-800">
                         <p className="font-medium">Note:</p>
-                        <p className="mt-1">This user is already enrolled in all available courses.</p>
+                        <p className="mt-1">This user is already enrolled in all available courses. Use the "Restore as Instructor" button above to change their role in existing courses.</p>
                       </div>
                     </div>
                   </div>
@@ -1484,7 +1871,14 @@ export default function AdminPanel() {
                 </button>
                 <button
                   onClick={confirmAddToCourse}
-                  disabled={!selectedCourseForAdd || !selectedRoleForAdd}
+                  disabled={
+                    !selectedCourseForAdd || 
+                    !selectedRoleForAdd || 
+                    (selectedCourseForAdd && userToAddToCourse && (() => {
+                      const membership = getUserMembershipInCourse(userToAddToCourse, selectedCourseForAdd);
+                      return membership?.role === 'instructor' && selectedRoleForAdd === 'student';
+                    })())
+                  }
                   className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Add as {selectedRoleForAdd === 'instructor' ? 'Instructor' : 'Student'}

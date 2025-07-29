@@ -56,7 +56,7 @@ export default function Layout() {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+    { name: 'My Dashboard', href: '/dashboard', icon: HomeIcon },
     ...(isInstructorAnywhere 
       ? [{ name: 'Instructor Dashboard', href: '/instructor', icon: ChartBarIcon }] 
       : []),

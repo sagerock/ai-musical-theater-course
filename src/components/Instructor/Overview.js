@@ -140,6 +140,34 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
 
   return (
     <div className="space-y-6">
+      {/* Course Context Header */}
+      <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {selectedCourse?.courses?.title || 'Course Overview'}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {selectedCourse?.courses?.course_code && selectedCourse?.courses?.semester && selectedCourse?.courses?.year ? (
+                <>
+                  {selectedCourse.courses.course_code} • {selectedCourse.courses.semester} {selectedCourse.courses.year}
+                  <span className="ml-2 text-gray-400">•</span>
+                  <span className="ml-2">All metrics below are for this specific course</span>
+                </>
+              ) : (
+                'All metrics below are for the currently selected course'
+              )}
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-500">Course Statistics</div>
+            <div className="text-xs text-gray-400 mt-1">
+              Updated in real-time
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Pending Approvals Notification */}
       {pendingApprovals.length > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
@@ -211,6 +239,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Student Projects</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
+              <p className="text-xs text-gray-500 mt-1">In this course</p>
             </div>
           </div>
           <div className="mt-4">
@@ -231,6 +260,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">AI Interactions</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalChats}</p>
+              <p className="text-xs text-gray-500 mt-1">Course-specific chats</p>
             </div>
           </div>
           <div className="mt-4">
@@ -251,6 +281,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Students</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              <p className="text-xs text-gray-500 mt-1">Enrolled in this course</p>
             </div>
           </div>
           <div className="mt-4">
@@ -271,6 +302,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Reflection Rate</p>
               <p className="text-2xl font-bold text-gray-900">{stats.reflectionCompletionRate}%</p>
+              <p className="text-xs text-gray-500 mt-1">AI chats with reflections</p>
             </div>
           </div>
           <div className="mt-4">

@@ -7,6 +7,7 @@ export default function CourseSelector({
   onCourseChange, 
   selectedCourse, 
   loading,
+  exporting,
   onExportData,
   onManageTags 
 }) {
@@ -60,10 +61,11 @@ export default function CourseSelector({
             <div className="flex items-center space-x-2">
               <button
                 onClick={onExportData}
-                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
+                disabled={exporting}
+                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
-                Export Data
+                {exporting ? 'Exporting...' : 'Export Data'}
               </button>
               <button
                 onClick={onManageTags}

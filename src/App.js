@@ -36,9 +36,6 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
           </Route>
-          <Route path="/projects" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<Projects />} />
-          </Route>
           <Route path="/chat/:projectId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Chat />} />
           </Route>

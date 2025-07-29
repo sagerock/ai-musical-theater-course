@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/firebaseApi';
+import { courseApi, chatApi, tagApi, instructorNotesApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import InstructorNavigation from './InstructorNavigation';
@@ -74,12 +74,88 @@ export default function InstructorDashboardContainer() {
     try {
       setExporting(true);
       
-      // Firebase users don't have analytics export functionality yet
-      toast.error('Data export is not yet available. Please contact support.');
+      // Load all course data for export
+      const [chats] = await Promise.all([
+        chatApi.getChatsWithFilters({
+          courseId: selectedCourseId,
+          limit: 1000
+        }).catch(() => [])
+      ]);
+
+      // Enrich chats with tags and instructor notes
+      const enrichedChats = await Promise.all(
+        chats.map(async (chat) => {
+          try {
+            // Load tags for this chat
+            const chatTags = await tagApi.getChatTags(chat.id).catch(() => []);
+            
+            // Load instructor notes for this chat
+            const instructorNotes = await instructorNotesApi.getNotesByChat(chat.id).catch(() => []);
+            
+            return {
+              ...chat,
+              chat_tags: chatTags,
+              instructor_notes: instructorNotes
+            };
+          } catch (error) {
+            console.warn(`Error enriching chat ${chat.id}:`, error);
+            return {
+              ...chat,
+              chat_tags: [],
+              instructor_notes: []
+            };
+          }
+        })
+      );
+
+      // Prepare data for export
+      const dataToExport = enrichedChats.map(chat => ({
+        id: chat.id,
+        user_name: chat.users?.name || 'Unknown',
+        user_email: chat.users?.email || 'Unknown',
+        project_title: chat.projects?.title || 'Unknown',
+        tool_used: chat.tool_used || 'Claude Sonnet 4',
+        prompt: chat.prompt,
+        response: chat.response,
+        tags: chat.chat_tags?.map(ct => ct.tags?.name || ct.name).join(', ') || '',
+        has_reflection: chat.reflections && chat.reflections.length > 0 ? 'Yes' : 'No',
+        reflection_content: chat.reflections?.[0]?.content || '',
+        instructor_notes: chat.instructor_notes?.map(note => `${note.title}: ${note.content}`).join(' | ') || '',
+        created_at: format(new Date(chat.created_at), 'yyyy-MM-dd HH:mm:ss')
+      }));
+
+      // Convert to CSV
+      const headers = [
+        'ID', 'User Name', 'User Email', 'Project', 'AI Tool', 'Prompt', 'Response', 
+        'Tags', 'Has Reflection', 'Reflection', 'Instructor Notes', 'Created At'
+      ];
+      
+      const csvContent = [
+        headers.join(','),
+        ...dataToExport.map(row => 
+          Object.values(row).map(field => 
+            `"${String(field).replace(/"/g, '""')}"`
+          ).join(',')
+        )
+      ].join('\n');
+
+      // Download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      const courseCode = selectedCourse?.courses?.course_code || 'course';
+      link.setAttribute('download', `${courseCode}_ai_interactions_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Data exported successfully! ${dataToExport.length} AI interactions exported.`);
       
     } catch (error) {
       console.error('Error exporting data:', error);
-      alert('Failed to export data. Please try again.');
+      toast.error('Failed to export data. Please try again.');
     } finally {
       setExporting(false);
     }
@@ -157,6 +233,7 @@ export default function InstructorDashboardContainer() {
         onCourseChange={handleCourseChange}
         selectedCourse={selectedCourse}
         loading={courseLoading}
+        exporting={exporting}
         onExportData={handleExportData}
         onManageTags={handleManageTags}
       />

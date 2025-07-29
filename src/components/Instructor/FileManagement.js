@@ -36,6 +36,12 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
       // Map the data structure to match what the component expects
       const mappedAttachments = attachmentsData.map(attachment => ({
         ...attachment,
+        // Map field names from Firebase structure to component expectations
+        file_name: attachment.fileName || attachment.file_name || 'Unknown File',
+        file_size: attachment.fileSize || attachment.file_size || 0,
+        file_type: attachment.fileType || attachment.file_type || 'application/pdf',
+        uploaded_at: attachment.createdAt || attachment.uploaded_at || attachment.uploadedAt,
+        storage_path: attachment.storagePath || attachment.storage_path,
         student_name: attachment.chats?.users?.name || 'Unknown Student',
         project_title: attachment.chats?.projects?.title || 'Unknown Project'
       }));
@@ -65,15 +71,15 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
     switch (sortBy) {
       case 'newest':
         filtered.sort((a, b) => {
-          const dateA = a.uploaded_at ? new Date(a.uploaded_at) : new Date(0);
-          const dateB = b.uploaded_at ? new Date(b.uploaded_at) : new Date(0);
+          const dateA = a.uploaded_at ? (a.uploaded_at.toDate ? a.uploaded_at.toDate() : new Date(a.uploaded_at)) : new Date(0);
+          const dateB = b.uploaded_at ? (b.uploaded_at.toDate ? b.uploaded_at.toDate() : new Date(b.uploaded_at)) : new Date(0);
           return dateB - dateA;
         });
         break;
       case 'oldest':
         filtered.sort((a, b) => {
-          const dateA = a.uploaded_at ? new Date(a.uploaded_at) : new Date(0);
-          const dateB = b.uploaded_at ? new Date(b.uploaded_at) : new Date(0);
+          const dateA = a.uploaded_at ? (a.uploaded_at.toDate ? a.uploaded_at.toDate() : new Date(a.uploaded_at)) : new Date(0);
+          const dateB = b.uploaded_at ? (b.uploaded_at.toDate ? b.uploaded_at.toDate() : new Date(b.uploaded_at)) : new Date(0);
           return dateA - dateB;
         });
         break;
@@ -84,7 +90,11 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
         filtered.sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''));
         break;
       case 'size':
-        filtered.sort((a, b) => b.file_size - a.file_size);
+        filtered.sort((a, b) => {
+          const sizeA = a.file_size || 0;
+          const sizeB = b.file_size || 0;
+          return sizeB - sizeA;
+        });
         break;
       default:
         break;
@@ -108,7 +118,9 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
   };
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    // Handle invalid or missing data
+    if (!bytes || bytes === 0 || isNaN(bytes)) return '0 Bytes';
+    
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -218,10 +230,20 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
                         <div className="flex items-center space-x-1">
                           <ClockIcon className="h-4 w-4" />
                           <span>
-                            {attachment.uploaded_at 
-                              ? format(new Date(attachment.uploaded_at), 'MMM dd, yyyy')
-                              : 'Unknown date'
-                            }
+                            {(() => {
+                              try {
+                                if (attachment.uploaded_at) {
+                                  const date = attachment.uploaded_at.toDate ? 
+                                    attachment.uploaded_at.toDate() : 
+                                    new Date(attachment.uploaded_at);
+                                  return format(date, 'MMM dd, yyyy');
+                                }
+                                return 'Unknown date';
+                              } catch (error) {
+                                console.warn('Date formatting error:', error);
+                                return 'Invalid date';
+                              }
+                            })()}
                           </span>
                         </div>
                       </div>
@@ -255,7 +277,10 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
-              {formatFileSize(attachments.reduce((sum, att) => sum + att.file_size, 0))}
+              {formatFileSize(attachments.reduce((sum, att) => {
+                const fileSize = att.file_size || 0;
+                return sum + (isNaN(fileSize) ? 0 : fileSize);
+              }, 0))}
             </div>
             <div className="text-sm text-gray-600">Total Size</div>
           </div>

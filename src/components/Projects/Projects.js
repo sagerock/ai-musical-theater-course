@@ -12,7 +12,9 @@ import {
   UserIcon,
   XMarkIcon,
   TrashIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  PencilIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 
 export default function Projects() {
@@ -28,6 +30,11 @@ export default function Projects() {
   });
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: ''
+  });
   const { currentUser } = useAuth();
   const { courseId } = useParams();
 
@@ -48,17 +55,30 @@ export default function Projects() {
       
       console.log('📂 Projects: Firebase user, loading data...');
       
-      // If accessing a specific course, verify the user is enrolled and approved
+      // If accessing a specific course, verify the user is enrolled
+      // Instructors can access regardless of approval status
       if (courseId) {
         console.log('🔍 Projects: Verifying course membership for courseId:', courseId);
         const userCourses = await courseApi.getUserCourses(currentUser.id);
-        const isEnrolledAndApproved = userCourses.some(membership => 
-          membership.courses.id === courseId && membership.status === 'approved'
+        const courseMembership = userCourses.find(membership => 
+          membership.courses.id === courseId
         );
         
-        if (!isEnrolledAndApproved) {
-          console.log('❌ Projects: User not enrolled or approved for course:', courseId);
+        if (!courseMembership) {
+          console.log('❌ Projects: User not enrolled in course:', courseId);
           toast.error('Access denied: You are not enrolled in this course');
+          setProjects([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Students need approval, instructors can access immediately
+        const canAccessCourse = courseMembership.role === 'instructor' || 
+                               (courseMembership.role === 'student' && courseMembership.status === 'approved');
+        
+        if (!canAccessCourse) {
+          console.log('❌ Projects: User cannot access course - role:', courseMembership.role, 'status:', courseMembership.status);
+          toast.error('Access denied: Students must be approved to access course projects');
           setProjects([]);
           setLoading(false);
           return;
@@ -110,26 +130,37 @@ export default function Projects() {
       return;
     }
 
-    // Firebase project creation - temporarily disabled
-    // toast.error('Project creation is not yet available for new accounts. Please contact support.');
-    // return;
-
-    // If we're in a course context, verify the user is still enrolled and approved before creating project
-    if (courseId) {
-      console.log('🔍 Projects: Verifying course membership before project creation for courseId:', courseId);
-      const userCourses = await courseApi.getUserCourses(currentUser.id);
-      const isEnrolledAndApproved = userCourses.some(membership => 
-        membership.courses.id === courseId && membership.status === 'approved'
-      );
-      
-      if (!isEnrolledAndApproved) {
-        console.log('❌ Projects: User not enrolled or approved for course project creation:', courseId);
-        toast.error('Access denied: You cannot create projects for this course');
-        return;
-      }
-      
-      console.log('✅ Projects: User verified for course project creation');
+    // SECURITY: Projects can only be created within a course context
+    if (!courseId) {
+      toast.error('Projects can only be created within a course. Please access projects from a course page.');
+      return;
     }
+
+    // Verify the user is enrolled in the course before creating project
+    // Instructors can create projects regardless of approval status
+    console.log('🔍 Projects: Verifying course membership before project creation for courseId:', courseId);
+    const userCourses = await courseApi.getUserCourses(currentUser.id);
+    const courseMembership = userCourses.find(membership => 
+      membership.courses.id === courseId
+    );
+    
+    if (!courseMembership) {
+      console.log('❌ Projects: User not enrolled in course:', courseId);
+      toast.error('Access denied: You are not enrolled in this course');
+      return;
+    }
+    
+    // Students need approval, instructors can create projects immediately
+    const canCreateProject = courseMembership.role === 'instructor' || 
+                           (courseMembership.role === 'student' && courseMembership.status === 'approved');
+    
+    if (!canCreateProject) {
+      console.log('❌ Projects: User cannot create projects - role:', courseMembership.role, 'status:', courseMembership.status);
+      toast.error('Access denied: Students must be approved to create projects');
+      return;
+    }
+    
+    console.log('✅ Projects: User verified for course project creation');
 
     try {
       setCreating(true);
@@ -197,6 +228,50 @@ export default function Projects() {
     }
   };
 
+  const startEditProject = (project) => {
+    setEditingProject(project);
+    setEditFormData({
+      title: project.title,
+      description: project.description || ''
+    });
+  };
+
+  const handleEditProject = async (e) => {
+    e.preventDefault();
+    if (!editFormData.title.trim()) {
+      toast.error('Project title is required');
+      return;
+    }
+    
+    if (!editingProject) return;
+    
+    try {
+      await projectApi.updateProject(editingProject.id, {
+        title: editFormData.title.trim(),
+        description: editFormData.description.trim()
+      });
+      
+      // Update local state
+      setProjects(projects.map(p => 
+        p.id === editingProject.id 
+          ? { ...p, title: editFormData.title.trim(), description: editFormData.description.trim() }
+          : p
+      ));
+      
+      toast.success('Project updated successfully!');
+      setEditingProject(null);
+      setEditFormData({ title: '', description: '' });
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast.error(error.message || 'Failed to update project');
+    }
+  };
+
+  const cancelEditProject = () => {
+    setEditingProject(null);
+    setEditFormData({ title: '', description: '' });
+  };
+
   const isProjectOwner = (project) => {
     return project.created_by === currentUser.id;
   };
@@ -244,36 +319,94 @@ export default function Projects() {
           {projects.map((project) => (
             <div key={project.id} className="bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition-shadow">
               <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center">
-                    <FolderIcon className="h-8 w-8 text-primary-500" />
-                    <div className="ml-3">
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
-                        {project.title}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {isProjectOwner(project) ? 'Owner' : 'Member'}
-                      </p>
+                {editingProject?.id === project.id ? (
+                  /* Edit Form */
+                  <form onSubmit={handleEditProject} className="w-full">
+                    <div className="space-y-3">
+                      <div>
+                        <input
+                          type="text"
+                          value={editFormData.title}
+                          onChange={(e) => setEditFormData({...editFormData, title: e.target.value})}
+                          className="w-full text-lg font-semibold text-gray-900 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Project title"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <textarea
+                          value={editFormData.description}
+                          onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                          className="w-full text-sm text-gray-600 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Project description (optional)"
+                          rows={2}
+                        />
+                      </div>
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          type="button"
+                          onClick={cancelEditProject}
+                          className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          <CheckIcon className="h-3 w-3 mr-1" />
+                          Save
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  {isProjectOwner(project) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProject(project);
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                      title="Delete project"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-
-                {project.description && (
-                  <p className="text-sm text-gray-600 mt-3 line-clamp-2">
-                    {project.description}
-                  </p>
+                  </form>
+                ) : (
+                  /* Normal Display */
+                  <>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center">
+                        <FolderIcon className="h-8 w-8 text-primary-500" />
+                        <div className="ml-3">
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                            {project.title}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {isProjectOwner(project) ? 'Owner' : 'Member'}
+                          </p>
+                        </div>
+                      </div>
+                      {isProjectOwner(project) && (
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditProject(project);
+                            }}
+                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Edit project"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project);
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            title="Delete project"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {project.description && (
+                      <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+                        {project.description}
+                      </p>
+                    )}
+                  </>
                 )}
 
                 <div className="mt-4">

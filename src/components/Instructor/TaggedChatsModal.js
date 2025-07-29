@@ -32,6 +32,10 @@ export default function TaggedChatsModal({
     try {
       setLoading(true);
       const chatData = await tagApi.getTaggedChats(tagId, courseId);
+      console.log('🔍 TaggedChatsModal received chat data:', chatData);
+      console.log('🔍 Sample chat object keys:', chatData[0] ? Object.keys(chatData[0]) : 'No chats');
+      console.log('🔍 Sample chat users data:', chatData[0]?.users);
+      console.log('🔍 Sample chat projects data:', chatData[0]?.projects);
       setChats(chatData);
     } catch (error) {
       console.error('Error loading tagged chats:', error);
@@ -125,12 +129,12 @@ export default function TaggedChatsModal({
                       <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                         <div className="flex items-center space-x-1">
                           <UserIcon className="h-3 w-3" />
-                          <span>{chat.student?.name || 'Unknown Student'}</span>
+                          <span>{chat.users?.name || chat.users?.displayName || 'Unknown Student'}</span>
                         </div>
-                        {chat.project && (
+                        {chat.projects && (
                           <div className="flex items-center space-x-1">
                             <FolderIcon className="h-3 w-3" />
-                            <span>{chat.project.title}</span>
+                            <span>{chat.projects.title}</span>
                           </div>
                         )}
                         <div className="flex items-center space-x-1">
@@ -139,9 +143,9 @@ export default function TaggedChatsModal({
                         </div>
                       </div>
                     </div>
-                    {chat.project_id ? (
+                    {chat.projectId ? (
                       <button
-                        onClick={() => handleViewProject(chat.project_id)}
+                        onClick={() => handleViewProject(chat.projectId)}
                         className="flex items-center space-x-1 px-3 py-1 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
                       >
                         <ArrowTopRightOnSquareIcon className="h-3 w-3" />
@@ -157,18 +161,18 @@ export default function TaggedChatsModal({
                   {/* Chat Preview */}
                   <div className="bg-gray-50 rounded-md p-3">
                     <p className="text-sm text-gray-700 leading-relaxed">
-                      {createPreview(chat.user_prompt)}
+                      {createPreview(chat.user_message || chat.prompt || chat.message || 'No message content available')}
                     </p>
                   </div>
 
                   {/* Student Info */}
                   <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
                     <span>
-                      Student: {chat.student?.name || 'Unknown'} ({chat.student?.email || 'No email'})
+                      Student: {chat.users?.name || chat.users?.displayName || 'Unknown'} ({chat.users?.email || 'No email'})
                     </span>
-                    {chat.project && (
+                    {chat.projects && (
                       <span>
-                        Project: {chat.project.title}
+                        Project: {chat.projects.title}
                       </span>
                     )}
                   </div>

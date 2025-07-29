@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { chatApi as supabaseChatApi, projectApi as supabaseProjectApi, userApi as supabaseUserApi, tagApi as supabaseTagApi, analyticsApi as supabaseAnalyticsApi, courseApi as supabaseCourseApi, attachmentApi as supabaseAttachmentApi } from '../../services/supabaseApi';
-import { chatApi as firebaseChatApi, projectApi as firebaseProjectApi, userApi as firebaseUserApi, tagApi as firebaseTagApi, courseApi as firebaseCourseApi, attachmentApi as firebaseAttachmentApi } from '../../services/firebaseApi';
+import { chatApi, projectApi, userApi, tagApi, courseApi, attachmentApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
@@ -58,19 +57,15 @@ export default function InstructorDashboard() {
   const [exporting, setExporting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Helper function to get appropriate APIs based on user type
-  const getAPIs = () => {
-    const isFirebaseUser = currentUser?.id && !currentUser.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-    
-    return {
-      chatApi: isFirebaseUser ? firebaseChatApi : supabaseChatApi,
-      projectApi: isFirebaseUser ? firebaseProjectApi : supabaseProjectApi,
-      userApi: isFirebaseUser ? firebaseUserApi : supabaseUserApi,
-      tagApi: isFirebaseUser ? firebaseTagApi : supabaseTagApi,
-      analyticsApi: isFirebaseUser ? null : supabaseAnalyticsApi, // Firebase doesn't have analytics API yet
-      courseApi: isFirebaseUser ? firebaseCourseApi : supabaseCourseApi,
-      attachmentApi: isFirebaseUser ? firebaseAttachmentApi : supabaseAttachmentApi
-    };
+  // Using Firebase-only APIs after migration
+  const apis = {
+    chatApi,
+    projectApi,
+    userApi,
+    tagApi,
+    analyticsApi: null, // Firebase doesn't have analytics API yet
+    courseApi,
+    attachmentApi
   };
   const [selectedChat, setSelectedChat] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,6 +77,7 @@ export default function InstructorDashboard() {
 
   const { currentUser, userRole, isInstructorAnywhere } = useAuth();
   const [fixingChats, setFixingChats] = useState(false);
+  const [fixingToolUsed, setFixingToolUsed] = useState(false);
 
   useEffect(() => {
     if (isInstructorAnywhere) {
@@ -109,8 +105,7 @@ export default function InstructorDashboard() {
 
   const loadInstructorCourses = async () => {
     try {
-      const { courseApi } = getAPIs();
-      const userCourses = await courseApi.getUserCourses(currentUser.id);
+      const userCourses = await apis.courseApi.getUserCourses(currentUser.id);
       const instructorCourses = userCourses.filter(membership => 
         membership.role === 'instructor' && membership.status === 'approved'
       );
@@ -151,8 +146,8 @@ export default function InstructorDashboard() {
 
       console.log('🔍 Backend filters being applied:', backendFilters);
 
-      // Get appropriate APIs based on user type
-      const { analyticsApi, chatApi, projectApi, userApi, tagApi, attachmentApi } = getAPIs();
+      // Use Firebase APIs
+      const { analyticsApi, chatApi, projectApi, userApi, tagApi, attachmentApi } = apis;
       
       // Load all data in parallel for the selected course
       // Use Promise.allSettled to handle individual failures gracefully
@@ -312,7 +307,7 @@ export default function InstructorDashboard() {
         user_name: chat.users?.name || 'Unknown',
         user_email: chat.users?.email || 'Unknown',
         project_title: chat.projects?.title || 'Unknown',
-        tool_used: chat.tool_used,
+        tool_used: chat.tool_used || 'Claude Sonnet 4',
         prompt: chat.prompt,
         response: chat.response,
         tags: chat.chat_tags?.map(ct => ct.tags.name).join(', ') || '',
@@ -394,8 +389,7 @@ export default function InstructorDashboard() {
   const handleFixChatLinkage = async () => {
     try {
       setFixingChats(true);
-      const { courseApi } = getAPIs();
-      const result = await courseApi.fixChatCourseLinkage();
+      const result = await apis.courseApi.fixChatCourseLinkage();
       if (result.fixed > 0) {
         toast.success(`Fixed ${result.fixed} AI interactions! Refreshing dashboard...`);
         loadDashboardData(); // Reload data to show the fixed interactions
@@ -407,6 +401,25 @@ export default function InstructorDashboard() {
       toast.error('Failed to fix AI interactions');
     } finally {
       setFixingChats(false);
+    }
+  };
+
+  const handleFixMissingToolUsed = async () => {
+    try {
+      setFixingToolUsed(true);
+      const result = await apis.chatApi.fixMissingToolUsed(selectedCourseId);
+      
+      if (result.fixed > 0) {
+        toast.success(`Fixed ${result.fixed} AI interactions with missing tool data! Refreshing dashboard...`);
+        loadDashboardData(); // Reload data to show the fixed interactions
+      } else {
+        toast.success('No AI interactions needed fixing - all have tool data');
+      }
+    } catch (error) {
+      console.error('Error fixing missing tool_used:', error);
+      toast.error('Failed to fix missing AI tool data');
+    } finally {
+      setFixingToolUsed(false);
     }
   };
 
@@ -432,8 +445,7 @@ export default function InstructorDashboard() {
     
     try {
       console.log('🔄 Calling courseApi.removeStudentFromCourse...');
-      const { courseApi } = getAPIs();
-      await courseApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.id);
+      await apis.courseApi.removeStudentFromCourse(student.id, selectedCourseId, currentUser.id);
       console.log('✅ Student removed successfully');
       
       // Immediately update local state to remove the student from the UI
@@ -477,8 +489,7 @@ export default function InstructorDashboard() {
   // Load all users for adding to course
   const loadAllUsers = async () => {
     try {
-      const { userApi } = getAPIs();
-      const allUsersData = await userApi.getAllUsers();
+      const allUsersData = await apis.userApi.getAllUsers();
       setAllUsers(allUsersData);
     } catch (error) {
       console.error('Error loading all users:', error);
@@ -495,8 +506,7 @@ export default function InstructorDashboard() {
     if (!selectedCourseId) return;
     
     try {
-      const { courseApi } = getAPIs();
-      await courseApi.addStudentToCourse(userId, selectedCourseId, currentUser.id);
+      await apis.courseApi.addStudentToCourse(userId, selectedCourseId, currentUser.id);
       const addedUser = allUsers.find(u => u.id === userId);
       toast.success(`${addedUser.name} added to course`);
       setShowAddStudentModal(false);
@@ -521,8 +531,7 @@ export default function InstructorDashboard() {
   const handleDownloadPDF = async (attachment) => {
     try {
       console.log('📎 Downloading PDF:', attachment.file_name);
-      const { attachmentApi } = getAPIs();
-      const downloadUrl = await attachmentApi.getAttachmentDownloadUrl(attachment.storage_path);
+      const downloadUrl = await apis.attachmentApi.getAttachmentDownloadUrl(attachment.storage_path);
       
       // Open in new tab for download
       window.open(downloadUrl, '_blank');
@@ -625,7 +634,7 @@ export default function InstructorDashboard() {
             </div>
             
             {/* Course-specific Actions */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               {/* Legacy sync button (should no longer be needed after fix) */}
               {stats.totalChats === 0 && (
                 <button
@@ -638,6 +647,21 @@ export default function InstructorDashboard() {
                   {fixingChats ? 'Fixing...' : 'Fix Legacy Data'}
                 </button>
               )}
+              
+              {/* Fix missing AI tool data */}
+              <button
+                onClick={() => {
+                  console.log('🔧 Fix AI Tool Data button clicked');
+                  handleFixMissingToolUsed();
+                }}
+                disabled={fixingToolUsed}
+                className="inline-flex items-center px-3 py-1.5 border border-orange-300 rounded-md shadow-sm text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
+                title="Fix AI interactions that show 'Unknown' for the AI tool used"
+              >
+                <SparklesIcon className="h-3 w-3 mr-1" />
+                {fixingToolUsed ? 'Fixing...' : 'Fix AI Tool Data'}
+              </button>
+              
               <button
                 onClick={() => setShowTagManagement(true)}
                 className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
@@ -912,6 +936,18 @@ export default function InstructorDashboard() {
               Filter AI Interactions
             </button>
             <button
+              onClick={() => {
+                console.log('🔧 Fix AI Tool Data button clicked (main section)');
+                handleFixMissingToolUsed();
+              }}
+              disabled={fixingToolUsed}
+              className="inline-flex items-center px-3 py-1.5 border border-orange-300 rounded-md shadow-sm text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
+              title="Fix AI interactions that show 'Unknown' for the AI tool used"
+            >
+              <SparklesIcon className="h-3 w-3 mr-1" />
+              {fixingToolUsed ? 'Fixing...' : 'Fix AI Tool Data'}
+            </button>
+            <button
               onClick={() => setShowAIChat(true)}
               className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
@@ -924,7 +960,7 @@ export default function InstructorDashboard() {
               className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
             >
               <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
-              {exporting ? 'Exporting...' : 'Export CSV'}
+              {exporting ? 'Exporting..' : 'Export CSV'}
             </button>
           </div>
         </div>
