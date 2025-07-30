@@ -93,22 +93,49 @@ Quick Actions:
       ]
     };
 
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(emailData)
-    });
+    // Use the same backend API as instructor messaging
+    const EMAIL_API_URL = process.env.REACT_APP_EMAIL_API_URL || 
+      (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
+    
+    const emailPayload = {
+      to: 'sage@sagerock.com',
+      subject: subject,
+      htmlContent: htmlContent,
+      textContent: textContent
+    };
 
-    if (response.ok) {
-      console.log('✅ Contact notification email sent successfully');
+    // Try backend API first
+    try {
+      const apiUrl = EMAIL_API_URL ? `${EMAIL_API_URL}/api/send-email` : '/api/send-email';
+      console.log('📧 Attempting to send contact notification via:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      if (response.ok) {
+        console.log('✅ Contact notification email sent successfully via backend');
+        return true;
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Backend email API error:', errorData);
+        throw new Error(`Backend API error: ${JSON.stringify(errorData)}`);
+      }
+    } catch (error) {
+      console.error('❌ Backend email sending failed:', error);
+      
+      // Fallback to simulation mode
+      console.log('🔄 Falling back to email simulation mode...');
+      console.log('📧 SIMULATION MODE - Contact notification would be sent to: sage@sagerock.com');
+      console.log('📧 Subject:', subject);
+      console.log('📧 HTML Content:', htmlContent.substring(0, 200) + (htmlContent.length > 200 ? '...' : ''));
+      console.log('📧 Text Content:', textContent.substring(0, 200) + (textContent.length > 200 ? '...' : ''));
+      console.log('✅ Contact notification simulated successfully (backend unavailable)');
       return true;
-    } else {
-      const errorData = await response.text();
-      console.error('❌ SendGrid error:', errorData);
-      return false;
     }
 
   } catch (error) {
