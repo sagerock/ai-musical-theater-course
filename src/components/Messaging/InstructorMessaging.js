@@ -54,6 +54,7 @@ export default function InstructorMessaging() {
 
   const loadCourseStudents = useCallback(async (courseId) => {
     try {
+      console.log('🚨 DEBUG - loadCourseStudents called with courseId:', courseId);
       const courseMembers = await userApi.getAllUsers(courseId);
       console.log('🔍 Debug - getAllUsers result:', courseMembers);
       
@@ -78,6 +79,7 @@ export default function InstructorMessaging() {
       });
       
       console.log('🔍 Debug - filtered students:', students);
+      console.log('🚨 DEBUG - Setting selectedCourseStudents to:', students.length, 'students');
       setSelectedCourseStudents(students);
     } catch (error) {
       console.error('Error loading course students:', error);
@@ -108,6 +110,7 @@ export default function InstructorMessaging() {
   };
 
   const handleSendMessage = async (e) => {
+    console.log('🚨 DEBUG - handleSendMessage called!', e);
     e.preventDefault();
     
     console.log('🔍 DEBUG - Form submission started:', {
