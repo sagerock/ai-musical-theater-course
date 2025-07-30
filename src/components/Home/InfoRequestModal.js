@@ -60,8 +60,17 @@ export default function InfoRequestModal({ onClose }) {
       
       console.log('📝 Contact request saved successfully:', docRef.id);
       
-      // Log success and show instructions for email notification
-      console.log('📧 Contact request ready for notification - run: node send_contact_notifications.js');
+      // Send email notification to admin
+      try {
+        await sendContactNotification({
+          ...formData,
+          created_at: new Date()
+        });
+        console.log('📧 Contact notification email sent successfully');
+      } catch (emailError) {
+        console.error('⚠️ Failed to send contact notification email:', emailError);
+        // Don't fail the form submission if email fails
+      }
       
       toast.success('Thank you! We\'ll be in touch soon.');
       setIsSubmitted(true);
