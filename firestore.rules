@@ -285,5 +285,17 @@ service cloud.firestore {
       // Only Cloud Functions should write analytics data (or admins for manual operations)
       allow write: if isGlobalAdmin();
     }
+
+    // CONTACT REQUESTS - Public contact form submissions
+    match /contactRequests/{requestId} {
+      // Allow anonymous users to create contact requests (public contact form)
+      allow create: if true;
+      
+      // Only admins can read/manage contact requests
+      allow read, update, delete: if isGlobalAdmin();
+      
+      // Allow admins to query/list contact requests
+      allow list: if isGlobalAdmin();
+    }
   }
 }
