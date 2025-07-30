@@ -55,6 +55,7 @@ export default function InstructorMessaging() {
   const loadCourseStudents = useCallback(async (courseId) => {
     try {
       const courseMembers = await userApi.getAllUsers(courseId);
+      console.log('🔍 Debug - getAllUsers result:', courseMembers);
       
       // Filter for students only - handle different data structures
       const students = courseMembers.filter(member => {
@@ -62,9 +63,11 @@ export default function InstructorMessaging() {
                            member.course_memberships?.[0]?.role || 
                            member.course_memberships?.role || 
                            member.role;
+        console.log('🔍 Debug - member role check:', { member, memberRole });
         return memberRole === 'student';
       });
       
+      console.log('🔍 Debug - filtered students:', students);
       setSelectedCourseStudents(students);
     } catch (error) {
       console.error('Error loading course students:', error);
@@ -120,10 +123,26 @@ export default function InstructorMessaging() {
       }
 
       // Format students for email service
-      const formattedStudents = selectedCourseStudents.map(student => ({
-        email: student.users?.email,
-        name: getDisplayNameForEmail(student.users, 'student')
-      })).filter(student => student.email); // Filter out students without email
+      console.log('🔍 Debug - selectedCourseStudents:', selectedCourseStudents);
+      
+      const formattedStudents = selectedCourseStudents.map(student => {
+        console.log('🔍 Debug - processing student:', student);
+        
+        // The getAllUsers method returns user data directly (not nested under 'users')
+        const email = student.email;
+        
+        return {
+          email: email,
+          name: getDisplayNameForEmail(student, 'student')
+        };
+      }).filter(student => {
+        if (!student.email) {
+          console.warn('⚠️ Student missing email:', student);
+        }
+        return student.email;
+      });
+
+      console.log('📧 Debug - formattedStudents:', formattedStudents);
 
       // Send messages
       const messageData = {

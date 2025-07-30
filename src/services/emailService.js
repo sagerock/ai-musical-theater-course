@@ -794,12 +794,17 @@ class EmailService {
     } catch (error) {
       console.error('❌ Backend email sending failed:', error);
       
+      // Check if it's a blocked request (ad blocker, etc.)
+      if (error.message?.includes('ERR_BLOCKED_BY_CLIENT') || error.message?.includes('blocked')) {
+        console.warn('⚠️ Email request blocked by client (likely ad blocker)');
+      }
+      
       // Fallback to simulation mode if backend is not available
       console.log('🔄 Falling back to email simulation mode...');
       console.log('📧 SIMULATION MODE - Email would be sent to:', to);
       console.log('📧 Subject:', subject);
-      console.log('📧 HTML Content:', htmlContent.substring(0, 200) + '...');
-      console.log('📧 Text Content:', textContent.substring(0, 200) + '...');
+      console.log('📧 HTML Content:', htmlContent.substring(0, 200) + (htmlContent.length > 200 ? '...' : ''));
+      console.log('📧 Text Content:', textContent.substring(0, 200) + (textContent.length > 200 ? '...' : ''));
       console.log('✅ Email simulated successfully (backend unavailable)');
       return { success: true };
     }
