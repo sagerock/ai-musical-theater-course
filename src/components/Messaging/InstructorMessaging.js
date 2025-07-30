@@ -63,7 +63,17 @@ export default function InstructorMessaging() {
                            member.course_memberships?.[0]?.role || 
                            member.course_memberships?.role || 
                            member.role;
-        console.log('🔍 Debug - member role check:', { member, memberRole });
+        
+        console.log('🔍 Debug - member role check:', { 
+          email: member.email,
+          name: member.name,
+          memberRole,
+          course_role: member.course_role,
+          role: member.role,
+          status: member.status,
+          isStudent: memberRole === 'student'
+        });
+        
         return memberRole === 'student';
       });
       
@@ -100,12 +110,22 @@ export default function InstructorMessaging() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
+    console.log('🔍 DEBUG - Form submission started:', {
+      courseId: formData.courseId,
+      subject: formData.subject?.length,
+      message: formData.message?.length,
+      selectedCourseStudents: selectedCourseStudents.length
+    });
+    
     if (!formData.courseId || !formData.subject.trim() || !formData.message.trim()) {
+      console.log('❌ DEBUG - Form validation failed');
       toast.error('Course, subject, and message are required');
       return;
     }
 
     if (selectedCourseStudents.length === 0) {
+      console.log('❌ DEBUG - No students in selected course');
+      console.log('🔍 DEBUG - selectedCourseStudents array:', selectedCourseStudents);
       toast.error('No students found in selected course');
       return;
     }
