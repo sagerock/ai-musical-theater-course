@@ -173,48 +173,74 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Fetch user role from Firestore
-  const fetchUserRole = async (userId) => {
-    try {
-      console.log('🔍 Fetching user role for:', userId);
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const role = userData.role || 'student';
-        console.log('✅ User role fetched:', role);
-        return role;
-      } else {
-        console.log('⚠️ User document not found, defaulting to student');
+  // Fetch user role from Firestore with retry logic
+  const fetchUserRole = async (userId, retries = 3) => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`🔍 Fetching user role for: ${userId} (attempt ${attempt}/${retries})`);
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const role = userData.role || 'student';
+          console.log('✅ User role fetched:', role);
+          return role;
+        } else {
+          console.log('⚠️ User document not found, defaulting to student');
+          return 'student';
+        }
+      } catch (error) {
+        console.error(`❌ Error fetching user role (attempt ${attempt}/${retries}):`, error);
+        
+        // If it's a network error and we have retries left, wait and try again
+        if (attempt < retries && (error.code === 'unavailable' || error.message?.includes('offline'))) {
+          console.log(`⏳ Retrying in ${attempt * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+          continue;
+        }
+        
+        // Final fallback
+        console.log('🔄 Using fallback role: student');
         return 'student';
       }
-    } catch (error) {
-      console.error('❌ Error fetching user role:', error);
-      return 'student';
     }
+    return 'student';
   };
 
-  // Check if user is instructor in any course
-  const checkInstructorStatus = async (userId) => {
-    try {
-      console.log('🔍 Checking instructor status for:', userId);
-      
-      const membershipsQuery = query(
-        collection(db, 'courseMemberships'),
-        where('userId', '==', userId),
-        where('role', '==', 'instructor'),
-        where('status', '==', 'approved')
-      );
-      
-      const membershipsSnapshot = await getDocs(membershipsQuery);
-      const isInstructor = !membershipsSnapshot.empty;
-      
-      console.log('✅ Instructor status:', isInstructor);
-      return isInstructor;
-    } catch (error) {
-      console.error('❌ Error checking instructor status:', error);
-      return false;
+  // Check if user is instructor in any course with retry logic
+  const checkInstructorStatus = async (userId, retries = 3) => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`🔍 Checking instructor status for: ${userId} (attempt ${attempt}/${retries})`);
+        
+        const membershipsQuery = query(
+          collection(db, 'courseMemberships'),
+          where('userId', '==', userId),
+          where('role', '==', 'instructor'),
+          where('status', '==', 'approved')
+        );
+        
+        const membershipsSnapshot = await getDocs(membershipsQuery);
+        const isInstructor = !membershipsSnapshot.empty;
+        
+        console.log('✅ Instructor status:', isInstructor);
+        return isInstructor;
+      } catch (error) {
+        console.error(`❌ Error checking instructor status (attempt ${attempt}/${retries}):`, error);
+        
+        // If it's a network error and we have retries left, wait and try again
+        if (attempt < retries && (error.code === 'unavailable' || error.message?.includes('offline'))) {
+          console.log(`⏳ Retrying instructor check in ${attempt * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+          continue;
+        }
+        
+        // Final fallback
+        console.log('🔄 Using fallback instructor status: false');
+        return false;
+      }
     }
+    return false;
   };
 
   // Auth state change handler
