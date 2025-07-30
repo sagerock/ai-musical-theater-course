@@ -34,9 +34,12 @@ export const functions = getFunctions(app);
 // Development debugging
 if (typeof window !== 'undefined') {
   console.log('🔥 Firebase initialized successfully');
-  console.log('📊 Project ID:', firebaseConfig.projectId);
-  console.log('🔐 Auth Domain:', firebaseConfig.authDomain);
-  console.log('📦 Storage Bucket:', firebaseConfig.storageBucket);
+  console.log('📊 Project ID:', JSON.stringify(firebaseConfig.projectId));
+  console.log('🔐 Auth Domain:', JSON.stringify(firebaseConfig.authDomain));
+  console.log('📦 Storage Bucket:', JSON.stringify(firebaseConfig.storageBucket));
+  console.log('🔧 Environment Variables Check:');
+  console.log('  - PROJECT_ID env var:', JSON.stringify(process.env.REACT_APP_FIREBASE_PROJECT_ID));
+  console.log('  - AUTH_DOMAIN env var:', JSON.stringify(process.env.REACT_APP_FIREBASE_AUTH_DOMAIN));
   
   // Global debugging helpers
   window.firebase = { auth, db, storage, functions };
