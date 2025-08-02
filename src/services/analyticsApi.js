@@ -35,14 +35,15 @@ export const analyticsApi = {
         const chat = doc.data();
         
         // Debug: Log the first few chat documents to understand the data structure
-        if (usageData.length < 3) {
+        if (usageData.length < 2) {
           console.log('🔍 Sample chat document:', {
             id: doc.id,
             toolUsed: chat.toolUsed,
             model: chat.model,
             tool: chat.tool,
             aiTool: chat.aiTool,
-            availableFields: Object.keys(chat)
+            availableFields: Object.keys(chat),
+            fullDocument: chat
           });
         }
         
