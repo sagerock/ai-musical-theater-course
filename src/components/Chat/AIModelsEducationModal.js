@@ -87,10 +87,10 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
     },
     'Gemini 2.5 Pro': {
       company: 'Google',
-      description: 'Google\'s flagship educational model with LearnLM integration, designed specifically for learning with enhanced privacy protections and multimodal capabilities.',
-      bestFor: ['Educational research', 'Multimodal learning', 'Complex reasoning', 'Student assignments', 'Visual analysis', 'Large context tasks'],
+      description: 'Google\'s flagship educational model with LearnLM integration, specifically designed for academic research with superior citation capabilities and privacy protections.',
+      bestFor: ['Academic research with citations', 'Scholarly writing', 'Multimodal analysis', 'Complex reasoning', 'Large document analysis', 'Research requiring sources'],
       notBestFor: ['Real-time web search', 'Simple quick questions', 'Cost-sensitive basic tasks'],
-      whenToUse: 'Ideal for research projects, analyzing images/documents, complex assignments, and when you need educational-grade AI with privacy protections.',
+      whenToUse: '🏆 TOP CHOICE for research projects requiring proper citations and academic rigor. Provides verifiable sources and models scholarly writing standards.',
       pricing: getModelInfo('Gemini 2.5 Pro').pricing
     },
     'Sonar Pro': {
@@ -107,6 +107,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
     { id: 'overview', name: 'Overview', icon: '📚' },
     { id: 'tokens', name: 'Understanding Tokens', icon: '🔤' },
     { id: 'models', name: 'Model Comparison', icon: '⚖️' },
+    { id: 'citations', name: 'Citations & Research', icon: '📖' },
     { id: 'companies', name: 'AI Companies', icon: '🏢' },
     { id: 'best-practices', name: 'Best Practices', icon: '💡' }
   ];
@@ -183,10 +184,10 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                   <h4 className="font-semibold text-yellow-800 mb-2">💡 Quick Start Tips</h4>
                   <ul className="text-sm text-yellow-700 space-y-1">
                     <li>• <strong>General use:</strong> Start with GPT-4.1 Mini (cost-effective default)</li>
-                    <li>• <strong>Educational research:</strong> Gemini 2.5 Pro (built for learning)</li>
-                    <li>• <strong>Advanced research:</strong> Claude Opus 4 for premium quality</li>
+                    <li>• <strong>Research with citations:</strong> 🏆 Gemini 2.5 Pro (superior academic sources)</li>
+                    <li>• <strong>Advanced analysis:</strong> Claude Opus 4 for premium insights</li>
                     <li>• <strong>Current events:</strong> Sonar Pro for real-time information</li>
-                    <li>• <strong>Multimodal tasks:</strong> Gemini 2.5 Pro for images/documents</li>
+                    <li>• <strong>Multimodal analysis:</strong> Gemini 2.5 Pro for images/documents</li>
                   </ul>
                 </div>
 
@@ -314,6 +315,175 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'citations' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Citations & Academic Research</h3>
+                  <p className="text-gray-600 mb-4">
+                    Learn how to use AI models effectively for academic research and understand the importance of proper citations in scholarly work.
+                  </p>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-900 mb-3">🏆 Best Model for Citations: Gemini 2.5 Pro</h4>
+                  <div className="space-y-2 text-sm text-green-800">
+                    <p><strong>Why Gemini 2.5 Pro excels at citations:</strong></p>
+                    <ul className="ml-4 space-y-1">
+                      <li>• <strong>LearnLM Training:</strong> Specifically trained on academic datasets with proper citation patterns</li>
+                      <li>• <strong>Verifiable Sources:</strong> Provides real author names, publication titles, and dates</li>
+                      <li>• <strong>Academic Standards:</strong> Models proper scholarly writing and research methodology</li>
+                      <li>• <strong>Large Context:</strong> 1 million tokens allows comprehensive knowledge synthesis</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-3">📚 What Makes Good Citations</h4>
+                    <ul className="text-sm text-blue-800 space-y-2">
+                      <li>• <strong>Specific Sources:</strong> Author names, not just general topics</li>
+                      <li>• <strong>Publication Details:</strong> Journal/book titles, publication dates</li>
+                      <li>• <strong>Verifiable Information:</strong> Sources you can actually look up</li>
+                      <li>• <strong>Relevant Context:</strong> Sources that directly support claims</li>
+                      <li>• <strong>Academic Credibility:</strong> Peer-reviewed and authoritative sources</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
+                    <h4 className="font-semibold text-orange-900 mb-3">⚠️ Citation Red Flags</h4>
+                    <ul className="text-sm text-orange-800 space-y-2">
+                      <li>• <strong>Generic References:</strong> "Studies show..." without specifics</li>
+                      <li>• <strong>Fake Sources:</strong> Made-up author names or publications</li>
+                      <li>• <strong>Outdated Information:</strong> Very old sources for current topics</li>
+                      <li>• <strong>Circular References:</strong> AI citing other AI-generated content</li>
+                      <li>• <strong>Unverifiable Claims:</strong> Sources that don't exist when checked</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-purple-900 mb-3">🎯 How to Request Better Citations</h4>
+                  <div className="space-y-3 text-sm text-purple-800">
+                    <div>
+                      <strong>Try these prompts for better citations:</strong>
+                      <div className="mt-2 bg-white p-3 rounded border text-gray-700 font-mono text-xs">
+                        "Please provide specific sources with author names and publication details for your claims about [topic]."
+                      </div>
+                    </div>
+                    <div>
+                      <div className="bg-white p-3 rounded border text-gray-700 font-mono text-xs">
+                        "Can you include verifiable academic sources to support this analysis?"
+                      </div>
+                    </div>
+                    <div>
+                      <div className="bg-white p-3 rounded border text-gray-700 font-mono text-xs">
+                        "Please cite specific studies or experts when making factual claims."
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3">📋 Academic Research Checklist</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                    <div>
+                      <strong>Before Using AI:</strong>
+                      <ul className="mt-2 space-y-1 ml-4">
+                        <li>☐ Check your institution's AI policy</li>
+                        <li>☐ Understand assignment requirements</li>
+                        <li>☐ Plan to verify all AI-provided sources</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <strong>After AI Response:</strong>
+                      <ul className="mt-2 space-y-1 ml-4">
+                        <li>☐ Verify all citations independently</li>
+                        <li>☐ Cross-check facts with multiple sources</li>
+                        <li>☐ Cite AI assistance per your instructor's guidelines</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-indigo-900 mb-3">📝 Academic Writing Workflow with AI</h4>
+                  <div className="space-y-3 text-sm text-indigo-800">
+                    <div>
+                      <strong>Step 1: Research Phase</strong>
+                      <ul className="mt-1 ml-4 space-y-1">
+                        <li>• Use <strong>Gemini 2.5 Pro</strong> for initial research with citations</li>
+                        <li>• Ask: "What are the key studies on [topic] with specific citations?"</li>
+                        <li>• Use <strong>Sonar Pro</strong> for current developments and recent sources</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <strong>Step 2: Analysis & Structure</strong>
+                      <ul className="mt-1 ml-4 space-y-1">
+                        <li>• Use <strong>Claude Sonnet 4</strong> for analytical frameworks</li>
+                        <li>• Ask: "Help me analyze these sources and create an argument structure"</li>
+                        <li>• Request: "Identify gaps in this research and suggest additional sources"</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <strong>Step 3: Writing & Refinement</strong>
+                      <ul className="mt-1 ml-4 space-y-1">
+                        <li>• Use <strong>Claude Opus 4</strong> for premium writing assistance</li>
+                        <li>• Request: "Help me improve this paragraph's clarity and academic tone"</li>
+                        <li>• Ask: "Review my argument flow and suggest improvements"</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <strong>Step 4: Fact-Check & Verify</strong>
+                      <ul className="mt-1 ml-4 space-y-1">
+                        <li>• <strong>Always verify all citations independently</strong></li>
+                        <li>• Cross-reference claims with multiple sources</li>
+                        <li>• Use your library's databases to confirm source accuracy</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-900 mb-3">🎯 Effective Prompting for Academic Work</h4>
+                  <div className="space-y-3 text-sm text-green-800">
+                    <div>
+                      <strong>For Research Papers:</strong>
+                      <div className="mt-1 bg-white p-2 rounded border text-gray-700 font-mono text-xs">
+                        "I'm writing about [topic]. Please provide 3-5 key academic sources with author names, publication years, and main findings. Include both foundational and recent research."
+                      </div>
+                    </div>
+                    <div>
+                      <strong>For Literature Reviews:</strong>
+                      <div className="mt-1 bg-white p-2 rounded border text-gray-700 font-mono text-xs">
+                        "Help me identify the main themes and debates in research about [topic]. Please organize findings by theme and cite specific studies."
+                      </div>
+                    </div>
+                    <div>
+                      <strong>For Critical Analysis:</strong>
+                      <div className="mt-1 bg-white p-2 rounded border text-gray-700 font-mono text-xs">
+                        "Analyze the strengths and limitations of [theory/study]. What are the key criticisms in the literature? Please cite specific sources."
+                      </div>
+                    </div>
+                    <div>
+                      <strong>For Methodology Sections:</strong>
+                      <div className="mt-1 bg-white p-2 rounded border text-gray-700 font-mono text-xs">
+                        "What are the standard methodological approaches for studying [topic]? Please cite examples from recent studies."
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-red-900 mb-3">🚨 Important Academic Integrity Note</h4>
+                  <p className="text-sm text-red-800">
+                    <strong>Always verify AI-provided citations independently.</strong> Even the best AI models can occasionally provide inaccurate sources. 
+                    Your responsibility as a student is to fact-check all sources and ensure they actually support your claims. 
+                    When in doubt, consult your librarian or instructor for guidance on proper source verification.
+                  </p>
                 </div>
               </div>
             )}
