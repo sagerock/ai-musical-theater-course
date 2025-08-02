@@ -14,8 +14,9 @@ export const AI_TOOLS = {
   // Anthropic Models
   'Claude Sonnet 4': 'claude-sonnet-4-20250514',
   'Claude Opus 4': 'claude-4-opus-20250514',
-  // Google Model
+  // Google Models
   'Gemini Flash': 'gemini-1.5-flash',
+  'Gemini 2.5 Pro': 'gemini-2.5-pro',
   // Perplexity Model
   'Sonar Pro': 'sonar-pro'
 };

@@ -67,6 +67,12 @@ export const MODEL_PRICING = {
     provider: 'Google',
     displayName: 'Gemini Flash'
   },
+  'gemini-2.5-pro': {
+    input: 1.25,
+    output: 10.00,
+    provider: 'Google',
+    displayName: 'Gemini 2.5 Pro'
+  },
   // Perplexity Models
   'sonar-pro': {
     input: 3.00,
@@ -85,6 +91,7 @@ export const DISPLAY_NAME_MAPPING = {
   'Claude Sonnet 4': 'claude-sonnet-4-20250514',
   'Claude Opus 4': 'claude-4-opus-20250514',
   'Gemini Flash': 'gemini-1.5-flash',
+  'Gemini 2.5 Pro': 'gemini-2.5-pro',
   'Sonar Pro': 'sonar-pro'
 };
 

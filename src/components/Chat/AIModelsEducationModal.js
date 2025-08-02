@@ -30,9 +30,9 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
       founded: '2021'
     },
     'Google': {
-      description: 'Google DeepMind develops Gemini models, leveraging decades of AI research and massive computational resources.',
+      description: 'Google DeepMind develops Gemini models with LearnLM integration, specifically optimized for educational use with enhanced privacy protections.',
       website: 'deepmind.google',
-      focus: 'Multimodal AI, search integration, and efficiency',
+      focus: 'Educational AI, multimodal learning, and student privacy',
       founded: '2010 (DeepMind)'
     },
     'Perplexity': {
@@ -84,6 +84,14 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
       notBestFor: ['Deep research', 'Creative writing', 'Complex reasoning'],
       whenToUse: 'When you need fast, efficient responses and Google\'s knowledge integration.',
       pricing: getModelInfo('Gemini Flash').pricing
+    },
+    'Gemini 2.5 Pro': {
+      company: 'Google',
+      description: 'Google\'s flagship educational model with LearnLM integration, designed specifically for learning with enhanced privacy protections and multimodal capabilities.',
+      bestFor: ['Educational research', 'Multimodal learning', 'Complex reasoning', 'Student assignments', 'Visual analysis', 'Large context tasks'],
+      notBestFor: ['Real-time web search', 'Simple quick questions', 'Cost-sensitive basic tasks'],
+      whenToUse: 'Ideal for research projects, analyzing images/documents, complex assignments, and when you need educational-grade AI with privacy protections.',
+      pricing: getModelInfo('Gemini 2.5 Pro').pricing
     },
     'Sonar Pro': {
       company: 'Perplexity',
@@ -166,7 +174,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                       <li>• {Object.keys(AI_TOOLS).length} different AI models</li>
                       <li>• 4 leading AI companies</li>
                       <li>• Various price points</li>
-                      <li>• Specialized capabilities</li>
+                      <li>• Educational optimizations</li>
                     </ul>
                   </div>
                 </div>
@@ -174,10 +182,21 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                   <h4 className="font-semibold text-yellow-800 mb-2">💡 Quick Start Tips</h4>
                   <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• <strong>General use:</strong> Start with GPT-4.1 Mini or Claude Sonnet 4</li>
-                    <li>• <strong>Research projects:</strong> Consider Claude Opus 4 for premium quality</li>
-                    <li>• <strong>Current events:</strong> Use Sonar Pro for real-time information</li>
-                    <li>• <strong>Quick tasks:</strong> Gemini Flash for speed and efficiency</li>
+                    <li>• <strong>General use:</strong> Start with GPT-4.1 Mini (cost-effective default)</li>
+                    <li>• <strong>Educational research:</strong> Gemini 2.5 Pro (built for learning)</li>
+                    <li>• <strong>Advanced research:</strong> Claude Opus 4 for premium quality</li>
+                    <li>• <strong>Current events:</strong> Sonar Pro for real-time information</li>
+                    <li>• <strong>Multimodal tasks:</strong> Gemini 2.5 Pro for images/documents</li>
+                  </ul>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-purple-900 mb-2">🎓 Educational Features</h4>
+                  <ul className="text-sm text-purple-800 space-y-1">
+                    <li>• <strong>Gemini 2.5 Pro:</strong> LearnLM integration for better learning</li>
+                    <li>• <strong>Privacy Protection:</strong> Educational data won't train AI models</li>
+                    <li>• <strong>Large Context:</strong> 1 million tokens for comprehensive analysis</li>
+                    <li>• <strong>Multimodal Learning:</strong> Analyze text, images, and documents</li>
                   </ul>
                 </div>
               </div>
@@ -360,19 +379,23 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                     <div className="space-y-3 text-sm text-green-800">
                       <div>
                         <strong>Quick Questions & Homework Help:</strong>
-                        <p>Use GPT-4.1 Mini or Gemini Flash for cost-effective, fast responses</p>
+                        <p>Use GPT-4.1 Mini for cost-effective, reliable responses</p>
                       </div>
                       <div>
-                        <strong>Writing & Analysis:</strong>
-                        <p>Claude Sonnet 4 excels at thoughtful writing and detailed analysis</p>
+                        <strong>Educational Research & Analysis:</strong>
+                        <p>Gemini 2.5 Pro - built for learning with privacy protections</p>
                       </div>
                       <div>
-                        <strong>Research Projects:</strong>
+                        <strong>Writing & Detailed Analysis:</strong>
+                        <p>Claude Sonnet 4 excels at thoughtful writing and nuanced analysis</p>
+                      </div>
+                      <div>
+                        <strong>Advanced Research Projects:</strong>
                         <p>Claude Opus 4 for premium quality, or Sonar Pro for current information</p>
                       </div>
                       <div>
-                        <strong>Technical/Coding Help:</strong>
-                        <p>GPT-4.1 for advanced technical assistance and problem-solving</p>
+                        <strong>Multimodal Tasks (Images/Documents):</strong>
+                        <p>Gemini 2.5 Pro for analyzing visual content and large documents</p>
                       </div>
                     </div>
                   </div>

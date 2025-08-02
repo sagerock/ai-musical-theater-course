@@ -16,7 +16,7 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 
 ## AI Models Configuration
 
-### Supported Models (6 streamlined models across 4 providers)
+### Supported Models (7 streamlined models across 4 providers)
 
 #### OpenAI Models
 - GPT-4.1 Mini: `gpt-4.1-mini` (default model - 83% cheaper than GPT-4o)
@@ -27,7 +27,8 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 - Claude Opus 4: `claude-4-opus-20250514` (research model - superior research and writing capabilities)
 
 #### Google Models
-- Gemini Flash: `gemini-1.5-flash`
+- Gemini Flash: `gemini-1.5-flash` (legacy model - fast responses)
+- Gemini 2.5 Pro: `gemini-2.5-pro` (educational model - built for learning with LearnLM)
 
 #### Perplexity Models
 - Sonar Pro: `sonar-pro`
@@ -81,8 +82,9 @@ npm run test        # Run tests (if configured)
 - Session persistence across page reloads
 
 ### Educational Features
-- **AI Chat Interface** with 6 different AI models including research-grade Claude Opus 4
+- **AI Chat Interface** with 7 different AI models including research-grade Claude Opus 4 and educational-optimized Gemini 2.5 Pro
 - **Smart Model Selection** with cost warnings and research mode indicators
+- **Educational AI Integration** - Gemini 2.5 Pro with LearnLM for enhanced learning
 - **Project Management** for organizing student work
 - **Course System** with enrollment and approval workflows
 - **Instructor Dashboard** for monitoring student AI interactions
@@ -90,8 +92,12 @@ npm run test        # Run tests (if configured)
 - **Tag System** for categorizing AI interactions (instructor-controlled)
 - **Help & Support** system with comprehensive FAQ
 
-### Research Capabilities
+### Advanced AI Capabilities
 - **Claude Opus 4 Research Mode** for superior research and writing tasks
+- **Gemini 2.5 Pro Education Mode** with LearnLM integration and privacy protections
+- **Multimodal Learning** - analyze images, documents, and text with Gemini 2.5 Pro
+- **Large Context Processing** - 1 million token context window for comprehensive analysis
+- **Privacy-First Design** - educational data protection and student safety features
 - **Automatic cost warnings** when using premium research models
 - **Hybrid model selection** allowing students to choose appropriate tools for their tasks
 - **Usage analytics** tracking model costs and effectiveness
