@@ -389,7 +389,20 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                 <div className="space-y-2">
                   <div className="flex items-center text-xs text-gray-500">
                     <CalendarIcon className="h-3 w-3 mr-1" />
-                    Joined {instructor.created_at ? format(new Date(instructor.created_at), 'MMM d, yyyy') : 'Unknown date'}
+                    Joined {(() => {
+                      // Try multiple possible date fields from course membership  
+                      const joinDate = instructor.course_memberships?.[0]?.joinedAt || 
+                                     instructor.course_memberships?.[0]?.createdAt ||
+                                     instructor.joined_at || 
+                                     instructor.created_at ||
+                                     instructor.createdAt ||
+                                     instructor.joinedAt;
+                      
+                      if (joinDate && !isNaN(new Date(joinDate))) {
+                        return format(new Date(joinDate), 'MMM d, yyyy');
+                      }
+                      return 'Unknown date';
+                    })()}
                   </div>
                   <div className="flex items-center text-xs text-gray-500">
                     <EnvelopeIcon className="h-3 w-3 mr-1" />
@@ -526,8 +539,20 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                         {student.status === 'approved' ? 'Active' : 'Pending'}
                       </span>
                       <span className="text-xs text-gray-500">
-                        Joined {(student.joined_at || student.created_at) && !isNaN(new Date(student.joined_at || student.created_at)) ? 
-                          format(new Date(student.joined_at || student.created_at), 'MMM dd, yyyy') : 'Unknown date'}
+                        Joined {(() => {
+                          // Try multiple possible date fields from course membership
+                          const joinDate = student.course_memberships?.[0]?.joinedAt || 
+                                         student.course_memberships?.[0]?.createdAt ||
+                                         student.joined_at || 
+                                         student.created_at ||
+                                         student.createdAt ||
+                                         student.joinedAt;
+                          
+                          if (joinDate && !isNaN(new Date(joinDate))) {
+                            return format(new Date(joinDate), 'MMM dd, yyyy');
+                          }
+                          return 'Unknown date';
+                        })()}
                       </span>
                     </div>
                   </div>

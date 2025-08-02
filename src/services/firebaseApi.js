@@ -24,6 +24,7 @@ import {
 import { db, storage, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { extractTextFromPDF, isPDFFile } from '../utils/pdfExtractor';
+import emailService from './emailService';
 
 // Helper function to convert Firestore timestamp to Date
 const convertTimestamp = (timestamp) => {
@@ -79,10 +80,18 @@ export const userApi = {
             // Add course membership info
             user.course_memberships = [{
               ...membership,
-              course_id: membership.courseId
+              course_id: membership.courseId,
+              // Convert Firestore timestamps to JavaScript Dates
+              joinedAt: membership.joinedAt?.toDate?.() || membership.joinedAt,
+              createdAt: membership.createdAt?.toDate?.() || membership.createdAt,
+              updatedAt: membership.updatedAt?.toDate?.() || membership.updatedAt
             }];
             user.course_role = membership.role; // For easier access in components
             user.status = membership.status; // Include membership status (pending/approved)
+            
+            // Also convert user timestamps
+            user.created_at = user.createdAt?.toDate?.() || user.createdAt;
+            user.updated_at = user.updatedAt?.toDate?.() || user.updatedAt;
             
             users.push(user);
           } else {
@@ -120,6 +129,11 @@ export const userApi = {
         for (const membershipDoc of membershipsSnapshot.docs) {
           const membership = { id: membershipDoc.id, ...membershipDoc.data() };
           
+          // Convert Firestore timestamps to JavaScript Dates
+          membership.joinedAt = membership.joinedAt?.toDate?.() || membership.joinedAt;
+          membership.createdAt = membership.createdAt?.toDate?.() || membership.createdAt;
+          membership.updatedAt = membership.updatedAt?.toDate?.() || membership.updatedAt;
+          
           // Fetch course details
           try {
             const courseDoc = await getDoc(doc(db, 'courses', membership.courseId));
@@ -135,6 +149,11 @@ export const userApi = {
         }
         
         user.course_memberships = memberships;
+        
+        // Convert user timestamps
+        user.created_at = user.createdAt?.toDate?.() || user.createdAt;
+        user.updated_at = user.updatedAt?.toDate?.() || user.updatedAt;
+        
         users.push(user);
       }
     }
@@ -651,8 +670,8 @@ export const courseApi = {
     return courses;
   },
 
-  async joinCourse(userId, courseId, accessCode) {
-    console.log('🔥 joinCourse:', userId, courseId);
+  async joinCourse(userId, courseId, accessCode, role = 'student') {
+    console.log('🔥 joinCourse:', userId, courseId, 'role:', role);
     
     // Verify course exists and access code is correct
     const course = await this.getCourseById(courseId);
@@ -668,32 +687,182 @@ export const courseApi = {
       const existingMembership = existingMembershipDoc.data();
       
       // If user is already an instructor, don't allow downgrade to student
-      if (existingMembership.role === 'instructor') {
+      if (existingMembership.role === 'instructor' && role === 'student') {
         throw new Error('You are already an instructor for this course. Instructors cannot join as students.');
       }
       
-      // If user is already a student, just update status if needed
-      if (existingMembership.role === 'student') {
+      // If existing membership exists, update status if needed
+      if (existingMembership.role === role) {
         await updateDoc(doc(db, 'courseMemberships', membershipId), {
           status: 'pending',
           updatedAt: serverTimestamp()
         });
+        
+        // Send email notifications for re-enrollment request
+        try {
+          await this.sendCourseJoinRequestNotifications(userId, courseId, role);
+          console.log('✅ Course re-join request notifications sent');
+        } catch (emailError) {
+          console.error('❌ Error sending course re-join request notifications:', emailError);
+          // Don't fail the join request if email fails
+        }
+        
         return { success: true };
       }
     }
     
-    // Create new student membership if no existing membership
-    await setDoc(doc(db, 'courseMemberships', membershipId), {
+    // Create new membership with the specified role
+    const membershipData = {
       userId,
       courseId,
-      role: 'student',
+      role: role,
       status: 'pending',
       joinedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
+    };
+    
+    console.log('🔥 joinCourse: Creating membership with role:', role);
+    console.log('🔥 joinCourse: Full membership data:', membershipData);
+    
+    await setDoc(doc(db, 'courseMemberships', membershipId), membershipData);
+    
+    // Send email notifications to instructors and admins
+    try {
+      await this.sendCourseJoinRequestNotifications(userId, courseId, role);
+      console.log('✅ Course join request notifications sent');
+    } catch (emailError) {
+      console.error('❌ Error sending course join request notifications:', emailError);
+      // Don't fail the join request if email fails
+    }
     
     return { success: true };
+  },
+
+  async sendCourseJoinRequestNotifications(userId, courseId, requestedRole) {
+    console.log('🔥 sendCourseJoinRequestNotifications:', userId, courseId, requestedRole);
+    
+    try {
+      // Get user and course information
+      const [userDoc, course] = await Promise.all([
+        getDoc(doc(db, 'users', userId)),
+        this.getCourseById(courseId)
+      ]);
+      
+      if (!userDoc.exists()) {
+        throw new Error('User not found');
+      }
+      
+      const user = { id: userDoc.id, ...userDoc.data() };
+      
+      // Get all instructors for this course
+      const instructorQuery = query(
+        collection(db, 'courseMemberships'),
+        where('courseId', '==', courseId),
+        where('role', '==', 'instructor'),
+        where('status', '==', 'approved')
+      );
+      
+      const instructorsSnapshot = await getDocs(instructorQuery);
+      const instructorEmails = [];
+      
+      for (const instructorDoc of instructorsSnapshot.docs) {
+        const membership = instructorDoc.data();
+        try {
+          const instructorUserDoc = await getDoc(doc(db, 'users', membership.userId));
+          if (instructorUserDoc.exists()) {
+            const instructorUser = instructorUserDoc.data();
+            if (instructorUser.email) {
+              instructorEmails.push({
+                email: instructorUser.email,
+                name: instructorUser.name || instructorUser.email.split('@')[0]
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to fetch instructor user:', membership.userId, error);
+        }
+      }
+      
+      // Get all global admins
+      const adminQuery = query(
+        collection(db, 'users'),
+        where('role', '==', 'admin')
+      );
+      
+      const adminsSnapshot = await getDocs(adminQuery);
+      const adminEmails = [];
+      
+      adminsSnapshot.forEach((adminDoc) => {
+        const adminUser = adminDoc.data();
+        if (adminUser.email) {
+          adminEmails.push({
+            email: adminUser.email,
+            name: adminUser.name || adminUser.email.split('@')[0]
+          });
+        }
+      });
+      
+      console.log(`📧 Found ${instructorEmails.length} instructors and ${adminEmails.length} admins to notify`);
+      
+      // Prepare email data
+      const emailData = {
+        studentName: user.name || user.email.split('@')[0],
+        studentEmail: user.email,
+        courseName: course.title,
+        courseCode: course.course_code,
+        requestedRole: requestedRole,
+        requestDate: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+      
+      // Send emails to instructors
+      const instructorEmailPromises = instructorEmails.map(instructor => {
+        const instructorEmailData = {
+          ...emailData,
+          instructorName: instructor.name,
+          instructorEmail: instructor.email
+        };
+        return emailService.sendCourseEnrollmentRequestEmail(instructorEmailData);
+      });
+      
+      // Send emails to admins
+      const adminEmailPromises = adminEmails.map(admin => {
+        const adminEmailData = {
+          ...emailData,
+          adminName: admin.name,
+          adminEmail: admin.email
+        };
+        return emailService.sendAdminCourseEnrollmentAlert(adminEmailData);
+      });
+      
+      // Send all emails
+      const allEmailPromises = [...instructorEmailPromises, ...adminEmailPromises];
+      const emailResults = await Promise.allSettled(allEmailPromises);
+      
+      // Log results
+      const successCount = emailResults.filter(result => result.status === 'fulfilled' && result.value.success).length;
+      const failureCount = emailResults.length - successCount;
+      
+      console.log(`📧 Email notification results: ${successCount} sent, ${failureCount} failed`);
+      
+      return { 
+        success: true, 
+        emailsSent: successCount, 
+        emailsFailed: failureCount,
+        totalInstructors: instructorEmails.length,
+        totalAdmins: adminEmails.length
+      };
+      
+    } catch (error) {
+      console.error('❌ Error in sendCourseJoinRequestNotifications:', error);
+      throw error;
+    }
   },
 
   async getPendingApprovals(courseId, instructorId) {
