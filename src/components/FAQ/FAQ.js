@@ -121,10 +121,6 @@ export default function FAQ() {
           answer: 'Your instructor will provide you with a course code. Simply click "Join Course" from your dashboard or go to the join page, enter the code, and you\'ll be enrolled pending instructor approval.'
         },
         {
-          question: 'Can I use the platform without joining a course?',
-          answer: 'Yes! You can create personal projects and use all AI tools independently. However, joining a course gives you access to instructor guidance, collaborative features, and course-specific resources.'
-        },
-        {
           question: 'What happens if I\'m removed from a course?',
           answer: 'If you\'re removed from a course, you lose access to projects created within that course context. However, your work is preserved and will be restored if you\'re re-enrolled. Personal projects outside the course remain unaffected.'
         },
