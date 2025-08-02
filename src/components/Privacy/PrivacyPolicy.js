@@ -122,19 +122,19 @@ export default function PrivacyPolicy() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr>
-                  <td className="py-3 font-medium text-gray-900">OpenAI (GPT-4.1 family)</td>
+                  <td className="py-3 font-medium text-gray-900">OpenAI (GPT-4.1 Mini & GPT-4.1)</td>
                   <td className="py-3 text-red-600 font-medium">❌ No</td>
                   <td className="py-3 text-gray-600">30 days or less</td>
                   <td className="py-3 text-blue-600">Enterprise API</td>
                 </tr>
                 <tr>
-                  <td className="py-3 font-medium text-gray-900">Anthropic (Claude)</td>
+                  <td className="py-3 font-medium text-gray-900">Anthropic (Claude Sonnet 4 & Opus 4)</td>
                   <td className="py-3 text-red-600 font-medium">❌ No</td>
                   <td className="py-3 text-gray-600">30 days or less</td>
                   <td className="py-3 text-blue-600">Pro API</td>
                 </tr>
                 <tr>
-                  <td className="py-3 font-medium text-gray-900">Google (Gemini)</td>
+                  <td className="py-3 font-medium text-gray-900">Google (Gemini Flash & 2.5 Pro)</td>
                   <td className="py-3 text-red-600 font-medium">❌ No</td>
                   <td className="py-3 text-gray-600">Session-only</td>
                   <td className="py-3 text-blue-600">Workspace/Education</td>
@@ -163,8 +163,8 @@ export default function PrivacyPolicy() {
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">OpenAI (GPT-4.1 family)</h3>
-                <p className="text-sm text-gray-600">Default models for general AI interactions (GPT-4.1 Mini & GPT-4.1)</p>
+                <h3 className="text-lg font-medium text-gray-900">OpenAI (GPT-4.1 Mini & GPT-4.1)</h3>
+                <p className="text-sm text-gray-600">Cost-effective and advanced models for general AI interactions</p>
               </div>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
@@ -194,8 +194,8 @@ export default function PrivacyPolicy() {
                 <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Anthropic (Claude Sonnet 4)</h3>
-                <p className="text-sm text-gray-600">High-quality reasoning and educational responses</p>
+                <h3 className="text-lg font-medium text-gray-900">Anthropic (Claude Sonnet 4 & Opus 4)</h3>
+                <p className="text-sm text-gray-600">Analytical excellence and premium research capabilities</p>
               </div>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
@@ -225,8 +225,8 @@ export default function PrivacyPolicy() {
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Google (Gemini Flash)</h3>
-                <p className="text-sm text-gray-600">Fast model with educational capabilities</p>
+                <h3 className="text-lg font-medium text-gray-900">Google (Gemini Flash & 2.5 Pro)</h3>
+                <p className="text-sm text-gray-600">Efficient responses and superior citations with LearnLM educational training</p>
               </div>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
