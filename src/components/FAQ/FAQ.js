@@ -34,7 +34,7 @@ export default function FAQ() {
         },
         {
           question: 'How is this different from just using ChatGPT or Claude directly?',
-          answer: 'AI Engagement Hub goes far beyond simple AI access. We provide comprehensive AI literacy education with 7 specially optimized models, built-in learning resources, model comparison guides, prompt engineering education, and enhanced citation capabilities. Students learn not just how to use AI, but when to use which model and why. Plus, educators get valuable oversight and analytics to guide student development—creating a complete educational ecosystem rather than just AI access.'
+          answer: 'AI Engagement Hub goes far beyond simple AI access. We provide comprehensive AI literacy education with 5 specially optimized models, built-in learning resources, model comparison guides, prompt engineering education, and enhanced citation capabilities. Students learn not just how to use AI, but when to use which model and why. Plus, educators get valuable oversight and analytics to guide student development—creating a complete educational ecosystem rather than just AI access.'
         }
       ]
     },
@@ -44,7 +44,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'What AI models are available?',
-          answer: 'We offer 7 carefully curated AI models optimized for educational use: GPT-4.1 Mini (cost-effective default) and GPT-4.1 (advanced technical analysis) from OpenAI, Claude Sonnet 4 (analytical excellence) and Claude Opus 4 (premium research) from Anthropic, Gemini Flash (efficient responses) and Gemini 2.5 Pro (superior citations with LearnLM educational training) from Google, and Sonar Pro (Perplexity) for real-time research with live citations. Each model receives specialized educational prompting to enhance learning outcomes.'
+          answer: 'We offer 5 carefully curated AI models optimized for educational use: GPT-4.1 Mini (cost-effective default) and GPT-4.1 (advanced technical analysis) from OpenAI, Claude Sonnet 4 (analytical excellence) from Anthropic, Gemini Flash (efficient responses) from Google, and Sonar Pro from Perplexity for real-time research with live citations. Each model receives specialized educational prompting to enhance learning outcomes.'
         },
         {
           question: 'Can students upload documents?',
@@ -74,7 +74,7 @@ export default function FAQ() {
         },
         {
           question: 'How do different models help with different learning tasks?',
-          answer: 'Each AI model excels at different educational tasks: Gemini 2.5 Pro provides superior citations for research papers, Claude Sonnet 4 excels at analytical thinking and breaking down complex concepts, Claude Opus 4 offers premium research assistance, GPT-4.1 Mini provides cost-effective general learning, GPT-4.1 handles advanced technical analysis, Gemini Flash delivers quick efficient responses, and Sonar Pro provides real-time information with live citations. Our platform teaches students when to use each model for optimal learning outcomes.'
+          answer: 'Each AI model excels at different educational tasks: Claude Sonnet 4 excels at analytical thinking and breaking down complex concepts, GPT-4.1 Mini provides cost-effective general learning, GPT-4.1 handles advanced technical analysis, Gemini Flash delivers quick efficient responses, and Sonar Pro provides real-time information with live citations. Our platform teaches students when to use each model for optimal learning outcomes.'
         },
         {
           question: 'What makes this educational vs. just using AI tools directly?',

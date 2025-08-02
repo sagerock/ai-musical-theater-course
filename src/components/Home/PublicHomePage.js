@@ -27,7 +27,7 @@ export default function PublicHomePage() {
       color: 'bg-blue-100 text-blue-600'
     },
     {
-      name: '7 Curated AI Models',
+      name: '5 Curated AI Models',
       description: 'Carefully selected models from OpenAI, Anthropic, Google, and Perplexity, each optimized for educational use with specialized prompting and enhanced capabilities.',
       icon: CogIcon,
       color: 'bg-green-100 text-green-600'
@@ -158,7 +158,7 @@ export default function PublicHomePage() {
               The comprehensive platform for AI literacy education and intelligent student engagement analytics
             </p>
             <p className="text-lg mb-10 max-w-2xl mx-auto opacity-90">
-              Beyond monitoring AI use, we provide complete AI literacy education with 7 curated models, specialized educational optimization, comprehensive learning resources, and advanced citation capabilities—preparing students for an AI-enhanced future.
+              Beyond monitoring AI use, we provide complete AI literacy education with 5 curated models, specialized educational optimization, comprehensive learning resources, and advanced citation capabilities—preparing students for an AI-enhanced future.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button

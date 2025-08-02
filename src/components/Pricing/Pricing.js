@@ -21,7 +21,7 @@ export default function Pricing() {
       studentPrice: '$30',
       period: 'per month',
       features: [
-        'Access to all 7 curated AI models',
+        'Access to all 5 curated AI models',
         'Unlimited AI interactions',
         'Real-time analytics dashboard',
         'Student progress tracking',
