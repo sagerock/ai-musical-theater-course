@@ -14,12 +14,14 @@ import {
   ExclamationTriangleIcon,
   SparklesIcon,
   PaperClipIcon,
-  DocumentIcon
+  DocumentIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import ChatMessage from './ChatMessage';
 import TaggingModal from './TaggingModal';
 import ReflectionModal from './ReflectionModal';
 import InstructorNotes from '../Instructor/InstructorNotes';
+import AIModelsEducationModal from './AIModelsEducationModal';
 
 export default function Chat() {
   const { projectId } = useParams();
@@ -40,6 +42,7 @@ export default function Chat() {
   // Modal states
   const [showTaggingModal, setShowTaggingModal] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
+  const [showAIModelsModal, setShowAIModelsModal] = useState(false);
   const [currentChatForModal, setCurrentChatForModal] = useState(null);
 
   // Access control - check if user can send AI messages
@@ -457,31 +460,41 @@ export default function Chat() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="relative">
-              <select
-                value={selectedTool}
-                onChange={(e) => setSelectedTool(e.target.value)}
-                className={`text-sm border rounded-md px-3 py-1 focus:ring-primary-500 focus:border-primary-500 ${
-                  isExpensiveModel() 
-                    ? 'border-orange-300 bg-orange-50' 
-                    : 'border-gray-300 bg-white'
-                }`}
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <select
+                  value={selectedTool}
+                  onChange={(e) => setSelectedTool(e.target.value)}
+                  className={`text-sm border rounded-md px-3 py-1 focus:ring-primary-500 focus:border-primary-500 ${
+                    isExpensiveModel() 
+                      ? 'border-orange-300 bg-orange-50' 
+                      : 'border-gray-300 bg-white'
+                  }`}
+                >
+                  {Object.keys(AI_TOOLS).map(tool => {
+                    const pricing = getModelPricing(tool);
+                    const priceInfo = pricing ? ` ($${pricing.input}/$${pricing.output})` : '';
+                    return (
+                      <option key={tool} value={tool}>
+                        {tool}{priceInfo}
+                      </option>
+                    );
+                  })}
+                </select>
+                {isExpensiveModel() && (
+                  <div className="absolute -bottom-6 left-0 text-xs text-orange-600 whitespace-nowrap">
+                    ⚠️ Research Model - Higher cost
+                  </div>
+                )}
+              </div>
+              
+              <button
+                onClick={() => setShowAIModelsModal(true)}
+                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title="Learn about AI models"
               >
-                {Object.keys(AI_TOOLS).map(tool => {
-                  const pricing = getModelPricing(tool);
-                  const priceInfo = pricing ? ` ($${pricing.input}/$${pricing.output})` : '';
-                  return (
-                    <option key={tool} value={tool}>
-                      {tool}{priceInfo}
-                    </option>
-                  );
-                })}
-              </select>
-              {isExpensiveModel() && (
-                <div className="absolute -bottom-6 left-0 text-xs text-orange-600 whitespace-nowrap">
-                  ⚠️ Research Model - Higher cost
-                </div>
-              )}
+                <InformationCircleIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -664,6 +677,12 @@ export default function Chat() {
           onReflectionUpdated={onReflectionUpdated}
         />
       )}
+
+      {/* AI Models Education Modal */}
+      <AIModelsEducationModal
+        isOpen={showAIModelsModal}
+        onClose={() => setShowAIModelsModal(false)}
+      />
     </div>
   );
 } 
