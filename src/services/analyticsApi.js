@@ -8,11 +8,12 @@ export const analyticsApi = {
    * Get platform usage analytics for a date range
    * @param {Date} startDate - Start date for the range
    * @param {Date} endDate - End date for the range
+   * @param {string} courseId - Optional course ID to filter by ('all' for all courses)
    * @returns {Promise<object>} Analytics data with costs and usage
    */
-  async getPlatformUsageAnalytics(startDate, endDate) {
+  async getPlatformUsageAnalytics(startDate, endDate, courseId = 'all') {
     try {
-      console.log('📊 Loading platform usage analytics...', { startDate, endDate });
+      console.log('📊 Loading platform usage analytics...', { startDate, endDate, courseId });
       
       // Get all chat interactions within the date range
       const chatsRef = collection(db, 'chats');
@@ -22,6 +23,17 @@ export const analyticsApi = {
         where('createdAt', '<=', endDate),
         orderBy('createdAt', 'desc')
       );
+
+      // Add course filter if specified
+      if (courseId && courseId !== 'all') {
+        q = query(
+          chatsRef,
+          where('createdAt', '>=', startDate),
+          where('createdAt', '<=', endDate),
+          where('courseId', '==', courseId),
+          orderBy('createdAt', 'desc')
+        );
+      }
 
       console.log('🔍 Querying chats from', startDate, 'to', endDate);
       const snapshot = await getDocs(q);

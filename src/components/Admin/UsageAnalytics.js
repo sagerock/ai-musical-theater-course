@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsApi } from '../../services/analyticsApi';
+import { courseApi } from '../../services/firebaseApi';
 import { formatCurrency, formatNumber } from '../../utils/costCalculator';
 import toast from 'react-hot-toast';
 import {
@@ -9,7 +10,8 @@ import {
   ClockIcon,
   ArrowDownTrayIcon,
   CalendarIcon,
-  CpuChipIcon
+  CpuChipIcon,
+  AcademicCapIcon
 } from '@heroicons/react/24/outline';
 
 export default function UsageAnalytics() {
@@ -19,10 +21,30 @@ export default function UsageAnalytics() {
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [showCustomDate, setShowCustomDate] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState('all');
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
 
   useEffect(() => {
     loadAnalytics();
-  }, [dateRange]);
+  }, [dateRange, selectedCourseId]);
+
+  const loadCourses = async () => {
+    try {
+      setCoursesLoading(true);
+      const allCourses = await courseApi.getAllCourses();
+      setCourses(allCourses);
+    } catch (error) {
+      console.error('Error loading courses:', error);
+      toast.error('Failed to load courses');
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
 
   const loadAnalytics = async () => {
     try {
@@ -39,8 +61,8 @@ export default function UsageAnalytics() {
         startDate = new Date(endDate.getTime() - (parseInt(dateRange) * 24 * 60 * 60 * 1000));
       }
 
-      console.log('📊 Loading analytics for date range:', startDate, 'to', endDate);
-      const data = await analyticsApi.getPlatformUsageAnalytics(startDate, endDate);
+      console.log('📊 Loading analytics for date range:', startDate, 'to', endDate, 'course:', selectedCourseId);
+      const data = await analyticsApi.getPlatformUsageAnalytics(startDate, endDate, selectedCourseId);
       setAnalyticsData(data);
       
     } catch (error) {
@@ -73,16 +95,21 @@ export default function UsageAnalytics() {
     if (!analyticsData) return;
     
     try {
-      const csvData = analyticsData.rawData.map(record => ({
-        Date: record.date.toISOString().split('T')[0],
-        Model: record.model,
-        'Input Tokens': record.inputTokens,
-        'Output Tokens': record.outputTokens,
-        'Total Tokens': record.inputTokens + record.outputTokens,
-        Searches: record.searches,
-        'User ID': record.userId,
-        'Course ID': record.courseId
-      }));
+      const csvData = analyticsData.rawData.map(record => {
+        const course = courses.find(c => c.id === record.courseId);
+        return {
+          Date: record.date.toISOString().split('T')[0],
+          Model: record.model,
+          'Input Tokens': record.inputTokens,
+          'Output Tokens': record.outputTokens,
+          'Total Tokens': record.inputTokens + record.outputTokens,
+          Searches: record.searches,
+          'User ID': record.userId,
+          'Course ID': record.courseId,
+          'Course Name': course?.title || 'Unknown Course',
+          'Course Code': course?.course_code || 'N/A'
+        };
+      });
 
       const csvContent = [
         Object.keys(csvData[0]).join(','),
@@ -93,7 +120,12 @@ export default function UsageAnalytics() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `platform-usage-${new Date().toISOString().split('T')[0]}.csv`;
+      
+      // Include course name in filename if filtering by specific course
+      const coursePrefix = selectedCourseId === 'all' 
+        ? 'platform-usage' 
+        : `course-usage-${courses.find(c => c.id === selectedCourseId)?.course_code || 'unknown'}`;
+      a.download = `${coursePrefix}-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
       
@@ -145,11 +177,32 @@ export default function UsageAnalytics() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Platform Usage Analytics</h1>
           <p className="text-gray-600 mt-1">
-            Monitor AI model usage and costs across the entire platform
+            {selectedCourseId === 'all' 
+              ? 'Monitor AI model usage and costs across the entire platform'
+              : `Monitor AI model usage and costs for ${courses.find(c => c.id === selectedCourseId)?.title || 'selected course'}`
+            }
           </p>
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Course Filter */}
+          <div className="flex items-center space-x-2">
+            <AcademicCapIcon className="h-5 w-5 text-gray-400" />
+            <select
+              value={selectedCourseId}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+              disabled={coursesLoading}
+            >
+              <option value="all">All Courses</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.title} ({course.course_code})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Date Range Selector */}
           <div className="flex items-center space-x-2">
             <CalendarIcon className="h-5 w-5 text-gray-400" />
@@ -286,7 +339,7 @@ export default function UsageAnalytics() {
       </div>
 
       {/* Model Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className={`grid grid-cols-1 ${selectedCourseId === 'all' ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-6 mb-8`}>
         <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Usage by Model</h3>
           <div className="space-y-4">
@@ -346,6 +399,45 @@ export default function UsageAnalytics() {
               ))}
           </div>
         </div>
+
+        {/* Course Breakdown - only show when viewing all courses */}
+        {selectedCourseId === 'all' && breakdown.byCourse && (
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Usage by Course</h3>
+            <div className="space-y-4">
+              {Object.entries(breakdown.byCourse)
+                .sort(([,a], [,b]) => b.cost - a.cost)
+                .slice(0, 10) // Show top 10 courses
+                .map(([courseId, data]) => {
+                  const course = courses.find(c => c.id === courseId) || { title: 'Unknown Course', course_code: 'N/A' };
+                  return (
+                    <div key={courseId} className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-900">
+                            {course.title} ({course.course_code})
+                          </span>
+                          <span className="text-sm text-gray-500">{formatCurrency(data.cost)}</span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
+                          <span>{formatNumber(data.interactions)} interactions</span>
+                          <span>{formatNumber(data.inputTokens + data.outputTokens)} tokens</span>
+                        </div>
+                        <div className="mt-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-purple-600 h-2 rounded-full"
+                            style={{ 
+                              width: `${(data.cost / summary.totalCost) * 100}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Additional Stats */}
