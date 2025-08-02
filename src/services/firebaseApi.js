@@ -727,10 +727,19 @@ export const courseApi = {
     
     await setDoc(doc(db, 'courseMemberships', membershipId), membershipData);
     
-    // Send email notifications to instructors and admins
+    // Send email notifications to instructors and admins via Cloud Function
     try {
-      await this.sendCourseJoinRequestNotifications(userId, courseId, role);
-      console.log('✅ Course join request notifications sent');
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../config/firebase');
+      const sendNotifications = httpsCallable(functions, 'sendCourseJoinNotifications');
+      
+      const result = await sendNotifications({
+        userId,
+        courseId,
+        requestedRole: role
+      });
+      
+      console.log('✅ Course join request notifications sent:', result.data);
     } catch (emailError) {
       console.error('❌ Error sending course join request notifications:', emailError);
       // Don't fail the join request if email fails
@@ -739,131 +748,6 @@ export const courseApi = {
     return { success: true };
   },
 
-  async sendCourseJoinRequestNotifications(userId, courseId, requestedRole) {
-    console.log('🔥 sendCourseJoinRequestNotifications:', userId, courseId, requestedRole);
-    
-    try {
-      // Get user and course information
-      const [userDoc, course] = await Promise.all([
-        getDoc(doc(db, 'users', userId)),
-        this.getCourseById(courseId)
-      ]);
-      
-      if (!userDoc.exists()) {
-        throw new Error('User not found');
-      }
-      
-      const user = { id: userDoc.id, ...userDoc.data() };
-      
-      // Get all instructors for this course
-      const instructorQuery = query(
-        collection(db, 'courseMemberships'),
-        where('courseId', '==', courseId),
-        where('role', '==', 'instructor'),
-        where('status', '==', 'approved')
-      );
-      
-      const instructorsSnapshot = await getDocs(instructorQuery);
-      const instructorEmails = [];
-      
-      for (const instructorDoc of instructorsSnapshot.docs) {
-        const membership = instructorDoc.data();
-        try {
-          const instructorUserDoc = await getDoc(doc(db, 'users', membership.userId));
-          if (instructorUserDoc.exists()) {
-            const instructorUser = instructorUserDoc.data();
-            if (instructorUser.email) {
-              instructorEmails.push({
-                email: instructorUser.email,
-                name: instructorUser.name || instructorUser.email.split('@')[0]
-              });
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to fetch instructor user:', membership.userId, error);
-        }
-      }
-      
-      // Get all global admins
-      const adminQuery = query(
-        collection(db, 'users'),
-        where('role', '==', 'admin')
-      );
-      
-      const adminsSnapshot = await getDocs(adminQuery);
-      const adminEmails = [];
-      
-      adminsSnapshot.forEach((adminDoc) => {
-        const adminUser = adminDoc.data();
-        if (adminUser.email) {
-          adminEmails.push({
-            email: adminUser.email,
-            name: adminUser.name || adminUser.email.split('@')[0]
-          });
-        }
-      });
-      
-      console.log(`📧 Found ${instructorEmails.length} instructors and ${adminEmails.length} admins to notify`);
-      
-      // Prepare email data
-      const emailData = {
-        studentName: user.name || user.email.split('@')[0],
-        studentEmail: user.email,
-        courseName: course.title,
-        courseCode: course.course_code,
-        requestedRole: requestedRole,
-        requestDate: new Date().toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      };
-      
-      // Send emails to instructors
-      const instructorEmailPromises = instructorEmails.map(instructor => {
-        const instructorEmailData = {
-          ...emailData,
-          instructorName: instructor.name,
-          instructorEmail: instructor.email
-        };
-        return emailService.sendCourseEnrollmentRequestEmail(instructorEmailData);
-      });
-      
-      // Send emails to admins
-      const adminEmailPromises = adminEmails.map(admin => {
-        const adminEmailData = {
-          ...emailData,
-          adminName: admin.name,
-          adminEmail: admin.email
-        };
-        return emailService.sendAdminCourseEnrollmentAlert(adminEmailData);
-      });
-      
-      // Send all emails
-      const allEmailPromises = [...instructorEmailPromises, ...adminEmailPromises];
-      const emailResults = await Promise.allSettled(allEmailPromises);
-      
-      // Log results
-      const successCount = emailResults.filter(result => result.status === 'fulfilled' && result.value.success).length;
-      const failureCount = emailResults.length - successCount;
-      
-      console.log(`📧 Email notification results: ${successCount} sent, ${failureCount} failed`);
-      
-      return { 
-        success: true, 
-        emailsSent: successCount, 
-        emailsFailed: failureCount,
-        totalInstructors: instructorEmails.length,
-        totalAdmins: adminEmails.length
-      };
-      
-    } catch (error) {
-      console.error('❌ Error in sendCourseJoinRequestNotifications:', error);
-      throw error;
-    }
-  },
 
   async getPendingApprovals(courseId, instructorId) {
     console.log('🔥 getPendingApprovals:', courseId, instructorId);

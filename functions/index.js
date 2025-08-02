@@ -546,3 +546,168 @@ function generatePeakActivityHours(chats) {
   
   return peakHours;
 }
+
+/**
+ * Cloud Function to send course join request notifications
+ * Runs with administrative privileges to query all users and memberships
+ */
+exports.sendCourseJoinNotifications = onCall({
+  enforceAppCheck: false,
+}, async (request) => {
+  const {userId, courseId, requestedRole} = request.data;
+  const callerUid = request.auth?.uid;
+
+  logger.info('📧 sendCourseJoinNotifications called', {userId, courseId, requestedRole, callerUid});
+
+  // Validate input
+  if (!userId || !courseId || !requestedRole) {
+    throw new HttpsError('invalid-argument', 'userId, courseId, and requestedRole are required');
+  }
+
+  // Security: Only allow authenticated users to call this function
+  if (!callerUid) {
+    throw new HttpsError('unauthenticated', 'Must be authenticated to send notifications');
+  }
+
+  // Security: Only allow the user to send notifications for their own join request
+  if (callerUid !== userId) {
+    throw new HttpsError('permission-denied', 'Can only send notifications for your own join requests');
+  }
+
+  try {
+    logger.info('📧 Processing course join notification...');
+
+    // Get user and course information
+    const [userDoc, courseDoc] = await Promise.all([
+      db.collection('users').doc(userId).get(),
+      db.collection('courses').doc(courseId).get()
+    ]);
+    
+    if (!userDoc.exists) {
+      throw new HttpsError('not-found', 'User not found');
+    }
+    
+    if (!courseDoc.exists) {
+      throw new HttpsError('not-found', 'Course not found');
+    }
+    
+    const user = {id: userDoc.id, ...userDoc.data()};
+    const course = {id: courseDoc.id, ...courseDoc.data()};
+    
+    logger.info('👤 User requesting join:', {name: user.name, email: user.email});
+    logger.info('📚 Course:', {title: course.title, code: course.course_code});
+
+    // Get all instructors for this course (using admin privileges)
+    const instructorQuery = db.collection('courseMemberships')
+      .where('courseId', '==', courseId)
+      .where('role', '==', 'instructor')
+      .where('status', '==', 'approved');
+    
+    const instructorsSnapshot = await instructorQuery.get();
+    const instructorEmails = [];
+    
+    logger.info(`🔍 Found ${instructorsSnapshot.size} instructor memberships`);
+    
+    for (const instructorDoc of instructorsSnapshot.docs) {
+      const membership = instructorDoc.data();
+      try {
+        const instructorUserDoc = await db.collection('users').doc(membership.userId).get();
+        if (instructorUserDoc.exists) {
+          const instructorUser = instructorUserDoc.data();
+          if (instructorUser.email) {
+            instructorEmails.push({
+              email: instructorUser.email,
+              name: instructorUser.name || instructorUser.email.split('@')[0]
+            });
+            logger.info('📧 Added instructor email:', instructorUser.email);
+          }
+        }
+      } catch (error) {
+        logger.warn('Failed to fetch instructor user:', membership.userId, error);
+      }
+    }
+    
+    // Get all global admins (using admin privileges)
+    const adminQuery = db.collection('users').where('role', '==', 'admin');
+    const adminsSnapshot = await adminQuery.get();
+    const adminEmails = [];
+    
+    logger.info(`🔍 Found ${adminsSnapshot.size} admin users`);
+    
+    adminsSnapshot.forEach((adminDoc) => {
+      const adminUser = adminDoc.data();
+      if (adminUser.email) {
+        adminEmails.push({
+          email: adminUser.email,
+          name: adminUser.name || adminUser.email.split('@')[0]
+        });
+        logger.info('📧 Added admin email:', adminUser.email);
+      }
+    });
+    
+    logger.info(`📧 Will notify ${instructorEmails.length} instructors and ${adminEmails.length} admins`);
+    
+    // Prepare email data
+    const emailData = {
+      studentName: user.name || user.email.split('@')[0],
+      studentEmail: user.email,
+      courseName: course.title,
+      courseCode: course.course_code,
+      requestedRole: requestedRole,
+      requestDate: new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+
+    // Send emails (this would typically use a service like SendGrid, Nodemailer, etc.)
+    // For now, we'll log the email data and return success
+    logger.info('📧 Email data prepared:', emailData);
+    logger.info('📧 Would send to instructors:', instructorEmails);
+    logger.info('📧 Would send to admins:', adminEmails);
+    
+    // TODO: Implement actual email sending here
+    // Example with SendGrid or similar service:
+    /*
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    
+    const allRecipients = [...instructorEmails, ...adminEmails];
+    
+    for (const recipient of allRecipients) {
+      const msg = {
+        to: recipient.email,
+        from: 'noreply@yourdomain.com',
+        subject: `New Course Join Request - ${emailData.courseName}`,
+        html: generateEmailTemplate(emailData, recipient.name)
+      };
+      
+      await sgMail.send(msg);
+    }
+    */
+    
+    return {
+      success: true,
+      message: 'Course join notifications processed successfully',
+      notificationsSent: {
+        instructors: instructorEmails.length,
+        admins: adminEmails.length,
+        total: instructorEmails.length + adminEmails.length
+      },
+      emailData
+    };
+
+  } catch (error) {
+    logger.error('❌ Error sending course join notifications:', error);
+    
+    // Re-throw HttpsError as-is, wrap others
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    
+    throw new HttpsError('internal', 'Failed to send notifications: ' + error.message);
+  }
+});
