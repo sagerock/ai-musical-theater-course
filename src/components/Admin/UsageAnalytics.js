@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { analyticsApi } from '../../services/analyticsApi';
 import { courseApi } from '../../services/firebaseApi';
-import { formatCurrency, formatNumber } from '../../utils/costCalculator';
+import { formatCurrency, formatNumber, MODEL_PRICING } from '../../utils/costCalculator';
 import toast from 'react-hot-toast';
 import {
   ChartBarIcon,
@@ -24,6 +24,23 @@ export default function UsageAnalytics() {
   const [selectedCourseId, setSelectedCourseId] = useState('all');
   const [courses, setCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
+
+  // Helper function to get model pricing info
+  const getModelPricing = (modelName) => {
+    // Try to find pricing by display name first
+    const pricingEntry = Object.values(MODEL_PRICING).find(p => p.displayName === modelName);
+    if (pricingEntry) {
+      return `$${pricingEntry.input}/$${pricingEntry.output} per 1M tokens`;
+    }
+    
+    // Fallback: try to find by model ID
+    const modelPricing = MODEL_PRICING[modelName];
+    if (modelPricing) {
+      return `$${modelPricing.input}/$${modelPricing.output} per 1M tokens`;
+    }
+    
+    return 'Pricing unavailable';
+  };
 
   const loadCourses = async () => {
     try {
@@ -367,7 +384,12 @@ export default function UsageAnalytics() {
                 <div key={modelName} className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{modelName}</span>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-900">{modelName}</span>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          {getModelPricing(modelName)}
+                        </div>
+                      </div>
                       <span className="text-sm text-gray-500">{formatCurrency(data.cost)}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
