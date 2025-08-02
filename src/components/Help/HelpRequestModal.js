@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
+import { sendHelpRequestNotification } from '../../services/contactEmailService';
 import {
   XMarkIcon,
   ExclamationCircleIcon,
@@ -62,6 +63,22 @@ export default function HelpRequestModal({ onClose }) {
       });
       
       console.log('🎫 Help request saved successfully:', docRef.id);
+      
+      // Send email notification to admin
+      try {
+        await sendHelpRequestNotification({
+          userName: currentUser?.displayName || currentUser?.email || 'Unknown User',
+          userEmail: currentUser?.email || 'No email',
+          category: formData.category,
+          subject: formData.subject,
+          description: formData.description,
+          createdAt: new Date()
+        });
+        console.log('📧 Help request notification email sent successfully');
+      } catch (emailError) {
+        console.error('⚠️ Failed to send help request notification email:', emailError);
+        // Don't fail the form submission if email fails
+      }
       
       toast.success('Help request submitted! We\'ll get back to you soon.');
       setIsSubmitted(true);
