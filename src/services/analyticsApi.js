@@ -41,7 +41,7 @@ export const analyticsApi = {
         }
         
         // Extract usage information - try multiple field names and fallback strategies
-        let modelName = chat.toolUsed || chat.model || chat.tool || chat.aiTool;
+        let modelName = chat.tool_used || chat.toolUsed || chat.model || chat.tool || chat.aiTool;
         
         // If no model found, try to infer from response patterns or use default
         if (!modelName) {
