@@ -27,8 +27,8 @@ export default function PublicHomePage() {
       color: 'bg-blue-100 text-blue-600'
     },
     {
-      name: 'Multi-Model Support',
-      description: 'Works with OpenAI, Anthropic, and Google AI models, giving you comprehensive visibility across platforms.',
+      name: '7 Curated AI Models',
+      description: 'Carefully selected models from OpenAI, Anthropic, Google, and Perplexity, each optimized for educational use with specialized prompting and enhanced capabilities.',
       icon: CogIcon,
       color: 'bg-green-100 text-green-600'
     },
@@ -36,11 +36,17 @@ export default function PublicHomePage() {
       name: 'Rich Analytics Dashboard',
       description: 'Visualize engagement patterns, model preferences, and usage trends through intuitive charts and reports.',
       icon: ChartBarIcon,
+      color: 'bg-indigo-100 text-indigo-600'
+    },
+    {
+      name: 'AI Literacy Education',
+      description: 'Comprehensive learning resources including model comparison guides, prompt engineering education, citation enhancement, and the "Understanding AI Models" resource accessible via the info icon.',
+      icon: AcademicCapIcon,
       color: 'bg-purple-100 text-purple-600'
     },
     {
       name: 'Academic Integrity Tools',
-      description: 'Support responsible AI use with tagging, filtering, and monitoring capabilities that promote transparency.',
+      description: 'Support responsible AI use with enhanced citation capabilities, tagging, filtering, and monitoring that promote transparency and proper source attribution.',
       icon: ShieldCheckIcon,
       color: 'bg-red-100 text-red-600'
     },
@@ -53,8 +59,8 @@ export default function PublicHomePage() {
     {
       name: 'Reflection & Learning',
       description: 'Enable structured reflection on AI interactions to deepen understanding and improve learning outcomes.',
-      icon: AcademicCapIcon,
-      color: 'bg-indigo-100 text-indigo-600'
+      icon: ClockIcon,
+      color: 'bg-orange-100 text-orange-600'
     }
   ];
 
@@ -62,28 +68,28 @@ export default function PublicHomePage() {
     {
       title: 'For Educators',
       points: [
-        'Understand how students are using AI tools',
-        'Monitor prompt quality and learning progression',
-        'Identify students who need additional support',
-        'Maintain academic integrity standards'
+        'Guide students through comprehensive AI literacy curriculum',
+        'Monitor learning progression and model usage patterns',
+        'Access built-in educational resources and teaching tools',
+        'Maintain academic integrity with enhanced citation capabilities'
       ]
     },
     {
       title: 'For Students',
       points: [
-        'Develop better AI interaction skills',
-        'Reflect on learning processes',
-        'Access multiple AI models in one place',
-        'Build responsible AI usage habits'
+        'Master AI literacy and prompt engineering skills',
+        'Learn when and why to use different AI models',
+        'Develop advanced citation and research capabilities',
+        'Build responsible AI usage habits for academic and professional success'
       ]
     },
     {
       title: 'For Institutions',
       points: [
-        'Scalable across departments and courses',
-        'Data-driven insights for curriculum development',
-        'Support for AI literacy initiatives',
-        'Transparent AI usage policies'
+        'Comprehensive AI literacy program ready for deployment',
+        'Data-driven insights for AI curriculum development',
+        'Prepare students with essential 21st-century skills',
+        'Lead in responsible AI education and workforce preparation'
       ]
     }
   ];
@@ -149,10 +155,10 @@ export default function PublicHomePage() {
               AI Engagement Hub
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-4xl mx-auto">
-              A powerful analytics platform that helps educators understand how students interact with AI in real time
+              The comprehensive platform for AI literacy education and intelligent student engagement analytics
             </p>
             <p className="text-lg mb-10 max-w-2xl mx-auto opacity-90">
-              Designed for classrooms at any level—from high school to higher ed—providing a smarter lens on AI usage with clear visibility into prompt activity, model selection, and engagement patterns.
+              Beyond monitoring AI use, we provide complete AI literacy education with 7 curated models, specialized educational optimization, comprehensive learning resources, and advanced citation capabilities—preparing students for an AI-enhanced future.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -182,7 +188,7 @@ export default function PublicHomePage() {
               Why Choose AI Engagement Hub?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Rather than generating content, AI Engagement Hub empowers teachers to observe, reflect, and respond to how students are learning with AI.
+              AI Engagement Hub combines intelligent oversight with comprehensive AI literacy education, teaching students not just how to use AI tools, but when, why, and which model to choose for different learning objectives.
             </p>
           </div>
 
@@ -236,11 +242,11 @@ export default function PublicHomePage() {
       <div className="bg-gray-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl md:text-3xl font-light mb-8">
-            Understanding how students engage with AI—intelligently.
+            Preparing students for an AI-enhanced future—intelligently.
           </h2>
           <p className="text-lg text-gray-300 mb-12">
-            Transform your classroom with data-driven insights into AI usage patterns, 
-            student engagement, and learning outcomes.
+            Transform your classroom with comprehensive AI literacy education, enhanced learning resources, 
+            and intelligent oversight that develops essential 21st-century skills.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button

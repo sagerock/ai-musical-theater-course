@@ -26,7 +26,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'What is AI Engagement Hub?',
-          answer: 'AI Engagement Hub is an educational analytics platform that helps educators understand how students interact with AI in real time. It provides visibility into prompt activity, model selection, and engagement patterns across leading AI tools including GPT-4.1, Claude, Gemini, and Perplexity.'
+          answer: 'AI Engagement Hub is a comprehensive AI literacy education platform that combines real-time student engagement analytics with advanced AI learning resources. Beyond helping educators monitor student AI interactions, we provide comprehensive AI literacy education through curated model selection, specialized educational prompting, citation enhancement, and in-depth learning guides that teach students when and how to use different AI models effectively.'
         },
         {
           question: 'Who is this platform designed for?',
@@ -34,7 +34,7 @@ export default function FAQ() {
         },
         {
           question: 'How is this different from just using ChatGPT or Claude directly?',
-          answer: 'Unlike standalone AI tools, AI Engagement Hub provides educational oversight and analytics. Instructors can see how students engage with AI, track progress across projects, organize interactions with tags, and ensure academic integrity—all while students benefit from multiple AI models in one place.'
+          answer: 'AI Engagement Hub goes far beyond simple AI access. We provide comprehensive AI literacy education with 7 specially optimized models, built-in learning resources, model comparison guides, prompt engineering education, and enhanced citation capabilities. Students learn not just how to use AI, but when to use which model and why. Plus, educators get valuable oversight and analytics to guide student development—creating a complete educational ecosystem rather than just AI access.'
         }
       ]
     },
@@ -44,7 +44,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'What AI models are available?',
-          answer: 'We offer 5 powerful AI models: GPT-4.1 Mini (cost-effective) and GPT-4.1 (premium) from OpenAI for general-purpose tasks, Claude Sonnet 4 (Anthropic) for nuanced reasoning, Gemini Flash (Google) for fast responses, and Sonar Pro (Perplexity) for research with real-time web access.'
+          answer: 'We offer 7 carefully curated AI models optimized for educational use: GPT-4.1 Mini (cost-effective default) and GPT-4.1 (advanced technical analysis) from OpenAI, Claude Sonnet 4 (analytical excellence) and Claude Opus 4 (premium research) from Anthropic, Gemini Flash (efficient responses) and Gemini 2.5 Pro (superior citations with LearnLM educational training) from Google, and Sonar Pro (Perplexity) for real-time research with live citations. Each model receives specialized educational prompting to enhance learning outcomes.'
         },
         {
           question: 'Can students upload documents?',
@@ -57,6 +57,36 @@ export default function FAQ() {
         {
           question: 'What is the reflection feature?',
           answer: 'Reflections allow students to add thoughtful commentary to their AI interactions. After important conversations, students can document what they learned, questions that arose, or how they plan to apply insights. This promotes critical thinking about AI use.'
+        }
+      ]
+    },
+    {
+      id: 'ai-literacy',
+      title: 'AI Literacy & Learning',
+      questions: [
+        {
+          question: 'How does the platform teach AI literacy?',
+          answer: 'AI Engagement Hub provides comprehensive AI literacy education through multiple approaches: curated model selection with educational optimization, built-in learning guides accessible via the info icon next to the model selector, specialized prompting that enhances each model\'s educational capabilities, citation enhancement systems, and prompt engineering education. Students learn not just to use AI tools, but to understand their strengths, limitations, and appropriate applications.'
+        },
+        {
+          question: 'What is the "Understanding AI Models" guide?',
+          answer: 'The Understanding AI Models guide is a comprehensive educational resource accessible by clicking the "ℹ️" icon next to the model selector. It features detailed model comparisons, token economics, citations & research techniques, AI optimization insights showing how we enhance each model, company profiles, and best practices for model selection and prompt engineering. This guide helps students develop crucial AI literacy skills.'
+        },
+        {
+          question: 'How do different models help with different learning tasks?',
+          answer: 'Each AI model excels at different educational tasks: Gemini 2.5 Pro provides superior citations for research papers, Claude Sonnet 4 excels at analytical thinking and breaking down complex concepts, Claude Opus 4 offers premium research assistance, GPT-4.1 Mini provides cost-effective general learning, GPT-4.1 handles advanced technical analysis, Gemini Flash delivers quick efficient responses, and Sonar Pro provides real-time information with live citations. Our platform teaches students when to use each model for optimal learning outcomes.'
+        },
+        {
+          question: 'What makes this educational vs. just using AI tools directly?',
+          answer: 'Our educational approach includes: specialized prompting that enhances each model for learning (not just raw AI access), comprehensive learning resources and guides, model-specific educational optimization, enhanced citation requirements for academic integrity, prompt engineering education, critical thinking development, and structured reflection tools. We\'re teaching students how to be intelligent AI users, not just AI consumers.'
+        },
+        {
+          question: 'How do students learn to choose the right AI model?',
+          answer: 'Students learn model selection through our comprehensive educational approach: the Understanding AI Models guide provides detailed comparisons and use cases, each model interaction includes educational context about why that model excels at the task, we provide workflow recommendations for different types of academic work, and students can explore model differences through hands-on experience with guided learning resources. This develops critical thinking about AI tool selection.'
+        },
+        {
+          question: 'What is model-specific optimization and why does it matter?',
+          answer: 'Model-specific optimization means each AI model receives specialized educational prompting that leverages its unique strengths. For example, Gemini 2.5 Pro gets enhanced citation prompts, Claude models get analytical excellence prompts, and Sonar Pro gets current research prompts. This ensures students get the best possible educational experience from each model while learning about AI capabilities and differences—skills they\'ll use throughout their academic and professional careers.'
         }
       ]
     },
