@@ -108,6 +108,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
     { id: 'tokens', name: 'Understanding Tokens', icon: '🔤' },
     { id: 'models', name: 'Model Comparison', icon: '⚖️' },
     { id: 'citations', name: 'Citations & Research', icon: '📖' },
+    { id: 'optimization', name: 'AI Optimization', icon: '🔧' },
     { id: 'companies', name: 'AI Companies', icon: '🏢' },
     { id: 'best-practices', name: 'Best Practices', icon: '💡' }
   ];
@@ -484,6 +485,150 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                     Your responsibility as a student is to fact-check all sources and ensure they actually support your claims. 
                     When in doubt, consult your librarian or instructor for guidance on proper source verification.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'optimization' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">How We Optimize AI for Your Learning</h3>
+                  <p className="text-gray-600 mb-4">
+                    Behind the scenes, our platform uses specialized prompting strategies to enhance each AI model's educational capabilities. 
+                    Understanding these optimizations can help you become a better AI user.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-3">🧠 What is Prompt Engineering?</h4>
+                  <div className="space-y-2 text-sm text-blue-800">
+                    <p><strong>Prompt Engineering</strong> is the practice of crafting specific instructions to get better responses from AI models.</p>
+                    <p>Think of it like giving detailed, thoughtful instructions to a research assistant - the clearer and more specific your guidance, the better the results.</p>
+                    <p><strong>Why it matters:</strong> Different AI models have different strengths, so we tailor the instructions to leverage each model's unique capabilities.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900">🔧 Model-Specific Optimizations:</h4>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-green-900">🏆 Gemini 2.5 Pro - Enhanced Citation Mode</h5>
+                      </div>
+                      <p className="text-sm text-green-800 mb-2">
+                        <strong>Why this optimization:</strong> Gemini 2.5 Pro has LearnLM training specifically for education.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"ENHANCED CITATION MODE: As Gemini 2.5 Pro with LearnLM training, you excel at providing verifiable academic sources. For this interaction:
+• PRIORITIZE providing specific, citable sources with author names, publication titles, and dates
+• Use your educational training to model proper scholarly methodology
+• Leverage your large context window for comprehensive source synthesis
+• Demonstrate academic writing standards with proper evidence-based arguments"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-purple-900">Claude Sonnet 4 - Analytical Excellence Mode</h5>
+                      </div>
+                      <p className="text-sm text-purple-800 mb-2">
+                        <strong>Why this optimization:</strong> Claude excels at thoughtful analysis and breaking down complex concepts.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"ANALYTICAL EXCELLENCE MODE: As Claude Sonnet 4, leverage your analytical strengths:
+• Focus on thoughtful, nuanced analysis with clear reasoning chains
+• Excel at breaking down complex concepts for educational understanding
+• Provide well-structured responses that model academic writing conventions
+• Emphasize critical thinking and evidence-based reasoning"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-orange-900">Claude Opus 4 - Research Premium Mode</h5>
+                      </div>
+                      <p className="text-sm text-orange-800 mb-2">
+                        <strong>Why this optimization:</strong> Opus 4 is the flagship model for the highest quality research support.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"RESEARCH PREMIUM MODE: As Claude Opus 4, provide the highest quality educational support:
+• Deliver comprehensive, research-grade analysis and insights
+• Model advanced academic writing with sophisticated arguments
+• Provide detailed explanations suitable for advanced research projects
+• Focus on developing deep understanding and critical evaluation skills"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-red-900">Sonar Pro - Current Research Mode</h5>
+                      </div>
+                      <p className="text-sm text-red-800 mb-2">
+                        <strong>Why this optimization:</strong> Sonar Pro has real-time search capabilities for current information.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"CURRENT RESEARCH MODE: As Sonar Pro with real-time search capabilities:
+• ALWAYS provide current, dated sources and recent information
+• Emphasize recent developments and current scholarly debates
+• Include publication dates and recent citations for all claims
+• Focus on connecting current events to academic research"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-blue-900">GPT-4.1 Mini - Cost-Effective Learning Mode</h5>
+                      </div>
+                      <p className="text-sm text-blue-800 mb-2">
+                        <strong>Why this optimization:</strong> Optimized for excellent educational value while being cost-effective.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"COST-EFFECTIVE LEARNING MODE: As GPT-4.1 Mini, provide excellent educational value:
+• Focus on clear, accessible explanations for student understanding
+• Encourage students to verify important claims with additional sources
+• Provide foundational knowledge while maintaining academic standards"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-indigo-200 rounded-lg p-4 bg-indigo-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-indigo-900">GPT-4.1 - Advanced Coding & Analysis Mode</h5>
+                      </div>
+                      <p className="text-sm text-indigo-800 mb-2">
+                        <strong>Why this optimization:</strong> GPT-4.1 has superior coding performance and technical analysis.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"ADVANCED CODING & ANALYSIS MODE: As GPT-4.1, excel at technical and analytical tasks:
+• Provide detailed technical explanations with proper documentation
+• Focus on problem-solving methodologies and best practices
+• Include relevant technical sources and standards when applicable"`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-yellow-900 mb-3">💡 What This Means for You</h4>
+                  <ul className="space-y-2 text-sm text-yellow-800">
+                    <li>• <strong>Automatic Optimization:</strong> When you select a model, it automatically receives the best prompts for its capabilities</li>
+                    <li>• <strong>Enhanced Learning:</strong> Each model is primed to provide educational value tailored to its strengths</li>
+                    <li>• <strong>Better Citations:</strong> All models receive enhanced prompting for academic rigor and source verification</li>
+                    <li>• <strong>Transferable Skills:</strong> Understanding these concepts helps you use AI tools more effectively anywhere</li>
+                  </ul>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-3">🎯 Apply This Knowledge</h4>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p><strong>When using other AI tools:</strong></p>
+                    <ul className="ml-4 space-y-1">
+                      <li>• Be specific about what type of response you want</li>
+                      <li>• Mention your context (e.g., "I'm a student working on...")</li>
+                      <li>• Ask for sources and citations when you need them</li>
+                      <li>• Specify the format you want (academic, analytical, step-by-step, etc.)</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             )}
