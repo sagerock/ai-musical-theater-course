@@ -34,7 +34,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [selectedTool, setSelectedTool] = useState('Claude Sonnet 4');
+  const [selectedTool, setSelectedTool] = useState('GPT-4.1 Mini');
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
