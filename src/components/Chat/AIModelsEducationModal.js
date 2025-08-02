@@ -436,7 +436,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
         <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              💡 Tip: Bookmark this guide and refer back to it as you work on different projects
+              💡 Tip: You can access this guide anytime by clicking the info icon next to the model selector
             </p>
             <button
               onClick={onClose}

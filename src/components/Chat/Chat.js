@@ -471,15 +471,11 @@ export default function Chat() {
                       : 'border-gray-300 bg-white'
                   }`}
                 >
-                  {Object.keys(AI_TOOLS).map(tool => {
-                    const pricing = getModelPricing(tool);
-                    const priceInfo = pricing ? ` ($${pricing.input}/$${pricing.output})` : '';
-                    return (
-                      <option key={tool} value={tool}>
-                        {tool}{priceInfo}
-                      </option>
-                    );
-                  })}
+                  {Object.keys(AI_TOOLS).map(tool => (
+                    <option key={tool} value={tool}>
+                      {tool}
+                    </option>
+                  ))}
                 </select>
                 {isExpensiveModel() && (
                   <div className="absolute -bottom-6 left-0 text-xs text-orange-600 whitespace-nowrap">
