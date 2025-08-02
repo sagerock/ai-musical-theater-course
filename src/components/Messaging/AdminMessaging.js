@@ -45,9 +45,30 @@ export default function AdminMessaging() {
         userApi.getAllUsers()
       ]);
 
-      const instructors = allUsers.filter(user => user.role === 'instructor').length;
+      // Count users who are instructors (either globally or in any course)
+      const instructorUsers = allUsers.filter(user => {
+        // Check if user has global instructor role
+        if (user.role === 'instructor') return true;
+        
+        // Check if user has instructor role in any course
+        if (user.course_memberships && user.course_memberships.length > 0) {
+          return user.course_memberships.some(membership => 
+            membership.role === 'instructor' && membership.status === 'approved'
+          );
+        }
+        
+        return false;
+      });
+
+      const instructors = instructorUsers.length;
       const students = allUsers.filter(user => user.role === 'student').length;
       const total = allUsers.length;
+
+      console.log('📊 Instructor stats:', {
+        totalUsers: allUsers.length,
+        instructorUsers: instructorUsers.map(u => ({ name: u.name, email: u.email, globalRole: u.role, courseMemberships: u.course_memberships })),
+        instructorCount: instructors
+      });
 
       setRecipientStats({
         instructors,
@@ -87,7 +108,22 @@ export default function AdminMessaging() {
       let recipients = [];
       
       if (formData.recipientType === 'instructors') {
-        recipients = allUsers.filter(user => user.role === 'instructor');
+        // Filter users who are instructors (either globally or in any course)
+        recipients = allUsers.filter(user => {
+          // Check if user has global instructor role
+          if (user.role === 'instructor') return true;
+          
+          // Check if user has instructor role in any course
+          if (user.course_memberships && user.course_memberships.length > 0) {
+            return user.course_memberships.some(membership => 
+              membership.role === 'instructor' && membership.status === 'approved'
+            );
+          }
+          
+          return false;
+        });
+        
+        console.log('📧 Selected instructors for messaging:', recipients.map(u => ({ name: u.name, email: u.email, globalRole: u.role })));
       } else if (formData.recipientType === 'all') {
         recipients = allUsers;
       }
