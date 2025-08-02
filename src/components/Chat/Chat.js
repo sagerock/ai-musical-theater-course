@@ -84,6 +84,8 @@ export default function Chat() {
   };
 
   useEffect(() => {
+    // Scroll to top when first loading the page
+    window.scrollTo(0, 0);
     loadProjectAndChats();
   }, [projectId, currentUser]);
 
@@ -95,8 +97,11 @@ export default function Chat() {
   }, [project]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [chats]);
+    // Only scroll to bottom if there are existing messages and we're not loading
+    if (chats.length > 0 && !loading) {
+      scrollToBottom();
+    }
+  }, [chats, loading]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
