@@ -78,6 +78,15 @@ export default function AdminPanel() {
   // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
   const isFirebaseUser = currentUser?.id && !currentUser.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 
+  // Handle URL parameters for direct navigation to tabs
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['courses', 'users', 'approvals', 'messaging'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
   useEffect(() => {
     loadCourses();
     if (activeTab === 'users') {

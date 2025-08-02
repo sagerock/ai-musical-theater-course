@@ -710,7 +710,7 @@ exports.sendCourseJoinNotifications = onCall({
               </div>
               
               <p>Please review and approve or deny this request in your instructor dashboard.</p>
-              <p><a href="https://ai-engagement-hub.com/instructor" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Review Request</a></p>
+              <p><a href="https://ai-engagement-hub.com/instructor#pending-approvals" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Review Request</a></p>
               
               <p>Best regards,<br>AI Engagement Hub</p>
             </div>
@@ -732,7 +732,7 @@ Course Information:
 - Course Code: ${emailData.courseCode}
 
 Please review and approve or deny this request in your instructor dashboard:
-https://ai-engagement-hub.com/instructor
+https://ai-engagement-hub.com/instructor#pending-approvals
 
 Best regards,
 AI Engagement Hub
@@ -783,7 +783,7 @@ AI Engagement Hub
               </div>
               
               <p>The course instructors have been notified and will handle the approval. You can monitor all course activities in the admin panel.</p>
-              <p><a href="https://ai-engagement-hub.com/admin" style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Admin Panel</a></p>
+              <p><a href="https://ai-engagement-hub.com/admin?tab=approvals" style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Pending Approvals</a></p>
               
               <p>Best regards,<br>AI Engagement Hub</p>
             </div>
@@ -805,7 +805,7 @@ Course Information:
 - Course Code: ${emailData.courseCode}
 
 The course instructors have been notified and will handle the approval. You can monitor all course activities in the admin panel:
-https://ai-engagement-hub.com/admin
+https://ai-engagement-hub.com/admin?tab=approvals
 
 Best regards,
 AI Engagement Hub

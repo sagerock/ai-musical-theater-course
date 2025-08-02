@@ -92,7 +92,18 @@ Global admins can now send emails to all users or just instructors from the Admi
 
 The admin messaging feature is fully implemented and ready for testing. It uses the same working email infrastructure as the instructor messaging system, so it should deliver emails reliably.
 
+## ✅ ISSUE FIXED - Instructor Count
+**Problem**: Only showing 1 instructor when there should be 2
+**Root Cause**: Was only counting users with global `role: 'instructor'`, missing users who have instructor roles in specific courses
+**Solution**: Updated filtering to include:
+- Users with global instructor role (`role === 'instructor'`)
+- Users with instructor role in any course (`course_memberships.role === 'instructor'`)
+- Only approved course memberships (`status === 'approved'`)
+
+**Status**: Fixed and deployed
+
 **Next Steps:**
 1. Test messaging functionality as an admin user
-2. Verify email delivery to instructors and all users
-3. Confirm recipient statistics are accurate
+2. Verify instructor count now shows 2 instructors
+3. Test email delivery to instructors only
+4. Confirm all instructors receive emails

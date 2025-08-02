@@ -35,3 +35,10 @@ The email notification system is now fully operational and will send real emails
 
 ## ✅ CONFIRMED WORKING - August 2, 2025
 User confirmed: "Amazing! It worked!!" - Email notifications are successfully being delivered to instructors and admins when students join courses.
+
+## ✅ EMAIL TEMPLATES UPDATED - August 2, 2025
+Updated all email template URLs from staging domain to main domain:
+- **Instructor Dashboard Links**: Now point to `https://ai-engagement-hub.com/instructor`
+- **Admin Panel Links**: Now point to `https://ai-engagement-hub.com/admin`
+- **Applied to Both**: HTML and plain text email templates
+- **Status**: Cloud Function deployed with updated templates

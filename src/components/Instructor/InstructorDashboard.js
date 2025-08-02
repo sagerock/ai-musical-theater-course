@@ -92,6 +92,19 @@ export default function InstructorDashboard() {
     }
   }, [currentUser, isInstructorAnywhere]);
 
+  // Handle URL hash for direct navigation to pending approvals
+  useEffect(() => {
+    if (window.location.hash === '#pending-approvals') {
+      // Use setTimeout to ensure the component has fully rendered
+      setTimeout(() => {
+        const pendingApprovalsElement = document.getElementById('pending-approvals-section');
+        if (pendingApprovalsElement) {
+          pendingApprovalsElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500);
+    }
+  }, [pendingApprovals]);
+
   useEffect(() => {
     if (selectedCourseId) {
       loadDashboardData();
@@ -771,7 +784,7 @@ export default function InstructorDashboard() {
 
       {/* Pending Approvals Section */}
       {pendingApprovals.length > 0 && (
-        <div className="mb-8">
+        <div id="pending-approvals-section" className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
               Pending Course Approvals ({pendingApprovals.length})
