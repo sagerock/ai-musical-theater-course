@@ -35,16 +35,9 @@ export const analyticsApi = {
         const chat = doc.data();
         
         // Debug: Log the first few chat documents to understand the data structure
-        if (usageData.length < 2) {
-          console.log('🔍 Sample chat document:', {
-            id: doc.id,
-            toolUsed: chat.toolUsed,
-            model: chat.model,
-            tool: chat.tool,
-            aiTool: chat.aiTool,
-            availableFields: Object.keys(chat),
-            fullDocument: chat
-          });
+        if (usageData.length < 1) {
+          console.log('🔍 FULL Chat Document Structure:', JSON.stringify(chat, null, 2));
+          console.log('🔍 Available Fields:', Object.keys(chat));
         }
         
         // Extract usage information - try multiple field names and fallback strategies
