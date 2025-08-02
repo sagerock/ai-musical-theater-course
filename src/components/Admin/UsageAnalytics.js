@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { analyticsApi } from '../../services/analyticsApi';
 import { courseApi } from '../../services/firebaseApi';
 import { formatCurrency, formatNumber } from '../../utils/costCalculator';
@@ -25,14 +25,6 @@ export default function UsageAnalytics() {
   const [courses, setCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
 
-  useEffect(() => {
-    loadCourses();
-  }, []);
-
-  useEffect(() => {
-    loadAnalytics();
-  }, [dateRange, selectedCourseId]);
-
   const loadCourses = async () => {
     try {
       setCoursesLoading(true);
@@ -46,7 +38,7 @@ export default function UsageAnalytics() {
     }
   };
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -71,7 +63,15 @@ export default function UsageAnalytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange, selectedCourseId, customStartDate, customEndDate, showCustomDate]);
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const handleDateRangeChange = (e) => {
     const value = e.target.value;
@@ -84,11 +84,29 @@ export default function UsageAnalytics() {
   };
 
   const handleCustomDateSubmit = () => {
-    if (customStartDate && customEndDate) {
-      loadAnalytics();
-    } else {
+    if (!customStartDate || !customEndDate) {
       toast.error('Please select both start and end dates');
+      return;
     }
+    
+    // Validate date range
+    const startDate = new Date(customStartDate);
+    const endDate = new Date(customEndDate);
+    
+    if (startDate > endDate) {
+      toast.error('Start date must be before end date');
+      return;
+    }
+    
+    // Check if dates are too far in the future
+    const today = new Date();
+    if (endDate > today) {
+      toast.error('End date cannot be in the future');
+      return;
+    }
+    
+    toast.success('Custom date range applied');
+    // Analytics will automatically reload via useEffect when dates change
   };
 
   const exportToCSV = () => {
