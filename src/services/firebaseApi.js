@@ -698,10 +698,19 @@ export const courseApi = {
           updatedAt: serverTimestamp()
         });
         
-        // Send email notifications for re-enrollment request
+        // Send email notifications for re-enrollment request via Cloud Function
         try {
-          await this.sendCourseJoinRequestNotifications(userId, courseId, role);
-          console.log('✅ Course re-join request notifications sent');
+          const { httpsCallable } = await import('firebase/functions');
+          const { functions } = await import('../config/firebase');
+          const sendNotifications = httpsCallable(functions, 'sendCourseJoinNotifications');
+          
+          const result = await sendNotifications({
+            userId,
+            courseId,
+            requestedRole: role
+          });
+          
+          console.log('✅ Course re-join request notifications sent:', result.data);
         } catch (emailError) {
           console.error('❌ Error sending course re-join request notifications:', emailError);
           // Don't fail the join request if email fails
