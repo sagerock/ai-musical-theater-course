@@ -1009,23 +1009,6 @@ export default function AdminPanel() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {approval.role === 'student' && (
-                            <button
-                              onClick={() => handleFixInstructorRole(approval.id, approval.users?.name || 'Unknown User', approval.courseName)}
-                              disabled={processingApproval[approval.id]}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                              title="Approve as Instructor (fixes lost instructor role)"
-                            >
-                              {processingApproval[approval.id] ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
-                              ) : (
-                                <>
-                                  <AcademicCapIcon className="h-3 w-3 mr-1" />
-                                  Fix as Instructor
-                                </>
-                              )}
-                            </button>
-                          )}
                           <button
                             onClick={() => handleApprovalAction(approval.id, 'rejected', approval.users?.name || 'Unknown User', approval.courseName)}
                             disabled={processingApproval[approval.id]}
@@ -1043,14 +1026,28 @@ export default function AdminPanel() {
                           <button
                             onClick={() => handleApprovalAction(approval.id, 'approved', approval.users?.name || 'Unknown User', approval.courseName)}
                             disabled={processingApproval[approval.id]}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                          >
+                            {processingApproval[approval.id] ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-700"></div>
+                            ) : (
+                              <>
+                                <CheckCircleIcon className="h-3 w-3 mr-1" />
+                                Approve as Student
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleFixInstructorRole(approval.id, approval.users?.name || 'Unknown User', approval.courseName)}
+                            disabled={processingApproval[approval.id]}
                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                           >
                             {processingApproval[approval.id] ? (
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
                             ) : (
                               <>
-                                <CheckCircleIcon className="h-3 w-3 mr-1" />
-                                Approve as {approval.role === 'instructor' ? 'Instructor' : 'Student'}
+                                <AcademicCapIcon className="h-3 w-3 mr-1" />
+                                Approve as Instructor
                               </>
                             )}
                           </button>

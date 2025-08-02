@@ -22,7 +22,9 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
   PaperClipIcon,
-  PlusIcon
+  PlusIcon,
+  XMarkIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboard() {
@@ -40,6 +42,11 @@ export default function InstructorDashboard() {
   const [users, setUsers] = useState([]);
   const [tags, setTags] = useState([]);
   const [attachments, setAttachments] = useState([]);
+  
+  // Pending approvals state
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [approvalsLoading, setApprovalsLoading] = useState(false);
+  const [processingApproval, setProcessingApproval] = useState({});
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -88,6 +95,7 @@ export default function InstructorDashboard() {
   useEffect(() => {
     if (selectedCourseId) {
       loadDashboardData();
+      loadPendingApprovals();
     }
   }, [selectedCourseId]);
 
@@ -542,6 +550,88 @@ export default function InstructorDashboard() {
     }
   };
 
+  // Pending Approvals Functions
+  const loadPendingApprovals = async () => {
+    if (!selectedCourseId) return;
+    
+    try {
+      setApprovalsLoading(true);
+      console.log('🔥 Instructor loading pending approvals for course:', selectedCourseId);
+      
+      // Get pending approvals for the selected course only
+      const courseApprovals = await apis.courseApi.getPendingApprovals(selectedCourseId, currentUser.id);
+      
+      // Add course info to each approval
+      const selectedCourse = instructorCourses.find(c => c.courses.id === selectedCourseId);
+      courseApprovals.forEach(approval => {
+        approval.courseName = selectedCourse?.courses.title || 'Unknown Course';
+        approval.courseCode = selectedCourse?.courses.course_code || 'Unknown';
+      });
+      
+      console.log(`✅ Loaded ${courseApprovals.length} pending approvals for course`);
+      setPendingApprovals(courseApprovals);
+    } catch (error) {
+      console.error('Error loading pending approvals:', error);
+      toast.error('Failed to load pending approvals');
+    } finally {
+      setApprovalsLoading(false);
+    }
+  };
+
+  const handleApprovalAction = async (membershipId, status, userName, courseName) => {
+    setProcessingApproval(prev => ({ ...prev, [membershipId]: true }));
+    
+    try {
+      await apis.courseApi.updateMembershipStatus(membershipId, status, currentUser.id);
+      
+      toast.success(
+        `${userName} has been ${status === 'approved' ? 'approved' : 'rejected'} for ${courseName}`
+      );
+      
+      // Remove from pending list
+      setPendingApprovals(prev => 
+        prev.filter(approval => approval.id !== membershipId)
+      );
+      
+      // Reload dashboard data to reflect changes
+      loadDashboardData();
+      
+    } catch (error) {
+      console.error('Error updating membership status:', error);
+      toast.error(`Failed to ${status} member`);
+    } finally {
+      setProcessingApproval(prev => ({ ...prev, [membershipId]: false }));
+    }
+  };
+
+  const handleFixInstructorRole = async (membershipId, userName, courseName) => {
+    setProcessingApproval(prev => ({ ...prev, [membershipId]: true }));
+    
+    try {
+      // First approve the membership, then change role to instructor
+      await apis.courseApi.updateMembershipStatus(membershipId, 'approved', currentUser.id);
+      
+      // Update role to instructor
+      await apis.courseApi.updateMemberRole(membershipId, 'instructor');
+      
+      toast.success(`${userName} has been approved as instructor for ${courseName}`);
+      
+      // Remove from pending list
+      setPendingApprovals(prev => 
+        prev.filter(approval => approval.id !== membershipId)
+      );
+      
+      // Reload dashboard data
+      loadDashboardData();
+      
+    } catch (error) {
+      console.error('Error fixing instructor role:', error);
+      toast.error('Failed to approve as instructor');
+    } finally {
+      setProcessingApproval(prev => ({ ...prev, [membershipId]: false }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -678,6 +768,126 @@ export default function InstructorDashboard() {
       <div className="mb-8">
         <InstructorMessaging />
       </div>
+
+      {/* Pending Approvals Section */}
+      {pendingApprovals.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Pending Course Approvals ({pendingApprovals.length})
+            </h2>
+            <button
+              onClick={loadPendingApprovals}
+              disabled={approvalsLoading}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            >
+              {approvalsLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                  Refreshing...
+                </>
+              ) : (
+                'Refresh'
+              )}
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Review and approve student enrollment requests for your course
+          </p>
+
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <div className="space-y-4">
+                {pendingApprovals.map((approval) => (
+                  <div key={approval.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                            approval.role === 'instructor' 
+                              ? 'bg-green-100' 
+                              : 'bg-blue-100'
+                          }`}>
+                            {approval.role === 'instructor' ? (
+                              <AcademicCapIcon className="h-5 w-5 text-green-600" />
+                            ) : (
+                              <UsersIcon className="h-5 w-5 text-blue-600" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="text-sm font-medium text-gray-900">
+                              {approval.users?.name || 'Unknown User'}
+                            </div>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              approval.role === 'instructor' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {approval.role}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {approval.users?.email}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Requested {format(new Date(approval.joinedAt?.toDate ? approval.joinedAt.toDate() : approval.joinedAt || approval.createdAt?.toDate ? approval.createdAt.toDate() : approval.createdAt), 'MMM dd, yyyy HH:mm')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleApprovalAction(approval.id, 'rejected', approval.users?.name || 'Unknown User', approval.courseName)}
+                        disabled={processingApproval[approval.id]}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                      >
+                        {processingApproval[approval.id] ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
+                        ) : (
+                          <>
+                            <XMarkIcon className="h-3 w-3 mr-1" />
+                            Reject
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleApprovalAction(approval.id, 'approved', approval.users?.name || 'Unknown User', approval.courseName)}
+                        disabled={processingApproval[approval.id]}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                      >
+                        {processingApproval[approval.id] ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-700"></div>
+                        ) : (
+                          <>
+                            <CheckCircleIcon className="h-3 w-3 mr-1" />
+                            Approve as Student
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleFixInstructorRole(approval.id, approval.users?.name || 'Unknown User', approval.courseName)}
+                        disabled={processingApproval[approval.id]}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                      >
+                        {processingApproval[approval.id] ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                        ) : (
+                          <>
+                            <AcademicCapIcon className="h-3 w-3 mr-1" />
+                            Approve as Instructor
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

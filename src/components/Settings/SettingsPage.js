@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EmailSettings from './EmailSettings';
 import ProfileSettings from './ProfileSettings';
@@ -68,12 +69,12 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <a 
-            href="/privacy" 
+          <Link 
+            to="/privacy" 
             className="text-sm text-blue-600 hover:text-blue-700 font-medium"
           >
             View full privacy policy →
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -87,12 +88,12 @@ export default function SettingsPage() {
             If you have questions about your account, privacy settings, or need technical support, here are some resources:
           </p>
           <div className="flex flex-wrap gap-4">
-            <a 
-              href="/privacy" 
+            <Link 
+              to="/privacy" 
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               Privacy Policy
-            </a>
+            </Link>
             <a 
               href="mailto:support@aiengagementhub.com" 
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"

@@ -663,7 +663,7 @@ exports.sendCourseJoinNotifications = onCall({
       })
     };
 
-    // Send emails via the same API endpoint used by the frontend
+    // Send emails directly via SendGrid API (no external HTTP call needed)
     logger.info('📧 Email data prepared:', emailData);
     logger.info('📧 Will send to instructors:', instructorEmails);
     logger.info('📧 Will send to admins:', adminEmails);
@@ -673,7 +673,16 @@ exports.sendCourseJoinNotifications = onCall({
     
     try {
       const axios = require('axios');
-      const EMAIL_API_URL = process.env.EMAIL_API_URL || 'https://staging-intelligence-8c59c.web.app/api/send-email';
+      
+      // Get SendGrid configuration from environment
+      const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+      const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com';
+      
+      if (!SENDGRID_API_KEY) {
+        throw new Error('SendGrid API key not configured in Cloud Function environment');
+      }
+      
+      logger.info('📧 Using SendGrid directly from Cloud Function');
       
       // Send emails to instructors
       for (const instructor of instructorEmails) {
@@ -727,24 +736,42 @@ Best regards,
 AI Engagement Hub
           `;
           
-          const response = await axios.post(EMAIL_API_URL, {
-            to: instructor.email,
-            subject: subject,
-            htmlContent: htmlContent,
-            textContent: textContent
-          }, {
+          // Send email directly via SendGrid API
+          const emailData = {
+            personalizations: [
+              {
+                to: [{ email: instructor.email }],
+                subject: subject
+              }
+            ],
+            from: { email: SENDGRID_FROM_EMAIL, name: 'AI Engagement Hub' },
+            content: [
+              {
+                type: 'text/plain',
+                value: textContent
+              },
+              {
+                type: 'text/html',
+                value: htmlContent
+              }
+            ]
+          };
+          
+          const response = await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
             headers: {
+              'Authorization': `Bearer ${SENDGRID_API_KEY}`,
               'Content-Type': 'application/json'
             },
             timeout: 10000
           });
           
-          if (response.data && response.data.success) {
+          // SendGrid returns 202 status code for successful email queuing
+          if (response.status === 202) {
             emailsSent++;
             logger.info('✅ Email sent to instructor:', instructor.email);
           } else {
             emailsFailed++;
-            logger.warn('❌ Email failed to instructor:', instructor.email, response.data);
+            logger.warn('❌ Email failed to instructor:', instructor.email, response.status, response.data);
           }
         } catch (emailError) {
           emailsFailed++;
@@ -804,24 +831,42 @@ Best regards,
 AI Engagement Hub
           `;
           
-          const response = await axios.post(EMAIL_API_URL, {
-            to: admin.email,
-            subject: subject,
-            htmlContent: htmlContent,
-            textContent: textContent
-          }, {
+          // Send email directly via SendGrid API
+          const emailData = {
+            personalizations: [
+              {
+                to: [{ email: admin.email }],
+                subject: subject
+              }
+            ],
+            from: { email: SENDGRID_FROM_EMAIL, name: 'AI Engagement Hub' },
+            content: [
+              {
+                type: 'text/plain',
+                value: textContent
+              },
+              {
+                type: 'text/html',
+                value: htmlContent
+              }
+            ]
+          };
+          
+          const response = await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
             headers: {
+              'Authorization': `Bearer ${SENDGRID_API_KEY}`,
               'Content-Type': 'application/json'
             },
             timeout: 10000
           });
           
-          if (response.data && response.data.success) {
+          // SendGrid returns 202 status code for successful email queuing
+          if (response.status === 202) {
             emailsSent++;
             logger.info('✅ Email sent to admin:', admin.email);
           } else {
             emailsFailed++;
-            logger.warn('❌ Email failed to admin:', admin.email, response.data);
+            logger.warn('❌ Email failed to admin:', admin.email, response.status, response.data);
           }
         } catch (emailError) {
           emailsFailed++;

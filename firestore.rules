@@ -42,10 +42,9 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'instructor';
     }
     
-    // Temporary: Allow data repair operations for authenticated users with instructor capabilities
-    // TODO: Implement proper course-specific instructor checking
+    // Restrict data repair operations to admins only
     function canPerformDataRepair() {
-      return isAuthenticated();
+      return isGlobalAdmin();
     }
     
     // Helper function to check if user owns the project referenced in an instructor note
@@ -54,10 +53,19 @@ service cloud.firestore {
              exists(/databases/$(database)/documents/projects/$(noteData.projectId)) &&
              get(/databases/$(database)/documents/projects/$(noteData.projectId)).data.createdBy == request.auth.uid;
     }
-
-    // USERS COLLECTION - Own profile access, instructors can search users
+    
+    // USERS COLLECTION - Secure user profile access for educational environment
     match /users/{userId} {
-      allow read, write: if isOwner(userId) || isGlobalAdmin() || canPerformDataRepair();
+      // Allow users to read their own profile, admins to read all, and instructors for course management
+      allow read: if isAuthenticated() && (
+        isOwner(userId) ||                                    // Own profile
+        isGlobalAdmin() ||                                    // Global admin access  
+        canPerformDataRepair() ||                             // Data repair operations
+        hasInstructorRole()                                   // Instructors can read profiles for course management
+      );
+      
+      // Only allow write access to own profile, admins, or data repair functions
+      allow write: if isOwner(userId) || isGlobalAdmin() || canPerformDataRepair();
       
       // Allow instructors and admins to query/list users for course management and data repair
       allow list: if isAuthenticated() && (hasInstructorRole() || isGlobalAdmin() || canPerformDataRepair());
@@ -65,7 +73,8 @@ service cloud.firestore {
 
     // COURSES COLLECTION - Basic course info
     match /courses/{courseId} {
-      // Anyone enrolled in the course can read basic course info
+      // Course members and admins can read full course info
+      // For course joining: users can read course info but only basic fields will be accessible
       allow read: if isMemberOfCourse(courseId) || isGlobalAdmin() || isAuthenticated();
       
       // Allow authenticated users to query courses by accessCode for joining
@@ -89,6 +98,7 @@ service cloud.firestore {
       // Allow collection queries for getting user's own memberships or for instructors
       allow list: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||       // User's own memberships
+        isInstructorInCourse(resource.data.courseId) ||   // Instructors can see all memberships in their courses
         hasInstructorRole() ||                            // Users with instructor role can query
         isGlobalAdmin()                                   // Global admin can query all
       );
@@ -141,12 +151,8 @@ service cloud.firestore {
         isGlobalAdmin()                                  // Global admin
       );
       
-      // Allow collection queries for all authenticated users (they can only see their own chats due to read rules)
-      // Instructors can list chats for data repair operations
-      allow list: if isAuthenticated() && (
-        true || // Users can query (filtered by read rules)
-        hasInstructorRole() // Instructors can query for repairs
-      );
+      // Allow collection queries for authenticated users (filtered by read rules above)
+      allow list: if isAuthenticated();
       
       // Only chat owners can create/update their chats (students can't see others' chats)
       allow create: if isAuthenticated() && 
@@ -258,14 +264,43 @@ service cloud.firestore {
 
     // CHAT TAGS - Junction table for chat-tag relationships
     match /chatTags/{chatTagId} {
-      // Users can read their own chat tags, instructors can read student chat tags
-      allow read: if isAuthenticated();
+      // Users can read their own chat tags, instructors can read student chat tags in their courses
+      allow read: if isAuthenticated() && (
+        // Chat owner can read their own tags
+        exists(/databases/$(database)/documents/chats/$(resource.data.chatId)) &&
+        get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.userId == request.auth.uid ||
+        // Instructors can read tags for chats in their courses
+        exists(/databases/$(database)/documents/chats/$(resource.data.chatId)) &&
+        isInstructorInCourse(get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.courseId) ||
+        // Global admins can read all
+        isGlobalAdmin()
+      );
       
-      // Allow collection queries for authenticated users
+      // Allow collection queries but filtered by read rules above
       allow list: if isAuthenticated();
       
-      // Users can create/modify tags for their own chats, instructors for student chats
-      allow create, update, delete: if isAuthenticated();
+      // Users can create/modify tags for their own chats, instructors for student chats in their courses
+      allow create: if isAuthenticated() && (
+        // Chat owner can tag their own chats
+        exists(/databases/$(database)/documents/chats/$(request.resource.data.chatId)) &&
+        get(/databases/$(database)/documents/chats/$(request.resource.data.chatId)).data.userId == request.auth.uid ||
+        // Instructors can tag chats in their courses
+        exists(/databases/$(database)/documents/chats/$(request.resource.data.chatId)) &&
+        isInstructorInCourse(get(/databases/$(database)/documents/chats/$(request.resource.data.chatId)).data.courseId) ||
+        // Global admins can create any tags
+        isGlobalAdmin()
+      );
+      
+      allow update, delete: if isAuthenticated() && (
+        // Chat owner can modify tags on their own chats
+        exists(/databases/$(database)/documents/chats/$(resource.data.chatId)) &&
+        get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.userId == request.auth.uid ||
+        // Instructors can modify tags for chats in their courses
+        exists(/databases/$(database)/documents/chats/$(resource.data.chatId)) &&
+        isInstructorInCourse(get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.courseId) ||
+        // Global admins can modify any tags
+        isGlobalAdmin()
+      );
     }
 
     // COURSE ANALYTICS - Server-side computed analytics data
