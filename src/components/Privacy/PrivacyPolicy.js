@@ -1,11 +1,77 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheckIcon, LockClosedIcon, DocumentTextIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../../contexts/AuthContext';
+import { ShieldCheckIcon, LockClosedIcon, DocumentTextIcon, ExclamationTriangleIcon, HomeIcon, Bars3Icon, XMarkIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 export default function PrivacyPolicy() {
+  const { currentUser } = useAuth();
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Navigation Header */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Link to={currentUser ? "/dashboard" : "/"} className="flex items-center">
+                  <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <ChartBarIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="ml-3 text-lg font-bold text-gray-900">AI Engagement Hub</span>
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              {currentUser ? (
+                // Logged-in user navigation
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200"
+                >
+                  <HomeIcon className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Link>
+              ) : (
+                // Anonymous user navigation
+                <>
+                  <Link
+                    to="/faq"
+                    className="text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    FAQ
+                  </Link>
+                  <Link
+                    to="/pricing"
+                    className="text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    Pricing
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/join"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Join Course
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Privacy Page Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center space-x-3">
@@ -237,6 +303,121 @@ export default function PrivacyPolicy() {
               <ExclamationTriangleIcon className="h-5 w-5 text-blue-600 mt-0.5" />
               <p><strong>Transparency:</strong> We've selected providers with clear, educator-friendly privacy policies and opt-out capabilities.</p>
             </div>
+          </div>
+        </div>
+
+        {/* Firebase Security Section */}
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6 mt-8">
+          <h2 className="text-xl font-semibold text-indigo-900 mb-4">
+            Firebase Security Infrastructure
+          </h2>
+          <div className="space-y-4 text-indigo-800">
+            <p>
+              <strong>AI Engagement Hub is built on Google Firebase</strong>, providing enterprise-grade security and reliability for educational institutions.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <ShieldCheckIcon className="h-5 w-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold">End-to-End Encryption</p>
+                  <p className="text-sm">All data is encrypted in transit using TLS 1.3 and at rest using AES-256 encryption.</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <LockClosedIcon className="h-5 w-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Authentication & Access Control</p>
+                  <p className="text-sm">Firebase Auth provides secure, token-based authentication with role-based access control (student, instructor, admin).</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <DocumentTextIcon className="h-5 w-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Data Isolation</p>
+                  <p className="text-sm">Firestore security rules ensure complete data isolation between courses. Students can only access data from their enrolled courses.</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <ExclamationTriangleIcon className="h-5 w-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Compliance & Certifications</p>
+                  <p className="text-sm">Firebase is SOC 1/2/3, ISO 27001/27017/27018 certified, GDPR compliant, and FERPA compliant for educational data protection.</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <ShieldCheckIcon className="h-5 w-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Firestore Security Rules</p>
+                  <p className="text-sm">Granular database-level access controls ensure course isolation, role-based permissions, and prevent unauthorized data access at the server level.</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <LockClosedIcon className="h-5 w-5 text-indigo-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Data Residency & Infrastructure</p>
+                  <p className="text-sm">Data hosted on Google Cloud Platform with redundant backup systems, 99.95% uptime SLA, and configurable data residency options for compliance.</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm mt-4">
+              Learn more about Firebase security: <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 underline">Firebase Privacy & Security</a>
+            </p>
+          </div>
+        </div>
+
+        {/* Technical Security Details for IT Review */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+          <h2 className="text-xl font-semibold text-blue-900 mb-4">
+            Technical Security Implementation
+          </h2>
+          <div className="text-blue-800 space-y-4">
+            <p className="font-medium">For IT administrators and security teams:</p>
+            
+            <div className="bg-white border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-900 mb-2">Access Control Architecture</h3>
+              <ul className="text-sm space-y-1 list-disc list-inside">
+                <li><strong>Database-Level Security:</strong> Firestore security rules enforce permissions at the server level before any data query execution</li>
+                <li><strong>Course Isolation:</strong> Users can only access data from courses where they have approved membership</li>
+                <li><strong>Role-Based Permissions:</strong> Students see only their own content + course materials; Instructors see all course content; Admins have system-wide access</li>
+                <li><strong>Session Management:</strong> JWT tokens with configurable expiration, automatic refresh, and secure logout</li>
+              </ul>
+            </div>
+
+            <div className="bg-white border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-900 mb-2">Data Protection & Compliance</h3>
+              <ul className="text-sm space-y-1 list-disc list-inside">
+                <li><strong>FERPA Alignment:</strong> Student AI interactions are treated as educational records with appropriate access controls</li>
+                <li><strong>Data Minimization:</strong> Only necessary data is collected (name, email, AI interactions, course enrollment)</li>
+                <li><strong>Retention Controls:</strong> Data lifecycle management with configurable retention periods</li>
+                <li><strong>Audit Logging:</strong> All data access and modifications are logged for compliance review</li>
+                <li><strong>No Third-Party Analytics:</strong> No external tracking or analytics beyond Firebase's built-in security monitoring</li>
+              </ul>
+            </div>
+
+            <div className="bg-white border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-900 mb-2">Infrastructure & Availability</h3>
+              <ul className="text-sm space-y-1 list-disc list-inside">
+                <li><strong>Google Cloud Infrastructure:</strong> Multi-region redundancy with 99.95% uptime SLA</li>
+                <li><strong>DDoS Protection:</strong> Built-in protection against distributed denial of service attacks</li>
+                <li><strong>Backup & Recovery:</strong> Automated daily backups with point-in-time recovery capabilities</li>
+                <li><strong>Network Security:</strong> All connections use TLS 1.3, HSTS headers, and secure cookie policies</li>
+                <li><strong>Vulnerability Management:</strong> Automated security scanning and patching through Firebase platform</li>
+              </ul>
+            </div>
+
+            <div className="bg-white border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-900 mb-2">Data Processing & AI Integration</h3>
+              <ul className="text-sm space-y-1 list-disc list-inside">
+                <li><strong>AI Provider Security:</strong> Encrypted API calls to OpenAI, Anthropic, Google, and Perplexity with no data retention by providers</li>
+                <li><strong>Local Processing:</strong> PDF text extraction and data processing occurs client-side when possible</li>
+                <li><strong>No AI Training:</strong> Student data is never used to train AI models or shared with AI providers beyond query processing</li>
+                <li><strong>Content Filtering:</strong> AI responses are monitored for inappropriate content and can be flagged for instructor review</li>
+              </ul>
+            </div>
+
+            <p className="text-sm italic">
+              For detailed security assessments or compliance documentation, please contact the development team for additional technical specifications and certifications.
+            </p>
           </div>
         </div>
 

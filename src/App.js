@@ -17,6 +17,8 @@ import CourseJoin from './components/Course/CourseJoin';
 import CourseDashboard from './components/Course/CourseDashboard';
 import Layout from './components/Layout/Layout';
 import PrivacyPolicy from './components/Privacy/PrivacyPolicy';
+import Pricing from './components/Pricing/Pricing';
+import FAQ from './components/FAQ/FAQ';
 import SettingsPage from './components/Settings/SettingsPage';
 import Help from './components/Help/Help';
 import TestDirectQuery from './components/TestDirectQuery';
@@ -61,6 +63,8 @@ function App() {
             <Route index element={<Help />} />
           </Route>
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/test-direct" element={<TestDirectQuery />} />
           </Routes>
         </div>

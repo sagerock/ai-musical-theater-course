@@ -107,17 +107,35 @@ export default function PublicHomePage() {
             </div>
             <div className="flex items-center space-x-4">
               <Link
+                to="/faq"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                FAQ
+              </Link>
+              <Link
+                to="/privacy"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Privacy
+              </Link>
+              <Link
+                to="/pricing"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Pricing
+              </Link>
+              <Link
                 to="/login"
                 className="text-gray-600 hover:text-gray-900 font-medium"
               >
                 Sign In
               </Link>
-              <button
-                onClick={() => setShowInfoModal(true)}
+              <Link
+                to="/join"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
               >
-                Get Info
-              </button>
+                Join Course
+              </Link>
             </div>
           </div>
         </div>
@@ -255,6 +273,9 @@ export default function PublicHomePage() {
             <div className="flex space-x-6">
               <Link to="/login" className="text-gray-600 hover:text-gray-900">
                 Sign In
+              </Link>
+              <Link to="/pricing" className="text-gray-600 hover:text-gray-900">
+                Pricing
               </Link>
               <button
                 onClick={() => setShowInfoModal(true)}
