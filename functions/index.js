@@ -663,7 +663,7 @@ exports.sendCourseJoinNotifications = onCall({
       })
     };
 
-    // Send emails directly via SendGrid API (no external HTTP call needed)
+    // Send emails using SendGrid SDK
     logger.info('📧 Email data prepared:', emailData);
     logger.info('📧 Will send to instructors:', instructorEmails);
     logger.info('📧 Will send to admins:', adminEmails);
@@ -672,7 +672,7 @@ exports.sendCourseJoinNotifications = onCall({
     let emailsFailed = 0;
     
     try {
-      const axios = require('axios');
+      const sgMail = require('@sendgrid/mail');
       
       // Get SendGrid configuration from environment
       const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
@@ -682,7 +682,9 @@ exports.sendCourseJoinNotifications = onCall({
         throw new Error('SendGrid API key not configured in Cloud Function environment');
       }
       
-      logger.info('📧 Using SendGrid directly from Cloud Function');
+      // Initialize SendGrid with API key
+      sgMail.setApiKey(SENDGRID_API_KEY);
+      logger.info('📧 Using SendGrid SDK from Cloud Function');
       
       // Send emails to instructors
       for (const instructor of instructorEmails) {
@@ -736,43 +738,21 @@ Best regards,
 AI Engagement Hub
           `;
           
-          // Send email directly via SendGrid API
-          const emailData = {
-            personalizations: [
-              {
-                to: [{ email: instructor.email }],
-                subject: subject
-              }
-            ],
-            from: { email: SENDGRID_FROM_EMAIL, name: 'AI Engagement Hub' },
-            content: [
-              {
-                type: 'text/plain',
-                value: textContent
-              },
-              {
-                type: 'text/html',
-                value: htmlContent
-              }
-            ]
+          // Send email using SendGrid SDK
+          const emailMessage = {
+            to: instructor.email,
+            from: {
+              email: SENDGRID_FROM_EMAIL,
+              name: 'AI Engagement Hub'
+            },
+            subject: subject,
+            text: textContent,
+            html: htmlContent
           };
           
-          const response = await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
-            headers: {
-              'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 10000
-          });
-          
-          // SendGrid returns 202 status code for successful email queuing
-          if (response.status === 202) {
-            emailsSent++;
-            logger.info('✅ Email sent to instructor:', instructor.email);
-          } else {
-            emailsFailed++;
-            logger.warn('❌ Email failed to instructor:', instructor.email, response.status, response.data);
-          }
+          await sgMail.send(emailMessage);
+          emailsSent++;
+          logger.info('✅ Email sent to instructor:', instructor.email);
         } catch (emailError) {
           emailsFailed++;
           logger.error('❌ Error sending email to instructor:', instructor.email, emailError.message);
@@ -831,43 +811,21 @@ Best regards,
 AI Engagement Hub
           `;
           
-          // Send email directly via SendGrid API
-          const emailData = {
-            personalizations: [
-              {
-                to: [{ email: admin.email }],
-                subject: subject
-              }
-            ],
-            from: { email: SENDGRID_FROM_EMAIL, name: 'AI Engagement Hub' },
-            content: [
-              {
-                type: 'text/plain',
-                value: textContent
-              },
-              {
-                type: 'text/html',
-                value: htmlContent
-              }
-            ]
+          // Send email using SendGrid SDK
+          const emailMessage = {
+            to: admin.email,
+            from: {
+              email: SENDGRID_FROM_EMAIL,
+              name: 'AI Engagement Hub'
+            },
+            subject: subject,
+            text: textContent,
+            html: htmlContent
           };
           
-          const response = await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
-            headers: {
-              'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 10000
-          });
-          
-          // SendGrid returns 202 status code for successful email queuing
-          if (response.status === 202) {
-            emailsSent++;
-            logger.info('✅ Email sent to admin:', admin.email);
-          } else {
-            emailsFailed++;
-            logger.warn('❌ Email failed to admin:', admin.email, response.status, response.data);
-          }
+          await sgMail.send(emailMessage);
+          emailsSent++;
+          logger.info('✅ Email sent to admin:', admin.email);
         } catch (emailError) {
           emailsFailed++;
           logger.error('❌ Error sending email to admin:', admin.email, emailError.message);
