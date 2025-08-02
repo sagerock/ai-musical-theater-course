@@ -115,8 +115,14 @@ service cloud.firestore {
         isGlobalAdmin()
       );
       
-      // Instructors can approve/deny memberships, admins can do anything
-      allow update, delete: if isInstructorInCourse(resource.data.courseId) || isGlobalAdmin();
+      // Instructors can approve/deny memberships, admins can do anything, 
+      // and users can update their own rejected memberships back to pending for re-requests
+      allow update, delete: if isInstructorInCourse(resource.data.courseId) || 
+                               isGlobalAdmin() || 
+                               (membershipId.matches(request.auth.uid + '_.*') &&
+                                resource.data.userId == request.auth.uid &&
+                                resource.data.status == 'rejected' &&
+                                request.resource.data.status == 'pending');
     }
 
     // PROJECTS COLLECTION - Owner or instructor access
