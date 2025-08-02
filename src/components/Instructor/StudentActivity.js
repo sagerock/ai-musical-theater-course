@@ -46,14 +46,24 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     if (!toolName) return 'Unknown Tool';
     
     const toolMap = {
+      // OpenAI Models (new)
+      'gpt-4.1-mini': 'GPT-4.1 Mini',
+      'gpt-4.1': 'GPT-4.1',
+      // OpenAI Models (legacy - for backward compatibility)
       'gpt-4o-2024-08-06': 'GPT-4o',
       'gpt-4o': 'GPT-4o',
+      // Anthropic Models
       'claude-sonnet-4-20250514': 'Claude Sonnet 4',
       'claude-sonnet-4': 'Claude Sonnet 4',
+      // Google Models
       'gemini-1.5-flash': 'Gemini Flash',
       'gemini-flash': 'Gemini Flash',
+      // Perplexity Models
       'sonar-pro': 'Sonar Pro',
+      // Display name mappings
       'Claude Sonnet 4': 'Claude Sonnet 4',
+      'GPT-4.1 Mini': 'GPT-4.1 Mini',
+      'GPT-4.1': 'GPT-4.1',
       'GPT-4o': 'GPT-4o',
       'Gemini Flash': 'Gemini Flash',
       'Sonar Pro': 'Sonar Pro'
@@ -71,14 +81,21 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       // Set available AI tools from system configuration
       // Use actual database values that might exist in chats
       const allConfiguredTools = [
-        'gpt-4o-2024-08-06',
+        // Current models
+        'gpt-4.1-mini',
+        'gpt-4.1',
         'claude-sonnet-4-20250514', 
         'gemini-1.5-flash',
         'sonar-pro',
-        'Claude Sonnet 4', // Legacy format that might exist in database
-        'GPT-4o',          // Legacy format that might exist in database
-        'Gemini Flash',    // Legacy format that might exist in database
-        'Sonar Pro'        // Legacy format that might exist in database
+        // Display name formats
+        'GPT-4.1 Mini',    // Display format
+        'GPT-4.1',         // Display format
+        'Claude Sonnet 4', // Display format
+        'Gemini Flash',    // Display format
+        'Sonar Pro',       // Display format
+        // Legacy formats (for backward compatibility)
+        'gpt-4o-2024-08-06',
+        'GPT-4o'           // Legacy format that might exist in database
       ];
       
       // Remove duplicates based on display name but keep one representative value

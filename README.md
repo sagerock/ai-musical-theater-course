@@ -41,7 +41,7 @@ A powerful analytics platform that helps educators understand how students inter
 - **Real-time Database**: Firebase Firestore
 - **Analytics Database**: Supabase (PostgreSQL)
 - **AI Integration**: OpenAI API, Anthropic Claude API, Google Gemini API, Perplexity API
-- **Supported Models**: 4 streamlined models - GPT-4o, Claude Sonnet 4, Gemini Flash, Sonar Pro
+- **Supported Models**: 5 streamlined models - GPT-4.1 Mini, GPT-4.1, Claude Sonnet 4, Gemini Flash, Sonar Pro
 - **File Processing**: PDF.js for document text extraction with intelligent large file handling
 - **Hosting**: Vercel (frontend), Supabase Cloud, Firebase
 - **Icons**: Heroicons

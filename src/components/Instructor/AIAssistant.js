@@ -181,7 +181,7 @@ Please analyze this REAL data to provide specific, actionable insights about stu
 
       const response = await aiApi.sendChatCompletion(
         `${courseContext}\n\nInstructor Question: ${inputMessage}`,
-        'GPT-4o' // Using GPT-4o as the default model for instructor assistance
+        'GPT-4.1 Mini' // Using GPT-4.1 Mini as the default model for instructor assistance (83% cheaper)
       );
 
       console.log('AI Response received:', response);

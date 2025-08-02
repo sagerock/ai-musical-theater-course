@@ -36,7 +36,7 @@ const getProviderFromModel = (tool) => {
 // Unified AI API service
 export const aiApi = {
   // Send chat completion request (automatically routes to correct provider)
-  async sendChatCompletion(prompt, tool = 'GPT-4o', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'GPT-4.1 Mini', conversationHistory = []) {
     const provider = getProviderFromModel(tool);
     
     try {

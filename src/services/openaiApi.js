@@ -6,10 +6,11 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true // Note: In production, API calls should go through your backend
 });
 
-// Available AI tools/models - Streamlined selection
+// Available AI tools/models - Streamlined selection  
 export const AI_TOOLS = {
-  // OpenAI Model
-  'GPT-4o': 'gpt-4o-2024-08-06',
+  // OpenAI Models (default is GPT-4.1 Mini for 83% cost savings)
+  'GPT-4.1 Mini': 'gpt-4.1-mini',
+  'GPT-4.1': 'gpt-4.1',
   // Anthropic Model
   'Claude Sonnet 4': 'claude-sonnet-4-20250514',
   // Google Model
@@ -20,9 +21,9 @@ export const AI_TOOLS = {
 
 export const openaiApi = {
   // Send chat completion request
-  async sendChatCompletion(prompt, tool = 'GPT-4o', conversationHistory = [], systemPrompt = null) {
+  async sendChatCompletion(prompt, tool = 'GPT-4.1 Mini', conversationHistory = [], systemPrompt = null) {
     try {
-      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-4o'];
+      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-4.1 Mini'];
       
       // Use provided system prompt or fallback to default
       const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';

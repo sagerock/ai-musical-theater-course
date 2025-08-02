@@ -26,7 +26,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'What is AI Engagement Hub?',
-          answer: 'AI Engagement Hub is an educational analytics platform that helps educators understand how students interact with AI in real time. It provides visibility into prompt activity, model selection, and engagement patterns across leading AI tools including GPT-4o, Claude, Gemini, and Perplexity.'
+          answer: 'AI Engagement Hub is an educational analytics platform that helps educators understand how students interact with AI in real time. It provides visibility into prompt activity, model selection, and engagement patterns across leading AI tools including GPT-4.1, Claude, Gemini, and Perplexity.'
         },
         {
           question: 'Who is this platform designed for?',
@@ -44,7 +44,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'What AI models are available?',
-          answer: 'We offer 4 powerful AI models: GPT-4o (OpenAI) for general-purpose tasks, Claude Sonnet 4 (Anthropic) for nuanced reasoning, Gemini Flash (Google) for fast responses, and Sonar Pro (Perplexity) for research with real-time web access.'
+          answer: 'We offer 5 powerful AI models: GPT-4.1 Mini (cost-effective) and GPT-4.1 (premium) from OpenAI for general-purpose tasks, Claude Sonnet 4 (Anthropic) for nuanced reasoning, Gemini Flash (Google) for fast responses, and Sonar Pro (Perplexity) for research with real-time web access.'
         },
         {
           question: 'Can students upload documents?',

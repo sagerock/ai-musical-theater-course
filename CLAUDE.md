@@ -16,10 +16,11 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 
 ## AI Models Configuration
 
-### Supported Models (4 streamlined models across 4 providers)
+### Supported Models (5 streamlined models across 4 providers)
 
 #### OpenAI Models
-- GPT-4o: `gpt-4o-2024-08-06` (default model)
+- GPT-4.1 Mini: `gpt-4.1-mini` (default model - 83% cheaper than GPT-4o)
+- GPT-4.1: `gpt-4.1` (premium model - superior coding performance)
 
 #### Anthropic Models
 - Claude Sonnet 4: `claude-sonnet-4-20250514`
