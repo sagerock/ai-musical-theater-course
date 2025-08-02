@@ -115,13 +115,12 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
         // Get student's projects in this course
         const projects = await projectApi.getUserProjects(student.id, selectedCourseId);
         
-        // Calculate completion rate (projects with reflections / total projects)
-        const projectsWithReflections = projects.filter(project => 
-          project.reflections && project.reflections.length > 0
-        );
-        const completionRate = projects.length > 0 
-          ? Math.round((projectsWithReflections.length / projects.length) * 100)
-          : 0;
+        // Calculate number of reflections across all chats
+        const totalReflections = chats.filter(chat => chat.has_reflection).length;
+        
+        // Calculate unique AI models used
+        const uniqueModels = [...new Set(chats.map(chat => chat.tool_used || chat.toolUsed).filter(Boolean))];
+        const modelsUsed = uniqueModels.length;
         
         // Find most recent activity
         const lastActivity = chats.length > 0 
@@ -131,7 +130,8 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
         stats[student.id] = {
           interactions: chats.length,
           lastActivity,
-          completionRate,
+          reflections: totalReflections,
+          modelsUsed: modelsUsed,
           projects: projects.length
         };
       }
@@ -236,7 +236,8 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
     return {
       interactions: 0,
       lastActivity: new Date(student.created_at),
-      completionRate: 0,
+      reflections: 0,
+      modelsUsed: 0,
       projects: 0
     };
   };
@@ -519,12 +520,18 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                     
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center space-x-1 text-gray-600">
-                        <CheckCircleIcon className="h-4 w-4" />
-                        <span>Completion Rate</span>
+                        <AcademicCapIcon className="h-4 w-4" />
+                        <span>Reflections</span>
                       </div>
-                      <span className={`font-medium ${stats.completionRate >= 70 ? 'text-green-600' : stats.completionRate >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {stats.completionRate}%
-                      </span>
+                      <span className="font-medium text-gray-900">{stats.reflections}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-1 text-gray-600">
+                        <UsersIcon className="h-4 w-4" />
+                        <span>AI Models Used</span>
+                      </div>
+                      <span className="font-medium text-gray-900">{stats.modelsUsed}/7</span>
                     </div>
                   </div>
 
