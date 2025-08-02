@@ -42,6 +42,18 @@ export const MODEL_PRICING = {
     provider: 'Anthropic',
     displayName: 'Claude Sonnet 4'
   },
+  'claude-4-opus-20250514': {
+    input: 15.00,
+    output: 75.00,
+    provider: 'Anthropic',
+    displayName: 'Claude Opus 4'
+  },
+  'claude-opus-4': {
+    input: 15.00,
+    output: 75.00,
+    provider: 'Anthropic',
+    displayName: 'Claude Opus 4'
+  },
   // Google Models
   'gemini-1.5-flash': {
     input: 0.15,
@@ -71,6 +83,7 @@ export const DISPLAY_NAME_MAPPING = {
   'GPT-4.1': 'gpt-4.1',
   'GPT-4o': 'gpt-4o',
   'Claude Sonnet 4': 'claude-sonnet-4-20250514',
+  'Claude Opus 4': 'claude-4-opus-20250514',
   'Gemini Flash': 'gemini-1.5-flash',
   'Sonar Pro': 'sonar-pro'
 };

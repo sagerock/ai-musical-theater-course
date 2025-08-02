@@ -8,7 +8,8 @@ const anthropic = new Anthropic({
 
 // Available Anthropic models - Streamlined selection
 export const ANTHROPIC_MODELS = {
-  'Claude Sonnet 4': 'claude-sonnet-4-20250514'
+  'Claude Sonnet 4': 'claude-sonnet-4-20250514',
+  'Claude Opus 4': 'claude-4-opus-20250514'
 };
 
 export const anthropicApi = {

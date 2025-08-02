@@ -11,8 +11,9 @@ export const AI_TOOLS = {
   // OpenAI Models (default is GPT-4.1 Mini for 83% cost savings)
   'GPT-4.1 Mini': 'gpt-4.1-mini',
   'GPT-4.1': 'gpt-4.1',
-  // Anthropic Model
+  // Anthropic Models
   'Claude Sonnet 4': 'claude-sonnet-4-20250514',
+  'Claude Opus 4': 'claude-4-opus-20250514',
   // Google Model
   'Gemini Flash': 'gemini-1.5-flash',
   // Perplexity Model

@@ -16,14 +16,15 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 
 ## AI Models Configuration
 
-### Supported Models (5 streamlined models across 4 providers)
+### Supported Models (6 streamlined models across 4 providers)
 
 #### OpenAI Models
 - GPT-4.1 Mini: `gpt-4.1-mini` (default model - 83% cheaper than GPT-4o)
 - GPT-4.1: `gpt-4.1` (premium model - superior coding performance)
 
 #### Anthropic Models
-- Claude Sonnet 4: `claude-sonnet-4-20250514`
+- Claude Sonnet 4: `claude-sonnet-4-20250514` (standard model - balanced performance and cost)
+- Claude Opus 4: `claude-4-opus-20250514` (research model - superior research and writing capabilities)
 
 #### Google Models
 - Gemini Flash: `gemini-1.5-flash`
@@ -80,13 +81,20 @@ npm run test        # Run tests (if configured)
 - Session persistence across page reloads
 
 ### Educational Features
-- **AI Chat Interface** with 4 different AI models
+- **AI Chat Interface** with 6 different AI models including research-grade Claude Opus 4
+- **Smart Model Selection** with cost warnings and research mode indicators
 - **Project Management** for organizing student work
 - **Course System** with enrollment and approval workflows
 - **Instructor Dashboard** for monitoring student AI interactions
 - **PDF Upload** capability for document analysis
 - **Tag System** for categorizing AI interactions (instructor-controlled)
 - **Help & Support** system with comprehensive FAQ
+
+### Research Capabilities
+- **Claude Opus 4 Research Mode** for superior research and writing tasks
+- **Automatic cost warnings** when using premium research models
+- **Hybrid model selection** allowing students to choose appropriate tools for their tasks
+- **Usage analytics** tracking model costs and effectiveness
 
 ### Data Security
 - **Firebase Security Rules** for data protection
@@ -200,6 +208,31 @@ courseAnalytics/{courseId}
 ├── recentActivity: [ last 20 interactions ]
 └── lastUpdated: timestamp, stale: boolean
 ```
+
+## Recent Updates
+
+### Claude Opus 4 Research Mode Integration (August 2025) ✅ COMPLETED
+**Status:** Successfully implemented premium research capabilities
+
+**New Features:**
+- ✅ **Claude Opus 4 Support** - Added world-class research model for advanced tasks
+- ✅ **Smart Model Selection** - Enhanced UI with pricing indicators and cost warnings  
+- ✅ **Research Mode Indicators** - Visual warnings when using premium models
+- ✅ **Cost Transparency** - Display token costs directly in model selection
+- ✅ **Usage Analytics Integration** - Track Opus 4 usage and costs separately
+
+**Benefits:**
+- 🔬 **Superior Research Quality** - Students get access to best-in-class research and writing capabilities
+- 💰 **Cost Awareness** - Clear pricing information helps students make informed choices
+- ⚖️ **Balanced Usage** - Hybrid approach with both standard and premium options
+- 📊 **Analytics Ready** - Full cost tracking and usage monitoring
+
+**Files Modified:**
+- `src/utils/costCalculator.js` - Added Opus 4 pricing ($15/$75 per million tokens)
+- `src/services/openaiApi.js` - Added to central AI_TOOLS configuration
+- `src/services/anthropicApi.js` - Added Opus 4 model support
+- `src/components/Chat/Chat.js` - Enhanced UI with cost warnings and model selection
+- `CLAUDE.md` - Updated documentation with new capabilities
 
 ## Next Development Priorities
 

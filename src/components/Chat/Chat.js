@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi, attachmentApi, courseApi } from '../../services/firebaseApi';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
+import { MODEL_PRICING, formatCurrency } from '../../utils/costCalculator';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -57,6 +58,27 @@ export default function Chat() {
     userRole,
     canSendAIMessages
   });
+
+  // Helper function to get model pricing info
+  const getModelPricing = (modelName) => {
+    const modelId = AI_TOOLS[modelName];
+    const pricing = MODEL_PRICING[modelId];
+    if (pricing) {
+      return {
+        input: pricing.input,
+        output: pricing.output,
+        displayName: pricing.displayName,
+        isExpensive: pricing.input >= 10 || pricing.output >= 50 // Flag expensive models
+      };
+    }
+    return null;
+  };
+
+  // Check if selected model is expensive
+  const isExpensiveModel = () => {
+    const pricing = getModelPricing(selectedTool);
+    return pricing?.isExpensive || false;
+  };
 
   useEffect(() => {
     loadProjectAndChats();
@@ -435,18 +457,55 @@ export default function Chat() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <select
-              value={selectedTool}
-              onChange={(e) => setSelectedTool(e.target.value)}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:ring-primary-500 focus:border-primary-500"
-            >
-              {Object.keys(AI_TOOLS).map(tool => (
-                <option key={tool} value={tool}>{tool}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedTool}
+                onChange={(e) => setSelectedTool(e.target.value)}
+                className={`text-sm border rounded-md px-3 py-1 focus:ring-primary-500 focus:border-primary-500 ${
+                  isExpensiveModel() 
+                    ? 'border-orange-300 bg-orange-50' 
+                    : 'border-gray-300 bg-white'
+                }`}
+              >
+                {Object.keys(AI_TOOLS).map(tool => {
+                  const pricing = getModelPricing(tool);
+                  const priceInfo = pricing ? ` ($${pricing.input}/$${pricing.output})` : '';
+                  return (
+                    <option key={tool} value={tool}>
+                      {tool}{priceInfo}
+                    </option>
+                  );
+                })}
+              </select>
+              {isExpensiveModel() && (
+                <div className="absolute -bottom-6 left-0 text-xs text-orange-600 whitespace-nowrap">
+                  ⚠️ Research Model - Higher cost
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Cost Warning Banner for Expensive Models */}
+      {isExpensiveModel() && (
+        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mx-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <ExclamationTriangleIcon className="h-5 w-5 text-orange-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-orange-700">
+                <strong>Research Mode Active:</strong> You've selected {selectedTool}, which provides superior research and writing capabilities 
+                but costs 5x more than standard models. Use for complex research tasks and high-quality writing.
+              </p>
+              <div className="mt-1 text-xs text-orange-600">
+                Cost: {formatCurrency(getModelPricing(selectedTool)?.input / 1000)}/{formatCurrency(getModelPricing(selectedTool)?.output / 1000)} per 1K tokens
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
