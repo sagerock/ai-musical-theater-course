@@ -34,11 +34,23 @@ export const analyticsApi = {
       snapshot.forEach(doc => {
         const chat = doc.data();
         
+        // Debug: Log the first few chat documents to understand the data structure
+        if (usageData.length < 3) {
+          console.log('🔍 Sample chat document:', {
+            id: doc.id,
+            toolUsed: chat.toolUsed,
+            model: chat.model,
+            tool: chat.tool,
+            aiTool: chat.aiTool,
+            availableFields: Object.keys(chat)
+          });
+        }
+        
         // Extract usage information
         const usageRecord = {
           id: doc.id,
           date: chat.createdAt?.toDate ? chat.createdAt.toDate() : new Date(chat.createdAt),
-          model: chat.toolUsed || chat.model || 'unknown',
+          model: chat.toolUsed || chat.model || chat.tool || chat.aiTool || 'unknown',
           // Extract token usage from various possible locations
           inputTokens: this.extractTokenUsage(chat, 'input'),
           outputTokens: this.extractTokenUsage(chat, 'output'),
@@ -115,9 +127,13 @@ export const analyticsApi = {
 
     // Fallback: estimate based on text length (rough approximation)
     if (type === 'input' && chat.prompt) {
-      return Math.ceil(chat.prompt.length / 4); // ~4 chars per token
+      const estimated = Math.ceil(chat.prompt.length / 4); // ~4 chars per token
+      console.log(`📏 Estimated ${type} tokens from text length:`, estimated, 'for prompt:', chat.prompt.substring(0, 50) + '...');
+      return estimated;
     } else if (type === 'output' && chat.response) {
-      return Math.ceil(chat.response.length / 4); // ~4 chars per token
+      const estimated = Math.ceil(chat.response.length / 4); // ~4 chars per token
+      console.log(`📏 Estimated ${type} tokens from text length:`, estimated, 'for response:', chat.response.substring(0, 50) + '...');
+      return estimated;
     }
 
     return 0;
