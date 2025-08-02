@@ -23,14 +23,24 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const [tags, setTags] = useState([]);
   const [availableTools, setAvailableTools] = useState([]);
   
-  // Filter states
+  // Filter states with default date range (last 30 days for performance)
+  const getDefaultDateRange = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    };
+  };
+
   const [filters, setFilters] = useState({
     userId: '',
     projectId: '',
     toolUsed: '',
     tagId: '',
-    startDate: '',
-    endDate: '',
+    ...getDefaultDateRange(), // Default to last 30 days
     hasReflection: ''
   });
   
@@ -40,6 +50,12 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const [showFilters, setShowFilters] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalChats, setTotalChats] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const CHATS_PER_PAGE = 50; // Reasonable page size
 
   // Helper function to display user-friendly AI tool names
   const getToolDisplayName = useCallback((toolName) => {
@@ -138,14 +154,14 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     }
   }, [selectedCourseId, getToolDisplayName]);
 
-  // Load all chats without filters to populate user, project, and tag dropdowns
-  const loadAllChatsForFilters = useCallback(async () => {
+  // Load recent chats to populate filter dropdowns (optimized - only last 200 for metadata)
+  const loadFilterMetadata = useCallback(async () => {
     try {
-      console.log('👥📁🏷️ Loading all chats to extract users, projects, and tags for filter dropdowns');
+      console.log('👥📁🏷️ Loading recent chats to extract filter metadata');
       
-      const allChats = await chatApi.getChatsWithFilters({
-        courseId: selectedCourseId
-        // No filters to get all chats
+      const recentChats = await chatApi.getChatsWithFilters({
+        courseId: selectedCourseId,
+        limit: 200 // Only load recent chats for metadata extraction
       });
       
       // Extract unique users from all chats
@@ -160,7 +176,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       const uniqueTags = [];
       const seenTagIds = new Set();
       
-      allChats.forEach(chat => {
+      recentChats.forEach(chat => {
         // Extract users
         if (chat.users && chat.userId && !seenUserIds.has(chat.userId)) {
           seenUserIds.add(chat.userId);
@@ -196,9 +212,9 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
         }
       });
       
-      console.log('👥 Extracted unique users from chats:', uniqueUsers.length);
-      console.log('📁 Extracted unique projects from chats:', uniqueProjects.length);
-      console.log('🏷️ Extracted unique tags from chats:', uniqueTags.length);
+      console.log('👥 Extracted unique users from recent chats:', uniqueUsers.length);
+      console.log('📁 Extracted unique projects from recent chats:', uniqueProjects.length);
+      console.log('🏷️ Extracted unique tags from recent chats:', uniqueTags.length);
       
       setUsers(uniqueUsers.sort((a, b) => a.name.localeCompare(b.name)));
       setProjects(uniqueProjects.sort((a, b) => a.title.localeCompare(b.title)));
@@ -212,10 +228,11 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     }
   }, [selectedCourseId]);
 
-  const loadChatsWithFilters = useCallback(async () => {
+  // Load paginated chats with current filters
+  const loadPaginatedChats = useCallback(async (page = 1, resetData = true) => {
     try {
       setFiltersLoading(true);
-      console.log('📊 Loading chats with filters:', filters);
+      console.log(`📊 Loading page ${page} of chats with filters:`, filters);
       
       const chatsData = await chatApi.getChatsWithFilters({
         courseId: selectedCourseId,
@@ -223,28 +240,43 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
         projectId: filters.projectId || undefined,
         toolUsed: filters.toolUsed || undefined,
         startDate: filters.startDate || undefined,
-        endDate: filters.endDate || undefined
+        endDate: filters.endDate || undefined,
+        limit: CHATS_PER_PAGE + 1 // Load one extra to check if there's a next page
       });
       
-      console.log('📊 Loaded chats:', chatsData.length);
+      // Check if there's a next page
+      const hasMore = chatsData.length > CHATS_PER_PAGE;
+      const pageData = hasMore ? chatsData.slice(0, CHATS_PER_PAGE) : chatsData;
       
-      // Debug: Show what tool values are actually in the database
-      if (filters.toolUsed) {
-        console.log('🔍 Debug: Looking for tool:', filters.toolUsed);
-        console.log('🔍 Debug: Actual tool values in results:', chatsData.map(chat => chat.tool_used));
-        console.log('🔍 Debug: Unique tool values:', [...new Set(chatsData.map(chat => chat.tool_used))]);
+      setHasNextPage(hasMore);
+      setCurrentPage(page);
+      
+      if (resetData) {
+        setChats(pageData);
+        setTotalChats(pageData.length + (hasMore ? 1 : 0)); // Approximate total
+      } else {
+        // Append for "load more" functionality
+        setChats(prev => [...prev, ...pageData]);
+        setTotalChats(prev => prev + pageData.length);
       }
       
-      setChats(chatsData);
+      console.log(`📊 Loaded page ${page}: ${pageData.length} chats, hasNextPage: ${hasMore}`);
       
     } catch (error) {
-      console.error('Error loading chats:', error);
+      console.error('Error loading paginated chats:', error);
       toast.error('Failed to load chat data');
       setChats([]);
     } finally {
       setFiltersLoading(false);
     }
   }, [selectedCourseId, filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate]);
+
+  // Load more chats (for pagination)
+  const loadMoreChats = () => {
+    if (hasNextPage && !filtersLoading) {
+      loadPaginatedChats(currentPage + 1, false);
+    }
+  };
 
   const applyFilters = useCallback(() => {
     let filtered = [...chats];
@@ -267,21 +299,21 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     setFilteredChats(filtered);
   }, [chats, filters.tagId, filters.hasReflection]);
 
-  // Load initial data (AI tools) and extract users/projects/tags from chats when component mounts
+  // Load initial data when component mounts
   useEffect(() => {
     if (selectedCourseId && currentUser?.id) {
       loadInitialData();
-      // Load all chats to populate user, project, and tag dropdowns with only active items
-      loadAllChatsForFilters();
+      loadFilterMetadata();
     }
-  }, [selectedCourseId, currentUser?.id, loadInitialData, loadAllChatsForFilters]);
+  }, [selectedCourseId, currentUser?.id, loadInitialData, loadFilterMetadata]);
 
-  // Load chats when filters change (server-side filtering)
+  // Load chats when filters change (server-side filtering with pagination)
   useEffect(() => {
     if (selectedCourseId && currentUser?.id) {
-      loadChatsWithFilters();
+      setCurrentPage(1); // Reset to first page when filters change
+      loadPaginatedChats(1, true);
     }
-  }, [selectedCourseId, currentUser?.id, loadChatsWithFilters]);
+  }, [selectedCourseId, currentUser?.id, loadPaginatedChats, filters.userId, filters.projectId, filters.toolUsed, filters.startDate, filters.endDate]);
 
   // Apply client-side filters (tags and reflection status)
   useEffect(() => {
@@ -303,10 +335,17 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       projectId: '',
       toolUsed: '',
       tagId: '',
-      startDate: '',
-      endDate: '',
+      ...getDefaultDateRange(), // Reset to default 30-day range
       hasReflection: ''
     });
+  };
+
+  const viewAllTime = () => {
+    setFilters(prev => ({
+      ...prev,
+      startDate: '',
+      endDate: ''
+    }));
   };
 
   const handleExport = async () => {
@@ -571,13 +610,27 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
               </select>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end space-x-2">
               <button
                 onClick={clearFilters}
-                className="w-full px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+                className="flex-1 px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
               >
-                Clear Filters
+                Reset to 30 Days
               </button>
+              <button
+                onClick={viewAllTime}
+                className="flex-1 px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+              >
+                View All Time
+              </button>
+            </div>
+            
+            {/* Performance Notice */}
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                <strong>Performance Tip:</strong> Default shows last 30 days for faster loading. 
+                Use "View All Time" to see complete history (may be slower for large courses).
+              </p>
             </div>
           </div>
         </div>
@@ -711,6 +764,47 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        
+        {/* Pagination Controls */}
+        {!loading && filteredChats.length > 0 && (
+          <div className="mt-6 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={loadMoreChats}
+                disabled={!hasNextPage || filtersLoading}
+                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {filtersLoading ? 'Loading...' : hasNextPage ? 'Load More' : 'All Loaded'}
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{filteredChats.length}</span> results
+                  {hasNextPage && <span className="text-gray-500"> (more available)</span>}
+                </p>
+              </div>
+              {hasNextPage && (
+                <div>
+                  <button
+                    onClick={loadMoreChats}
+                    disabled={filtersLoading}
+                    className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {filtersLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More Activity'
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
