@@ -4,6 +4,7 @@ import { courseApi, userApi, tagApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import AdminMessaging from '../Messaging/AdminMessaging';
+import UsageAnalytics from './UsageAnalytics';
 import {
   PlusIcon,
   AcademicCapIcon,
@@ -17,7 +18,8 @@ import {
   MagnifyingGlassIcon,
   UserCircleIcon,
   CheckCircleIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminPanel() {
@@ -82,7 +84,7 @@ export default function AdminPanel() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['courses', 'users', 'approvals', 'messaging'].includes(tabParam)) {
+    if (tabParam && ['courses', 'users', 'approvals', 'messaging', 'analytics'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, []);
@@ -766,6 +768,17 @@ export default function AdminPanel() {
             <EnvelopeIcon className="h-5 w-5 inline-block mr-2" />
             Admin Messaging
           </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'analytics'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <ChartBarIcon className="h-5 w-5 inline-block mr-2" />
+            Usage Analytics
+          </button>
         </nav>
       </div>
 
@@ -1086,6 +1099,10 @@ export default function AdminPanel() {
 
       {activeTab === 'messaging' && (
         <AdminMessaging />
+      )}
+
+      {activeTab === 'analytics' && (
+        <UsageAnalytics />
       )}
 
       {activeTab === 'courses' && (
