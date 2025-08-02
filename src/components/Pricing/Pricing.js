@@ -21,10 +21,11 @@ export default function Pricing() {
       studentPrice: '$30',
       period: 'per month',
       features: [
-        'Access to all 4 AI models',
+        'Access to all 7 curated AI models',
         'Unlimited AI interactions',
         'Real-time analytics dashboard',
         'Student progress tracking',
+        'AI literacy education resources',
         'Tag system for organization',
         'PDF upload capabilities',
         'Email support',
@@ -125,7 +126,9 @@ export default function Pricing() {
               Pay per class, scale with your students. No hidden fees.
             </p>
             <p className="mt-2 text-lg text-primary-600 font-semibold">
-              Contact us for free trials and personalized pricing
+              <button onClick={() => setShowInfoModal(true)} className="underline hover:text-primary-700">
+                Contact us for free trials and personalized pricing
+              </button>
             </p>
           </div>
         </div>
@@ -184,8 +187,8 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              <a
-                href="mailto:sage@sagerock.com?subject=AI Engagement Hub Pricing Inquiry"
+              <button
+                onClick={() => setShowInfoModal(true)}
                 className={`block w-full py-3 px-6 text-center rounded-md font-medium transition-colors ${
                   plan.highlighted
                     ? 'bg-primary-600 text-white hover:bg-primary-700'
@@ -193,7 +196,7 @@ export default function Pricing() {
                 }`}
               >
                 {plan.cta}
-              </a>
+              </button>
             </div>
           ))}
         </div>
@@ -285,8 +288,8 @@ export default function Pricing() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h4 className="font-medium text-gray-900 mb-2">Is there a free trial?</h4>
               <p className="text-gray-600">
-                Yes! We offer free trials for new educators. Contact us at 
-                <a href="mailto:sage@sagerock.com" className="text-primary-600 hover:text-primary-700 font-medium"> sage@sagerock.com</a> to 
+                Yes! We offer free trials for new educators. 
+                <button onClick={() => setShowInfoModal(true)} className="text-primary-600 hover:text-primary-700 font-medium underline">Contact us</button> to 
                 set up your personalized trial with up to 5 students and explore all features risk-free.
               </p>
             </div>
@@ -294,7 +297,7 @@ export default function Pricing() {
               <h4 className="font-medium text-gray-900 mb-2">What about volume discounts?</h4>
               <p className="text-gray-600">
                 For departments or institutions with 5+ classes or 200+ students, we offer custom pricing. 
-                Contact us at <a href="mailto:sage@sagerock.com" className="text-primary-600 hover:text-primary-700">sage@sagerock.com</a> to discuss.
+                <button onClick={() => setShowInfoModal(true)} className="text-primary-600 hover:text-primary-700 underline">Contact us</button> to discuss.
               </p>
             </div>
           </div>
@@ -309,18 +312,18 @@ export default function Pricing() {
             Join educators using AI Engagement Hub to transform student learning
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="mailto:sage@sagerock.com?subject=AI Engagement Hub - Free Trial Request"
+            <button
+              onClick={() => setShowInfoModal(true)}
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
             >
               Request Free Trial
-            </a>
-            <a
-              href="mailto:sage@sagerock.com?subject=AI Engagement Hub - Pricing Inquiry"
+            </button>
+            <button
+              onClick={() => setShowInfoModal(true)}
               className="inline-flex items-center justify-center px-6 py-3 border border-primary-300 text-base font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100"
             >
               Get Custom Quote
-            </a>
+            </button>
           </div>
         </div>
       </div>
