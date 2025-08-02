@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { courseApi, userApi, tagApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import AdminMessaging from '../Messaging/AdminMessaging';
 import {
   PlusIcon,
   AcademicCapIcon,
@@ -15,7 +16,8 @@ import {
   ExclamationTriangleIcon,
   MagnifyingGlassIcon,
   UserCircleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminPanel() {
@@ -744,6 +746,17 @@ export default function AdminPanel() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('messaging')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'messaging'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <EnvelopeIcon className="h-5 w-5 inline-block mr-2" />
+            Admin Messaging
+          </button>
         </nav>
       </div>
 
@@ -1060,6 +1073,10 @@ export default function AdminPanel() {
             </div>
           )}
         </>
+      )}
+
+      {activeTab === 'messaging' && (
+        <AdminMessaging />
       )}
 
       {activeTab === 'courses' && (
