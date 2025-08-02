@@ -9,7 +9,6 @@ import {
 
 export default function CourseJoin() {
   const [courseCode, setCourseCode] = useState('');
-  const [role, setRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [courseInfo, setCourseInfo] = useState(null);
 
@@ -18,7 +17,7 @@ export default function CourseJoin() {
   const handleCourseCodeSubmit = async (e) => {
     e.preventDefault();
     console.log('🎯 CourseJoin: Form submitted');
-    console.log('📝 Course join details:', { courseCode, role, currentUser: currentUser?.id });
+    console.log('📝 Course join details:', { courseCode, currentUser: currentUser?.id });
     
     if (!courseCode.trim()) {
       toast.error('Please enter a course code');
@@ -31,8 +30,7 @@ export default function CourseJoin() {
       toast.error('Please log in first to join a course');
       // Store course info for after login
       localStorage.setItem('pendingCourseJoin', JSON.stringify({
-        courseCode: courseCode.trim().toUpperCase(),
-        role: role
+        courseCode: courseCode.trim().toUpperCase()
       }));
       window.location.href = '/login';
       return;
@@ -53,15 +51,11 @@ export default function CourseJoin() {
       setCourseInfo(course);
       
       console.log('🚀 CourseJoin: Calling joinCourse API');
-      // Join the course directly using existing user data
+      // Join the course directly using existing user data (defaults to student role)
       await courseApi.joinCourse(currentUser.id, course.id, courseCode.trim().toUpperCase());
       console.log('✅ CourseJoin: joinCourse completed successfully');
       
-      toast.success(`Successfully requested to join ${course.title}! ${
-        role === 'instructor' 
-          ? 'Your request is pending admin approval.' 
-          : 'Your request is pending instructor approval.'
-      }`);
+      toast.success(`Successfully requested to join ${course.title}! Your request is pending instructor approval.`);
       
       console.log('🎉 CourseJoin: Course enrollment completed successfully!');
       console.log('⏳ CourseJoin: Delaying redirect to show logs...');
@@ -123,44 +117,11 @@ export default function CourseJoin() {
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              I am joining as a:
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="role"
-                  value="student"
-                  checked={role === 'student'}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="ml-2 text-sm text-gray-700">Student</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="role"
-                  value="instructor"
-                  checked={role === 'instructor'}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="ml-2 text-sm text-gray-700">Instructor</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="bg-yellow-50 rounded-lg p-3">
-            <div className="text-sm text-yellow-800">
+          <div className="bg-blue-50 rounded-lg p-3">
+            <div className="text-sm text-blue-800">
               <strong>Note:</strong>
               <p className="mt-1">
-                {role === 'instructor' 
-                  ? 'Your request will need to be approved by a course admin.'
-                  : 'Your request will need to be approved by an instructor.'
-                }
+                Your request to join this course will need to be approved by an instructor.
               </p>
             </div>
           </div>
