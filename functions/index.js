@@ -663,31 +663,178 @@ exports.sendCourseJoinNotifications = onCall({
       })
     };
 
-    // Send emails (this would typically use a service like SendGrid, Nodemailer, etc.)
-    // For now, we'll log the email data and return success
+    // Send emails via the same API endpoint used by the frontend
     logger.info('📧 Email data prepared:', emailData);
-    logger.info('📧 Would send to instructors:', instructorEmails);
-    logger.info('📧 Would send to admins:', adminEmails);
+    logger.info('📧 Will send to instructors:', instructorEmails);
+    logger.info('📧 Will send to admins:', adminEmails);
     
-    // TODO: Implement actual email sending here
-    // Example with SendGrid or similar service:
-    /*
-    const sgMail = require('@sendgrid/mail');
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    let emailsSent = 0;
+    let emailsFailed = 0;
     
-    const allRecipients = [...instructorEmails, ...adminEmails];
-    
-    for (const recipient of allRecipients) {
-      const msg = {
-        to: recipient.email,
-        from: 'noreply@yourdomain.com',
-        subject: `New Course Join Request - ${emailData.courseName}`,
-        html: generateEmailTemplate(emailData, recipient.name)
-      };
+    try {
+      const axios = require('axios');
+      const EMAIL_API_URL = process.env.EMAIL_API_URL || 'https://staging-intelligence-8c59c.web.app/api/send-email';
       
-      await sgMail.send(msg);
+      // Send emails to instructors
+      for (const instructor of instructorEmails) {
+        try {
+          const subject = `New Student Enrollment Request - ${emailData.courseName}`;
+          const htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2563eb;">New Student Enrollment Request</h2>
+              <p>Hello ${instructor.name},</p>
+              <p>A student has requested to join your course and needs your approval.</p>
+              
+              <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>Student Details:</h3>
+                <p><strong>Name:</strong> ${emailData.studentName}</p>
+                <p><strong>Email:</strong> ${emailData.studentEmail}</p>
+                <p><strong>Request Date:</strong> ${emailData.requestDate}</p>
+              </div>
+              
+              <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>Course Information:</h3>
+                <p><strong>Course:</strong> ${emailData.courseName}</p>
+                <p><strong>Course Code:</strong> ${emailData.courseCode}</p>
+              </div>
+              
+              <p>Please review and approve or deny this request in your instructor dashboard.</p>
+              <p><a href="https://staging-intelligence-8c59c.web.app/instructor" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Review Request</a></p>
+              
+              <p>Best regards,<br>AI Engagement Hub</p>
+            </div>
+          `;
+          const textContent = `
+New Student Enrollment Request - ${emailData.courseName}
+
+Hello ${instructor.name},
+
+A student has requested to join your course and needs your approval.
+
+Student Details:
+- Name: ${emailData.studentName}
+- Email: ${emailData.studentEmail}
+- Request Date: ${emailData.requestDate}
+
+Course Information:
+- Course: ${emailData.courseName}
+- Course Code: ${emailData.courseCode}
+
+Please review and approve or deny this request in your instructor dashboard:
+https://staging-intelligence-8c59c.web.app/instructor
+
+Best regards,
+AI Engagement Hub
+          `;
+          
+          const response = await axios.post(EMAIL_API_URL, {
+            to: instructor.email,
+            subject: subject,
+            htmlContent: htmlContent,
+            textContent: textContent
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000
+          });
+          
+          if (response.data && response.data.success) {
+            emailsSent++;
+            logger.info('✅ Email sent to instructor:', instructor.email);
+          } else {
+            emailsFailed++;
+            logger.warn('❌ Email failed to instructor:', instructor.email, response.data);
+          }
+        } catch (emailError) {
+          emailsFailed++;
+          logger.error('❌ Error sending email to instructor:', instructor.email, emailError.message);
+        }
+      }
+      
+      // Send emails to admins
+      for (const admin of adminEmails) {
+        try {
+          const subject = `Student Enrollment Notification - ${emailData.courseName}`;
+          const htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #dc2626;">Student Enrollment Notification</h2>
+              <p>Hello ${admin.name},</p>
+              <p>A student has requested to join a course in your system. This is for your information and oversight.</p>
+              
+              <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>Student Details:</h3>
+                <p><strong>Name:</strong> ${emailData.studentName}</p>
+                <p><strong>Email:</strong> ${emailData.studentEmail}</p>
+                <p><strong>Request Date:</strong> ${emailData.requestDate}</p>
+              </div>
+              
+              <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>Course Information:</h3>
+                <p><strong>Course:</strong> ${emailData.courseName}</p>
+                <p><strong>Course Code:</strong> ${emailData.courseCode}</p>
+              </div>
+              
+              <p>The course instructors have been notified and will handle the approval. You can monitor all course activities in the admin panel.</p>
+              <p><a href="https://staging-intelligence-8c59c.web.app/admin" style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Admin Panel</a></p>
+              
+              <p>Best regards,<br>AI Engagement Hub</p>
+            </div>
+          `;
+          const textContent = `
+Student Enrollment Notification - ${emailData.courseName}
+
+Hello ${admin.name},
+
+A student has requested to join a course in your system. This is for your information and oversight.
+
+Student Details:
+- Name: ${emailData.studentName}
+- Email: ${emailData.studentEmail}
+- Request Date: ${emailData.requestDate}
+
+Course Information:
+- Course: ${emailData.courseName}
+- Course Code: ${emailData.courseCode}
+
+The course instructors have been notified and will handle the approval. You can monitor all course activities in the admin panel:
+https://staging-intelligence-8c59c.web.app/admin
+
+Best regards,
+AI Engagement Hub
+          `;
+          
+          const response = await axios.post(EMAIL_API_URL, {
+            to: admin.email,
+            subject: subject,
+            htmlContent: htmlContent,
+            textContent: textContent
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000
+          });
+          
+          if (response.data && response.data.success) {
+            emailsSent++;
+            logger.info('✅ Email sent to admin:', admin.email);
+          } else {
+            emailsFailed++;
+            logger.warn('❌ Email failed to admin:', admin.email, response.data);
+          }
+        } catch (emailError) {
+          emailsFailed++;
+          logger.error('❌ Error sending email to admin:', admin.email, emailError.message);
+        }
+      }
+      
+      logger.info(`📧 Email sending complete: ${emailsSent} sent, ${emailsFailed} failed`);
+      
+    } catch (error) {
+      logger.error('❌ Email sending setup error:', error.message);
+      emailsFailed = instructorEmails.length + adminEmails.length;
     }
-    */
     
     return {
       success: true,
@@ -696,6 +843,11 @@ exports.sendCourseJoinNotifications = onCall({
         instructors: instructorEmails.length,
         admins: adminEmails.length,
         total: instructorEmails.length + adminEmails.length
+      },
+      emailResults: {
+        sent: emailsSent,
+        failed: emailsFailed,
+        total: emailsSent + emailsFailed
       },
       emailData
     };
