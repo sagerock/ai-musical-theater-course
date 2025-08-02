@@ -47,11 +47,24 @@ export const analyticsApi = {
           });
         }
         
-        // Extract usage information
+        // Extract usage information - try multiple field names and fallback strategies
+        let modelName = chat.toolUsed || chat.model || chat.tool || chat.aiTool;
+        
+        // If no model found, try to infer from response patterns or use default
+        if (!modelName) {
+          // Check if there's a response that might indicate the model
+          if (chat.response && chat.response.length > 0) {
+            // For now, assume GPT-4.1 Mini as default since that's our new default
+            modelName = 'GPT-4.1 Mini';
+          } else {
+            modelName = 'unknown';
+          }
+        }
+        
         const usageRecord = {
           id: doc.id,
           date: chat.createdAt?.toDate ? chat.createdAt.toDate() : new Date(chat.createdAt),
-          model: chat.toolUsed || chat.model || chat.tool || chat.aiTool || 'unknown',
+          model: modelName,
           // Extract token usage from various possible locations
           inputTokens: this.extractTokenUsage(chat, 'input'),
           outputTokens: this.extractTokenUsage(chat, 'output'),
