@@ -19,12 +19,12 @@ export const googleApi = {
       // Use provided system prompt or fallback to default
       const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';
       
-      // Configure generation settings
+      // Configure generation settings - increased limits for Gemini 2.5 Pro
       const generationConfig = {
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 1000,
+        maxOutputTokens: modelName === 'gemini-2.5-pro' ? 8192 : 1000, // Higher limit for 2.5 Pro
       };
 
       // Prepare conversation history
@@ -57,16 +57,29 @@ export const googleApi = {
       console.log('Google API response:', response);
       console.log('Google API candidates:', response.candidates);
       
-      // Extract text from candidates
+      // Extract text from candidates with better error handling
       let responseText = '';
+      
+      // Check finish reason first
       if (response.candidates && response.candidates.length > 0) {
         const candidate = response.candidates[0];
         console.log('Google API candidate:', candidate);
-        console.log('Google API candidate content:', candidate.content);
+        console.log('Google API finish reason:', candidate.finishReason);
         
+        // Handle different finish reasons
+        if (candidate.finishReason === 'MAX_TOKENS') {
+          console.warn('Response truncated due to max tokens limit');
+        } else if (candidate.finishReason === 'SAFETY') {
+          throw new Error('Response blocked due to safety filters');
+        } else if (candidate.finishReason === 'RECITATION') {
+          throw new Error('Response blocked due to recitation concerns');
+        }
+        
+        // Extract text content
         if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
           responseText = candidate.content.parts[0].text || '';
-          console.log('Google API extracted text:', responseText);
+          console.log('Google API extracted text length:', responseText.length);
+          console.log('Google API extracted text preview:', responseText.substring(0, 100));
         }
       }
       
@@ -74,10 +87,15 @@ export const googleApi = {
       if (!responseText) {
         try {
           responseText = response.text() || '';
-          console.log('Google API text() method result:', responseText);
+          console.log('Google API text() method result length:', responseText.length);
         } catch (e) {
           console.log('Google API text() method failed:', e);
         }
+      }
+      
+      // If still no response, throw an error
+      if (!responseText) {
+        throw new Error('No response received from Gemini model. This may be due to content filtering or technical issues.');
       }
       
       return {
