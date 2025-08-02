@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ChevronDownIcon, ChevronUpIcon, ChartBarIcon, HomeIcon } from '@heroicons/react/24/outline';
+import InfoRequestModal from '../Home/InfoRequestModal';
 
 export default function FAQ() {
   const [openSections, setOpenSections] = useState({});
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const { currentUser } = useAuth();
 
   // Scroll to top when component mounts
@@ -266,12 +268,12 @@ export default function FAQ() {
             We're here to help! Reach out to our support team for personalized assistance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="mailto:sage@sagerock.com"
+            <button
+              onClick={() => setShowInfoModal(true)}
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               Contact Support
-            </a>
+            </button>
             <Link
               to="/pricing"
               className="inline-flex items-center justify-center px-6 py-3 border border-blue-600 text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
@@ -291,6 +293,11 @@ export default function FAQ() {
           </Link>
         </div>
       </div>
+      
+      {/* Info Request Modal */}
+      {showInfoModal && (
+        <InfoRequestModal onClose={() => setShowInfoModal(false)} />
+      )}
     </div>
   );
 }
