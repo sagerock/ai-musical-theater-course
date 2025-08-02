@@ -467,7 +467,7 @@ exports.updateAnalyticsOnChatChange = onDocumentWritten('chats/{chatId}', async 
 
     // Check if analytics exist for this course
     const analyticsDoc = await db.collection('courseAnalytics').doc(courseId).get();
-    if (!analyticsDoc.exists()) {
+    if (!analyticsDoc.exists) {
       logger.info('📊 No analytics found for course, will need full regeneration');
       return;
     }
