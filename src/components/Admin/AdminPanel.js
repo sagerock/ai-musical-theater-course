@@ -45,6 +45,7 @@ export default function AdminPanel() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [memberToRemove, setMemberToRemove] = useState(null);
+  const [updatingRoles, setUpdatingRoles] = useState({}); // Track which roles are being updated
   
   // User management state
   const [users, setUsers] = useState([]);
@@ -231,6 +232,9 @@ export default function AdminPanel() {
     });
     
     try {
+      // Set loading state for this specific membership
+      setUpdatingRoles(prev => ({ ...prev, [membershipId]: true }));
+      
       const changedBy = currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrator';
       console.log('🔄 Calling courseApi.updateMemberRole...');
       
@@ -241,11 +245,23 @@ export default function AdminPanel() {
       
       console.log('🔄 Reloading courses to refresh UI...');
       await loadCourses();
+      
+      // Update the editingCourse state if the modal is open
+      if (editingCourse) {
+        console.log('🔄 Updating editing course state to reflect changes...');
+        const updatedCourse = await courseApi.getCourseById(editingCourse.id);
+        setEditingCourse(updatedCourse);
+        console.log('✅ Editing course state updated');
+      }
+      
       console.log('✅ Courses reloaded successfully');
       
     } catch (error) {
       console.error('❌ Error updating member role:', error);
       toast.error('Failed to update member role');
+    } finally {
+      // Clear loading state
+      setUpdatingRoles(prev => ({ ...prev, [membershipId]: false }));
     }
   };
 
@@ -1625,17 +1641,27 @@ export default function AdminPanel() {
                           </span>
                           {membership.status === 'approved' && (
                             <>
-                              <select
-                                value={membership.role}
-                                onChange={(e) => handleMemberRoleChange(membership.id, e.target.value, membership.users?.name)}
-                                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              >
-                                {Object.entries(ROLE_LABELS).map(([roleValue, roleLabel]) => (
-                                  <option key={roleValue} value={roleValue}>
-                                    {roleLabel}
-                                  </option>
-                                ))}
-                              </select>
+                              <div className="relative">
+                                <select
+                                  value={membership.role}
+                                  onChange={(e) => handleMemberRoleChange(membership.id, e.target.value, membership.users?.name)}
+                                  disabled={updatingRoles[membership.id]}
+                                  className={`px-2 py-1 text-xs bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                    updatingRoles[membership.id] ? 'opacity-50 cursor-not-allowed' : ''
+                                  }`}
+                                >
+                                  {Object.entries(ROLE_LABELS).map(([roleValue, roleLabel]) => (
+                                    <option key={roleValue} value={roleValue}>
+                                      {roleLabel}
+                                    </option>
+                                  ))}
+                                </select>
+                                {updatingRoles[membership.id] && (
+                                  <div className="absolute inset-y-0 right-8 flex items-center">
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+                                  </div>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMember(membership)}
