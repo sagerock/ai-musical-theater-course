@@ -1662,8 +1662,11 @@ export default function AdminPanel() {
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="student">Student</option>
+                    <option value="student_assistant">Student Assistant</option>
+                    <option value="teaching_assistant">Teaching Assistant</option>
                     <option value="instructor">Instructor</option>
-                    <option value="admin">Admin</option>
+                    <option value="school_administrator">School Administrator</option>
+                    <option value="admin">Global Administrator</option>
                   </select>
                 </div>
 
