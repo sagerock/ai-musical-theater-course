@@ -5,6 +5,12 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import AdminMessaging from '../Messaging/AdminMessaging';
 import UsageAnalytics from './UsageAnalytics';
+import { 
+  ROLES, 
+  ROLE_LABELS, 
+  getRoleDisplayName, 
+  getRoleStyle 
+} from '../../utils/roleUtils';
 import {
   PlusIcon,
   AcademicCapIcon,
@@ -200,12 +206,10 @@ export default function AdminPanel() {
     }
   };
 
-  const handleMemberRoleChange = async (membershipId, currentRole) => {
-    const newRole = currentRole === 'student' ? 'instructor' : 'student';
-    
+  const handleMemberRoleChange = async (membershipId, newRole, memberName) => {
     try {
       await courseApi.updateMemberRole(membershipId, newRole);
-      toast.success(`Member role changed to ${newRole}`);
+      toast.success(`${memberName}'s role changed to ${getRoleDisplayName(newRole)}`);
       loadCourses();
     } catch (error) {
       console.error('Error updating member role:', error);
@@ -421,7 +425,7 @@ export default function AdminPanel() {
       );
       
       const selectedCourseName = courses.find(c => c.id === selectedCourseForAdd)?.title || 'course';
-      const roleText = selectedRoleForAdd === 'instructor' ? 'instructor' : 'student';
+      const roleText = getRoleDisplayName(selectedRoleForAdd);
       toast.success(`${userToAddToCourse.name} added to ${selectedCourseName} as ${roleText}`);
       
       setShowAddToCourseModal(false);
@@ -1330,12 +1334,8 @@ export default function AdminPanel() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            membership.role === 'instructor' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {membership.role}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoleStyle(membership.role)}`}>
+                            {getRoleDisplayName(membership.role)}
                           </span>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             membership.status === 'approved' 
@@ -1461,12 +1461,8 @@ export default function AdminPanel() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            membership.role === 'instructor' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {membership.role}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoleStyle(membership.role)}`}>
+                            {getRoleDisplayName(membership.role)}
                           </span>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             membership.status === 'approved' 
@@ -1479,13 +1475,17 @@ export default function AdminPanel() {
                           </span>
                           {membership.status === 'approved' && (
                             <>
-                              <button
-                                type="button"
-                                onClick={() => handleMemberRoleChange(membership.id, membership.role)}
-                                className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              <select
+                                value={membership.role}
+                                onChange={(e) => handleMemberRoleChange(membership.id, e.target.value, membership.users?.name)}
+                                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                               >
-                                Switch to {membership.role === 'student' ? 'Instructor' : 'Student'}
-                              </button>
+                                {Object.entries(ROLE_LABELS).map(([roleValue, roleLabel]) => (
+                                  <option key={roleValue} value={roleValue}>
+                                    {roleLabel}
+                                  </option>
+                                ))}
+                              </select>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMember(membership)}
@@ -1861,8 +1861,11 @@ export default function AdminPanel() {
                       onChange={(e) => setSelectedRoleForAdd(e.target.value)}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
                     >
-                      <option value="student">Student</option>
-                      <option value="instructor">Instructor</option>
+                      {Object.entries(ROLE_LABELS).map(([roleValue, roleLabel]) => (
+                        <option key={roleValue} value={roleValue}>
+                          {roleLabel}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -1872,14 +1875,14 @@ export default function AdminPanel() {
                   const isInstructor = membership?.role === 'instructor';
                   const selectedCourseName = courses.find(c => c.id === selectedCourseForAdd)?.title;
                   
-                  if (isInstructor && selectedRoleForAdd === 'student') {
+                  if (membership && membership.role !== selectedRoleForAdd) {
                     return (
-                      <div className="mt-3 bg-red-50 border border-red-200 rounded-md p-3">
+                      <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-md p-3">
                         <div className="flex">
-                          <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
-                          <div className="text-sm text-red-800">
-                            <p className="font-medium">Warning:</p>
-                            <p className="mt-1">This user is already an instructor in {selectedCourseName}. Cannot downgrade instructor to student role.</p>
+                          <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2" />
+                          <div className="text-sm text-yellow-800">
+                            <p className="font-medium">Note:</p>
+                            <p className="mt-1">This user is currently a {getRoleDisplayName(membership.role)} in {selectedCourseName}. Their role will be changed to {getRoleDisplayName(selectedRoleForAdd)}.</p>
                           </div>
                         </div>
                       </div>
@@ -1913,15 +1916,11 @@ export default function AdminPanel() {
                   onClick={confirmAddToCourse}
                   disabled={
                     !selectedCourseForAdd || 
-                    !selectedRoleForAdd || 
-                    (selectedCourseForAdd && userToAddToCourse && (() => {
-                      const membership = getUserMembershipInCourse(userToAddToCourse, selectedCourseForAdd);
-                      return membership?.role === 'instructor' && selectedRoleForAdd === 'student';
-                    })())
+                    !selectedRoleForAdd
                   }
                   className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add as {selectedRoleForAdd === 'instructor' ? 'Instructor' : 'Student'}
+                  Add as {getRoleDisplayName(selectedRoleForAdd)}
                 </button>
               </div>
             </div>

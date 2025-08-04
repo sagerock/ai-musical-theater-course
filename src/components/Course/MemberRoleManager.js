@@ -29,19 +29,25 @@ export default function MemberRoleManager({ member, currentUserRole, onRoleUpdat
   const getAvailableRoles = () => {
     const roles = [];
     
-    // Everyone can see student role
+    // Always include student role
     roles.push(ROLES.STUDENT);
     
-    // Instructors and admins can assign assistant roles
-    if (hasAdminPermissions(currentUserRole)) {
+    // Add roles based on current user's permissions
+    if (currentUserRole === ROLES.SCHOOL_ADMINISTRATOR) {
+      // School administrators can assign any role
       roles.push(ROLES.STUDENT_ASSISTANT);
       roles.push(ROLES.TEACHING_ASSISTANT);
-      
-      // Only school administrators can assign instructor or admin roles
-      if (currentUserRole === ROLES.SCHOOL_ADMINISTRATOR) {
-        roles.push(ROLES.INSTRUCTOR);
-        roles.push(ROLES.SCHOOL_ADMINISTRATOR);
-      }
+      roles.push(ROLES.INSTRUCTOR);
+      roles.push(ROLES.SCHOOL_ADMINISTRATOR);
+    } else if (currentUserRole === ROLES.INSTRUCTOR) {
+      // Instructors can assign student and assistant roles, and other instructor roles
+      roles.push(ROLES.STUDENT_ASSISTANT);
+      roles.push(ROLES.TEACHING_ASSISTANT);
+      roles.push(ROLES.INSTRUCTOR);
+    } else if (hasAdminPermissions(currentUserRole)) {
+      // Other admin-level roles can assign assistant roles
+      roles.push(ROLES.STUDENT_ASSISTANT);
+      roles.push(ROLES.TEACHING_ASSISTANT);
     }
     
     return roles;

@@ -136,14 +136,14 @@ export function canManageRole(userRole, targetRole) {
     return true;
   }
   
-  // Instructors can manage students and assistants
+  // Instructors can manage students, assistants, and other instructors
   if (normalizedUserRole === ROLES.INSTRUCTOR) {
-    return [ROLES.STUDENT, ROLES.STUDENT_ASSISTANT, ROLES.TEACHING_ASSISTANT].includes(normalizedTargetRole);
+    return [ROLES.STUDENT, ROLES.STUDENT_ASSISTANT, ROLES.TEACHING_ASSISTANT, ROLES.INSTRUCTOR].includes(normalizedTargetRole);
   }
   
-  // Teaching assistants can manage students
+  // Teaching assistants can manage students and student assistants
   if (normalizedUserRole === ROLES.TEACHING_ASSISTANT) {
-    return normalizedTargetRole === ROLES.STUDENT;
+    return [ROLES.STUDENT, ROLES.STUDENT_ASSISTANT].includes(normalizedTargetRole);
   }
   
   return false;
