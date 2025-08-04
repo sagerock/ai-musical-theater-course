@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/firebaseApi';
+import { hasTeachingPermissions } from '../../utils/roleUtils';
 import Footer from './Footer';
 import {
   HomeIcon,
@@ -167,8 +168,8 @@ export default function Layout() {
                           Projects
                         </Link>
                         
-                        {/* Show Instructor Notes for instructors only */}
-                        {courseMembership.role === 'instructor' && (
+                        {/* Show Instructor Notes for users with teaching permissions */}
+                        {hasTeachingPermissions(courseMembership.role) && (
                           <Link
                             to={`/course/${courseMembership.courses.id}/instructor-notes`}
                             onClick={() => setSidebarOpen(false)}
@@ -282,8 +283,8 @@ export default function Layout() {
                             Projects
                           </Link>
                           
-                          {/* Show Instructor Notes for instructors only */}
-                          {courseMembership.role === 'instructor' && (
+                          {/* Show Instructor Notes for users with teaching permissions */}
+                          {hasTeachingPermissions(courseMembership.role) && (
                             <Link
                               to={`/course/${courseMembership.courses.id}/instructor-notes`}
                               className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${

@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { getRoleDisplayName, getRoleStyle, getRoleIconColor, isInstructorLevel } from '../../utils/roleUtils';
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -111,17 +112,11 @@ export default function PendingApprovals({ courseId, courseName }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                      request.role === 'instructor' 
-                        ? 'bg-green-100' 
-                        : 'bg-blue-100'
-                    }`}>
-                      {request.role === 'instructor' ? (
-                        <AcademicCapIcon className={`h-5 w-5 ${
-                          request.role === 'instructor' ? 'text-green-600' : 'text-blue-600'
-                        }`} />
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getRoleStyle(request.role).replace('text-', 'bg-').replace('-800', '-100')}`}>
+                      {isInstructorLevel(request.role) ? (
+                        <AcademicCapIcon className={`h-5 w-5 ${getRoleIconColor(request.role)}`} />
                       ) : (
-                        <UserIcon className="h-5 w-5 text-blue-600" />
+                        <UserIcon className={`h-5 w-5 ${getRoleIconColor(request.role)}`} />
                       )}
                     </div>
                   </div>
@@ -131,12 +126,8 @@ export default function PendingApprovals({ courseId, courseName }) {
                       <p className="text-sm font-medium text-gray-900">
                         {request.users?.name || 'Unknown User'}
                       </p>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        request.role === 'instructor' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {request.role}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRoleStyle(request.role)}`}>
+                        {getRoleDisplayName(request.role)}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500">
@@ -181,11 +172,11 @@ export default function PendingApprovals({ courseId, courseName }) {
                 </div>
               </div>
               
-              {request.role === 'instructor' && (
+              {isInstructorLevel(request.role) && (
                 <div className="mt-2 p-2 bg-yellow-50 rounded-md">
                   <p className="text-xs text-yellow-800">
-                    <strong>Note:</strong> This user is requesting instructor privileges. 
-                    Only approve if you know they should have teaching access.
+                    <strong>Note:</strong> This user is requesting {getRoleDisplayName(request.role)} privileges. 
+                    Only approve if you know they should have this level of access.
                   </p>
                 </div>
               )}

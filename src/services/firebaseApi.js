@@ -615,25 +615,55 @@ export const courseApi = {
       const snapshot = await getDocs(membershipsQuery);
       let instructorCount = 0;
       let studentCount = 0;
+      let teachingAssistantCount = 0;
+      let studentAssistantCount = 0;
+      let schoolAdministratorCount = 0;
       
       snapshot.forEach((doc) => {
         const membership = doc.data();
-        if (membership.role === 'instructor') {
-          instructorCount++;
-        } else if (membership.role === 'student') {
-          studentCount++;
+        switch (membership.role) {
+          case 'instructor':
+            instructorCount++;
+            break;
+          case 'student':
+            studentCount++;
+            break;
+          case 'teaching_assistant':
+            teachingAssistantCount++;
+            break;
+          case 'student_assistant':
+            studentAssistantCount++;
+            break;
+          case 'school_administrator':
+            schoolAdministratorCount++;
+            break;
+          default:
+            // Default unknown roles to student for counting
+            studentCount++;
         }
       });
       
+      const totalMembers = instructorCount + studentCount + teachingAssistantCount + studentAssistantCount + schoolAdministratorCount;
+      
       const courseRef = doc(db, 'courses', courseId);
       await updateDoc(courseRef, {
-        memberCount: instructorCount + studentCount,
+        memberCount: totalMembers,
         instructorCount,
         studentCount,
+        teachingAssistantCount,
+        studentAssistantCount,
+        schoolAdministratorCount,
         updatedAt: serverTimestamp()
       });
       
-      console.log('✅ Course member counts updated:', { instructorCount, studentCount });
+      console.log('✅ Course member counts updated:', { 
+        totalMembers, 
+        instructorCount, 
+        studentCount, 
+        teachingAssistantCount, 
+        studentAssistantCount, 
+        schoolAdministratorCount 
+      });
     } catch (error) {
       console.error('❌ Error updating course member counts:', error);
     }

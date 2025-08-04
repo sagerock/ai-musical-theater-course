@@ -4,11 +4,21 @@ import { courseApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   AcademicCapIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
+
+const ROLE_OPTIONS = [
+  { value: 'student', label: 'Student', description: 'Access course materials and AI tools' },
+  { value: 'student_assistant', label: 'Student Assistant', description: 'Help manage course activities and assist other students' },
+  { value: 'teaching_assistant', label: 'Teaching Assistant', description: 'Assist with grading and course management' },
+  { value: 'instructor', label: 'Instructor', description: 'Full course management and administrative access' },
+  { value: 'school_administrator', label: 'School Administrator', description: 'Oversight and administrative access across courses' }
+];
 
 export default function CourseJoin() {
   const [courseCode, setCourseCode] = useState('');
+  const [selectedRole, setSelectedRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [courseInfo, setCourseInfo] = useState(null);
 
@@ -50,9 +60,9 @@ export default function CourseJoin() {
       console.log('✅ CourseJoin: Course found:', course.title);
       setCourseInfo(course);
       
-      console.log('🚀 CourseJoin: Calling joinCourse API');
-      // Join the course directly using existing user data (defaults to student role)
-      await courseApi.joinCourse(currentUser.id, course.id, courseCode.trim().toUpperCase());
+      console.log('🚀 CourseJoin: Calling joinCourse API with role:', selectedRole);
+      // Join the course with selected role
+      await courseApi.joinCourse(currentUser.id, course.id, courseCode.trim().toUpperCase(), selectedRole);
       console.log('✅ CourseJoin: joinCourse completed successfully');
       
       toast.success(`Successfully requested to join ${course.title}! Your request is pending instructor approval.`);
@@ -115,6 +125,31 @@ export default function CourseJoin() {
             <p className="mt-1 text-xs text-gray-500">
               Ask your instructor for the course code
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              <UserGroupIcon className="inline h-4 w-4 mr-1" />
+              Your Role
+            </label>
+            <div className="space-y-3">
+              {ROLE_OPTIONS.map((role) => (
+                <label key={role.value} className="flex items-start">
+                  <input
+                    type="radio"
+                    name="role"
+                    value={role.value}
+                    checked={selectedRole === role.value}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <div className="ml-3">
+                    <div className="text-sm font-medium text-gray-900">{role.label}</div>
+                    <div className="text-xs text-gray-500">{role.description}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="bg-blue-50 rounded-lg p-3">

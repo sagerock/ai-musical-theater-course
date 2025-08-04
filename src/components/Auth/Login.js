@@ -11,8 +11,7 @@ export default function Login() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    displayName: '',
-    role: 'student'
+    displayName: ''
   });
   const [resetEmail, setResetEmail] = useState('');
 
@@ -144,21 +143,6 @@ export default function Login() {
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                    Role
-                  </label>
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="student">Student</option>
-                    <option value="instructor">Instructor</option>
-                  </select>
-                </div>
               </>
             )}
 
