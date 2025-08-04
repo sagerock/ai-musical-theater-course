@@ -594,6 +594,92 @@ export const courseApi = {
     return true;
   },
 
+  // Cleanup function to identify and fix duplicate memberships
+  async cleanupDuplicateMemberships() {
+    console.log('🧹 Starting duplicate membership cleanup...');
+    
+    const membershipsQuery = collection(db, 'courseMemberships');
+    const membershipsSnapshot = await getDocs(membershipsQuery);
+    
+    const membershipMap = new Map(); // userId_courseId -> [membership records]
+    const duplicates = [];
+    
+    // Group memberships by user-course combination
+    membershipsSnapshot.docs.forEach(doc => {
+      const membership = { id: doc.id, ...doc.data() };
+      const key = `${membership.userId}_${membership.courseId}`;
+      
+      if (!membershipMap.has(key)) {
+        membershipMap.set(key, []);
+      }
+      membershipMap.get(key).push(membership);
+    });
+    
+    // Find user-course combinations with multiple records
+    for (const [key, memberships] of membershipMap.entries()) {
+      if (memberships.length > 1) {
+        console.log(`🔍 Found ${memberships.length} memberships for ${key}:`);
+        memberships.forEach((m, index) => {
+          console.log(`  ${index + 1}. ID: ${m.id}, Role: ${m.role}, Status: ${m.status}, Updated: ${m.updatedAt?.toDate ? m.updatedAt.toDate() : m.updatedAt}`);
+        });
+        duplicates.push({ key, memberships });
+      }
+    }
+    
+    console.log(`📊 Found ${duplicates.length} user-course combinations with duplicate memberships`);
+    return duplicates;
+  },
+
+  // Fix duplicate memberships by keeping the most recent approved one
+  async fixDuplicateMemberships(dryRun = true) {
+    console.log('🔧 Starting duplicate membership fix...', dryRun ? '(DRY RUN)' : '(LIVE)');
+    
+    const duplicates = await this.cleanupDuplicateMemberships();
+    const fixes = [];
+    
+    for (const { key, memberships } of duplicates) {
+      // Sort by priority: approved status first, then by most recent update
+      const sorted = memberships.sort((a, b) => {
+        // Prioritize approved memberships
+        if (a.status === 'approved' && b.status !== 'approved') return -1;
+        if (b.status === 'approved' && a.status !== 'approved') return 1;
+        
+        // If both approved or both not approved, sort by most recent update
+        const aTime = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt || 0);
+        const bTime = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt || 0);
+        return bTime - aTime;
+      });
+      
+      const keepMembership = sorted[0]; // Keep the first (best) one
+      const deleteMemberships = sorted.slice(1); // Delete the rest
+      
+      console.log(`🎯 For ${key}:`);
+      console.log(`  ✅ KEEP: ${keepMembership.id} (${keepMembership.role}, ${keepMembership.status})`);
+      deleteMemberships.forEach(m => {
+        console.log(`  🗑️ DELETE: ${m.id} (${m.role}, ${m.status})`);
+      });
+      
+      if (!dryRun) {
+        // Actually delete the duplicate memberships
+        const batch = writeBatch(db);
+        deleteMemberships.forEach(m => {
+          batch.delete(doc(db, 'courseMemberships', m.id));
+        });
+        await batch.commit();
+        console.log(`✅ Deleted ${deleteMemberships.length} duplicate memberships for ${key}`);
+      }
+      
+      fixes.push({
+        key,
+        kept: keepMembership,
+        deleted: deleteMemberships.length
+      });
+    }
+    
+    console.log(`🎉 Fix complete: ${fixes.length} user-course combinations processed`);
+    return fixes;
+  },
+
   // Restore instructor role for a user in a course (admin function)
   async restoreInstructorRole(userId, courseId, adminId) {
     console.log('🔥 restoreInstructorRole:', userId, courseId, adminId);

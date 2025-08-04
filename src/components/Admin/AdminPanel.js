@@ -249,6 +249,23 @@ export default function AdminPanel() {
     }
   };
 
+  // Add debugging functions for duplicate membership cleanup
+  const handleCleanupDuplicates = async (dryRun = true) => {
+    console.log('🧹 Starting duplicate membership cleanup...');
+    try {
+      const result = await courseApi.fixDuplicateMemberships(dryRun);
+      if (dryRun) {
+        toast.success(`Found ${result.length} user-course combinations with duplicates. Check console for details.`);
+      } else {
+        toast.success(`Fixed ${result.length} duplicate membership issues!`);
+        await loadCourses(); // Refresh the UI
+      }
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+      toast.error('Failed to cleanup duplicates');
+    }
+  };
+
   const handleRemoveMember = (membership) => {
     setMemberToRemove(membership);
     setShowRemoveMemberConfirm(true);
@@ -1225,6 +1242,25 @@ export default function AdminPanel() {
 
       {activeTab === 'courses' && (
         <>
+          {/* Debug Tools */}
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="text-sm font-medium text-yellow-800 mb-2">🔧 Debug Tools</h3>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleCleanupDuplicates(true)}
+                className="inline-flex items-center px-3 py-1 border border-yellow-300 rounded text-xs font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
+              >
+                🔍 Check Duplicates
+              </button>
+              <button
+                onClick={() => handleCleanupDuplicates(false)}
+                className="inline-flex items-center px-3 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200"
+              >
+                🧹 Fix Duplicates
+              </button>
+            </div>
+          </div>
+          
           {/* Courses Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => {
