@@ -866,3 +866,278 @@ AI Engagement Hub
     throw new HttpsError('internal', 'Failed to send notifications: ' + error.message);
   }
 });
+
+/**
+ * Cloud Function to send course approval confirmation emails to students
+ * Notifies students when their course join request has been approved
+ */
+exports.sendApprovalConfirmationEmail = onCall({
+  enforceAppCheck: false,
+}, async (request) => {
+  const {userId, courseId, approvedRole, approverName} = request.data;
+  const callerUid = request.auth?.uid;
+
+  logger.info('📧 sendApprovalConfirmationEmail called', {userId, courseId, approvedRole, approverName, callerUid});
+
+  // Validate input
+  if (!userId || !courseId || !approvedRole) {
+    throw new HttpsError('invalid-argument', 'userId, courseId, and approvedRole are required');
+  }
+
+  // Security: Only allow authenticated users to call this function
+  if (!callerUid) {
+    throw new HttpsError('unauthenticated', 'Must be authenticated to send notifications');
+  }
+
+  // Security: Check if caller has permission to approve users for this course
+  try {
+    // First check if user is global admin
+    const callerDoc = await db.collection('users').doc(callerUid).get();
+    if (callerDoc.exists) {
+      const callerData = callerDoc.data();
+      
+      // Allow global admins
+      if (callerData.role === 'admin') {
+        logger.info('✅ Caller is global admin, allowing access');
+      } else {
+        // Check course membership for non-admins
+        const membershipQuery = await db.collection('courseMemberships')
+          .where('userId', '==', callerUid)
+          .where('courseId', '==', courseId)
+          .where('status', '==', 'approved')
+          .get();
+        
+        if (membershipQuery.empty) {
+          throw new HttpsError('permission-denied', 'Not authorized to approve users for this course');
+        }
+        
+        const membership = membershipQuery.docs[0].data();
+        const instructorRoles = ['instructor', 'school_administrator', 'teaching_assistant'];
+        
+        if (!instructorRoles.includes(membership.role)) {
+          throw new HttpsError('permission-denied', 'Only instructors and administrators can approve users');
+        }
+      }
+    } else {
+      throw new HttpsError('permission-denied', 'Caller not found');
+    }
+  } catch (error) {
+    logger.error('❌ Error checking approval permissions:', error);
+    
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    
+    throw new HttpsError('permission-denied', 'Unable to verify approval permissions: ' + error.message);
+  }
+
+  try {
+    logger.info('📧 Processing approval confirmation email...');
+
+    // Get user and course information
+    const [userDoc, courseDoc] = await Promise.all([
+      db.collection('users').doc(userId).get(),
+      db.collection('courses').doc(courseId).get()
+    ]);
+    
+    if (!userDoc.exists) {
+      throw new HttpsError('not-found', 'User not found');
+    }
+    
+    if (!courseDoc.exists) {
+      throw new HttpsError('not-found', 'Course not found');
+    }
+    
+    const user = {id: userDoc.id, ...userDoc.data()};
+    const course = {id: courseDoc.id, ...courseDoc.data()};
+    
+    logger.info('👤 User being approved:', {name: user.name, email: user.email});
+    logger.info('📚 Course:', {title: course.title, code: course.course_code});
+
+    // Helper function to get role display name
+    const getRoleDisplayName = (role) => {
+      const roleLabels = {
+        'student': 'Student',
+        'student_assistant': 'Student Assistant',
+        'teaching_assistant': 'Teaching Assistant',
+        'instructor': 'Instructor',
+        'school_administrator': 'School Administrator'
+      };
+      return roleLabels[role] || role;
+    };
+
+    // Prepare email data
+    const emailData = {
+      studentName: user.name || user.email.split('@')[0],
+      studentEmail: user.email,
+      courseName: course.title,
+      courseCode: course.course_code,
+      approvedRole: getRoleDisplayName(approvedRole),
+      approverName: approverName || 'Your instructor',
+      approvalDate: new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+
+    // Send approval confirmation email using SendGrid SDK
+    logger.info('📧 Email data prepared:', emailData);
+    
+    let emailSent = false;
+    let emailError = null;
+    
+    try {
+      const sgMail = require('@sendgrid/mail');
+      
+      // Get SendGrid configuration from environment
+      const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+      const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com';
+      
+      if (!SENDGRID_API_KEY) {
+        throw new Error('SendGrid API key not configured in Cloud Function environment');
+      }
+      
+      // Initialize SendGrid with API key
+      sgMail.setApiKey(SENDGRID_API_KEY);
+      logger.info('📧 Using SendGrid SDK from Cloud Function');
+      
+      const subject = `Welcome! You've been approved for ${emailData.courseName}`;
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Welcome to the Course!</h1>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <p style="font-size: 18px; color: #374151; margin-bottom: 20px;">Hello ${emailData.studentName},</p>
+            
+            <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+              <h2 style="color: #15803d; margin-top: 0;">Great news! Your enrollment request has been approved! ✅</h2>
+              <p style="color: #166534; margin-bottom: 0;">You can now access all course materials and start engaging with AI tools.</p>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 25px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #1f2937; margin-top: 0;">Course Details:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Course:</td>
+                  <td style="padding: 8px 0; color: #111827;">${emailData.courseName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Course Code:</td>
+                  <td style="padding: 8px 0; color: #111827;">${emailData.courseCode}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Your Role:</td>
+                  <td style="padding: 8px 0; color: #111827; font-weight: 600;">${emailData.approvedRole}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Approved By:</td>
+                  <td style="padding: 8px 0; color: #111827;">${emailData.approverName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Approval Date:</td>
+                  <td style="padding: 8px 0; color: #111827;">${emailData.approvalDate}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background: #eff6ff; padding: 25px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">What's Next?</h3>
+              <ul style="color: #1e3a8a; margin: 0; padding-left: 20px;">
+                <li style="margin-bottom: 8px;">Access your course dashboard to see available resources</li>
+                <li style="margin-bottom: 8px;">Start creating projects and exploring AI tools</li>
+                <li style="margin-bottom: 8px;">Engage with course materials and assignments</li>
+                <li>Connect with your instructor and classmates</li>
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://ai-engagement-hub.com/dashboard" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">Go to Your Dashboard</a>
+            </div>
+            
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+              <p style="color: #6b7280; margin: 0;">
+                Welcome to AI Engagement Hub! We're excited to have you in the course.<br>
+                <strong>AI Engagement Hub Team</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const textContent = `
+🎉 Welcome! You've been approved for ${emailData.courseName}
+
+Hello ${emailData.studentName},
+
+Great news! Your enrollment request has been approved! ✅
+
+Course Details:
+- Course: ${emailData.courseName}
+- Course Code: ${emailData.courseCode}
+- Your Role: ${emailData.approvedRole}
+- Approved By: ${emailData.approverName}
+- Approval Date: ${emailData.approvalDate}
+
+What's Next?
+• Access your course dashboard to see available resources
+• Start creating projects and exploring AI tools
+• Engage with course materials and assignments
+• Connect with your instructor and classmates
+
+Go to your dashboard: https://ai-engagement-hub.com/dashboard
+
+Welcome to AI Engagement Hub! We're excited to have you in the course.
+
+Best regards,
+AI Engagement Hub Team
+      `;
+      
+      // Send email using SendGrid SDK
+      const emailMessage = {
+        to: user.email,
+        from: {
+          email: SENDGRID_FROM_EMAIL,
+          name: 'AI Engagement Hub'
+        },
+        subject: subject,
+        text: textContent,
+        html: htmlContent
+      };
+      
+      await sgMail.send(emailMessage);
+      emailSent = true;
+      logger.info('✅ Approval confirmation email sent to:', user.email);
+      
+    } catch (error) {
+      emailError = error.message;
+      logger.error('❌ Error sending approval confirmation email:', error.message);
+    }
+    
+    return {
+      success: true,
+      message: 'Approval confirmation email processed',
+      emailResult: {
+        sent: emailSent,
+        recipientEmail: user.email,
+        recipientName: emailData.studentName,
+        error: emailError
+      },
+      emailData
+    };
+
+  } catch (error) {
+    logger.error('❌ Error processing approval confirmation email:', error);
+    
+    // Re-throw HttpsError as-is, wrap others
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    
+    throw new HttpsError('internal', 'Failed to send approval confirmation: ' + error.message);
+  }
+});

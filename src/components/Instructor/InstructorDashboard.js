@@ -11,6 +11,7 @@ import {
   canManageRole 
 } from '../../utils/roleUtils';
 import toast from 'react-hot-toast';
+import approvalEmailService from '../../services/approvalEmailService';
 import SessionDetailModal from './SessionDetailModal';
 import InstructorAIChat from './InstructorAIChat';
 import TagManagement from './TagManagement';
@@ -610,6 +611,25 @@ export default function InstructorDashboard() {
         `${userName} has been ${status === 'approved' ? 'approved' : 'rejected'} for ${courseName}`
       );
       
+      // Send approval confirmation email if approved
+      if (status === 'approved') {
+        try {
+          const approval = pendingApprovals.find(a => a.id === membershipId);
+          if (approval) {
+            await approvalEmailService.sendApprovalConfirmation({
+              userId: approval.userId,
+              courseId: approval.courseId,
+              approvedRole: approval.role, // Use the original requested role
+              approverName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor'
+            });
+            console.log('✅ Approval confirmation email sent successfully');
+          }
+        } catch (emailError) {
+          console.warn('⚠️ Failed to send approval confirmation email:', emailError);
+          // Don't fail the approval process if email fails
+        }
+      }
+      
       // Remove from pending list
       setPendingApprovals(prev => 
         prev.filter(approval => approval.id !== membershipId)
@@ -670,6 +690,20 @@ export default function InstructorDashboard() {
       
       const roleDisplayName = getRoleDisplayName(role);
       toast.success(`${userName} has been approved as ${roleDisplayName} for ${courseName}`);
+      
+      // Send approval confirmation email
+      try {
+        await approvalEmailService.sendApprovalConfirmation({
+          userId: approval.userId,
+          courseId: approval.courseId,
+          approvedRole: role,
+          approverName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor'
+        });
+        console.log('✅ Approval confirmation email sent successfully');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send approval confirmation email:', emailError);
+        // Don't fail the approval process if email fails
+      }
       
       // Remove from pending list
       setPendingApprovals(prev => 

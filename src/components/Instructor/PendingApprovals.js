@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import approvalEmailService from '../../services/approvalEmailService';
 import { getRoleDisplayName, getRoleStyle, getRoleIconColor, isInstructorLevel } from '../../utils/roleUtils';
 import {
   CheckCircleIcon,
@@ -49,6 +50,25 @@ export default function PendingApprovals({ courseId, courseName }) {
         `${userName} has been ${status === 'approved' ? 'approved' : 'rejected'}`
       );
       
+      // Send approval confirmation email if approved
+      if (status === 'approved') {
+        try {
+          const request = pendingRequests.find(r => r.id === membershipId);
+          if (request) {
+            await approvalEmailService.sendApprovalConfirmation({
+              userId: request.userId,
+              courseId: courseId,
+              approvedRole: request.role, // Use the original requested role
+              approverName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor'
+            });
+            console.log('✅ Approval confirmation email sent successfully');
+          }
+        } catch (emailError) {
+          console.warn('⚠️ Failed to send approval confirmation email:', emailError);
+          // Don't fail the approval process if email fails
+        }
+      }
+      
       // Remove from pending list
       setPendingRequests(prev => 
         prev.filter(request => request.id !== membershipId)
@@ -78,6 +98,20 @@ export default function PendingApprovals({ courseId, courseName }) {
       
       const roleDisplayName = getRoleDisplayName(role);
       toast.success(`${userName} has been approved as ${roleDisplayName}`);
+      
+      // Send approval confirmation email
+      try {
+        await approvalEmailService.sendApprovalConfirmation({
+          userId: request.userId,
+          courseId: courseId,
+          approvedRole: role,
+          approverName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor'
+        });
+        console.log('✅ Approval confirmation email sent successfully');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send approval confirmation email:', emailError);
+        // Don't fail the approval process if email fails
+      }
       
       // Remove from pending list
       setPendingRequests(prev => 
