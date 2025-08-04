@@ -538,11 +538,21 @@ export const courseApi = {
     const membershipSnap = await getDoc(membershipRef);
     
     if (!membershipSnap.exists()) {
+      console.error('❌ Membership document not found:', membershipId);
       throw new Error('Membership not found');
     }
     
     const membership = membershipSnap.data();
     const oldRole = membership.role;
+    
+    console.log('📋 Current membership data:', {
+      id: membershipId,
+      userId: membership.userId,
+      courseId: membership.courseId,
+      oldRole: oldRole,
+      newRole: newRole,
+      status: membership.status
+    });
     
     // Only proceed if the role is actually changing
     if (oldRole === newRole) {
@@ -550,10 +560,17 @@ export const courseApi = {
       return true;
     }
     
+    console.log('🔄 Updating role from', oldRole, 'to', newRole);
+    
     await updateDoc(membershipRef, {
       role: newRole,
       updatedAt: serverTimestamp()
     });
+    
+    // Verify the update by reading the document again
+    const updatedMembershipSnap = await getDoc(membershipRef);
+    const updatedMembership = updatedMembershipSnap.data();
+    console.log('✅ Verified updated role:', updatedMembership.role);
     
     // Update course member counts
     await this.updateCourseMemberCounts(membership.courseId);
@@ -573,7 +590,7 @@ export const courseApi = {
       // Don't fail the role update if email fails
     }
     
-    console.log('✅ Member role updated successfully');
+    console.log('✅ Member role updated successfully from', oldRole, 'to', newRole);
     return true;
   },
 

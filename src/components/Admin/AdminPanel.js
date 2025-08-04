@@ -111,10 +111,23 @@ export default function AdminPanel() {
   const loadCourses = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Loading courses...');
       const coursesData = await courseApi.getAllCourses();
+      console.log('📊 Courses loaded:', coursesData.length, 'courses');
+      
+      // Log membership data for debugging
+      coursesData.forEach((course, index) => {
+        console.log(`📚 Course ${index + 1}: ${course.title}`);
+        console.log('  Memberships:', course.course_memberships?.length || 0);
+        course.course_memberships?.forEach((membership, mIndex) => {
+          console.log(`    ${mIndex + 1}. ${membership.users?.name || 'Unknown'} - ${membership.role} (${membership.status})`);
+        });
+      });
+      
       setCourses(coursesData);
+      console.log('✅ Courses state updated');
     } catch (error) {
-      console.error('Error loading courses:', error);
+      console.error('❌ Error loading courses:', error);
       toast.error('Failed to load courses');
     } finally {
       setLoading(false);
@@ -211,13 +224,27 @@ export default function AdminPanel() {
   };
 
   const handleMemberRoleChange = async (membershipId, newRole, memberName) => {
+    console.log('🎯 AdminPanel handleMemberRoleChange called:', {
+      membershipId,
+      newRole,
+      memberName
+    });
+    
     try {
       const changedBy = currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrator';
+      console.log('🔄 Calling courseApi.updateMemberRole...');
+      
       await courseApi.updateMemberRole(membershipId, newRole, changedBy);
+      
+      console.log('✅ Role change API call successful, showing toast and reloading courses');
       toast.success(`${memberName}'s role changed to ${getRoleDisplayName(newRole)}`);
-      loadCourses();
+      
+      console.log('🔄 Reloading courses to refresh UI...');
+      await loadCourses();
+      console.log('✅ Courses reloaded successfully');
+      
     } catch (error) {
-      console.error('Error updating member role:', error);
+      console.error('❌ Error updating member role:', error);
       toast.error('Failed to update member role');
     }
   };
