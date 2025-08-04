@@ -17,10 +17,12 @@ export default function Pricing() {
     {
       name: 'Monthly Plan',
       description: 'Flexible month-to-month pricing',
-      basePrice: '$75',
-      studentPrice: '$30',
+      basePrice: '$750',
       period: 'per month',
+      accounts: '25 accounts included',
       features: [
+        'Base platform for up to 25 accounts',
+        'School Administrators, Instructors, Teaching Assistants, Student Assistants, Students',
         'Access to all 7 curated AI models',
         'Unlimited AI interactions',
         'Real-time analytics dashboard',
@@ -37,13 +39,21 @@ export default function Pricing() {
     {
       name: 'Annual Plan',
       description: 'Best value with annual commitment',
-      basePrice: '$50',
-      studentPrice: '$20',
+      basePrice: '$500',
       period: 'per month',
-      billing: 'billed annually',
-      savings: 'Save 33% vs monthly',
+      billing: 'billed annually ($6,000)',
+      accounts: '25 accounts included',
+      savings: 'Save $250/month vs monthly',
       features: [
-        'Everything in Monthly, plus:',
+        'Base platform for up to 25 accounts',
+        'School Administrators, Instructors, Teaching Assistants, Student Assistants, Students',
+        'Access to all 7 curated AI models',
+        'Unlimited AI interactions',
+        'Real-time analytics dashboard',
+        'Student progress tracking',
+        'AI literacy education resources',
+        'Tag system for organization',
+        'PDF upload capabilities',
         'Priority support',
         'Advanced analytics',
         'Bulk student enrollment',
@@ -123,11 +133,11 @@ export default function Pricing() {
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900">Simple, Transparent Pricing</h1>
             <p className="mt-4 text-xl text-gray-600">
-              Pay per class, scale with your students. No hidden fees.
+              Base platform for up to 25 accounts. If you require more accounts, discounts are available.
             </p>
             <p className="mt-2 text-lg text-primary-600 font-semibold">
               <button onClick={() => setShowInfoModal(true)} className="underline hover:text-primary-700">
-                Contact us for free trials and personalized pricing
+                Contact Sales for more information
               </button>
             </p>
           </div>
@@ -165,11 +175,10 @@ export default function Pricing() {
               <div className="mb-8">
                 <div className="flex items-baseline mb-4">
                   <span className="text-4xl font-bold text-gray-900">{plan.basePrice}</span>
-                  <span className="ml-2 text-gray-600">per class {plan.period}</span>
+                  <span className="ml-2 text-gray-600">{plan.period}</span>
                 </div>
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-semibold text-gray-700">+{plan.studentPrice}</span>
-                  <span className="ml-2 text-gray-600">per student {plan.period}</span>
+                <div className="text-lg text-gray-600 mb-2">
+                  {plan.accounts}
                 </div>
                 {plan.billing && (
                   <p className="mt-2 text-sm text-gray-500">{plan.billing}</p>
@@ -201,67 +210,36 @@ export default function Pricing() {
           ))}
         </div>
 
-        {/* Example Pricing */}
+        {/* Platform Overview */}
         <div className="mt-16 max-w-3xl mx-auto">
           <h3 className="text-xl font-semibold text-gray-900 text-center mb-8">
-            Example Pricing Scenarios
+            Platform Overview
           </h3>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Scenario</th>
-                  <th className="px-6 py-3 text-center text-sm font-medium text-gray-900">Monthly Cost</th>
-                  <th className="px-6 py-3 text-center text-sm font-medium text-gray-900">Annual Cost</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 font-medium">Small Seminar</div>
-                    <div className="text-sm text-gray-500">1 class, 10 students</div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">$375/month</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">
-                    <div>$250/month</div>
-                    <div className="text-xs text-green-600">($3,000/year)</div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 font-medium">Standard Course</div>
-                    <div className="text-sm text-gray-500">1 class, 25 students</div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">$825/month</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">
-                    <div>$550/month</div>
-                    <div className="text-xs text-green-600">($6,600/year)</div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 font-medium">Large Lecture</div>
-                    <div className="text-sm text-gray-500">1 class, 50 students</div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">$1,575/month</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">
-                    <div>$1,050/month</div>
-                    <div className="text-xs text-green-600">($12,600/year)</div>
-                  </td>
-                </tr>
-                <tr className="bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 font-medium">Department Bundle</div>
-                    <div className="text-sm text-gray-500">3 classes, 75 students total</div>
-                  </td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">$2,475/month</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-900">
-                    <div>$1,650/month</div>
-                    <div className="text-xs text-green-600">($19,800/year)</div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <div className="text-center mb-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Base Platform</h4>
+              <p className="text-gray-600">Every account sets up with a minimum of 25 accounts</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h5 className="font-medium text-gray-900 mb-3">Account Types Included:</h5>
+                <ul className="space-y-2 text-gray-600">
+                  <li>• School Administrators</li>
+                  <li>• Instructors</li>
+                  <li>• Teaching Assistants</li>
+                  <li>• Student Assistants</li>
+                  <li>• Students</li>
+                </ul>
+              </div>
+              <div>
+                <h5 className="font-medium text-gray-900 mb-3">Pricing Options:</h5>
+                <ul className="space-y-2 text-gray-600">
+                  <li><strong>Annual:</strong> $500/month ($6,000 invoice)</li>
+                  <li><strong>Monthly:</strong> $750/month</li>
+                  <li><strong>Volume:</strong> Discounts available for more accounts</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -274,8 +252,8 @@ export default function Pricing() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h4 className="font-medium text-gray-900 mb-2">How does billing work?</h4>
               <p className="text-gray-600">
-                You're billed for the base class fee plus the per-student fee based on active enrollments. 
-                Students can be added or removed at any time, and your next bill will reflect the changes.
+                Every account starts with a base platform fee for up to 25 accounts. You can add or remove 
+                users within this limit at any time. For more than 25 accounts, volume discounts are available.
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -286,18 +264,10 @@ export default function Pricing() {
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h4 className="font-medium text-gray-900 mb-2">Is there a free trial?</h4>
-              <p className="text-gray-600">
-                Yes! We offer free trials for new educators. 
-                <button onClick={() => setShowInfoModal(true)} className="text-primary-600 hover:text-primary-700 font-medium underline">Contact us</button> to 
-                set up your personalized trial with up to 5 students and explore all features risk-free.
-              </p>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h4 className="font-medium text-gray-900 mb-2">What about volume discounts?</h4>
               <p className="text-gray-600">
-                For departments or institutions with 5+ classes or 200+ students, we offer custom pricing. 
-                <button onClick={() => setShowInfoModal(true)} className="text-primary-600 hover:text-primary-700 underline">Contact us</button> to discuss.
+                If you require more than 25 accounts, discounts are available. 
+                <button onClick={() => setShowInfoModal(true)} className="text-primary-600 hover:text-primary-700 underline">Contact Sales</button> for more information about volume pricing.
               </p>
             </div>
           </div>
@@ -316,13 +286,13 @@ export default function Pricing() {
               onClick={() => setShowInfoModal(true)}
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
             >
-              Request Free Trial
+              Contact Sales
             </button>
             <button
               onClick={() => setShowInfoModal(true)}
               className="inline-flex items-center justify-center px-6 py-3 border border-primary-300 text-base font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100"
             >
-              Get Custom Quote
+              Get Volume Pricing
             </button>
           </div>
         </div>
