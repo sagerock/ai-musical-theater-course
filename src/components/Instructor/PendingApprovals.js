@@ -16,8 +16,9 @@ export default function PendingApprovals({ courseId, courseName }) {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState({});
+  const [roleSelection, setRoleSelection] = useState({}); // Track role selection for each request
 
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
 
   useEffect(() => {
     if (courseId) {
@@ -59,6 +60,52 @@ export default function PendingApprovals({ courseId, courseName }) {
     } finally {
       setProcessing(prev => ({ ...prev, [membershipId]: false }));
     }
+  };
+
+  // New handler for approving with specific role
+  const handleApprovalWithRole = async (membershipId, role, userName) => {
+    setProcessing(prev => ({ ...prev, [membershipId]: true }));
+    
+    try {
+      // First approve the membership
+      await courseApi.updateMembershipStatus(membershipId, 'approved', currentUser.id);
+      
+      // If the role is different from the requested role, update it
+      const request = pendingRequests.find(r => r.id === membershipId);
+      if (request && role !== request.role) {
+        await courseApi.updateMemberRole(membershipId, role);
+      }
+      
+      const roleDisplayName = getRoleDisplayName(role);
+      toast.success(`${userName} has been approved as ${roleDisplayName}`);
+      
+      // Remove from pending list
+      setPendingRequests(prev => 
+        prev.filter(request => request.id !== membershipId)
+      );
+      
+      // Clear role selection
+      setRoleSelection(prev => ({ ...prev, [membershipId]: undefined }));
+      
+    } catch (error) {
+      console.error('Error approving with role:', error);
+      toast.error('Failed to approve member');
+    } finally {
+      setProcessing(prev => ({ ...prev, [membershipId]: false }));
+    }
+  };
+
+  // Get available roles based on current user's permissions
+  const getAvailableRoles = () => {
+    if (userRole === 'admin') {
+      // Global admins can assign any role
+      return Object.values(ROLES);
+    } else if (hasAdminPermissions(userRole)) {
+      // Course instructors can assign most roles
+      return [ROLES.STUDENT, ROLES.STUDENT_ASSISTANT, ROLES.TEACHING_ASSISTANT, ROLES.INSTRUCTOR];
+    }
+    
+    return [ROLES.STUDENT]; // Default fallback
   };
 
   if (loading) {
@@ -155,20 +202,64 @@ export default function PendingApprovals({ courseId, courseName }) {
                     )}
                   </button>
                   
-                  <button
-                    onClick={() => handleApproval(request.id, 'approved', request.users?.name || 'Unknown User')}
-                    disabled={processing[request.id]}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                  >
-                    {processing[request.id] ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
-                    ) : (
-                      <>
-                        <CheckCircleIcon className="h-3 w-3 mr-1" />
-                        Approve
-                      </>
-                    )}
-                  </button>
+                  {userRole === 'admin' || hasAdminPermissions(userRole) ? (
+                    // Enhanced interface for admins with role selection
+                    <div className="flex items-center space-x-1">
+                      <div className="relative">
+                        <select
+                          value={roleSelection[request.id] || request.role}
+                          onChange={(e) => setRoleSelection(prev => ({ 
+                            ...prev, 
+                            [request.id]: e.target.value 
+                          }))}
+                          className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1.5 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={processing[request.id]}
+                        >
+                          {getAvailableRoles().map((role) => (
+                            <option key={role} value={role}>
+                              {ROLE_LABELS[role]}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                      </div>
+                      
+                      <button
+                        onClick={() => handleApprovalWithRole(
+                          request.id, 
+                          roleSelection[request.id] || request.role, 
+                          request.users?.name || 'Unknown User'
+                        )}
+                        disabled={processing[request.id]}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                      >
+                        {processing[request.id] ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                        ) : (
+                          <>
+                            <CheckIcon className="h-3 w-3 mr-1" />
+                            Approve
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    // Simple interface for regular users
+                    <button
+                      onClick={() => handleApproval(request.id, 'approved', request.users?.name || 'Unknown User')}
+                      disabled={processing[request.id]}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                    >
+                      {processing[request.id] ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                      ) : (
+                        <>
+                          <CheckCircleIcon className="h-3 w-3 mr-1" />
+                          Approve
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
               

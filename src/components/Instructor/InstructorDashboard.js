@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { chatApi, projectApi, userApi, tagApi, courseApi, attachmentApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
+import { 
+  ROLES, 
+  ROLE_LABELS, 
+  getRoleDisplayName, 
+  getRoleStyle,
+  canManageRole 
+} from '../../utils/roleUtils';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
 import InstructorAIChat from './InstructorAIChat';
@@ -24,7 +31,8 @@ import {
   PaperClipIcon,
   PlusIcon,
   XMarkIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboard() {
@@ -47,6 +55,7 @@ export default function InstructorDashboard() {
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [approvalsLoading, setApprovalsLoading] = useState(false);
   const [processingApproval, setProcessingApproval] = useState({});
+  const [approvalRoleSelection, setApprovalRoleSelection] = useState({}); // Track role selection for each approval
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -645,6 +654,59 @@ export default function InstructorDashboard() {
     }
   };
 
+  // New handler for approving with specific role
+  const handleApprovalWithRole = async (membershipId, role, userName, courseName) => {
+    setProcessingApproval(prev => ({ ...prev, [membershipId]: true }));
+    
+    try {
+      // First approve the membership
+      await apis.courseApi.updateMembershipStatus(membershipId, 'approved', currentUser.id);
+      
+      // If the role is different from the requested role, update it
+      const approval = pendingApprovals.find(a => a.id === membershipId);
+      if (approval && role !== approval.role) {
+        await apis.courseApi.updateMemberRole(membershipId, role);
+      }
+      
+      const roleDisplayName = getRoleDisplayName(role);
+      toast.success(`${userName} has been approved as ${roleDisplayName} for ${courseName}`);
+      
+      // Remove from pending list
+      setPendingApprovals(prev => 
+        prev.filter(approval => approval.id !== membershipId)
+      );
+      
+      // Clear role selection
+      setApprovalRoleSelection(prev => ({ ...prev, [membershipId]: undefined }));
+      
+      // Reload dashboard data
+      loadDashboardData();
+      
+    } catch (error) {
+      console.error('Error approving with role:', error);
+      toast.error('Failed to approve member');
+    } finally {
+      setProcessingApproval(prev => ({ ...prev, [membershipId]: false }));
+    }
+  };
+
+  // Get available roles for instructor to assign based on permissions
+  const getAvailableRoles = (userRole) => {
+    const roles = [ROLES.STUDENT]; // Always include student
+    
+    if (userRole === 'admin') {
+      // Global admins can assign any role
+      return Object.values(ROLES);
+    } else if (canManageRole(userRole, ROLES.INSTRUCTOR)) {
+      // Instructors can manage most roles
+      roles.push(ROLES.STUDENT_ASSISTANT);
+      roles.push(ROLES.TEACHING_ASSISTANT);
+      roles.push(ROLES.INSTRUCTOR);
+    }
+    
+    return roles;
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -833,12 +895,8 @@ export default function InstructorDashboard() {
                             <div className="text-sm font-medium text-gray-900">
                               {approval.users?.name || 'Unknown User'}
                             </div>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              approval.role === 'instructor' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {approval.role}
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoleStyle(approval.role)}`}>
+                              Requested: {getRoleDisplayName(approval.role)}
                             </span>
                           </div>
                           <div className="text-sm text-gray-500">
@@ -865,34 +923,48 @@ export default function InstructorDashboard() {
                           </>
                         )}
                       </button>
-                      <button
-                        onClick={() => handleApprovalAction(approval.id, 'approved', approval.users?.name || 'Unknown User', approval.courseName)}
-                        disabled={processingApproval[approval.id]}
-                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                      >
-                        {processingApproval[approval.id] ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-700"></div>
-                        ) : (
-                          <>
-                            <CheckCircleIcon className="h-3 w-3 mr-1" />
-                            Approve as Student
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleFixInstructorRole(approval.id, approval.users?.name || 'Unknown User', approval.courseName)}
-                        disabled={processingApproval[approval.id]}
-                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                      >
-                        {processingApproval[approval.id] ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
-                        ) : (
-                          <>
-                            <AcademicCapIcon className="h-3 w-3 mr-1" />
-                            Approve as Instructor
-                          </>
-                        )}
-                      </button>
+                      
+                      {/* Role selection dropdown and approve button */}
+                      <div className="flex items-center space-x-1">
+                        <div className="relative">
+                          <select
+                            value={approvalRoleSelection[approval.id] || approval.role}
+                            onChange={(e) => setApprovalRoleSelection(prev => ({ 
+                              ...prev, 
+                              [approval.id]: e.target.value 
+                            }))}
+                            className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1.5 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            disabled={processingApproval[approval.id]}
+                          >
+                            {getAvailableRoles(userRole).map((role) => (
+                              <option key={role} value={role}>
+                                {ROLE_LABELS[role]}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                        </div>
+                        
+                        <button
+                          onClick={() => handleApprovalWithRole(
+                            approval.id, 
+                            approvalRoleSelection[approval.id] || approval.role, 
+                            approval.users?.name || 'Unknown User', 
+                            approval.courseName
+                          )}
+                          disabled={processingApproval[approval.id]}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                        >
+                          {processingApproval[approval.id] ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                          ) : (
+                            <>
+                              <CheckCircleIcon className="h-3 w-3 mr-1" />
+                              Approve
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
