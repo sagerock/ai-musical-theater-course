@@ -35,7 +35,7 @@ export const ROLE_HIERARCHY = {
 
 // Check if a role has instructor-level permissions
 export function isInstructorLevel(role) {
-  return [ROLES.INSTRUCTOR, ROLES.SCHOOL_ADMINISTRATOR].includes(role);
+  return role === 'admin' || [ROLES.INSTRUCTOR, ROLES.SCHOOL_ADMINISTRATOR].includes(role);
 }
 
 // Check if a role has assistant-level permissions
@@ -59,7 +59,7 @@ export function hasTeachingPermissions(role) {
 
 // Check if a role has administrative permissions
 export function hasAdminPermissions(role) {
-  return [ROLES.INSTRUCTOR, ROLES.SCHOOL_ADMINISTRATOR].includes(role);
+  return role === 'admin' || [ROLES.INSTRUCTOR, ROLES.SCHOOL_ADMINISTRATOR].includes(role);
 }
 
 // Check if role A has higher permissions than role B
@@ -70,6 +70,8 @@ export function hasHigherPermissions(roleA, roleB) {
 // Get role styling for UI components
 export function getRoleStyle(role) {
   switch (role) {
+    case 'admin':
+      return 'bg-red-100 text-red-800';
     case ROLES.SCHOOL_ADMINISTRATOR:
       return 'bg-purple-100 text-purple-800';
     case ROLES.INSTRUCTOR:
@@ -87,6 +89,8 @@ export function getRoleStyle(role) {
 // Get role icon color
 export function getRoleIconColor(role) {
   switch (role) {
+    case 'admin':
+      return 'text-red-600';
     case ROLES.SCHOOL_ADMINISTRATOR:
       return 'text-purple-600';
     case ROLES.INSTRUCTOR:
@@ -122,12 +126,20 @@ export function normalizeRole(role) {
 
 // Get display name for role
 export function getRoleDisplayName(role) {
+  if (role === 'admin') {
+    return 'Global Administrator';
+  }
   const normalizedRole = normalizeRole(role);
   return ROLE_LABELS[normalizedRole] || 'Unknown Role';
 }
 
 // Check if user can manage other users based on role
 export function canManageRole(userRole, targetRole) {
+  // Global admins can manage anyone
+  if (userRole === 'admin') {
+    return true;
+  }
+  
   const normalizedUserRole = normalizeRole(userRole);
   const normalizedTargetRole = normalizeRole(targetRole);
   

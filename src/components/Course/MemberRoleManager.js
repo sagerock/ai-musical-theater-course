@@ -33,8 +33,8 @@ export default function MemberRoleManager({ member, currentUserRole, onRoleUpdat
     roles.push(ROLES.STUDENT);
     
     // Add roles based on current user's permissions
-    if (currentUserRole === ROLES.SCHOOL_ADMINISTRATOR) {
-      // School administrators can assign any role
+    if (currentUserRole === 'admin' || currentUserRole === ROLES.SCHOOL_ADMINISTRATOR) {
+      // Global admins and school administrators can assign any role
       roles.push(ROLES.STUDENT_ASSISTANT);
       roles.push(ROLES.TEACHING_ASSISTANT);
       roles.push(ROLES.INSTRUCTOR);
