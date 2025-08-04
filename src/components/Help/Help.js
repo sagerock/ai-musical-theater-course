@@ -4,7 +4,6 @@ import {
   QuestionMarkCircleIcon,
   AcademicCapIcon,
   ChatBubbleLeftRightIcon,
-  FolderIcon,
   UserGroupIcon,
   ExclamationCircleIcon,
   LightBulbIcon
@@ -67,6 +66,48 @@ export default function Help() {
               <p className="text-gray-600">
                 Your instructor will provide you with a course code or invite link. Click "Join Course" from your 
                 dashboard or navigate to the join page and enter the course information provided by your instructor.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* User Roles & Permissions */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center mb-4">
+            <UserGroupIcon className="h-5 w-5 text-yellow-600 mr-3" />
+            <h3 className="text-lg font-semibold text-gray-900">User Roles & Permissions</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">What are the different user roles?</h4>
+              <p className="text-gray-600 mb-2">
+                AI Engagement Hub supports 5 different roles, each with specific permissions:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1 ml-4">
+                <li><strong>Student:</strong> Access course materials and AI tools, create projects and reflections</li>
+                <li><strong>Student Assistant:</strong> Help manage course activities and assist other students</li>
+                <li><strong>Teaching Assistant:</strong> Assist with grading and course management, view student work</li>
+                <li><strong>Instructor:</strong> Full course management, student oversight, and administrative access</li>
+                <li><strong>School Administrator:</strong> System-wide oversight and administrative access across all courses</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">How do I get assigned a role?</h4>
+              <p className="text-gray-600">
+                When you join a course, you select your intended role during enrollment. Your request must be 
+                approved by an instructor. Instructors and administrators can also change your role at any time 
+                to match your responsibilities in the course.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Can I have different roles in different courses?</h4>
+              <p className="text-gray-600">
+                Yes! Your role is specific to each course. You might be a student in one course, a teaching 
+                assistant in another, and an instructor in a third. Each role gives you appropriate permissions 
+                for that specific course context.
               </p>
             </div>
           </div>
