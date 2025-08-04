@@ -212,7 +212,8 @@ export default function AdminPanel() {
 
   const handleMemberRoleChange = async (membershipId, newRole, memberName) => {
     try {
-      await courseApi.updateMemberRole(membershipId, newRole);
+      const changedBy = currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrator';
+      await courseApi.updateMemberRole(membershipId, newRole, changedBy);
       toast.success(`${memberName}'s role changed to ${getRoleDisplayName(newRole)}`);
       loadCourses();
     } catch (error) {
@@ -551,7 +552,8 @@ export default function AdminPanel() {
       const approval = pendingApprovals.find(a => a.id === membershipId);
       if (approval) {
         // Update role to instructor using our existing function
-        await courseApi.updateMemberRole(membershipId, 'instructor');
+        const changedBy = currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrator';
+        await courseApi.updateMemberRole(membershipId, 'instructor', changedBy);
         
         toast.success(`${userName} has been approved as instructor for ${courseName}`);
         
@@ -584,7 +586,8 @@ export default function AdminPanel() {
       // If the role is different from the requested role, update it
       const approval = pendingApprovals.find(a => a.id === membershipId);
       if (approval && role !== approval.role) {
-        await courseApi.updateMemberRole(membershipId, role);
+        const changedBy = currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrator';
+        await courseApi.updateMemberRole(membershipId, role, changedBy);
       }
       
       const roleDisplayName = getRoleDisplayName(role);

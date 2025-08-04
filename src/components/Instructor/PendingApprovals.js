@@ -4,13 +4,15 @@ import { courseApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import approvalEmailService from '../../services/approvalEmailService';
-import { getRoleDisplayName, getRoleStyle, getRoleIconColor, isInstructorLevel } from '../../utils/roleUtils';
+import { getRoleDisplayName, getRoleStyle, getRoleIconColor, isInstructorLevel, ROLES, ROLE_LABELS, hasAdminPermissions } from '../../utils/roleUtils';
 import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
   UserIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  ChevronDownIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 
 export default function PendingApprovals({ courseId, courseName }) {
@@ -93,7 +95,8 @@ export default function PendingApprovals({ courseId, courseName }) {
       // If the role is different from the requested role, update it
       const request = pendingRequests.find(r => r.id === membershipId);
       if (request && role !== request.role) {
-        await courseApi.updateMemberRole(membershipId, role);
+        const changedBy = currentUser.displayName || currentUser.email?.split('@')[0] || 'Instructor';
+        await courseApi.updateMemberRole(membershipId, role, changedBy);
       }
       
       const roleDisplayName = getRoleDisplayName(role);

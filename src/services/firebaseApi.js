@@ -25,6 +25,7 @@ import { db, storage, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { extractTextFromPDF, isPDFFile } from '../utils/pdfExtractor';
 import emailService from './emailService';
+import approvalEmailService from './approvalEmailService';
 
 // Helper function to convert Firestore timestamp to Date
 const convertTimestamp = (timestamp) => {
@@ -530,8 +531,8 @@ export const courseApi = {
   },
 
   // Update member role
-  async updateMemberRole(membershipId, newRole) {
-    console.log('🔥 updateMemberRole:', membershipId, newRole);
+  async updateMemberRole(membershipId, newRole, changedBy = null) {
+    console.log('🔥 updateMemberRole:', membershipId, newRole, changedBy);
     
     const membershipRef = doc(db, 'courseMemberships', membershipId);
     const membershipSnap = await getDoc(membershipRef);
@@ -541,6 +542,13 @@ export const courseApi = {
     }
     
     const membership = membershipSnap.data();
+    const oldRole = membership.role;
+    
+    // Only proceed if the role is actually changing
+    if (oldRole === newRole) {
+      console.log('⚠️ Role is already set to', newRole, '- no change needed');
+      return true;
+    }
     
     await updateDoc(membershipRef, {
       role: newRole,
@@ -549,6 +557,21 @@ export const courseApi = {
     
     // Update course member counts
     await this.updateCourseMemberCounts(membership.courseId);
+    
+    // Send role change notification email
+    try {
+      await approvalEmailService.sendRoleChangeNotification({
+        userId: membership.userId,
+        courseId: membership.courseId,
+        oldRole: oldRole,
+        newRole: newRole,
+        changedBy: changedBy || 'Your instructor'
+      });
+      console.log('✅ Role change notification email sent successfully');
+    } catch (emailError) {
+      console.warn('⚠️ Failed to send role change notification email:', emailError);
+      // Don't fail the role update if email fails
+    }
     
     console.log('✅ Member role updated successfully');
     return true;
