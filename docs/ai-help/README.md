@@ -71,6 +71,26 @@ Welcome to the AI Engagement Hub documentation! This folder contains detailed gu
    - Implementation strategies
    - Assessment approaches
 
+### Platform Features & Privacy
+
+10. **[Student Data Privacy Guide](./STUDENT_DATA_PRIVACY_GUIDE.md)**
+    - Privacy rights and protections
+    - What instructors can see
+    - Security measures
+    - FERPA compliance
+
+11. **[PDF Upload Guide](./PDF_UPLOAD_GUIDE.md)**
+    - How to upload documents
+    - Best practices for students
+    - Instructor monitoring tools
+    - Troubleshooting tips
+
+12. **[Advanced Features Guide](./ADVANCED_FEATURES_GUIDE.md)**
+    - Multi-model comparison
+    - Analytics and insights
+    - Tag management
+    - Power user tips
+
 ## 🤖 For AI Bot Integration
 
 When building your AI help bot, these documents provide:
@@ -158,6 +178,10 @@ When platform updates occur:
   - AI Classroom Policies Template
   - AI Literacy Assessment Rubrics
   - AI-Integrated Lesson Plans
+- v1.2 (January 2025) - Added platform features and privacy guides
+  - Student Data Privacy Guide
+  - PDF Upload Guide
+  - Advanced Features Guide
 - Future updates logged here
 
 ## 🔗 Quick Links
