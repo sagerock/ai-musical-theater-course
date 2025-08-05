@@ -49,19 +49,19 @@ Database schema and migration scripts.
 - Migration files
 - Debugging queries
 
-### 📚 `/documents/`
+### 🔌 `/integrations/`
 External API documentation and integration guides.
-- Firebase integration
-- OpenAI API docs
-- Anthropic API docs
-- React architecture
+- Firebase integration guides
+- AI API documentation (OpenAI, Anthropic)
+- React architecture guide
 - Tailwind CSS patterns
+- Third-party service setup
 
 ## 🚀 Quick Links
 
 ### For New Developers
 1. Start with [Setup Instructions](./setup/SETUP_INSTRUCTIONS.md)
-2. Review [React Architecture Guide](./documents/react-architecture-guide.md)
+2. Review [React Architecture Guide](./integrations/react-architecture-guide.md)
 3. Understand [Role System Guide](./development/ROLE_SYSTEM_GUIDE.md)
 
 ### For Instructors
