@@ -3,12 +3,15 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi, projectApi, chatApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
+import { diagnoseCourseProjects } from '../../utils/diagnostics';
+import { repairProjectCourseIds } from '../../utils/dataRepair';
 import {
   AcademicCapIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
   FolderIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
 
 export default function CourseDashboard() {
@@ -149,6 +152,46 @@ export default function CourseDashboard() {
 
   const instructors = courseMembers.filter(m => m.role === 'instructor');
   const students = courseMembers.filter(m => m.role === 'student');
+  
+  // Diagnostic function for debugging projects issue
+  const runDiagnostics = async () => {
+    try {
+      console.log('🔧 Running diagnostics for course:', courseId);
+      const results = await diagnoseCourseProjects(courseId);
+      console.log('📊 Diagnostic Results:', results);
+      
+      // Show results in an alert for now
+      const needsRepair = results.projectsWithCourse_id > 0 || results.orphanedChats.length > 0;
+      
+      alert(`
+Course Diagnostics for ${course.title}:
+- Projects with courseId field: ${results.projectsWithCourseId}
+- Projects with course_id field: ${results.projectsWithCourse_id}
+- Total chats: ${results.totalChats}
+- Orphaned chats: ${results.orphanedChats.length}
+
+${needsRepair ? 'Issues detected! Would you like to run the repair tool?' : 'No issues detected.'}
+
+Check browser console for detailed information.
+      `);
+      
+      if (needsRepair && window.confirm('Run repair tool to fix project courseId issues?')) {
+        try {
+          const repairResult = await repairProjectCourseIds();
+          alert(`Repair completed! Fixed ${repairResult.repairedCount} out of ${repairResult.totalProjects} projects.`);
+          
+          // Reload course stats to reflect the fix
+          await loadCourseStatsWithCourse(course);
+        } catch (error) {
+          console.error('Repair error:', error);
+          alert('Error running repair. Check console for details.');
+        }
+      }
+    } catch (error) {
+      console.error('Diagnostic error:', error);
+      alert('Error running diagnostics. Check console for details.');
+    }
+  };
 
   return (
     <div className="p-6">
@@ -299,17 +342,33 @@ export default function CourseDashboard() {
 
       {/* Course Info */}
       <div className="mt-6 bg-gray-50 rounded-lg p-4">
-        <div className="text-xs text-gray-500">
-          Course created {(() => {
-            if (!course.created_at) return 'Unknown date';
-            
-            // Handle Firestore timestamp
-            const date = course.created_at?.toDate ? course.created_at.toDate() : new Date(course.created_at);
-            
-            if (isNaN(date)) return 'Unknown date';
-            
-            return format(date, 'MMMM dd, yyyy');
-          })()}
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-gray-500">
+            Course created {(() => {
+              // Check both createdAt and created_at for compatibility
+              const timestamp = course.createdAt || course.created_at;
+              if (!timestamp) return 'Unknown date';
+              
+              // Handle Firestore timestamp
+              const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+              
+              if (isNaN(date.getTime())) return 'Unknown date';
+              
+              return format(date, 'MMMM dd, yyyy');
+            })()}
+          </div>
+          
+          {/* Diagnostic button - only visible to instructors and admins */}
+          {(userRole === 'instructor' || userRole === 'admin' || userRole === 'school_administrator') && (
+            <button
+              onClick={runDiagnostics}
+              className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+              title="Run diagnostics to debug project count issues"
+            >
+              <WrenchScrewdriverIcon className="h-3 w-3 mr-1" />
+              Diagnostics
+            </button>
+          )}
         </div>
       </div>
     </div>

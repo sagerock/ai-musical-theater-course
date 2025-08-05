@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, userApi, tagApi } from '../../services/firebaseApi';
+import { courseApi, userApi, tagApi, schoolsApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import approvalEmailService from '../../services/approvalEmailService';
@@ -28,7 +28,8 @@ import {
   CheckCircleIcon,
   EnvelopeIcon,
   ChartBarIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  BuildingOffice2Icon
 } from '@heroicons/react/24/outline';
 
 export default function AdminPanel() {
@@ -77,13 +78,19 @@ export default function AdminPanel() {
     name: '',
     description: '',
     semester: 'Spring',
-    year: new Date().getFullYear()
+    year: new Date().getFullYear(),
+    schoolId: ''
   });
+  const [schools, setSchools] = useState([]);
+  const [loadingSchools, setLoadingSchools] = useState(false);
+  const [showEditSchoolModal, setShowEditSchoolModal] = useState(false);
+  const [editingSchool, setEditingSchool] = useState(null);
   const [editCourse, setEditCourse] = useState({
     name: '',
     description: '',
     semester: 'Spring',
-    year: new Date().getFullYear()
+    year: new Date().getFullYear(),
+    schoolId: ''
   });
 
   const { currentUser } = useAuth();
@@ -95,13 +102,14 @@ export default function AdminPanel() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['courses', 'users', 'approvals', 'messaging', 'analytics'].includes(tabParam)) {
+    if (tabParam && ['courses', 'users', 'approvals', 'messaging', 'analytics', 'schools'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, []);
 
   useEffect(() => {
     loadCourses();
+    loadSchools();
     if (activeTab === 'users') {
       loadUsers();
     } else if (activeTab === 'approvals') {
@@ -135,6 +143,60 @@ export default function AdminPanel() {
     }
   };
 
+  const loadSchools = async () => {
+    try {
+      setLoadingSchools(true);
+      const schoolsList = await schoolsApi.getAllSchools();
+      setSchools(schoolsList);
+      console.log('🏫 Schools loaded:', schoolsList.length, 'schools');
+    } catch (error) {
+      console.error('Error loading schools:', error);
+      // Don't show error toast if no schools exist yet
+    } finally {
+      setLoadingSchools(false);
+    }
+  };
+
+  const handleEditSchool = (school) => {
+    setEditingSchool({
+      id: school.id,
+      name: school.name || '',
+      shortName: school.shortName || '',
+      address: school.address || '',
+      city: school.city || '',
+      state: school.state || '',
+      country: school.country || 'USA',
+      website: school.website || '',
+      description: school.description || ''
+    });
+    setShowEditSchoolModal(true);
+  };
+
+  const handleUpdateSchool = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await schoolsApi.updateSchool(editingSchool.id, {
+        name: editingSchool.name,
+        shortName: editingSchool.shortName,
+        address: editingSchool.address,
+        city: editingSchool.city,
+        state: editingSchool.state,
+        country: editingSchool.country,
+        website: editingSchool.website,
+        description: editingSchool.description
+      });
+      
+      toast.success('School updated successfully!');
+      setShowEditSchoolModal(false);
+      setEditingSchool(null);
+      loadSchools();
+    } catch (error) {
+      console.error('Error updating school:', error);
+      toast.error('Failed to update school');
+    }
+  };
+
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     
@@ -153,6 +215,7 @@ export default function AdminPanel() {
         semester: newCourse.semester,
         year: newCourse.year,
         course_code: courseCode,
+        schoolId: newCourse.schoolId || null,
         createdBy: currentUser.id  // Firebase uses createdBy
       };
 
@@ -164,7 +227,8 @@ export default function AdminPanel() {
         name: '',
         description: '',
         semester: 'Spring',
-        year: new Date().getFullYear()
+        year: new Date().getFullYear(),
+        schoolId: ''
       });
       
       // Reload courses
@@ -182,7 +246,8 @@ export default function AdminPanel() {
       name: course.title,  // Map title to name for the form
       description: course.description || '',
       semester: course.semester,
-      year: course.year
+      year: course.year,
+      schoolId: course.schoolId || ''
     });
     setShowEditModal(true);
   };
@@ -195,7 +260,8 @@ export default function AdminPanel() {
         title: editCourse.name,  // Map name back to title for database
         description: editCourse.description,
         semester: editCourse.semester,
-        year: editCourse.year
+        year: editCourse.year,
+        schoolId: editCourse.schoolId || null
       };
       await courseApi.updateCourse(editingCourse.id, updateData);
       toast.success('Course updated successfully!');
@@ -332,7 +398,8 @@ export default function AdminPanel() {
     setEditingUser({
       ...user,
       originalName: user.name,
-      originalEmail: user.email
+      originalEmail: user.email,
+      schoolId: user.schoolId || ''
     });
     setShowEditUserModal(true);
   };
@@ -346,6 +413,14 @@ export default function AdminPanel() {
         email: editingUser.email,
         role: editingUser.role
       };
+      
+      // Add schoolId if user is a school administrator
+      if (editingUser.role === 'school_administrator') {
+        updateData.schoolId = editingUser.schoolId || null;
+      } else {
+        // Clear schoolId if role changed from school_administrator
+        updateData.schoolId = null;
+      }
       
       await userApi.updateUser(editingUser.id, updateData);
       toast.success('User updated successfully!');
@@ -920,6 +995,17 @@ export default function AdminPanel() {
             <ChartBarIcon className="h-5 w-5 inline-block mr-2" />
             Usage Analytics
           </button>
+          <button
+            onClick={() => setActiveTab('schools')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'schools'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <BuildingOffice2Icon className="h-5 w-5 inline-block mr-2" />
+            Schools
+          </button>
         </nav>
       </div>
 
@@ -1013,6 +1099,12 @@ export default function AdminPanel() {
                                 <div className="text-sm text-gray-500">
                                   {user.email}
                                 </div>
+                                {/* Show school for School Administrators */}
+                                {user.role === 'school_administrator' && user.schoolId && (
+                                  <div className="text-sm text-gray-500 mt-1">
+                                    <span className="font-medium">School:</span> {schools.find(s => s.id === user.schoolId)?.name || 'Unknown School'}
+                                  </div>
+                                )}
                                 <div className="mt-1">
                                   {userRoles.length > 0 ? (
                                     <div className="space-y-1">
@@ -1256,6 +1348,134 @@ export default function AdminPanel() {
         <UsageAnalytics />
       )}
 
+      {activeTab === 'schools' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Schools & Institutions</h2>
+            <button
+              onClick={() => {
+                const schoolName = prompt('Enter school name:');
+                if (schoolName) {
+                  schoolsApi.createSchool({ name: schoolName })
+                    .then(() => {
+                      toast.success('School created successfully!');
+                      loadSchools();
+                    })
+                    .catch(error => {
+                      console.error('Error creating school:', error);
+                      toast.error('Failed to create school');
+                    });
+                }
+              }}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add School
+            </button>
+          </div>
+
+          {loadingSchools ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            </div>
+          ) : schools.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <BuildingOffice2Icon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No schools yet</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Get started by adding your first school or institution.
+              </p>
+              <div className="mt-6">
+                <button
+                  onClick={() => {
+                    const schoolName = prompt('Enter school name:');
+                    if (schoolName) {
+                      schoolsApi.createSchool({ name: schoolName })
+                        .then(() => {
+                          toast.success('School created successfully!');
+                          loadSchools();
+                        })
+                        .catch(error => {
+                          console.error('Error creating school:', error);
+                          toast.error('Failed to create school');
+                        });
+                    }
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                  Add First School
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {schools.map((school) => (
+                <div key={school.id} className="bg-white rounded-lg shadow border border-gray-200 p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {school.name}
+                      </h3>
+                      {school.city && school.state && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          {school.city}, {school.state}
+                        </p>
+                      )}
+                      {school.website && (
+                        <a 
+                          href={school.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-800 mt-1 inline-block"
+                        >
+                          {school.website}
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleEditSchool(school)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        title="Edit school"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to delete ${school.name}? This action cannot be undone.`)) {
+                            schoolsApi.deleteSchool(school.id)
+                              .then(() => {
+                                toast.success('School deleted successfully');
+                                loadSchools();
+                              })
+                              .catch(error => {
+                                console.error('Error deleting school:', error);
+                                toast.error('Failed to delete school');
+                              });
+                          }
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete school"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-gray-500 space-y-1">
+                    <p>Created {format(school.createdAt, 'MMM d, yyyy')}</p>
+                    <p className="font-medium text-gray-700">
+                      ID: <span className="font-mono text-xs">{school.id}</span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'courses' && (
         <>
           {/* Debug Tools */}
@@ -1408,6 +1628,29 @@ export default function AdminPanel() {
                     rows={3}
                     placeholder="Exploring AI tools in musical theater production"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    School/Institution
+                  </label>
+                  <select
+                    value={newCourse.schoolId}
+                    onChange={(e) => setNewCourse(prev => ({ ...prev, schoolId: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">No School (Independent)</option>
+                    {schools.map(school => (
+                      <option key={school.id} value={school.id}>
+                        {school.name}
+                      </option>
+                    ))}
+                  </select>
+                  {schools.length === 0 && !loadingSchools && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      No schools available. You can add schools in the Schools tab.
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1608,6 +1851,29 @@ export default function AdminPanel() {
                           max={new Date().getFullYear() + 5}
                         />
                       </div>
+                    </div>
+                    {/* School Selection */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        School/Institution
+                      </label>
+                      <select
+                        value={editCourse.schoolId || ''}
+                        onChange={(e) => setEditCourse(prev => ({ ...prev, schoolId: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">No School Selected</option>
+                        {schools.filter(school => school.isActive).map((school) => (
+                          <option key={school.id} value={school.id}>
+                            {school.name}
+                          </option>
+                        ))}
+                      </select>
+                      {schools.length === 0 && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          No schools available. You can add schools in the Schools tab.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1845,6 +2111,31 @@ export default function AdminPanel() {
                     <option value="admin">Global Administrator</option>
                   </select>
                 </div>
+                
+                {/* School Selection for School Administrators */}
+                {editingUser.role === 'school_administrator' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      School/Institution
+                    </label>
+                    <select
+                      value={editingUser.schoolId || ''}
+                      onChange={(e) => setEditingUser(prev => ({ ...prev, schoolId: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      required={editingUser.role === 'school_administrator'}
+                    >
+                      <option value="">Select a School</option>
+                      {schools.filter(school => school.isActive).map((school) => (
+                        <option key={school.id} value={school.id}>
+                          {school.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      School Administrators have oversight of all courses within their institution.
+                    </p>
+                  </div>
+                )}
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                   <div className="flex">
@@ -2102,6 +2393,140 @@ export default function AdminPanel() {
                   Add as {getRoleDisplayName(selectedRoleForAdd)}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit School Modal */}
+      {showEditSchoolModal && editingSchool && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowEditSchoolModal(false)}></div>
+            
+            <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit School Information</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowEditSchoolModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpdateSchool} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      School Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editingSchool.name}
+                      onChange={(e) => setEditingSchool(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="California State University Stanislaus"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Short Name
+                    </label>
+                    <input
+                      type="text"
+                      value={editingSchool.shortName}
+                      onChange={(e) => setEditingSchool(prev => ({ ...prev, shortName: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="CSU Stanislaus"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      value={editingSchool.website}
+                      onChange={(e) => setEditingSchool(prev => ({ ...prev, website: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="https://www.csustan.edu"
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={editingSchool.address}
+                      onChange={(e) => setEditingSchool(prev => ({ ...prev, address: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="One University Circle"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={editingSchool.city}
+                      onChange={(e) => setEditingSchool(prev => ({ ...prev, city: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Turlock"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      State
+                    </label>
+                    <input
+                      type="text"
+                      value={editingSchool.state}
+                      onChange={(e) => setEditingSchool(prev => ({ ...prev, state: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="CA"
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={editingSchool.description}
+                      onChange={(e) => setEditingSchool(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      rows={3}
+                      placeholder="A brief description of the school..."
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditSchoolModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                  >
+                    Update School
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

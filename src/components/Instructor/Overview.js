@@ -26,13 +26,48 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Helper function to display user-friendly AI tool names
+  const getToolDisplayName = useCallback((toolName) => {
+    if (!toolName) return 'Unknown Tool';
+    
+    const toolMap = {
+      // OpenAI Models (new)
+      'gpt-4.1-mini': 'GPT-4.1 Mini',
+      'gpt-4.1': 'GPT-4.1',
+      // OpenAI Models (legacy - for backward compatibility)
+      'gpt-4o-2024-08-06': 'GPT-4o',
+      'gpt-4o': 'GPT-4o',
+      // Anthropic Models
+      'claude-sonnet-4-20250514': 'Claude Sonnet 4',
+      'claude-sonnet-4': 'Claude Sonnet 4',
+      'claude-4-opus-20250514': 'Claude Opus 4',
+      // Google Models
+      'gemini-1.5-flash': 'Gemini Flash',
+      'gemini-flash': 'Gemini Flash',
+      'gemini-2.5-pro': 'Gemini 2.5 Pro',
+      // Perplexity Models
+      'sonar-pro': 'Sonar Pro',
+      // Display name mappings
+      'Claude Sonnet 4': 'Claude Sonnet 4',
+      'Claude Opus 4': 'Claude Opus 4',
+      'GPT-4.1 Mini': 'GPT-4.1 Mini',
+      'GPT-4.1': 'GPT-4.1',
+      'GPT-4o': 'GPT-4o',
+      'Gemini Flash': 'Gemini Flash',
+      'Gemini 2.5 Pro': 'Gemini 2.5 Pro',
+      'Sonar Pro': 'Sonar Pro'
+    };
+    
+    return toolMap[toolName] || toolName;
+  }, []);
+
   const loadOverviewData = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔄 Loading overview data for course:', selectedCourseId);
       
-      // Load all data in parallel for better performance
-      const [chats, projects, users, pendingRequests] = await Promise.all([
+      // Load chat data (which includes user/project info) and pending requests
+      const [chats, pendingRequests] = await Promise.all([
         chatApi.getChatsWithFilters({
           courseId: selectedCourseId,
           limit: 1000  // Get all chats for accurate count
@@ -40,19 +75,40 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
           console.log('❌ Error loading chats:', error);
           return [];
         }),
-        projectApi.getAllProjects(selectedCourseId).catch(error => {
-          console.log('❌ Error loading projects:', error);
-          return [];
-        }),
-        userApi.getAllUsers(selectedCourseId).catch(error => {
-          console.log('❌ Error loading users:', error);
-          return [];
-        }),
         courseApi.getPendingApprovals(selectedCourseId, currentUser.id).catch(error => {
-          console.log('❌ Error loading pending approvals:', error);
+          console.log('❌ Error loading pending approvals (this is normal for Teaching Assistants):', error);
           return [];
         })
       ]);
+
+      // Extract unique projects and users from chat data
+      const projectsFromChats = [];
+      const usersFromChats = [];
+      const seenProjects = new Set();
+      const seenUsers = new Set();
+
+      chats.forEach(chat => {
+        // Extract project info
+        if (chat.projects && chat.projects.id && !seenProjects.has(chat.projects.id)) {
+          projectsFromChats.push(chat.projects);
+          seenProjects.add(chat.projects.id);
+        }
+        
+        // Extract user info  
+        if (chat.users && chat.userId && !seenUsers.has(chat.userId)) {
+          usersFromChats.push({
+            id: chat.userId,
+            name: chat.users.name,
+            email: chat.users.email,
+            course_role: 'student', // Assume student role for counting
+            status: 'approved' // Assume approved if they have chats
+          });
+          seenUsers.add(chat.userId);
+        }
+      });
+
+      const projects = projectsFromChats;
+      const users = usersFromChats;
       
       // Debug logging
       console.log('🔍 Debug data loaded:', {
@@ -61,7 +117,22 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
         projectsCount: projects.length,
         usersCount: users.length,
         pendingRequestsCount: pendingRequests.length,
-        sampleProjects: projects.slice(0, 3).map(p => ({ id: p.id, title: p.title, courseId: p.courseId }))
+        sampleChat: chats[0] ? {
+          id: chats[0].id,
+          userId: chats[0].userId || chats[0].user_id,
+          projectId: chats[0].projectId || chats[0].project_id,
+          fields: Object.keys(chats[0])
+        } : 'No chats',
+        sampleUser: users[0] ? {
+          id: users[0].id || users[0].user_id,
+          name: users[0].name,
+          fields: Object.keys(users[0])
+        } : 'No users',
+        sampleProject: projects[0] ? {
+          id: projects[0].id,
+          title: projects[0].title,
+          fields: Object.keys(projects[0])
+        } : 'No projects'
       });
       
       // Calculate statistics
@@ -87,8 +158,11 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
       console.log('📊 Calculated overview stats:', calculatedStats);
       setStats(calculatedStats);
       
-      // Set recent activity (limit to 10 most recent)
-      setRecentActivity(chats.slice(0, 10));
+      // Recent activity uses chat data directly (already enriched by getChatsWithFilters)
+      const recentChats = chats.slice(0, 10);
+      
+      console.log('🔍 Sample chat data:', recentChats[0]);
+      setRecentActivity(recentChats);
       setPendingApprovals(pendingRequests);
       
     } catch (error) {
@@ -406,7 +480,7 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
                       })()}
                     </span>
                     <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
-                      {chat.tool_used || 'Unknown Tool'}
+                      {getToolDisplayName(chat.tool_used)}
                     </span>
                   </div>
                 </div>

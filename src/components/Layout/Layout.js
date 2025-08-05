@@ -21,7 +21,7 @@ import {
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userCourses, setUserCourses] = useState([]);
-  const { currentUser, userRole, isInstructorAnywhere, logout } = useAuth();
+  const { currentUser, userRole, isInstructorAnywhere, isSchoolAdministrator, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -60,6 +60,9 @@ export default function Layout() {
     { name: 'My Dashboard', href: '/dashboard', icon: HomeIcon },
     ...(isInstructorAnywhere 
       ? [{ name: 'Instructor Dashboard', href: '/instructor', icon: ChartBarIcon }] 
+      : []),
+    ...(isSchoolAdministrator
+      ? [{ name: 'School Administrator', href: '/school-admin', icon: AcademicCapIcon }]
       : []),
     ...(userRole === 'admin' 
       ? [{ name: 'Admin Panel', href: '/admin', icon: CogIcon }] 

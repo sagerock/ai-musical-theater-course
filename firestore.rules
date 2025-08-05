@@ -20,12 +20,25 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
-    // Helper function to check if user is instructor in a course
-    function isInstructorInCourse(courseId) {
+    // Helper function to check if user has teaching permissions in a course
+    function hasTeachingPermissionsInCourse(courseId) {
       return isAuthenticated() && 
              exists(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)) &&
-             get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.role == 'instructor' &&
+             get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.role in ['teaching_assistant', 'instructor', 'school_administrator'] &&
              get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.status == 'approved';
+    }
+    
+    // Helper function to check if user has student assistant permissions in a course
+    function hasStudentAssistantPermissionsInCourse(courseId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)) &&
+             get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.role in ['student_assistant', 'teaching_assistant', 'instructor', 'school_administrator'] &&
+             get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.status == 'approved';
+    }
+    
+    // Helper function to check if user is instructor in a course (legacy - use hasTeachingPermissionsInCourse for new code)
+    function isInstructorInCourse(courseId) {
+      return hasTeachingPermissionsInCourse(courseId);
     }
     
     // Helper function to check if user is member of a course
@@ -35,11 +48,23 @@ service cloud.firestore {
              get(/databases/$(database)/documents/courseMemberships/$(request.auth.uid + '_' + courseId)).data.status == 'approved';
     }
     
-    // Helper function to check if user has instructor role (simplified)
-    function hasInstructorRole() {
+    // Helper function to check if user has teaching permissions globally
+    function hasTeachingPermissions() {
       return isAuthenticated() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'instructor';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teaching_assistant', 'instructor', 'school_administrator'];
+    }
+    
+    // Helper function to check if user has teaching permissions in any course
+    function hasTeachingPermissionsInAnyCourse() {
+      // This is a simplified check - in practice, we check if they have the teaching permissions function
+      // or if they're trying to access data related to courses where they have teaching permissions
+      return hasTeachingPermissions();
+    }
+    
+    // Helper function to check if user has instructor role (legacy - use hasTeachingPermissions for new code)
+    function hasInstructorRole() {
+      return hasTeachingPermissions();
     }
     
     // Restrict data repair operations to admins only
@@ -54,21 +79,32 @@ service cloud.firestore {
              get(/databases/$(database)/documents/projects/$(noteData.projectId)).data.createdBy == request.auth.uid;
     }
     
+    // Helper function to check if user is a school administrator
+    function isSchoolAdministrator() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'school_administrator';
+    }
+    
+    // Helper function to check if school administrator can access course (same school)
+    function isSchoolAdministratorForCourse(courseId) {
+      return isSchoolAdministrator() &&
+             exists(/databases/$(database)/documents/courses/$(courseId)) &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId == get(/databases/$(database)/documents/courses/$(courseId)).data.schoolId;
+    }
+    
     // USERS COLLECTION - Secure user profile access for educational environment
     match /users/{userId} {
-      // Allow users to read their own profile, admins to read all, and instructors for course management
-      allow read: if isAuthenticated() && (
-        isOwner(userId) ||                                    // Own profile
-        isGlobalAdmin() ||                                    // Global admin access  
-        canPerformDataRepair() ||                             // Data repair operations
-        hasInstructorRole()                                   // Instructors can read profiles for course management
-      );
+      // In an educational platform, basic user profiles (name, email) should be readable by authenticated users
+      // This allows Teaching Assistants and other course staff to see student names in their courses
+      allow read: if isAuthenticated();
       
       // Only allow write access to own profile, admins, or data repair functions
       allow write: if isOwner(userId) || isGlobalAdmin() || canPerformDataRepair();
       
-      // Allow instructors and admins to query/list users for course management and data repair
-      allow list: if isAuthenticated() && (hasInstructorRole() || isGlobalAdmin() || canPerformDataRepair());
+      // Allow instructors, teaching assistants and admins to query/list users for course management and data repair
+      allow list: if isAuthenticated() && (hasTeachingPermissions() || isGlobalAdmin() || canPerformDataRepair());
     }
 
     // COURSES COLLECTION - Basic course info
@@ -92,13 +128,15 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         membershipId.matches(request.auth.uid + '_.*') || // Own membership
         isInstructorInCourse(resource.data.courseId) ||   // Instructor in course
+        hasStudentAssistantPermissionsInCourse(resource.data.courseId) ||  // Student assistants can see course memberships
         isGlobalAdmin()                                   // Global admin
       );
       
-      // Allow collection queries for getting user's own memberships or for instructors
+      // Allow collection queries for getting user's own memberships, for instructors, and for student assistants
       allow list: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||       // User's own memberships
         isInstructorInCourse(resource.data.courseId) ||   // Instructors can see all memberships in their courses
+        hasStudentAssistantPermissionsInCourse(resource.data.courseId) ||  // Student assistants can see course memberships
         hasInstructorRole() ||                            // Users with instructor role can query
         isGlobalAdmin()                                   // Global admin can query all
       );
@@ -127,10 +165,12 @@ service cloud.firestore {
 
     // PROJECTS COLLECTION - Owner or instructor access
     match /projects/{projectId} {
-      // Users can read their own projects + instructors can read student projects in their courses
+      // Users can read their own projects + instructors can read student projects + student assistants can read peer projects
       allow read: if isAuthenticated() && (
         isOwner(resource.data.createdBy) ||              // Project owner
         isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
+        hasStudentAssistantPermissionsInCourse(resource.data.courseId) ||  // Student assistants can view peer projects
+        isSchoolAdministratorForCourse(resource.data.courseId) ||  // School administrators can view projects in their school's courses
         isGlobalAdmin()                                  // Global admin
       );
       
@@ -146,6 +186,9 @@ service cloud.firestore {
         isOwner(resource.data.createdBy) ||              // Project owner
         isGlobalAdmin()                                  // Global admin
       );
+      
+      // Allow list queries for projects (filtered by read rules)
+      allow list: if isAuthenticated();
     }
 
     // CHATS COLLECTION - Owner or instructor access (most sensitive data)
@@ -311,15 +354,17 @@ service cloud.firestore {
 
     // COURSE ANALYTICS - Server-side computed analytics data
     match /courseAnalytics/{courseId} {
-      // Only instructors and admins can read course analytics
+      // Instructors, school administrators (for their school's courses), and admins can read course analytics
       allow read: if isAuthenticated() && (
         isInstructorInCourse(courseId) ||                    // Instructor in course
+        isSchoolAdministratorForCourse(courseId) ||         // School administrator for course's school
         isGlobalAdmin()                                      // Global admin
       );
       
-      // Allow collection queries for instructors and admins
+      // Allow collection queries for instructors, school administrators, and admins
       allow list: if isAuthenticated() && (
         hasInstructorRole() ||                               // Users with instructor role
+        isSchoolAdministrator() ||                           // School administrators
         isGlobalAdmin()                                      // Global admin
       );
       
@@ -339,6 +384,19 @@ service cloud.firestore {
       allow list: if isGlobalAdmin();
     }
 
+    // SCHOOLS - Educational institution management
+    match /schools/{schoolId} {
+      // Anyone can read active schools (for course creation dropdown)
+      allow read: if isAuthenticated() && 
+                     (resource.data.isActive == true || isGlobalAdmin());
+      
+      // Only global admins can create, update, or delete schools
+      allow create, update, delete: if isGlobalAdmin();
+      
+      // Allow listing schools for authenticated users
+      allow list: if isAuthenticated();
+    }
+    
     // HELP REQUESTS - Internal user support requests
     match /helpRequests/{requestId} {
       // Authenticated users can create help requests

@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isInstructorAnywhere, setIsInstructorAnywhere] = useState(false);
+  const [isSchoolAdministrator, setIsSchoolAdministrator] = useState(false);
   const [loading, setLoading] = useState(true);
 
   console.log('🔥 AuthProvider render:', {
@@ -36,6 +37,7 @@ export function AuthProvider({ children }) {
     email: currentUser?.email,
     userRole,
     isInstructorAnywhere,
+    isSchoolAdministrator,
     loading
   });
 
@@ -207,24 +209,32 @@ export function AuthProvider({ children }) {
     return 'student';
   };
 
-  // Check if user is instructor in any course with retry logic
+  // Check if user has teaching permissions in any course with retry logic
   const checkInstructorStatus = async (userId, retries = 3) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        console.log(`🔍 Checking instructor status for: ${userId} (attempt ${attempt}/${retries})`);
+        console.log(`🔍 Checking teaching permissions for: ${userId} (attempt ${attempt}/${retries})`);
         
+        // Get all user's course memberships
         const membershipsQuery = query(
           collection(db, 'courseMemberships'),
           where('userId', '==', userId),
-          where('role', '==', 'instructor'),
           where('status', '==', 'approved')
         );
         
         const membershipsSnapshot = await getDocs(membershipsQuery);
-        const isInstructor = !membershipsSnapshot.empty;
         
-        console.log('✅ Instructor status:', isInstructor);
-        return isInstructor;
+        // Import roleUtils to check for teaching permissions
+        const { hasTeachingPermissions } = await import('../utils/roleUtils');
+        
+        // Check if user has teaching permissions in any course
+        const hasTeachingRole = membershipsSnapshot.docs.some(doc => {
+          const membership = doc.data();
+          return hasTeachingPermissions(membership.role);
+        });
+        
+        console.log('✅ Teaching permissions status:', hasTeachingRole);
+        return hasTeachingRole;
       } catch (error) {
         console.error(`❌ Error checking instructor status (attempt ${attempt}/${retries}):`, error);
         
@@ -297,17 +307,20 @@ export function AuthProvider({ children }) {
           
           setUserRole(role);
           setIsInstructorAnywhere(isInstructor);
+          setIsSchoolAdministrator(role === 'school_administrator');
           
-          console.log('✅ User data loaded:', { role, isInstructor });
+          console.log('✅ User data loaded:', { role, isInstructor, isSchoolAdmin: role === 'school_administrator' });
         } catch (error) {
           console.error('❌ Error loading user data:', error);
           setUserRole('student');
           setIsInstructorAnywhere(false);
+          setIsSchoolAdministrator(false);
         }
       } else {
         setCurrentUser(null);
         setUserRole(null);
         setIsInstructorAnywhere(false);
+        setIsSchoolAdministrator(false);
       }
       
       setLoading(false);
@@ -320,6 +333,7 @@ export function AuthProvider({ children }) {
     currentUser,
     userRole,
     isInstructorAnywhere,
+    isSchoolAdministrator,
     loading,
     signUp,
     signIn,

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { projectApi, courseApi } from '../../services/firebaseApi';
+import { hasStudentAssistantPermissions, hasTeachingPermissions } from '../../utils/roleUtils';
 import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -19,6 +20,8 @@ import {
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
+  const [allCourseProjects, setAllCourseProjects] = useState([]);
+  const [userRole, setUserRole] = useState(null);
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -55,12 +58,14 @@ export default function Projects() {
       
       console.log('📂 Projects: Firebase user, loading data...');
       
+      let courseMembership = null;
+      
       // If accessing a specific course, verify the user is enrolled
       // Instructors can access regardless of approval status
       if (courseId) {
         console.log('🔍 Projects: Verifying course membership for courseId:', courseId);
         const userCourses = await courseApi.getUserCourses(currentUser.id);
-        const courseMembership = userCourses.find(membership => 
+        courseMembership = userCourses.find(membership => 
           membership.courses.id === courseId
         );
         
@@ -72,19 +77,26 @@ export default function Projects() {
           return;
         }
         
-        // Students need approval, instructors can access immediately
-        const canAccessCourse = courseMembership.role === 'instructor' || 
-                               (courseMembership.role === 'student' && courseMembership.status === 'approved');
+        // Import permission check function
+        const { hasTeachingPermissions } = await import('../../utils/roleUtils');
+        
+        // Students need approval, teaching staff and student assistants can access immediately
+        const canAccessCourse = hasTeachingPermissions(courseMembership.role) || 
+                               (courseMembership.role === 'student' && courseMembership.status === 'approved') ||
+                               (courseMembership.role === 'student_assistant' && courseMembership.status === 'approved');
         
         if (!canAccessCourse) {
           console.log('❌ Projects: User cannot access course - role:', courseMembership.role, 'status:', courseMembership.status);
-          toast.error('Access denied: Students must be approved to access course projects');
+          toast.error('Access denied: You must be approved to access course projects');
           setProjects([]);
           setLoading(false);
           return;
         }
         
         console.log('✅ Projects: User verified for course access');
+        
+        // Store user role for UI decisions
+        setUserRole(courseMembership.role);
       }
       
       // Load projects based on whether we're in a course context or not
@@ -92,10 +104,26 @@ export default function Projects() {
         ? await projectApi.getUserProjects(currentUser.id, courseId)
         : await projectApi.getUserProjects(currentUser.id);
       
-      console.log('  - Projects loaded:', userProjects.length);
+      console.log('  - User projects loaded:', userProjects.length);
       console.log('  - Projects:', userProjects.map(p => ({ id: p.id, title: p.title, course_id: p.course_id, created_at: p.created_at })));
       
       setProjects(userProjects);
+      
+      // If user is a Student Assistant or has teaching permissions, load all course projects
+      if (courseId && courseMembership && 
+          (hasStudentAssistantPermissions(courseMembership.role) || hasTeachingPermissions(courseMembership.role))) {
+        console.log('📂 Loading all course projects for', courseMembership.role, '...');
+        try {
+          const courseProjects = await projectApi.getAllProjects(courseId);
+          // Filter out user's own projects to avoid duplicates
+          const peerProjects = courseProjects.filter(p => p.createdBy !== currentUser.id);
+          console.log('  - All course projects loaded:', peerProjects.length);
+          setAllCourseProjects(peerProjects);
+        } catch (error) {
+          console.error('Error loading course projects:', error);
+          // Don't fail the whole load, just log the error
+        }
+      }
     } catch (error) {
       console.error('Error loading projects:', error);
       toast.error('Failed to load projects');
@@ -150,13 +178,14 @@ export default function Projects() {
       return;
     }
     
-    // Students need approval, instructors can create projects immediately
+    // Students need approval, instructors and student assistants can create projects immediately
     const canCreateProject = courseMembership.role === 'instructor' || 
-                           (courseMembership.role === 'student' && courseMembership.status === 'approved');
+                           (courseMembership.role === 'student' && courseMembership.status === 'approved') ||
+                           (courseMembership.role === 'student_assistant' && courseMembership.status === 'approved');
     
     if (!canCreateProject) {
       console.log('❌ Projects: User cannot create projects - role:', courseMembership.role, 'status:', courseMembership.status);
-      toast.error('Access denied: Students must be approved to create projects');
+      toast.error('Access denied: You must be approved to create projects');
       return;
     }
     
@@ -305,13 +334,26 @@ export default function Projects() {
             }
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-colors"
-        >
-          <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-          New Project
-        </button>
+        <div className="flex items-center space-x-3">
+          {/* Course Members Link for Student Assistants */}
+          {courseId && userRole && hasStudentAssistantPermissions(userRole) && (
+            <Link
+              to={`/course/${courseId}/students`}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            >
+              <UserIcon className="-ml-1 mr-2 h-4 w-4" />
+              Course Members
+            </Link>
+          )}
+          
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+          >
+            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+            New Project
+          </button>
+        </div>
       </div>
 
       {projects.length > 0 ? (
@@ -444,6 +486,95 @@ export default function Projects() {
               <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
               Create Project
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* All Course Projects Section for Student Assistants and Teaching Staff */}
+      {courseId && userRole && 
+       (hasStudentAssistantPermissions(userRole) || hasTeachingPermissions(userRole)) && 
+       allCourseProjects.length > 0 && (
+        <div className="mt-12">
+          <div className="border-t border-gray-200 pt-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">All Course Projects</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {hasTeachingPermissions(userRole) 
+                    ? `All student projects in ${course?.name || 'this course'}`
+                    : `Projects from other students in ${course?.name || 'this course'} - available for peer assistance`
+                  }
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  hasTeachingPermissions(userRole) 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {userRole === 'school_administrator' ? 'School Administrator' :
+                   userRole === 'teaching_assistant' ? 'Teaching Assistant' :
+                   userRole === 'instructor' ? 'Instructor' :
+                   'Student Assistant'}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {allCourseProjects.length} {hasTeachingPermissions(userRole) ? 'student' : 'peer'} {allCourseProjects.length === 1 ? 'project' : 'projects'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allCourseProjects.map((project) => (
+                <div key={`peer-${project.id}`} className="bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition-shadow">
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center">
+                        <FolderIcon className="h-8 w-8 text-blue-500" />
+                        <div className="ml-3">
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                            {project.title}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            By {project.users?.name || project.userName || 'Anonymous Student'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Peer Project
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {project.description && (
+                      <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+                        {project.description}
+                      </p>
+                    )}
+
+                    <div className="mt-4">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <UserIcon className="h-4 w-4 mr-2" />
+                        Created {project.created_at ? format(new Date(project.created_at), 'MMM dd, yyyy') : 'Unknown date'}
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex items-center justify-between">
+                      <Link
+                        to={`/chat/${project.id}`}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 transition-colors"
+                      >
+                        <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
+                        View Project
+                      </Link>
+                      <div className="text-xs text-gray-400">
+                        Read-only access
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

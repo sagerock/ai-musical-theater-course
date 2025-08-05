@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi, chatApi, tagApi, instructorNotesApi } from '../../services/firebaseApi';
+import { hasTeachingPermissions } from '../../utils/roleUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import InstructorNavigation from './InstructorNavigation';
@@ -32,7 +33,7 @@ export default function InstructorDashboardContainer() {
       
       const userCourses = await courseApi.getUserCourses(currentUser.id);
       const instructorCourses = userCourses.filter(membership => 
-        membership.role === 'instructor' && membership.status === 'approved'
+        hasTeachingPermissions(membership.role) && membership.status === 'approved'
       );
       
       setInstructorCourses(instructorCourses);
@@ -209,7 +210,7 @@ export default function InstructorDashboardContainer() {
           <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No Courses Found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You are not currently an instructor in any courses.
+            You do not have teaching permissions in any courses.
           </p>
         </div>
       </div>

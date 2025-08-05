@@ -223,8 +223,24 @@ exports.generateCourseAnalytics = onCall({
       if (userData.role === 'admin') {
         logger.info('✅ User is global admin, allowing access');
         // Continue to analytics generation
+      } else if (userData.role === 'school_administrator' && userData.schoolId) {
+        // Check if school administrator oversees this course
+        logger.info('🏫 User is school administrator, checking course school...');
+        const courseDoc = await db.collection('courses').doc(courseId).get();
+        
+        if (courseDoc.exists) {
+          const courseData = courseDoc.data();
+          if (courseData.schoolId === userData.schoolId) {
+            logger.info('✅ School administrator has access to course in their school');
+            // Continue to analytics generation
+          } else {
+            throw new HttpsError('permission-denied', 'School administrator can only access courses in their school');
+          }
+        } else {
+          throw new HttpsError('not-found', 'Course not found');
+        }
       } else {
-        // Check course membership for non-admins
+        // Check course membership for non-admins and non-school-administrators
         const membershipDoc = await db.collection('courseMemberships')
           .doc(`${callerUid}_${courseId}`)
           .get();
@@ -251,15 +267,15 @@ exports.generateCourseAnalytics = onCall({
           const membership = membershipQuery.docs[0].data();
           logger.info('📋 Found membership via query:', membership);
           
-          if (membership.role !== 'instructor' && membership.role !== 'admin') {
-            throw new HttpsError('permission-denied', 'Only instructors and admins can generate analytics');
+          if (!['student_assistant', 'instructor', 'teaching_assistant', 'school_administrator', 'admin'].includes(membership.role)) {
+            throw new HttpsError('permission-denied', 'Only student assistants, instructors, teaching assistants, and admins can generate analytics');
           }
         } else {
           const membership = membershipDoc.data();
           logger.info('📋 Direct membership data:', membership);
           
-          if (membership.role !== 'instructor' && membership.role !== 'admin') {
-            throw new HttpsError('permission-denied', 'Only instructors and admins can generate analytics');
+          if (!['student_assistant', 'instructor', 'teaching_assistant', 'school_administrator', 'admin'].includes(membership.role)) {
+            throw new HttpsError('permission-denied', 'Only student assistants, instructors, teaching assistants, and admins can generate analytics');
           }
         }
       }

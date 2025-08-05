@@ -62,6 +62,16 @@ export function hasAdminPermissions(role) {
   return role === 'admin' || [ROLES.INSTRUCTOR, ROLES.SCHOOL_ADMINISTRATOR].includes(role);
 }
 
+// Check if a role has student assistant permissions
+export function hasStudentAssistantPermissions(role) {
+  return [
+    ROLES.STUDENT_ASSISTANT,
+    ROLES.TEACHING_ASSISTANT,
+    ROLES.INSTRUCTOR,
+    ROLES.SCHOOL_ADMINISTRATOR
+  ].includes(role);
+}
+
 // Check if role A has higher permissions than role B
 export function hasHigherPermissions(roleA, roleB) {
   return ROLE_HIERARCHY[roleA] > ROLE_HIERARCHY[roleB];

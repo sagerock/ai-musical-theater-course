@@ -21,7 +21,7 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
-import { db, storage, functions } from '../config/firebase';
+import { db, storage, functions, auth } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { extractTextFromPDF, isPDFFile } from '../utils/pdfExtractor';
 import emailService from './emailService';
@@ -3115,6 +3115,149 @@ export const analyticsApi = {
     } catch (error) {
       console.error('❌ Error getting analytics status:', error);
       return { exists: false, error: error.message };
+    }
+  }
+};
+
+// SCHOOLS API - Organization management
+export const schoolsApi = {
+  async createSchool(schoolData) {
+    console.log('🏫 createSchool:', schoolData);
+    
+    try {
+      const schoolDoc = {
+        name: schoolData.name,
+        shortName: schoolData.shortName || null,
+        address: schoolData.address || null,
+        city: schoolData.city || null,
+        state: schoolData.state || null,
+        country: schoolData.country || 'USA',
+        website: schoolData.website || null,
+        description: schoolData.description || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: auth.currentUser?.uid || null,
+        isActive: true
+      };
+      
+      const docRef = await addDoc(collection(db, 'schools'), schoolDoc);
+      console.log('✅ School created with ID:', docRef.id);
+      
+      return {
+        id: docRef.id,
+        ...schoolDoc,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    } catch (error) {
+      console.error('❌ Error creating school:', error);
+      throw error;
+    }
+  },
+  
+  async getAllSchools() {
+    console.log('🏫 getAllSchools');
+    
+    try {
+      const schoolsQuery = query(
+        collection(db, 'schools'),
+        where('isActive', '==', true),
+        orderBy('name', 'asc')
+      );
+      
+      const snapshot = await getDocs(schoolsQuery);
+      const schools = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: convertTimestamp(doc.data().createdAt),
+        updatedAt: convertTimestamp(doc.data().updatedAt)
+      }));
+      
+      console.log('✅ getAllSchools result:', schools.length, 'schools');
+      return schools;
+    } catch (error) {
+      console.error('❌ Error getting schools:', error);
+      throw error;
+    }
+  },
+  
+  async getSchoolById(schoolId) {
+    console.log('🏫 getSchoolById:', schoolId);
+    
+    try {
+      const schoolDoc = await getDoc(doc(db, 'schools', schoolId));
+      
+      if (!schoolDoc.exists()) {
+        throw new Error('School not found');
+      }
+      
+      return {
+        id: schoolDoc.id,
+        ...schoolDoc.data(),
+        createdAt: convertTimestamp(schoolDoc.data().createdAt),
+        updatedAt: convertTimestamp(schoolDoc.data().updatedAt)
+      };
+    } catch (error) {
+      console.error('❌ Error getting school:', error);
+      throw error;
+    }
+  },
+  
+  async updateSchool(schoolId, updates) {
+    console.log('🏫 updateSchool:', schoolId, updates);
+    
+    try {
+      const schoolRef = doc(db, 'schools', schoolId);
+      
+      await updateDoc(schoolRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log('✅ School updated successfully');
+      return await this.getSchoolById(schoolId);
+    } catch (error) {
+      console.error('❌ Error updating school:', error);
+      throw error;
+    }
+  },
+  
+  async deleteSchool(schoolId) {
+    console.log('🏫 deleteSchool:', schoolId);
+    
+    try {
+      // Soft delete - just mark as inactive
+      await this.updateSchool(schoolId, { isActive: false });
+      console.log('✅ School soft deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting school:', error);
+      throw error;
+    }
+  },
+  
+  async getSchoolCourses(schoolId) {
+    console.log('🏫 getSchoolCourses:', schoolId);
+    
+    try {
+      const coursesQuery = query(
+        collection(db, 'courses'),
+        where('schoolId', '==', schoolId),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(coursesQuery);
+      const courses = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: convertTimestamp(doc.data().createdAt),
+        updatedAt: convertTimestamp(doc.data().updatedAt)
+      }));
+      
+      console.log('✅ getSchoolCourses result:', courses.length, 'courses');
+      return courses;
+    } catch (error) {
+      console.error('❌ Error getting school courses:', error);
+      throw error;
     }
   }
 };

@@ -61,8 +61,14 @@ export default function MemberRoleManager({ member, currentUserRole, onRoleUpdat
 
     setUpdating(true);
     try {
-      await courseApi.updateMemberRole(member.id, selectedRole);
-      toast.success(`${member.users.name}'s role updated to ${getRoleDisplayName(selectedRole)}`);
+      // Get the membership ID from the member object
+      const membershipId = member.course_memberships?.[0]?.id || 
+                          `${member.id}_${member.course_memberships?.[0]?.courseId || member.course_memberships?.[0]?.course_id}`;
+      
+      console.log('🔧 Updating role for membership:', membershipId);
+      
+      await courseApi.updateMemberRole(membershipId, selectedRole);
+      toast.success(`${member.name || member.users?.name}'s role updated to ${getRoleDisplayName(selectedRole)}`);
       
       // Call parent callback to refresh data
       if (onRoleUpdated) {

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { userApi, courseApi, chatApi, projectApi } from '../../services/firebaseApi';
+import { hasAdminPermissions } from '../../utils/roleUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import MemberRoleManager from '../Course/MemberRoleManager';
 import {
   UsersIcon,
   MagnifyingGlassIcon,
@@ -21,6 +23,8 @@ import {
 export default function Students({ selectedCourseId, selectedCourse, currentUser }) {
   const [students, setStudents] = useState([]);
   const [instructors, setInstructors] = useState([]);
+  const [teachingAssistants, setTeachingAssistants] = useState([]);
+  const [otherRoles, setOtherRoles] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [studentStats, setStudentStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -34,6 +38,10 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   const [searchResults, setSearchResults] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [searching, setSearching] = useState(false);
+
+  // Check if current user can delete students (only instructors and admins)
+  const canDeleteStudents = hasAdminPermissions(currentUser?.role) || 
+                           currentUser?.role === 'admin';
 
 
   useEffect(() => {
@@ -63,32 +71,48 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       
       const courseMembers = await userApi.getAllUsers(selectedCourseId);
       
-      // Separate students and instructors based on their course membership role
-      const studentsOnly = courseMembers.filter(user => {
+      // Separate all users by their course membership role
+      const studentsOnly = [];
+      const instructorsOnly = [];
+      const teachingAssistantsOnly = [];
+      const otherRolesOnly = [];
+
+      courseMembers.forEach(user => {
         // Handle both fallback (course_role) and normal (course_memberships) data structures
         const membershipRole = user.course_role || 
                                user.course_memberships?.[0]?.role || 
                                user.course_memberships?.role || 
                                user.role;
-        // console.log(`🔍 Filtering ${user.name}: membershipRole = "${membershipRole}"`);
-        return membershipRole === 'student';
-      });
-      
-      const instructorsOnly = courseMembers.filter(user => {
-        // Handle both fallback (course_role) and normal (course_memberships) data structures
-        const membershipRole = user.course_role || 
-                               user.course_memberships?.[0]?.role || 
-                               user.course_memberships?.role || 
-                               user.role;
-        // console.log(`🎓 Filtering ${user.name}: membershipRole = "${membershipRole}"`);
-        return membershipRole === 'instructor';
+        
+        switch (membershipRole) {
+          case 'student':
+            studentsOnly.push(user);
+            break;
+          case 'instructor':
+            instructorsOnly.push(user);
+            break;
+          case 'teaching_assistant':
+            teachingAssistantsOnly.push(user);
+            break;
+          case 'student_assistant':
+          case 'school_administrator':
+            otherRolesOnly.push(user);
+            break;
+          default:
+            // Unknown roles go to other
+            otherRolesOnly.push(user);
+        }
       });
       
       console.log('👥 Students found:', studentsOnly.length);
       console.log('👨‍🏫 Instructors found:', instructorsOnly.length);
+      console.log('🎓 Teaching Assistants found:', teachingAssistantsOnly.length);
+      console.log('👤 Other roles found:', otherRolesOnly.length);
       
       setStudents(studentsOnly);
       setInstructors(instructorsOnly);
+      setTeachingAssistants(teachingAssistantsOnly);
+      setOtherRoles(otherRolesOnly);
       
       // Load real statistics for each student
       await loadStudentStats(studentsOnly);
@@ -324,7 +348,10 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Course Members</h2>
           <p className="text-sm text-gray-600">
-            {students.length} students and {instructors.length} instructors in {selectedCourse.courses?.title || selectedCourse.courses?.name}
+            {students.length} students, {instructors.length} instructors
+            {teachingAssistants.length > 0 && `, ${teachingAssistants.length} teaching assistants`}
+            {otherRoles.length > 0 && `, ${otherRoles.length} other members`}
+            {' '}in {selectedCourse.courses?.title || selectedCourse.courses?.name}
           </p>
         </div>
         <button
@@ -422,6 +449,159 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
         </div>
       )}
 
+      {/* Teaching Assistants Section */}
+      {teachingAssistants.length > 0 && (
+        <div className="bg-white rounded-lg shadow border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <AcademicCapIcon className="h-5 w-5 text-orange-600 mr-2" />
+              <h3 className="text-lg font-medium text-gray-900">
+                Teaching Assistants ({teachingAssistants.length})
+              </h3>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+            {teachingAssistants.map((ta) => (
+              <div key={ta.id} className="border border-orange-200 rounded-lg p-4 bg-orange-50 hover:shadow-md transition-shadow">
+                {/* TA Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                      <AcademicCapIcon className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {ta.name || 'No name provided'}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {ta.email || 'No email provided'}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          Teaching Assistant
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* TA Info */}
+                <div className="space-y-2">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    Joined {(() => {
+                      const joinDate = ta.course_memberships?.[0]?.joinedAt || 
+                                     ta.course_memberships?.[0]?.createdAt ||
+                                     ta.joined_at || 
+                                     ta.created_at ||
+                                     ta.createdAt ||
+                                     ta.joinedAt;
+                      
+                      if (joinDate && !isNaN(new Date(joinDate))) {
+                        return format(new Date(joinDate), 'MMM d, yyyy');
+                      }
+                      return 'Unknown date';
+                    })()}
+                  </div>
+                  <div className="flex items-center text-xs text-gray-500">
+                    <EnvelopeIcon className="h-3 w-3 mr-1" />
+                    {ta.email || 'No email'}
+                  </div>
+                  {ta.status && (
+                    <div className="flex items-center text-xs text-gray-500">
+                      <CheckCircleIcon className="h-3 w-3 mr-1" />
+                      Status: {ta.status}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Other Roles Section */}
+      {otherRoles.length > 0 && (
+        <div className="bg-white rounded-lg shadow border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <UsersIcon className="h-5 w-5 text-gray-600 mr-2" />
+              <h3 className="text-lg font-medium text-gray-900">
+                Other Course Members ({otherRoles.length})
+              </h3>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+            {otherRoles.map((member) => {
+              const membershipRole = member.course_role || 
+                                   member.course_memberships?.[0]?.role || 
+                                   member.course_memberships?.role || 
+                                   member.role;
+              
+              const roleDisplayName = membershipRole === 'student_assistant' ? 'Student Assistant' :
+                                    membershipRole === 'school_administrator' ? 'School Administrator' :
+                                    membershipRole || 'Unknown Role';
+              
+              return (
+                <div key={member.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition-shadow">
+                  {/* Member Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <UsersIcon className="h-5 w-5 text-gray-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {member.name || 'No name provided'}
+                        </h3>
+                        <p className="text-xs text-gray-500 truncate">
+                          {member.email || 'No email provided'}
+                        </p>
+                        <div className="flex items-center mt-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {roleDisplayName}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Member Info */}
+                  <div className="space-y-2">
+                    <div className="flex items-center text-xs text-gray-500">
+                      <CalendarIcon className="h-3 w-3 mr-1" />
+                      Joined {(() => {
+                        const joinDate = member.course_memberships?.[0]?.joinedAt || 
+                                       member.course_memberships?.[0]?.createdAt ||
+                                       member.joined_at || 
+                                       member.created_at ||
+                                       member.createdAt ||
+                                       member.joinedAt;
+                        
+                        if (joinDate && !isNaN(new Date(joinDate))) {
+                          return format(new Date(joinDate), 'MMM d, yyyy');
+                        }
+                        return 'Unknown date';
+                      })()}
+                    </div>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <EnvelopeIcon className="h-3 w-3 mr-1" />
+                      {member.email || 'No email'}
+                    </div>
+                    {member.status && (
+                      <div className="flex items-center text-xs text-gray-500">
+                        <CheckCircleIcon className="h-3 w-3 mr-1" />
+                        Status: {member.status}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Students Grid */}
       <div className="bg-white rounded-lg shadow border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -485,16 +665,27 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setShowConfirmModal(student)}
-                          disabled={removeLoading === student.id}
-                          className="p-1 text-red-400 hover:text-red-600 transition-colors"
-                          title="Remove student from course"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
+                        canDeleteStudents && (
+                          <button
+                            onClick={() => setShowConfirmModal(student)}
+                            disabled={removeLoading === student.id}
+                            className="p-1 text-red-400 hover:text-red-600 transition-colors"
+                            title="Remove student from course"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        )
                       )}
                     </div>
+                  </div>
+
+                  {/* Role Management */}
+                  <div className="mb-3">
+                    <MemberRoleManager 
+                      member={student}
+                      currentUserRole={currentUser?.role || 'instructor'}
+                      onRoleUpdated={loadStudents}
+                    />
                   </div>
 
                   {/* Student Stats */}
