@@ -64,7 +64,7 @@ AI Engagement Hub takes your privacy seriously. This guide explains how we prote
 - Educational use only
 
 **Technical Security:**
-- Database-level protection (Row Level Security)
+- Database-level protection (Firebase Security Rules)
 - Encrypted data transmission
 - Secure cloud storage
 - Complete audit trails
@@ -79,7 +79,7 @@ AI Engagement Hub takes your privacy seriously. This guide explains how we prote
 
 ### The Technology Behind It
 
-We use **Row Level Security (RLS)** - think of it as a smart filter that automatically shows each person only the data they're allowed to see:
+We use **Firebase Security Rules** - think of it as a smart filter that automatically shows each person only the data they're allowed to see:
 
 ```
 Student A logs in → Sees only Student A's data
