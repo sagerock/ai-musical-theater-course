@@ -71,7 +71,19 @@ export default function AIAssistant({ selectedCourseId, selectedCourse, currentU
   useEffect(() => {
     if (selectedCourseId && selectedCourse) {
       loadCourseAnalytics().then(data => {
-        setAnalyticsData(data);
+        if (data) {
+          setAnalyticsData(data);
+        } else {
+          console.warn('⚠️ Analytics data could not be loaded for AI Assistant');
+          // Try again after a short delay
+          setTimeout(() => {
+            loadCourseAnalytics().then(retryData => {
+              if (retryData) {
+                setAnalyticsData(retryData);
+              }
+            });
+          }, 3000); // Retry after 3 seconds
+        }
       });
     }
   }, [selectedCourseId, selectedCourse]);
@@ -170,14 +182,36 @@ ${Object.entries(analyticsData.engagementPatterns.dailyActivityTrend || {}).map(
 Peak Activity Hours:
 ${(analyticsData.engagementPatterns.peakActivityHours || []).map(peak => `- ${peak.timeRange}: ${peak.count} interactions`).join('\n')}
 `;
-      } else {
+      } else if (analyticsLoading) {
         courseContext += `
-[Analytics data is loading... Server-side computation in progress. Please ask general questions about course analytics while data loads.]`;
+[Analytics data is currently loading. Server-side computation in progress. I can still help you with general questions about course management, best practices, and teaching strategies while the data loads.]`;
+      } else {
+        // Try to provide some basic context even without full analytics
+        courseContext += `
+[Full analytics data is not available at the moment. However, I can help you with:
+- General course management strategies
+- Best practices for student engagement
+- AI tool recommendations and usage patterns
+- Teaching methodologies for AI-integrated courses
+
+For specific student data and metrics, please ensure the course has student activity and try refreshing the analytics using the refresh button.]`;
       }
 
-      courseContext += `
+      // Add appropriate instructions based on data availability
+      if (analyticsData) {
+        courseContext += `
 
 Please analyze this REAL data to provide specific, actionable insights about student engagement, learning patterns, and areas for improvement. Reference specific students, metrics, and patterns when possible.`;
+      } else {
+        courseContext += `
+
+IMPORTANT: The specific analytics data is not currently available. If the instructor asks about specific metrics (like "most popular AI tools" or "student engagement patterns"), explain that you need the analytics to load first and suggest they:
+1. Wait a moment for the data to load (you can see the loading indicator above the chat)
+2. Click the "Refresh Data" button to force a reload
+3. Ask general questions about course management in the meantime
+
+Be helpful but honest about data availability.`;
+      }
 
       const response = await aiApi.sendChatCompletion(
         `${courseContext}\n\nInstructor Question: ${inputMessage}`,
