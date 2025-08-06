@@ -20,11 +20,22 @@ import {
 export default function MemberRoleManager({ member, currentUserRole, onRoleUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
   
-  // Get the actual course membership role
+  // Get the actual course membership role - NEVER use member.role as it's the global role
   const memberRole = member.course_role || 
                      member.course_memberships?.[0]?.role || 
-                     member.course_memberships?.role || 
-                     member.role;
+                     member.course_memberships?.role ||
+                     'student'; // Default to student if no course role found
+  
+  // Debug logging to understand the data structure
+  if (!member.course_role && !member.course_memberships?.[0]?.role) {
+    console.warn('⚠️ Member missing course role data:', {
+      name: member.name,
+      email: member.email,
+      course_role: member.course_role,
+      course_memberships: member.course_memberships,
+      globalRole: member.role
+    });
+  }
   
   const [selectedRole, setSelectedRole] = useState(memberRole);
   const [updating, setUpdating] = useState(false);

@@ -433,7 +433,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                 {/* Role Management */}
                 <div className="mb-3">
                   <MemberRoleManager 
-                    member={instructor}
+                    member={{...instructor, course_role: instructor.course_role || 'instructor'}}
                     currentUserRole={currentUser?.role || 'instructor'}
                     onRoleUpdated={refreshStudents}
                   />
@@ -509,7 +509,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                 {/* Role Management */}
                 <div className="mb-3">
                   <MemberRoleManager 
-                    member={ta}
+                    member={{...ta, course_role: ta.course_role || 'teaching_assistant'}}
                     currentUserRole={currentUser?.role || 'instructor'}
                     onRoleUpdated={refreshStudents}
                   />
@@ -584,7 +584,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                   {/* Role Management */}
                   <div className="mb-3">
                     <MemberRoleManager 
-                      member={member}
+                      member={{...member, course_role: member.course_role || member.course_memberships?.[0]?.role || 'student_assistant'}}
                       currentUserRole={currentUser?.role || 'instructor'}
                       onRoleUpdated={refreshStudents}
                     />
@@ -705,7 +705,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                   {/* Role Management */}
                   <div className="mb-3">
                     <MemberRoleManager 
-                      member={student}
+                      member={{...student, course_role: student.course_role || 'student'}}
                       currentUserRole={currentUser?.role || 'instructor'}
                       onRoleUpdated={refreshStudents}
                     />
