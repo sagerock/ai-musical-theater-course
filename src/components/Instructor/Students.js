@@ -28,6 +28,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [studentStats, setStudentStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [removeLoading, setRemoveLoading] = useState(null);
   const [approveLoading, setApproveLoading] = useState(null);
@@ -65,9 +66,20 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
     return () => clearTimeout(timeoutId);
   }, [userSearchTerm, showAddStudentModal, selectedCourseId]);
 
+  const refreshStudents = async () => {
+    try {
+      setRefreshing(true);
+      await loadStudents();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const loadStudents = async () => {
     try {
-      setLoading(true);
+      if (!refreshing) {
+        setLoading(true);
+      }
       
       const courseMembers = await userApi.getAllUsers(selectedCourseId);
       
@@ -120,7 +132,9 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       console.error('Error loading students:', error);
       toast.error('Failed to load students');
     } finally {
-      setLoading(false);
+      if (!refreshing) {
+        setLoading(false);
+      }
     }
   };
 
@@ -343,6 +357,14 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
 
   return (
     <div className="space-y-6">
+      {/* Refreshing Indicator */}
+      {refreshing && (
+        <div className="fixed top-4 right-4 z-50 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          Updating member sections...
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -413,7 +435,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                   <MemberRoleManager 
                     member={instructor}
                     currentUserRole={currentUser?.role || 'instructor'}
-                    onRoleUpdated={loadStudents}
+                    onRoleUpdated={refreshStudents}
                   />
                 </div>
 
@@ -489,7 +511,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                   <MemberRoleManager 
                     member={ta}
                     currentUserRole={currentUser?.role || 'instructor'}
-                    onRoleUpdated={loadStudents}
+                    onRoleUpdated={refreshStudents}
                   />
                 </div>
 
@@ -564,7 +586,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                     <MemberRoleManager 
                       member={member}
                       currentUserRole={currentUser?.role || 'instructor'}
-                      onRoleUpdated={loadStudents}
+                      onRoleUpdated={refreshStudents}
                     />
                   </div>
 
@@ -685,7 +707,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                     <MemberRoleManager 
                       member={student}
                       currentUserRole={currentUser?.role || 'instructor'}
-                      onRoleUpdated={loadStudents}
+                      onRoleUpdated={refreshStudents}
                     />
                   </div>
 

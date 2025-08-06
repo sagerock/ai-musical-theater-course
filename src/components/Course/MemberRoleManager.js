@@ -70,9 +70,20 @@ export default function MemberRoleManager({ member, currentUserRole, onRoleUpdat
       await courseApi.updateMemberRole(membershipId, selectedRole);
       toast.success(`${member.name || member.users?.name}'s role updated to ${getRoleDisplayName(selectedRole)}`);
       
-      // Call parent callback to refresh data
+      // Update the member's role locally for immediate UI feedback
+      member.role = selectedRole;
+      if (member.course_memberships?.[0]) {
+        member.course_memberships[0].role = selectedRole;
+      }
+      if (member.course_role !== undefined) {
+        member.course_role = selectedRole;
+      }
+      
+      // Call parent callback to refresh data with a small delay to ensure DB update is complete
       if (onRoleUpdated) {
-        onRoleUpdated();
+        setTimeout(() => {
+          onRoleUpdated();
+        }, 1000); // 1 second delay to ensure Firestore update is fully propagated
       }
       
       setIsEditing(false);
