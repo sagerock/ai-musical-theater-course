@@ -404,13 +404,17 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                       <p className="text-xs text-gray-500 truncate">
                         {instructor.email || 'No email provided'}
                       </p>
-                      <div className="flex items-center mt-1">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          Instructor
-                        </span>
-                      </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Role Management */}
+                <div className="mb-3">
+                  <MemberRoleManager 
+                    member={instructor}
+                    currentUserRole={currentUser?.role || 'instructor'}
+                    onRoleUpdated={loadStudents}
+                  />
                 </div>
 
                 {/* Instructor Info */}
@@ -476,13 +480,17 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                       <p className="text-xs text-gray-500 truncate">
                         {ta.email || 'No email provided'}
                       </p>
-                      <div className="flex items-center mt-1">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                          Teaching Assistant
-                        </span>
-                      </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Role Management */}
+                <div className="mb-3">
+                  <MemberRoleManager 
+                    member={ta}
+                    currentUserRole={currentUser?.role || 'instructor'}
+                    onRoleUpdated={loadStudents}
+                  />
                 </div>
 
                 {/* TA Info */}
@@ -532,17 +540,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-            {otherRoles.map((member) => {
-              const membershipRole = member.course_role || 
-                                   member.course_memberships?.[0]?.role || 
-                                   member.course_memberships?.role || 
-                                   member.role;
-              
-              const roleDisplayName = membershipRole === 'student_assistant' ? 'Student Assistant' :
-                                    membershipRole === 'school_administrator' ? 'School Administrator' :
-                                    membershipRole || 'Unknown Role';
-              
-              return (
+            {otherRoles.map((member) => (
                 <div key={member.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition-shadow">
                   {/* Member Header */}
                   <div className="flex items-start justify-between mb-4">
@@ -557,13 +555,17 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                         <p className="text-xs text-gray-500 truncate">
                           {member.email || 'No email provided'}
                         </p>
-                        <div className="flex items-center mt-1">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {roleDisplayName}
-                          </span>
-                        </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Role Management */}
+                  <div className="mb-3">
+                    <MemberRoleManager 
+                      member={member}
+                      currentUserRole={currentUser?.role || 'instructor'}
+                      onRoleUpdated={loadStudents}
+                    />
                   </div>
 
                   {/* Member Info */}
@@ -596,8 +598,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                     )}
                   </div>
                 </div>
-              );
-            })}
+            ))}
           </div>
         </div>
       )}
