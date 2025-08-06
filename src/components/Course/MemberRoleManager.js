@@ -19,11 +19,18 @@ import {
 
 export default function MemberRoleManager({ member, currentUserRole, onRoleUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(member.role);
+  
+  // Get the actual course membership role
+  const memberRole = member.course_role || 
+                     member.course_memberships?.[0]?.role || 
+                     member.course_memberships?.role || 
+                     member.role;
+  
+  const [selectedRole, setSelectedRole] = useState(memberRole);
   const [updating, setUpdating] = useState(false);
 
   // Check if current user can manage this member's role
-  const canManage = canManageRole(currentUserRole, member.role);
+  const canManage = canManageRole(currentUserRole, memberRole);
 
   // Get available roles based on current user's permissions
   const getAvailableRoles = () => {
@@ -54,7 +61,7 @@ export default function MemberRoleManager({ member, currentUserRole, onRoleUpdat
   };
 
   const handleRoleChange = async () => {
-    if (selectedRole === member.role) {
+    if (selectedRole === memberRole) {
       setIsEditing(false);
       return;
     }
@@ -90,14 +97,14 @@ export default function MemberRoleManager({ member, currentUserRole, onRoleUpdat
     } catch (error) {
       console.error('Error updating role:', error);
       toast.error('Failed to update role');
-      setSelectedRole(member.role); // Reset to original
+      setSelectedRole(memberRole); // Reset to original
     } finally {
       setUpdating(false);
     }
   };
 
   const handleCancel = () => {
-    setSelectedRole(member.role);
+    setSelectedRole(memberRole);
     setIsEditing(false);
   };
 
@@ -145,8 +152,8 @@ export default function MemberRoleManager({ member, currentUserRole, onRoleUpdat
 
   return (
     <div className="flex items-center space-x-2">
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRoleStyle(member.role)}`}>
-        {getRoleDisplayName(member.role)}
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRoleStyle(memberRole)}`}>
+        {getRoleDisplayName(memberRole)}
       </span>
       
       {canManage && (
