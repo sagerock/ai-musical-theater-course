@@ -1,0 +1,388 @@
+{
+  "title": "Advanced Features Guide",
+  "overview": "This guide covers advanced features in AI Engagement Hub that can enhance your teaching and learning experience. These features go beyond basic AI chat to provide powerful educational tools.",
+  "sections": [
+    {
+      "heading": "For Students",
+      "features": [
+        {
+          "title": "Multi-Model Comparison",
+          "description": "Compare responses from different AI models to the same question.",
+          "howToUse": [
+            "Ask a question to one AI model",
+            "Switch to a different model (dropdown menu)",
+            "Ask the same question",
+            "Compare responses for different perspectives"
+          ],
+          "benefits": [
+            "See different approaches to problems",
+            "Understand AI model strengths",
+            "Develop critical thinking",
+            "Learn to evaluate AI responses"
+          ],
+          "example": {
+            "description": "Compare explanations of photosynthesis",
+            "steps": [
+              "Question to GPT-4: \"Explain photosynthesis\"",
+              "Question to Claude: \"Explain photosynthesis\"",
+              "Question to Gemini: \"Explain photosynthesis\"",
+              "Compare: Which explanation works best for your learning style?"
+            ]
+          }
+        },
+        {
+          "title": "Reflection Notes",
+          "description": "Add personal reflections to your AI conversations.",
+          "howToUse": [
+            "After an AI interaction, click \"Add Reflection\"",
+            "Write what you learned or still don't understand",
+            "Save for future review",
+            "Track your learning journey"
+          ],
+          "bestPractices": [
+            "Reflect immediately after learning",
+            "Note confusion points",
+            "Track \"aha!\" moments",
+            "Review before exams"
+          ]
+        },
+        {
+          "title": "Project Organization",
+          "description": "Organize your AI interactions into focused projects.",
+          "howToCreate": [
+            "Click \"New Project\" in your course",
+            "Name it descriptively (e.g., \"Essay Research\", \"Math Homework Week 3\")",
+            "Keep related conversations together",
+            "Easy to review later"
+          ],
+          "organizationTips": [
+            "One project per assignment",
+            "Separate projects for different topics",
+            "Use clear naming conventions",
+            "Archive completed projects"
+          ]
+        },
+        {
+          "title": "Cost-Aware Model Selection",
+          "description": "See the cost implications of using different AI models.",
+          "modelCosts": [
+            {
+              "indicator": "🟢",
+              "level": "Green Models",
+              "description": "Low cost, good for most tasks"
+            },
+            {
+              "indicator": "🟡",
+              "level": "Yellow Models",
+              "description": "Medium cost, better performance"
+            },
+            {
+              "indicator": "🔴",
+              "level": "Red Models",
+              "description": "High cost, best for complex work"
+            }
+          ],
+          "smartSelectionStrategy": [
+            "Start with green models",
+            "Upgrade if needed",
+            "Use red models for final drafts",
+            "Track your usage costs"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For Instructors",
+      "features": [
+        {
+          "title": "AI Assistant for Analytics",
+          "description": "An AI that analyzes your class data and provides insights.",
+          "howToAccess": [
+            "Go to Instructor Dashboard",
+            "Click \"AI Assistant\" tab",
+            "Ask questions about your class"
+          ],
+          "exampleQuestions": [
+            "Which students are struggling with AI usage?",
+            "What topics are students asking about most?",
+            "Show me engagement trends this week",
+            "Who hasn't submitted work recently?"
+          ]
+        },
+        {
+          "title": "Tag Management System",
+          "description": "Categorize and track student AI interactions by topic.",
+          "settingUpTags": [
+            "Navigate to Instructor Dashboard",
+            "Go to \"Tag Management\"",
+            "Create tags like \"Essay Writing\", \"Problem Solving\"",
+            "Apply to student conversations"
+          ],
+          "benefits": [
+            "Track learning patterns",
+            "Identify common struggles",
+            "Prepare targeted lessons",
+            "Assessment alignment"
+          ]
+        },
+        {
+          "title": "Bulk Student Management",
+          "description": "Efficiently manage multiple students at once.",
+          "features": [
+            "Bulk approve enrollments",
+            "Assign roles to multiple students",
+            "Send announcements to all",
+            "Export class data"
+          ],
+          "howToUse": [
+            "Go to Students page",
+            "Select multiple students (checkboxes)",
+            "Choose bulk action",
+            "Confirm changes"
+          ]
+        },
+        {
+          "title": "Student Activity Analytics",
+          "description": "Detailed insights into how students use AI.",
+          "keyMetrics": [
+            "AI models used",
+            "Token consumption",
+            "Active hours",
+            "Project completion",
+            "Reflection frequency"
+          ],
+          "usingAnalytics": [
+            "Identify at-risk students (low engagement)",
+            "Spot high performers",
+            "Understand class patterns",
+            "Adjust teaching methods"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For Teaching Assistants",
+      "features": [
+        {
+          "title": "Student Support Tools",
+          "capabilities": [
+            "View all student AI conversations",
+            "Add instructor notes",
+            "Flag concerning interactions",
+            "Provide targeted help"
+          ],
+          "bestPractices": [
+            "Regular monitoring",
+            "Proactive outreach",
+            "Document interventions",
+            "Collaborate with instructor"
+          ]
+        },
+        {
+          "title": "Office Hours Enhancement",
+          "virtualOfficeHours": [
+            "Students submit questions via AI chat",
+            "Tag questions by topic",
+            "Address common issues in class",
+            "Provide personalized follow-up"
+          ]
+        },
+        {
+          "title": "Grading Support",
+          "howAIHelps": [
+            "Review student AI usage quality",
+            "Check for understanding depth",
+            "Identify copy-paste behavior",
+            "Track improvement over time"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For School Administrators",
+      "features": [
+        {
+          "title": "Multi-Course Overview",
+          "dashboardFeatures": [
+            "Course enrollment numbers",
+            "AI usage statistics",
+            "Cost tracking",
+            "Instructor activity"
+          ],
+          "monitoringTools": [
+            "Flag unusual patterns",
+            "Track platform adoption",
+            "Measure engagement",
+            "ROI analysis"
+          ]
+        },
+        {
+          "title": "Instructor Support",
+          "supportingTeachers": [
+            "Share best practices",
+            "Identify training needs",
+            "Recognize high performers",
+            "Resource allocation"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Advanced Tips & Tricks",
+      "subsections": [
+        {
+          "title": "Power User Shortcuts",
+          "shortcuts": [
+            {
+              "action": "Quick Model Switch",
+              "keys": "Use number keys 1-7 to switch models"
+            },
+            {
+              "action": "Copy Previous Prompt",
+              "keys": "Up arrow in input field"
+            },
+            {
+              "action": "Export Conversations",
+              "keys": "Ctrl/Cmd + E"
+            },
+            {
+              "action": "Search Projects",
+              "keys": "Ctrl/Cmd + F"
+            }
+          ]
+        },
+        {
+          "title": "Integration Ideas",
+          "ideas": [
+            {
+              "name": "Research Projects",
+              "steps": [
+                "Upload sources as PDFs",
+                "Use multiple models for perspectives",
+                "Track research journey",
+                "Export for citations"
+              ]
+            },
+            {
+              "name": "Collaborative Learning",
+              "steps": [
+                "Student Assistants help peers",
+                "Share effective prompts",
+                "Group project coordination",
+                "Peer learning tracking"
+              ]
+            },
+            {
+              "name": "Assessment Innovation",
+              "steps": [
+                "AI-assisted assessments",
+                "Process-based grading",
+                "Reflection requirements",
+                "Learning portfolios"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Hidden Features",
+          "features": [
+            {
+              "name": "Conversation Branching",
+              "capabilities": [
+                "Save a conversation state",
+                "Try different approaches",
+                "Compare outcomes",
+                "Choose best path"
+              ]
+            },
+            {
+              "name": "Template Prompts",
+              "capabilities": [
+                "Save frequently used prompts",
+                "Share with class",
+                "Build prompt library",
+                "Standardize approaches"
+              ]
+            },
+            {
+              "name": "Advanced Search",
+              "capabilities": [
+                "Search within conversations",
+                "Filter by date/model",
+                "Find specific topics",
+                "Export search results"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Troubleshooting Advanced Features",
+      "commonIssues": [
+        {
+          "issue": "Analytics Not Loading",
+          "solutions": [
+            "Clear browser cache",
+            "Check permissions",
+            "Refresh authentication",
+            "Contact support"
+          ]
+        },
+        {
+          "issue": "Tags Not Applying",
+          "solutions": [
+            "Ensure instructor role",
+            "Check tag creation",
+            "Verify in correct course",
+            "Review permissions"
+          ]
+        },
+        {
+          "issue": "PDF Upload Failing",
+          "solutions": [
+            "Check file size (<10MB)",
+            "Verify PDF format",
+            "Test connection",
+            "Try different browser"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Feature Request Process",
+      "intro": "Have an idea for a new feature?",
+      "steps": [
+        {
+          "title": "Document the Need",
+          "requirements": [
+            "What problem does it solve?",
+            "Who would benefit?",
+            "How would it work?"
+          ]
+        },
+        {
+          "title": "Submit Request",
+          "actions": [
+            "Use Help section",
+            "Provide detailed description",
+            "Include use cases",
+            "Suggest implementation"
+          ]
+        },
+        {
+          "title": "Track Progress",
+          "followUp": [
+            "Check announcements",
+            "Beta testing opportunities",
+            "Provide feedback",
+            "Help shape development"
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "Advanced features are powerful tools. Start with basics and gradually incorporate advanced features as you become comfortable. The goal is enhancing learning, not complexity for its own sake!"
+  }
+}

@@ -1,0 +1,528 @@
+{
+  "title": "Guide to Effective AI Usage for Students",
+  "sections": [
+    {
+      "heading": "Understanding AI as a Learning Tool",
+      "subsections": [
+        {
+          "heading": "The Learning Partnership Model",
+          "content": "Teach students to view AI as a:",
+          "roles": [
+            {
+              "role": "Learning Partner",
+              "description": "Not a homework machine"
+            },
+            {
+              "role": "Thought Challenger", 
+              "description": "Questions assumptions"
+            },
+            {
+              "role": "Idea Generator",
+              "description": "Sparks creativity"
+            },
+            {
+              "role": "Feedback Provider",
+              "description": "Offers perspectives"
+            },
+            {
+              "role": "Skill Builder",
+              "description": "Develops critical thinking"
+            }
+          ]
+        },
+        {
+          "heading": "Setting Proper Expectations",
+          "content": "Help students understand AI:",
+          "aspects": [
+            {
+              "category": "Strengths",
+              "items": ["Pattern recognition", "synthesis", "explanation"]
+            },
+            {
+              "category": "Limitations", 
+              "items": ["Can hallucinate", "lacks real understanding"]
+            },
+            {
+              "category": "Best Uses",
+              "items": ["Brainstorming", "explaining concepts", "practice"]
+            },
+            {
+              "category": "Poor Uses",
+              "items": ["Replacing thinking", "avoiding learning"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Choosing the Right AI Model",
+      "subsections": [
+        {
+          "heading": "Model Selection Guide for Students",
+          "modelRecommendations": [
+            {
+              "task": "Quick explanations",
+              "model": "GPT-4.1 Mini",
+              "reason": "Fast, cost-effective"
+            },
+            {
+              "task": "Complex coding",
+              "model": "GPT-4.1",
+              "reason": "Superior reasoning"
+            },
+            {
+              "task": "Research & writing",
+              "model": "Claude Opus 4",
+              "reason": "Best analysis, coherent writing"
+            },
+            {
+              "task": "Learning activities",
+              "model": "Gemini 2.5 Pro",
+              "reason": "Built for education with LearnLM"
+            },
+            {
+              "task": "Current events",
+              "model": "Sonar Pro",
+              "reason": "Real-time information"
+            },
+            {
+              "task": "Creative writing",
+              "model": "Claude Sonnet 4",
+              "reason": "Balanced creativity"
+            },
+            {
+              "task": "Quick searches",
+              "model": "Gemini Flash",
+              "reason": "Fast responses"
+            }
+          ]
+        },
+        {
+          "heading": "Teaching Model Awareness",
+          "exercise": {
+            "title": "Cost Consciousness Exercise",
+            "instructions": "Have students track:",
+            "steps": [
+              "Which model they used",
+              "Token count for each query",
+              "Estimated cost",
+              "Value received"
+            ],
+            "goal": "Develop intuition for model selection"
+          }
+        },
+        {
+          "heading": "Model Comparison Activity",
+          "activity": {
+            "description": "Create assignments that require students to:",
+            "steps": [
+              "Ask the same question to 3 different models",
+              {
+                "step": "Compare responses for:",
+                "criteria": ["Accuracy", "Depth", "Writing style", "Usefulness"]
+              },
+              "Reflect on which model was best and why"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Crafting Effective Prompts",
+      "subsections": [
+        {
+          "heading": "The CLEAR Framework",
+          "content": "Teach students to write prompts that are:",
+          "framework": [
+            {
+              "letter": "C",
+              "word": "Context-rich"
+            },
+            {
+              "letter": "L", 
+              "word": "Learning-focused"
+            },
+            {
+              "letter": "E",
+              "word": "Explicit in requirements"
+            },
+            {
+              "letter": "A",
+              "word": "Appropriately scoped"
+            },
+            {
+              "letter": "R",
+              "word": "Reflective in nature"
+            }
+          ]
+        },
+        {
+          "heading": "Prompt Evolution Exercise",
+          "promptLevels": [
+            {
+              "level": "Level 1 - Basic",
+              "example": "Explain photosynthesis"
+            },
+            {
+              "level": "Level 2 - Improved",
+              "example": "Explain photosynthesis to a 10th grade biology student, focusing on the light and dark reactions"
+            },
+            {
+              "level": "Level 3 - Effective",
+              "example": "I'm a 10th grade biology student learning about photosynthesis. Can you explain the light-dependent and light-independent reactions, including where they occur and their main products? Please use analogies that relate to everyday experiences."
+            },
+            {
+              "level": "Level 4 - Master",
+              "example": "I'm studying photosynthesis for my 10th grade biology class. I understand that plants convert sunlight to energy, but I'm confused about the specific steps. Can you:\n1. Explain the light and dark reactions separately\n2. Use a factory analogy to show how they connect\n3. Highlight 3 key molecules I should remember\n4. Give me a practice question to test my understanding"
+            }
+          ]
+        },
+        {
+          "heading": "Prompt Templates by Purpose",
+          "templates": [
+            {
+              "purpose": "For Understanding Concepts",
+              "template": "I'm learning about [TOPIC] in my [COURSE] class. I understand [WHAT I KNOW] but I'm confused about [SPECIFIC CONFUSION]. Can you explain [SPECIFIC ASPECT] using [PREFERRED LEARNING STYLE]?"
+            },
+            {
+              "purpose": "For Problem-Solving",
+              "template": "I'm working on [PROBLEM TYPE] in [SUBJECT]. Here's what I've tried: [MY ATTEMPT]. I'm stuck at [SPECIFIC POINT]. Can you guide me through the next step without giving the full answer?"
+            },
+            {
+              "purpose": "For Writing Assistance",
+              "template": "I'm writing a [TYPE OF WRITING] about [TOPIC] for [COURSE]. My thesis is [THESIS]. Can you help me [SPECIFIC NEED: outline, strengthen argument, find evidence, improve transitions]?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Common Student Mistakes",
+      "mistakes": [
+        {
+          "title": "The Copy-Paste Trap",
+          "whatStudentsDo": "Copy AI responses directly",
+          "whyWrong": "No learning occurs, plagiarism risk",
+          "betterApproach": "Use AI output as starting point for own work",
+          "teachingActivity": {
+            "description": "Have students:",
+            "steps": [
+              "Get an AI response",
+              "Rewrite it entirely in their voice",
+              "Add personal examples",
+              "Cite AI as a brainstorming tool"
+            ]
+          }
+        },
+        {
+          "title": "The Homework Machine Mindset",
+          "whatStudentsDo": "Do my homework for me",
+          "whyWrong": "Avoids learning, develops dependence",
+          "betterApproach": "Help me understand so I can do it",
+          "interventionStrategy": [
+            "Review student prompts",
+            "Flag 'do this for me' language",
+            "Redirect to learning-focused prompts"
+          ]
+        },
+        {
+          "title": "The Single Source Error",
+          "whatStudentsDo": "Accept first AI answer as truth",
+          "whyWrong": "AI can be incorrect or biased",
+          "betterApproach": "Verify, cross-reference, think critically",
+          "criticalThinkingExercise": {
+            "steps": [
+              "Get AI response on controversial topic",
+              "Identify potential biases",
+              "Find contradicting sources",
+              "Form independent conclusion"
+            ]
+          }
+        },
+        {
+          "title": "The Shallow Interaction",
+          "whatStudentsDo": "One question and done",
+          "whyWrong": "Misses deeper understanding",
+          "betterApproach": "Follow-up questions, dig deeper",
+          "depthDevelopment": {
+            "technique": "Teach the '5 Whys' with AI:",
+            "steps": [
+              "Initial question",
+              "Why is that?",
+              "Why does that matter?",
+              "Why should I care?",
+              "Why will this help me?"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices by Subject",
+      "subjects": [
+        {
+          "subject": "Mathematics",
+          "practices": [
+            "Use AI to check understanding, not answers",
+            "Ask for step-by-step explanations",
+            "Request different solution methods",
+            "Generate practice problems"
+          ],
+          "goodPrompt": "I solved this calculus problem and got X. Can you work through it step-by-step so I can check my method?"
+        },
+        {
+          "subject": "Writing & Literature",
+          "practices": [
+            "Brainstorm ideas and outlines",
+            "Analyze themes and symbolism",
+            "Get feedback on thesis statements",
+            "Never use AI-generated text directly"
+          ],
+          "goodPrompt": "My thesis for my essay on Hamlet is X. What are potential counterarguments I should address?"
+        },
+        {
+          "subject": "Science",
+          "practices": [
+            "Clarify complex concepts",
+            "Visualize processes with descriptions",
+            "Connect theory to real-world applications",
+            "Design hypothetical experiments"
+          ],
+          "goodPrompt": "How would I design an experiment to test the effect of pH on enzyme activity? What variables should I control?"
+        },
+        {
+          "subject": "History",
+          "practices": [
+            "Explore multiple perspectives",
+            "Understand cause and effect",
+            "Make connections between events",
+            "Challenge historical narratives"
+          ],
+          "goodPrompt": "What were different perspectives on the Industrial Revolution from workers, factory owners, and government officials?"
+        },
+        {
+          "subject": "Programming",
+          "practices": [
+            "Debug with understanding",
+            "Learn best practices",
+            "Explore alternative approaches",
+            "Understand error messages"
+          ],
+          "goodPrompt": "My Python code throws this error: [ERROR]. Can you explain what's causing it and guide me to fix it myself?"
+        }
+      ]
+    },
+    {
+      "heading": "Academic Integrity Guidelines",
+      "subsections": [
+        {
+          "heading": "Clear Boundaries",
+          "acceptable": [
+            "Brainstorming and ideation",
+            "Concept clarification",
+            "Grammar and style checking",
+            "Research starting points",
+            "Practice problem generation"
+          ],
+          "unacceptable": [
+            "Submitting AI-generated work",
+            "Having AI write assignments",
+            "Using AI during closed-book exams",
+            "Copying without attribution",
+            "Avoiding assigned readings"
+          ]
+        },
+        {
+          "heading": "Citation Guidelines",
+          "content": "Teach students to cite AI use:",
+          "format": "I used [AI Model] on [Date] to [Specific Purpose]. The AI helped me [Specific Contribution] but all written work and analysis is my own.",
+          "example": "I used GPT-4.1 on January 15, 2025 to brainstorm thesis statements for my essay on climate change. The AI suggested exploring economic impacts, which I independently researched and developed into my own argument."
+        },
+        {
+          "heading": "Creating an AI Honor Code",
+          "samplePolicy": {
+            "pledge": "I pledge to:",
+            "commitments": [
+              "Use AI as a learning tool, not a replacement for thinking",
+              "Always cite when AI influenced my work",
+              "Never submit AI-generated text as my own",
+              "Verify AI information with credible sources",
+              "Use AI to enhance, not bypass, my learning"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Building AI Literacy",
+      "subsections": [
+        {
+          "heading": "Progressive Skill Development",
+          "timeline": [
+            {
+              "period": "Week 1-2: AI Basics",
+              "topics": [
+                "What is AI and how does it work?",
+                "Different models and their strengths",
+                "Basic prompt writing"
+              ]
+            },
+            {
+              "period": "Week 3-4: Critical Evaluation",
+              "topics": [
+                "Identifying AI limitations",
+                "Spotting hallucinations",
+                "Verification strategies"
+              ]
+            },
+            {
+              "period": "Week 5-6: Advanced Prompting",
+              "topics": [
+                "Multi-turn conversations",
+                "Role-playing prompts",
+                "Chain-of-thought reasoning"
+              ]
+            },
+            {
+              "period": "Week 7-8: Integration Skills",
+              "topics": [
+                "Using AI in research workflow",
+                "Combining AI with traditional resources",
+                "Building on AI suggestions"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Assessment Ideas",
+          "assessments": [
+            {
+              "name": "AI Interaction Portfolio",
+              "description": "Students maintain a portfolio showing:",
+              "components": [
+                "Best prompts written",
+                "How they improved AI responses",
+                "Critical evaluations of AI output",
+                "Reflections on AI as learning tool"
+              ]
+            },
+            {
+              "name": "AI Debate Project",
+              "steps": [
+                "Students use different AIs to research topic",
+                "Compare and contrast AI perspectives",
+                "Form independent conclusion",
+                "Present findings with AI use transparency"
+              ]
+            },
+            {
+              "name": "Prompt Engineering Challenge",
+              "process": [
+                "Give students a learning goal",
+                "They compete to write most effective prompt",
+                "Judge based on response quality",
+                "Share winning strategies"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Reflection Prompts for Students",
+          "content": "After each AI interaction, have students reflect:",
+          "questions": [
+            "What did I learn from this interaction?",
+            "How could I have asked better questions?",
+            "What will I do with this information?",
+            "What do I still need to learn?",
+            "How did AI help or hinder my learning?"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Creating a Classroom AI Culture",
+      "subsections": [
+        {
+          "heading": "Principles to Emphasize",
+          "principles": [
+            {
+              "principle": "Transparency",
+              "description": "Always disclose AI use"
+            },
+            {
+              "principle": "Learning First",
+              "description": "AI supports, doesn't replace learning"
+            },
+            {
+              "principle": "Critical Thinking",
+              "description": "Question AI outputs"
+            },
+            {
+              "principle": "Collaboration",
+              "description": "Share effective strategies"
+            },
+            {
+              "principle": "Ethics",
+              "description": "Consider implications of AI use"
+            }
+          ]
+        },
+        {
+          "heading": "Regular Check-ins",
+          "weeklyDiscussionPrompts": [
+            "Best AI interaction this week?",
+            "When did AI lead you astray?",
+            "How did AI deepen your understanding?",
+            "What prompt technique did you discover?"
+          ]
+        },
+        {
+          "heading": "Peer Learning",
+          "aiStrategySharing": [
+            "Students share successful prompts",
+            "Demonstrate effective workflows",
+            "Teach each other prompt techniques",
+            "Build collective knowledge"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Red Flags for Instructors",
+      "content": "Watch for students who:",
+      "redFlags": [
+        "Submit work with AI writing patterns",
+        "Can't explain their submitted work",
+        "Show sudden changes in writing style",
+        "Use terms they can't define",
+        "Have perfect but generic assignments"
+      ]
+    },
+    {
+      "heading": "Resources for Further Learning",
+      "audiences": [
+        {
+          "audience": "For Instructors",
+          "resources": [
+            "Schedule regular AI literacy workshops",
+            "Create prompt libraries for your subject",
+            "Share success stories and failures",
+            "Build assignment-specific guidelines"
+          ]
+        },
+        {
+          "audience": "For Students",
+          "resources": [
+            "AI interaction logs",
+            "Prompt improvement exercises",
+            "Critical thinking checklists",
+            "Citation templates"
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "The goal is not to restrict AI use but to channel it toward genuine learning and skill development. AI should amplify student capabilities, not replace student thinking."
+  }
+}

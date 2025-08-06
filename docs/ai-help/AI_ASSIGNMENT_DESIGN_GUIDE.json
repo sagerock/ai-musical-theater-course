@@ -1,0 +1,474 @@
+{
+  "title": "Designing AI-Enhanced Assignments",
+  "tableOfContents": [
+    "Core Principles",
+    "Assignment Types That Work",
+    "Assignment Types to Avoid",
+    "Sample Assignment Templates",
+    "Assessment Strategies",
+    "Rubric Examples"
+  ],
+  "sections": [
+    {
+      "heading": "Core Principles",
+      "subsections": [
+        {
+          "title": "Design for Learning, Not Avoidance",
+          "mindsets": {
+            "traditional": "How do I prevent AI use?",
+            "aiEnhanced": "How do I leverage AI for deeper learning?"
+          }
+        },
+        {
+          "title": "The SPARK Framework for AI Assignments",
+          "framework": [
+            {
+              "letter": "S",
+              "principle": "Synthesis-focused",
+              "description": "Require combining multiple sources"
+            },
+            {
+              "letter": "P",
+              "principle": "Process-oriented",
+              "description": "Value the journey, not just outcome"
+            },
+            {
+              "letter": "A",
+              "principle": "AI-transparent",
+              "description": "Explicitly allow and guide AI use"
+            },
+            {
+              "letter": "R",
+              "principle": "Reflection-heavy",
+              "description": "Build in metacognition"
+            },
+            {
+              "letter": "K",
+              "principle": "Knowledge-building",
+              "description": "Create something new"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Assignment Types That Work",
+      "assignments": [
+        {
+          "title": "AI Collaboration Projects",
+          "example": "Research Paper with AI Process Documentation",
+          "requirements": [
+            "Use AI for brainstorming (document prompts)",
+            "Research with traditional sources",
+            "Use AI to challenge their thesis",
+            "Document how AI shaped their thinking",
+            "Submit both paper and AI interaction log"
+          ],
+          "learningOutcome": "Critical evaluation of AI suggestions"
+        },
+        {
+          "title": "Comparative Analysis Assignments",
+          "example": "Multi-Model Literature Analysis",
+          "requirements": [
+            "Ask 3 different AI models about a text",
+            "Compare their interpretations",
+            "Identify biases and limitations",
+            "Form independent conclusion",
+            "Present findings with evidence"
+          ],
+          "learningOutcome": "Understanding AI perspectives and limitations"
+        },
+        {
+          "title": "AI-Enhanced Problem Solving",
+          "example": "Coding Project with AI Pair Programming",
+          "requirements": [
+            "Plan solution without AI",
+            "Implement with AI assistance",
+            "Document what AI suggested",
+            "Explain every line of code",
+            "Reflect on AI's impact on learning"
+          ],
+          "learningOutcome": "Using AI as learning tool, not crutch"
+        },
+        {
+          "title": "Creative Synthesis Projects",
+          "example": "Historical Event from Multiple Perspectives",
+          "requirements": [
+            "Use AI to explore different viewpoints",
+            "Verify AI claims with primary sources",
+            "Create original narrative combining insights",
+            "Cite both AI and traditional sources",
+            "Present unique interpretation"
+          ],
+          "learningOutcome": "AI as research assistant, not author"
+        },
+        {
+          "title": "Process Portfolio Assignments",
+          "example": "Math Problem-Solving Journey",
+          "requirements": [
+            "Show initial attempt",
+            "Document AI consultation",
+            "Explain AI's suggestions",
+            "Show revised approach",
+            "Reflect on learning process"
+          ],
+          "learningOutcome": "Transparent learning process"
+        }
+      ]
+    },
+    {
+      "heading": "Assignment Types to Avoid",
+      "avoidList": [
+        {
+          "type": "Traditional Essays Without Process",
+          "reasons": [
+            "Easy to generate with AI",
+            "No learning verification",
+            "Encourages copy-paste"
+          ]
+        },
+        {
+          "type": "Fact-Based Quizzes",
+          "reasons": [
+            "AI excels at recall",
+            "Doesn't test understanding",
+            "No critical thinking required"
+          ]
+        },
+        {
+          "type": "Standard Code Functions",
+          "reasons": [
+            "AI writes these easily",
+            "No problem-solving needed",
+            "Bypasses learning objectives"
+          ]
+        },
+        {
+          "type": "Summary Assignments",
+          "reasons": [
+            "AI summarizes perfectly",
+            "No original thought required",
+            "Minimal student engagement"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Sample Assignment Templates",
+      "templates": [
+        {
+          "title": "AI Dialog Assignment",
+          "assignment": "Philosophical Debate with AI",
+          "instructions": [
+            "Choose an ethical dilemma",
+            "Engage 3 AI models in debate",
+            "Challenge each model's position",
+            "Document the conversation",
+            "Write reflection on whose arguments were strongest"
+          ],
+          "deliverables": [
+            "AI conversation transcripts",
+            "2-page critical analysis",
+            "Personal position paper",
+            "Process reflection"
+          ],
+          "grading": {
+            "qualityOfChallenges": 30,
+            "criticalAnalysis": 30,
+            "originalPosition": 30,
+            "processReflection": 10
+          }
+        },
+        {
+          "title": "AI-Assisted Research Project",
+          "assignment": "Scientific Investigation",
+          "phases": [
+            {
+              "name": "Phase 1 - Hypothesis",
+              "aiUse": "No AI",
+              "tasks": [
+                "Develop original research question",
+                "Form initial hypothesis",
+                "Create methodology outline"
+              ]
+            },
+            {
+              "name": "Phase 2 - Research",
+              "aiUse": "With AI",
+              "tasks": [
+                "Use AI to find related studies",
+                "Verify AI suggestions",
+                "Document search process",
+                "Build literature review"
+              ]
+            },
+            {
+              "name": "Phase 3 - Analysis",
+              "aiUse": "Mixed",
+              "tasks": [
+                "Analyze findings yourself",
+                "Use AI to check logic",
+                "Challenge AI's interpretations",
+                "Develop conclusions"
+              ]
+            }
+          ],
+          "deliverables": [
+            "Research proposal",
+            "AI interaction log",
+            "Annotated bibliography",
+            "Final paper with methodology"
+          ]
+        },
+        {
+          "title": "Creative Problem-Solving",
+          "assignment": "Design Challenge",
+          "problem": "Design solution for campus sustainability issue",
+          "process": [
+            {
+              "step": "Identify",
+              "approach": "Human",
+              "task": "Define specific problem"
+            },
+            {
+              "step": "Ideate",
+              "approach": "AI-Assisted",
+              "task": "Brainstorm with AI"
+            },
+            {
+              "step": "Evaluate",
+              "approach": "Human",
+              "task": "Assess AI suggestions"
+            },
+            {
+              "step": "Develop",
+              "approach": "Mixed",
+              "task": "Refine best ideas"
+            },
+            {
+              "step": "Validate",
+              "approach": "Human",
+              "task": "Test feasibility"
+            },
+            {
+              "step": "Present",
+              "approach": "Human",
+              "task": "Pitch solution"
+            }
+          ],
+          "requirements": [
+            "Show all AI interactions",
+            "Explain selection criteria",
+            "Demonstrate feasibility",
+            "Original implementation plan"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Assessment Strategies",
+      "strategies": [
+        {
+          "title": "Process-Based Grading",
+          "description": "Instead of grading only final product:",
+          "breakdown": {
+            "initialHumanWork": 20,
+            "aiInteractionQuality": 20,
+            "criticalEvaluation": 20,
+            "synthesisOriginality": 20,
+            "finalProduct": 20
+          }
+        },
+        {
+          "title": "Oral Defense Component",
+          "description": "Add verbal component to verify understanding:",
+          "components": [
+            "5-minute presentation",
+            "Q&A about process",
+            "Explain AI contributions",
+            "Defend conclusions"
+          ]
+        },
+        {
+          "title": "Reflection Requirements",
+          "description": "Mandatory reflection addressing:",
+          "questions": [
+            "What did you learn?",
+            "How did AI help/hinder?",
+            "What would you do differently?",
+            "What questions remain?"
+          ]
+        },
+        {
+          "title": "Peer Review Integration",
+          "description": "Students review each other's:",
+          "reviewAreas": [
+            "AI interaction strategies",
+            "Critical thinking process",
+            "Original contributions",
+            "Learning outcomes"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Rubric Examples",
+      "rubrics": [
+        {
+          "title": "AI-Enhanced Essay Rubric",
+          "criteria": [
+            {
+              "name": "AI Transparency",
+              "excellent": "Full documentation of AI use, clear attribution",
+              "good": "Most AI use documented",
+              "needsWork": "Some AI use hidden",
+              "poor": "No AI documentation"
+            },
+            {
+              "name": "Critical Thinking",
+              "excellent": "Challenges AI, original insights",
+              "good": "Some critical evaluation",
+              "needsWork": "Accepts AI uncritically",
+              "poor": "Pure AI copying"
+            },
+            {
+              "name": "Synthesis",
+              "excellent": "Seamless blend of sources",
+              "good": "Good integration",
+              "needsWork": "Choppy integration",
+              "poor": "No synthesis"
+            },
+            {
+              "name": "Process",
+              "excellent": "Clear learning journey",
+              "good": "Decent process shown",
+              "needsWork": "Minimal process",
+              "poor": "No process visible"
+            },
+            {
+              "name": "Original Voice",
+              "excellent": "Strong personal perspective",
+              "good": "Some originality",
+              "needsWork": "Little personality",
+              "poor": "No original thought"
+            }
+          ]
+        },
+        {
+          "title": "AI Problem-Solving Rubric",
+          "components": [
+            {
+              "name": "Initial Attempt",
+              "fourPoints": "Shows deep engagement",
+              "threePoints": "Good effort",
+              "twoPoints": "Minimal try",
+              "onePoint": "No attempt"
+            },
+            {
+              "name": "AI Interaction",
+              "fourPoints": "Strategic, thoughtful",
+              "threePoints": "Decent prompting",
+              "twoPoints": "Basic questions",
+              "onePoint": "Poor use"
+            },
+            {
+              "name": "Understanding",
+              "fourPoints": "Can explain all aspects",
+              "threePoints": "Explains most",
+              "twoPoints": "Some gaps",
+              "onePoint": "Can't explain"
+            },
+            {
+              "name": "Implementation",
+              "fourPoints": "Working, elegant solution",
+              "threePoints": "Works with issues",
+              "twoPoints": "Partially works",
+              "onePoint": "Doesn't work"
+            },
+            {
+              "name": "Reflection",
+              "fourPoints": "Deep insights",
+              "threePoints": "Good thoughts",
+              "twoPoints": "Surface level",
+              "onePoint": "Missing"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Implementation Tips",
+      "tips": [
+        {
+          "title": "Start Small",
+          "steps": [
+            "Try one AI-enhanced assignment",
+            "Gather student feedback",
+            "Iterate based on results",
+            "Scale successful approaches"
+          ]
+        },
+        {
+          "title": "Be Transparent",
+          "actions": [
+            "Share rubrics upfront",
+            "Explain AI policies clearly",
+            "Model good AI use",
+            "Celebrate creative approaches"
+          ]
+        },
+        {
+          "title": "Focus on Learning",
+          "priorities": [
+            "Emphasize process over product",
+            "Reward critical thinking",
+            "Value originality",
+            "Build AI literacy"
+          ]
+        },
+        {
+          "title": "Common Pitfalls to Avoid",
+          "pitfalls": [
+            {
+              "name": "Over-restriction",
+              "advice": "Don't ban AI entirely"
+            },
+            {
+              "name": "Under-guidance",
+              "advice": "Provide clear frameworks"
+            },
+            {
+              "name": "Punishment focus",
+              "advice": "Reward good use instead"
+            },
+            {
+              "name": "Tech-only focus",
+              "advice": "Remember learning goals"
+            },
+            {
+              "name": "One-size-fits-all",
+              "advice": "Adapt to your subject"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Quick-Start Checklist",
+      "intro": "Before launching AI-enhanced assignment:",
+      "checklist": [
+        "Clear learning objectives defined",
+        "AI use guidelines specified",
+        "Process documentation required",
+        "Reflection component included",
+        "Rubric addresses AI use",
+        "Examples provided to students",
+        "Original thinking required",
+        "Verification method planned"
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "The goal is to prepare students for an AI-enhanced world where they'll need to work with AI tools effectively and ethically. Design assignments that build these crucial skills!"
+  }
+}

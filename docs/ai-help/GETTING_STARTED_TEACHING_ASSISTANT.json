@@ -1,0 +1,281 @@
+{
+  "title": "Getting Started as a Teaching Assistant",
+  "sections": [
+    {
+      "heading": "Welcome to AI Engagement Hub",
+      "content": "As a Teaching Assistant, you have enhanced privileges to support instructors in course management, grading assistance, and student mentorship. This role combines educational support with administrative responsibilities.",
+      "subsections": []
+    },
+    {
+      "heading": "Understanding Your Role",
+      "content": "Teaching Assistants serve as key support staff for instructors while maintaining direct engagement with students.",
+      "subsections": [
+        {
+          "heading": "Primary Responsibilities",
+          "content": "Assist with grading and assessment. Monitor student progress and engagement. Provide advanced academic support. Help manage course administration.",
+          "subsections": []
+        },
+        {
+          "heading": "Your Permissions",
+          "content": "View individual student chat histories. Access detailed analytics and reports. Manage student groups and projects. Add comments and feedback to student work.",
+          "subsections": []
+        },
+        {
+          "heading": "Role Limitations",
+          "content": "Cannot modify course structure or settings. Cannot change final grades without approval. Cannot access other courses without permission. Must coordinate major decisions with instructor.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Initial Setup",
+      "content": "Getting your Teaching Assistant account configured properly.",
+      "subsections": [
+        {
+          "heading": "Account Activation",
+          "content": "Instructor promotes you to Teaching Assistant role. Receive notification of enhanced permissions. Review new dashboard features available. Complete any required training modules.",
+          "subsections": []
+        },
+        {
+          "heading": "Course Access",
+          "content": "Verify access to assigned courses. Review course syllabus and AI policies. Understand grading rubrics and standards. Familiarize yourself with student roster.",
+          "subsections": []
+        },
+        {
+          "heading": "Tool Configuration",
+          "content": "Set up notification preferences. Configure analytics dashboard views. Organize workflow for efficiency. Create templates for common feedback.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Student Interaction Management",
+      "content": "Monitoring and supporting student AI usage effectively.",
+      "subsections": [
+        {
+          "heading": "Reviewing Chat Histories",
+          "content": "Access individual student conversations. Evaluate prompt quality and responses. Identify learning patterns and challenges. Flag exceptional or concerning interactions.",
+          "subsections": []
+        },
+        {
+          "heading": "Providing Feedback",
+          "content": "Add constructive comments to chats. Suggest prompt improvements. Highlight exemplary usage. Create feedback reports for instructors.",
+          "subsections": []
+        },
+        {
+          "heading": "Progress Tracking",
+          "content": "Monitor individual student metrics. Track assignment completion rates. Identify at-risk students early. Generate progress reports.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Support",
+          "content": "Schedule one-on-one help sessions. Provide targeted AI usage guidance. Help students improve prompt engineering. Support project development.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Grading and Assessment",
+      "content": "Supporting the evaluation of AI-assisted student work.",
+      "subsections": [
+        {
+          "heading": "Evaluation Criteria",
+          "content": "Assess quality of AI interactions. Evaluate prompt sophistication. Measure learning progression. Check for academic integrity.",
+          "subsections": []
+        },
+        {
+          "heading": "Grading Support",
+          "content": "Pre-grade assignments for instructor review. Apply rubrics consistently. Document grading decisions. Maintain grading records.",
+          "subsections": []
+        },
+        {
+          "heading": "Feedback Delivery",
+          "content": "Write detailed assignment feedback. Explain grading decisions clearly. Suggest improvement strategies. Encourage continued learning.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Integrity",
+          "content": "Monitor for inappropriate AI usage. Verify original student thinking. Report suspected violations. Document evidence properly.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Analytics and Reporting",
+      "content": "Using data to support course improvement.",
+      "subsections": [
+        {
+          "heading": "Dashboard Analytics",
+          "content": "Access comprehensive usage statistics. Track model preference trends. Monitor cost distributions. Analyze engagement patterns.",
+          "subsections": []
+        },
+        {
+          "heading": "Student Analytics",
+          "content": "Review individual performance metrics. Compare student progress. Identify usage patterns. Track improvement over time.",
+          "subsections": []
+        },
+        {
+          "heading": "Report Generation",
+          "content": "Create weekly progress summaries. Generate assessment reports. Compile usage statistics. Prepare data for instructor meetings.",
+          "subsections": []
+        },
+        {
+          "heading": "Data Interpretation",
+          "content": "Identify trends and patterns. Recognize outliers and anomalies. Make data-driven recommendations. Support evidence-based decisions.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Course Administration",
+      "content": "Supporting day-to-day course operations.",
+      "subsections": [
+        {
+          "heading": "Enrollment Support",
+          "content": "Help process enrollment requests. Verify student prerequisites. Manage waitlist communications. Update student rosters.",
+          "subsections": []
+        },
+        {
+          "heading": "Group Management",
+          "content": "Create and organize student groups. Monitor group collaborations. Resolve group conflicts. Track group project progress.",
+          "subsections": []
+        },
+        {
+          "heading": "Resource Management",
+          "content": "Upload course materials. Organize assignment resources. Maintain help documentation. Update course announcements.",
+          "subsections": []
+        },
+        {
+          "heading": "Communication Coordination",
+          "content": "Draft course announcements. Respond to routine inquiries. Schedule office hours. Coordinate with other TAs.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Advanced AI Support",
+      "content": "Providing sophisticated AI assistance to students.",
+      "subsections": [
+        {
+          "heading": "Model Optimization",
+          "content": "Recommend optimal model selection. Demonstrate advanced features. Explain model capabilities. Guide cost-effective usage.",
+          "subsections": []
+        },
+        {
+          "heading": "Prompt Engineering",
+          "content": "Teach advanced prompting techniques. Create prompt templates. Review and improve student prompts. Share best practices.",
+          "subsections": []
+        },
+        {
+          "heading": "Troubleshooting",
+          "content": "Diagnose complex AI issues. Provide technical solutions. Document problem resolutions. Escalate platform bugs.",
+          "subsections": []
+        },
+        {
+          "heading": "Innovation Support",
+          "content": "Encourage creative AI applications. Support experimental usage. Share innovative examples. Foster AI literacy development.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Collaboration with Instructors",
+      "content": "Working effectively with course instructors.",
+      "subsections": [
+        {
+          "heading": "Regular Communication",
+          "content": "Schedule weekly check-ins. Provide status updates. Share student insights. Request guidance on issues.",
+          "subsections": []
+        },
+        {
+          "heading": "Decision Support",
+          "content": "Present data-driven recommendations. Suggest course improvements. Report student concerns. Propose policy adjustments.",
+          "subsections": []
+        },
+        {
+          "heading": "Task Coordination",
+          "content": "Clarify responsibilities. Meet deadlines consistently. Manage workload effectively. Communicate availability clearly.",
+          "subsections": []
+        },
+        {
+          "heading": "Professional Development",
+          "content": "Seek feedback on performance. Request additional training. Share learning experiences. Build teaching skills.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices",
+      "content": "Guidelines for excellence as a Teaching Assistant.",
+      "subsections": [
+        {
+          "heading": "Time Management",
+          "content": "Prioritize urgent tasks. Create efficient workflows. Set realistic deadlines. Maintain work-life balance.",
+          "subsections": []
+        },
+        {
+          "heading": "Communication Excellence",
+          "content": "Respond promptly to messages. Write clear, professional emails. Provide detailed explanations. Maintain consistent tone.",
+          "subsections": []
+        },
+        {
+          "heading": "Educational Support",
+          "content": "Adapt to different learning styles. Provide personalized guidance. Encourage student autonomy. Celebrate student achievements.",
+          "subsections": []
+        },
+        {
+          "heading": "Professional Ethics",
+          "content": "Maintain confidentiality. Avoid conflicts of interest. Treat all students fairly. Uphold academic standards.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Common Challenges",
+      "content": "Handling typical Teaching Assistant scenarios.",
+      "subsections": [
+        {
+          "heading": "Grading Disputes",
+          "content": "Listen to student concerns. Review grading criteria. Consult with instructor. Document resolution process.",
+          "subsections": []
+        },
+        {
+          "heading": "Student Complaints",
+          "content": "Remain professional and objective. Gather all relevant information. Escalate when appropriate. Follow up on resolutions.",
+          "subsections": []
+        },
+        {
+          "heading": "Workload Management",
+          "content": "Communicate capacity limits. Request help when needed. Delegate when possible. Maintain quality standards.",
+          "subsections": []
+        },
+        {
+          "heading": "Technical Issues",
+          "content": "Document problems thoroughly. Provide temporary workarounds. Coordinate with IT support. Keep stakeholders informed.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Resources and Support",
+      "content": "Available resources for Teaching Assistants.",
+      "subsections": [
+        {
+          "heading": "Training Resources",
+          "content": "Access TA training modules. Review grading guidelines. Study platform documentation. Attend professional workshops.",
+          "subsections": []
+        },
+        {
+          "heading": "Support Channels",
+          "content": "Connect with other TAs. Join TA discussion forums. Access instructor resources. Contact platform support.",
+          "subsections": []
+        },
+        {
+          "heading": "Professional Growth",
+          "content": "Seek mentorship opportunities. Build teaching portfolio. Document achievements. Request recommendation letters.",
+          "subsections": []
+        }
+      ]
+    }
+  ]
+}

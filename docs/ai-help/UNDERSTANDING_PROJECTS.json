@@ -1,0 +1,209 @@
+{
+  "title": "Understanding Projects in AI Engagement Hub",
+  "sections": [
+    {
+      "heading": "What Are Projects?",
+      "content": "Projects are organizational containers that help you group related AI conversations, uploaded files, and resources together. Think of them as digital folders where you can collect all your work on a specific topic, assignment, or research area. Projects make it easy to manage complex tasks and track your progress over time.",
+      "subsections": []
+    },
+    {
+      "heading": "Key Features of Projects",
+      "content": "Projects provide powerful organizational and collaborative capabilities for managing your AI-assisted work.",
+      "subsections": [
+        {
+          "heading": "Conversation Organization",
+          "content": "Group multiple AI chat sessions under one project. Keep all related discussions in one place. Easily navigate between different conversations. View the evolution of your ideas across multiple chats.",
+          "subsections": []
+        },
+        {
+          "heading": "File Management",
+          "content": "Upload PDFs, documents, and other files directly to projects. Store research materials, assignment instructions, and reference documents. Access uploaded files across all project conversations. Keep supporting materials organized with your AI interactions.",
+          "subsections": []
+        },
+        {
+          "heading": "Progress Tracking",
+          "content": "Monitor your work progression over time. See all interactions related to a specific assignment. Track how your understanding develops. Review the complete history of your project work.",
+          "subsections": []
+        },
+        {
+          "heading": "Collaboration Features",
+          "content": "Share project summaries with instructors. Organize group work in shared projects. Maintain clear boundaries between different assignments. Demonstrate your work process for assessment.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Creating and Managing Projects",
+      "content": "Setting up projects is straightforward and helps you stay organized from the start.",
+      "subsections": [
+        {
+          "heading": "Creating a New Project",
+          "content": "Navigate to the Projects section from your dashboard. Click 'New Project' or 'Create Project'. Give your project a descriptive name (e.g., 'Research Paper on Climate Change'). Add an optional description to remind yourself of the project's purpose. Set any relevant tags or categories if available.",
+          "subsections": []
+        },
+        {
+          "heading": "Adding Content to Projects",
+          "content": "Start new AI conversations within the project context. Move existing conversations into projects. Upload relevant files and documents. Add notes or descriptions to track your thoughts.",
+          "subsections": []
+        },
+        {
+          "heading": "Organizing Your Projects",
+          "content": "Use clear, descriptive names for easy identification. Create separate projects for different assignments or topics. Archive completed projects to reduce clutter. Use consistent naming conventions across projects.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Working with Files in Projects",
+      "content": "Projects support file uploads to enhance your AI interactions with relevant documents.",
+      "subsections": [
+        {
+          "heading": "Uploading Files",
+          "content": "Click the upload button within your project. Select PDFs, documents, or other supported file types. Files are stored securely within your project. Upload multiple files for comprehensive projects.",
+          "subsections": []
+        },
+        {
+          "heading": "Using Uploaded Files",
+          "content": "Reference uploaded documents in AI conversations. Ask AI to analyze or summarize uploaded PDFs. Use files as context for more accurate AI responses. Compare information across multiple uploaded sources.",
+          "subsections": []
+        },
+        {
+          "heading": "File Organization",
+          "content": "Name files clearly before uploading. Remove outdated or unnecessary files. Keep file sizes reasonable for faster processing. Organize files by type or purpose within projects.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Practical Use Cases",
+      "content": "Examples of how to effectively use projects for different academic tasks.",
+      "subsections": [
+        {
+          "heading": "Research Papers",
+          "content": "Create a project for your entire research paper. Upload source materials and assignment guidelines. Organize conversations by paper sections (intro, methods, conclusion). Track your research questions and AI-assisted explorations. Build your bibliography with AI help.",
+          "subsections": []
+        },
+        {
+          "heading": "Group Assignments",
+          "content": "Set up a shared project for team collaboration. Upload group guidelines and division of work. Keep all team member contributions organized. Track different approaches to the problem. Compile final deliverables from various conversations.",
+          "subsections": []
+        },
+        {
+          "heading": "Semester-Long Courses",
+          "content": "Create a project for each major course topic. Upload lecture notes and reading materials. Organize study sessions by chapter or unit. Build comprehensive study guides over time. Prepare for exams with organized materials.",
+          "subsections": []
+        },
+        {
+          "heading": "Creative Projects",
+          "content": "Develop creative writing or artistic projects. Store inspiration and reference materials. Track iterations and improvements. Document your creative process. Build portfolios of related work.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices for Projects",
+      "content": "Tips for maximizing the value of projects in your academic work.",
+      "subsections": [
+        {
+          "heading": "Planning Your Projects",
+          "content": "Create projects at the beginning of assignments. Define clear goals and scope for each project. Break large tasks into multiple focused projects. Consider your instructor's requirements when organizing.",
+          "subsections": []
+        },
+        {
+          "heading": "Maintaining Projects",
+          "content": "Regularly review and organize project contents. Delete or archive completed projects. Update project descriptions as work evolves. Keep projects focused on specific goals.",
+          "subsections": []
+        },
+        {
+          "heading": "Using Projects for Learning",
+          "content": "Review past conversations to track learning progress. Identify patterns in your AI interactions. Build upon previous work systematically. Use projects to prepare for assessments.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Projects and Assessment",
+      "content": "How projects support academic evaluation and demonstrate your learning process.",
+      "subsections": [
+        {
+          "heading": "Showing Your Work",
+          "content": "Projects document your entire thinking process. Instructors can see how you developed ideas. Your iterative improvements are clearly visible. The progression from initial thoughts to final work is preserved.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Integrity",
+          "content": "Projects provide transparency in AI usage. All AI assistance is documented and visible. Your original thinking is distinguished from AI input. The collaborative process with AI is clear.",
+          "subsections": []
+        },
+        {
+          "heading": "Portfolio Building",
+          "content": "Projects can showcase your best work. Build a collection of successful projects. Demonstrate growth over the semester. Create evidence of skill development.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Advanced Project Features",
+      "content": "Additional capabilities for power users and complex projects.",
+      "subsections": [
+        {
+          "heading": "Project Analytics",
+          "content": "View statistics on project AI usage. Track time spent on different aspects. Monitor which AI models you use most. Analyze your productivity patterns.",
+          "subsections": []
+        },
+        {
+          "heading": "Export Options",
+          "content": "Export project conversations for external use. Download all project files at once. Create project summaries for submission. Archive projects for future reference.",
+          "subsections": []
+        },
+        {
+          "heading": "Project Templates",
+          "content": "Create reusable project structures. Set up templates for common assignment types. Share successful project organizations. Build consistency across similar tasks.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Troubleshooting Projects",
+      "content": "Common issues and solutions when working with projects.",
+      "subsections": [
+        {
+          "heading": "Can't Find a Project",
+          "content": "Check if you're in the correct course. Look in archived projects. Use the search function. Verify you have access permissions.",
+          "subsections": []
+        },
+        {
+          "heading": "File Upload Issues",
+          "content": "Check file size limits. Ensure file format is supported. Verify you have upload permissions. Try uploading files individually.",
+          "subsections": []
+        },
+        {
+          "heading": "Project Organization Problems",
+          "content": "Review project naming conventions. Consolidate duplicate projects. Archive old projects regularly. Ask for help if projects seem corrupted.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Tips for Success",
+      "content": "Maximize your effectiveness with projects through these strategies.",
+      "subsections": [
+        {
+          "heading": "Start Early",
+          "content": "Create projects when assignments are given. Upload materials immediately. Begin organizing before you need it. Build good habits from the start.",
+          "subsections": []
+        },
+        {
+          "heading": "Stay Organized",
+          "content": "Use consistent naming schemes. Regularly clean up old projects. Keep related work together. Document your organization system.",
+          "subsections": []
+        },
+        {
+          "heading": "Leverage Projects Fully",
+          "content": "Don't just store files—use them in conversations. Review past work before starting new tasks. Build upon previous projects. Share successful projects as examples.",
+          "subsections": []
+        }
+      ]
+    }
+  ]
+}

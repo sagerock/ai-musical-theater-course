@@ -1,0 +1,737 @@
+{
+  "title": "AI Literacy Assessment Rubrics",
+  "tableOfContents": [
+    "Core AI Literacy Competencies",
+    "Beginner Level Rubrics",
+    "Intermediate Level Rubrics",
+    "Advanced Level Rubrics",
+    "Skill-Specific Rubrics",
+    "Portfolio Assessment",
+    "Self-Assessment Tools"
+  ],
+  "sections": [
+    {
+      "heading": "Core AI Literacy Competencies",
+      "subsections": [
+        {
+          "title": "The CRAFT Framework",
+          "framework": [
+            {
+              "letter": "C",
+              "competency": "Critical Evaluation",
+              "description": "Assess AI outputs critically"
+            },
+            {
+              "letter": "R",
+              "competency": "Responsible Use",
+              "description": "Ethical and transparent practices"
+            },
+            {
+              "letter": "A",
+              "competency": "Adaptive Prompting",
+              "description": "Effective communication with AI"
+            },
+            {
+              "letter": "F",
+              "competency": "Foundational Understanding",
+              "description": "How AI works and limitations"
+            },
+            {
+              "letter": "T",
+              "competency": "Transformative Application",
+              "description": "Using AI for enhanced learning"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Beginner Level Rubrics",
+      "rubrics": [
+        {
+          "title": "Basic AI Interaction Rubric",
+          "criteria": [
+            {
+              "name": "Prompt Writing",
+              "emerging": "Single word/phrase prompts",
+              "developing": "Basic questions",
+              "proficient": "Clear, specific prompts",
+              "exemplary": "Context-rich, targeted prompts"
+            },
+            {
+              "name": "AI Tool Selection",
+              "emerging": "Uses only one tool",
+              "developing": "Tries 2-3 tools",
+              "proficient": "Selects appropriate tool",
+              "exemplary": "Compares multiple tools strategically"
+            },
+            {
+              "name": "Output Evaluation",
+              "emerging": "Accepts all AI output",
+              "developing": "Questions some output",
+              "proficient": "Verifies key information",
+              "exemplary": "Critically analyzes all output"
+            },
+            {
+              "name": "Citation Practice",
+              "emerging": "No AI citation",
+              "developing": "Mentions AI use",
+              "proficient": "Basic citation format",
+              "exemplary": "Complete, detailed citations"
+            },
+            {
+              "name": "Learning Integration",
+              "emerging": "AI replaces thinking",
+              "developing": "AI sometimes helps",
+              "proficient": "AI enhances learning",
+              "exemplary": "AI transforms understanding"
+            }
+          ]
+        },
+        {
+          "title": "First AI Assignment Rubric",
+          "assignment": "Use AI to help understand a course concept",
+          "components": [
+            {
+              "category": "Initial Understanding",
+              "weight": "20%",
+              "items": [
+                {
+                  "item": "Shows confusion points",
+                  "points": 5,
+                  "indicator": "Clearly identifies what's confusing"
+                },
+                {
+                  "item": "Asks good questions",
+                  "points": 5,
+                  "indicator": "Formulates specific questions"
+                },
+                {
+                  "item": "Documents starting point",
+                  "points": 10,
+                  "indicator": "Explains current understanding"
+                }
+              ]
+            },
+            {
+              "category": "AI Interaction",
+              "weight": "30%",
+              "items": [
+                {
+                  "item": "Prompt quality",
+                  "points": 10,
+                  "indicator": "Uses complete, clear sentences"
+                },
+                {
+                  "item": "Follow-up questions",
+                  "points": 10,
+                  "indicator": "Asks for clarification"
+                },
+                {
+                  "item": "Tool exploration",
+                  "points": 10,
+                  "indicator": "Tries different approaches"
+                }
+              ]
+            },
+            {
+              "category": "Critical Thinking",
+              "weight": "30%",
+              "items": [
+                {
+                  "item": "Identifies AI errors",
+                  "points": 10,
+                  "indicator": "Catches any mistakes"
+                },
+                {
+                  "item": "Questions explanations",
+                  "points": 10,
+                  "indicator": "Doesn't accept blindly"
+                },
+                {
+                  "item": "Seeks verification",
+                  "points": 10,
+                  "indicator": "Checks with other sources"
+                }
+              ]
+            },
+            {
+              "category": "Learning Outcome",
+              "weight": "20%",
+              "items": [
+                {
+                  "item": "Explains in own words",
+                  "points": 10,
+                  "indicator": "Clear personal understanding"
+                },
+                {
+                  "item": "Shows improvement",
+                  "points": 10,
+                  "indicator": "Demonstrates learning growth"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Intermediate Level Rubrics",
+      "rubrics": [
+        {
+          "title": "AI Research Project Rubric",
+          "criteria": [
+            {
+              "name": "Research Planning",
+              "subCriteria": "Uses AI effectively",
+              "belowStandard": "Random AI queries",
+              "approaching": "Some planning",
+              "meetsStandard": "Strategic AI use",
+              "exceedsStandard": "Sophisticated integration"
+            },
+            {
+              "name": "Source Evaluation",
+              "subCriteria": "AI vs traditional sources",
+              "belowStandard": "Only AI sources",
+              "approaching": "Mostly AI sources",
+              "meetsStandard": "Balanced sources",
+              "exceedsStandard": "Optimal source blend"
+            },
+            {
+              "name": "Information Synthesis",
+              "subCriteria": "Combines insights",
+              "belowStandard": "Copy-paste sections",
+              "approaching": "Some integration",
+              "meetsStandard": "Good synthesis",
+              "exceedsStandard": "Seamless integration"
+            },
+            {
+              "name": "AI Transparency",
+              "subCriteria": "Documents process",
+              "belowStandard": "No documentation",
+              "approaching": "Minimal notes",
+              "meetsStandard": "Clear documentation",
+              "exceedsStandard": "Detailed methodology"
+            },
+            {
+              "name": "Original Contribution",
+              "subCriteria": "Adds unique value",
+              "belowStandard": "No original thought",
+              "approaching": "Some originality",
+              "meetsStandard": "Clear contributions",
+              "exceedsStandard": "Significant insights"
+            }
+          ]
+        },
+        {
+          "title": "Collaborative AI Use Rubric",
+          "description": "For Group Projects Using AI",
+          "teamMemberField": "Team Member: _________",
+          "criteria": [
+            "Shares AI strategies",
+            "Documents AI contributions",
+            "Verifies AI information",
+            "Integrates AI ethically",
+            "Teaches others AI skills",
+            "Challenges AI outputs"
+          ],
+          "scale": {
+            "never": 0,
+            "rarely": 1,
+            "sometimes": 2,
+            "often": 3,
+            "always": 4
+          },
+          "totalPossible": 24
+        }
+      ]
+    },
+    {
+      "heading": "Advanced Level Rubrics",
+      "rubrics": [
+        {
+          "title": "AI Innovation Project Rubric",
+          "description": "For Creating New Solutions with AI",
+          "dimensions": [
+            {
+              "name": "Problem Definition",
+              "novice": "Generic problem",
+              "competent": "Clear problem",
+              "proficient": "Complex problem",
+              "expert": "Novel problem space"
+            },
+            {
+              "name": "AI Integration",
+              "novice": "Basic AI use",
+              "competent": "Multiple AI tools",
+              "proficient": "Strategic AI deployment",
+              "expert": "Innovative AI application"
+            },
+            {
+              "name": "Prompt Engineering",
+              "novice": "Simple prompts",
+              "competent": "Effective prompts",
+              "proficient": "Advanced techniques",
+              "expert": "Cutting-edge approaches"
+            },
+            {
+              "name": "Solution Development",
+              "novice": "AI-dependent",
+              "competent": "AI-assisted",
+              "proficient": "AI-enhanced",
+              "expert": "AI-transformed"
+            },
+            {
+              "name": "Critical Analysis",
+              "novice": "Minimal critique",
+              "competent": "Some analysis",
+              "proficient": "Thorough evaluation",
+              "expert": "Deep critical insight"
+            },
+            {
+              "name": "Ethical Consideration",
+              "novice": "Not addressed",
+              "competent": "Basic mention",
+              "proficient": "Thoughtful discussion",
+              "expert": "Comprehensive analysis"
+            },
+            {
+              "name": "Documentation",
+              "novice": "Sparse notes",
+              "competent": "Adequate records",
+              "proficient": "Detailed documentation",
+              "expert": "Publication-quality"
+            },
+            {
+              "name": "Presentation",
+              "novice": "Basic delivery",
+              "competent": "Clear explanation",
+              "proficient": "Engaging presentation",
+              "expert": "Compelling narrative"
+            }
+          ],
+          "scoreRange": {
+            "novice": "1-2",
+            "competent": "3-4",
+            "proficient": "5-6",
+            "expert": "7-8"
+          }
+        },
+        {
+          "title": "AI Literacy Capstone Rubric",
+          "elements": [
+            {
+              "category": "Foundational Knowledge",
+              "weight": "20%",
+              "components": [
+                {
+                  "name": "AI/ML concepts",
+                  "maxScore": 10,
+                  "evidence": "Explains how AI works"
+                },
+                {
+                  "name": "Model differences",
+                  "maxScore": 5,
+                  "evidence": "Compares model types"
+                },
+                {
+                  "name": "Limitations awareness",
+                  "maxScore": 5,
+                  "evidence": "Identifies constraints"
+                }
+              ]
+            },
+            {
+              "category": "Practical Skills",
+              "weight": "30%",
+              "components": [
+                {
+                  "name": "Prompt engineering",
+                  "maxScore": 10,
+                  "evidence": "Advanced prompting demos"
+                },
+                {
+                  "name": "Tool selection",
+                  "maxScore": 10,
+                  "evidence": "Optimal tool choice"
+                },
+                {
+                  "name": "Output refinement",
+                  "maxScore": 10,
+                  "evidence": "Iterative improvement"
+                }
+              ]
+            },
+            {
+              "category": "Critical Thinking",
+              "weight": "25%",
+              "components": [
+                {
+                  "name": "Bias detection",
+                  "maxScore": 10,
+                  "evidence": "Identifies AI biases"
+                },
+                {
+                  "name": "Fact checking",
+                  "maxScore": 10,
+                  "evidence": "Verification process"
+                },
+                {
+                  "name": "Ethical reasoning",
+                  "maxScore": 5,
+                  "evidence": "Considers implications"
+                }
+              ]
+            },
+            {
+              "category": "Creative Application",
+              "weight": "25%",
+              "components": [
+                {
+                  "name": "Novel uses",
+                  "maxScore": 10,
+                  "evidence": "Innovative approaches"
+                },
+                {
+                  "name": "Problem solving",
+                  "maxScore": 10,
+                  "evidence": "Complex solutions"
+                },
+                {
+                  "name": "Knowledge creation",
+                  "maxScore": 5,
+                  "evidence": "Original insights"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Skill-Specific Rubrics",
+      "rubrics": [
+        {
+          "title": "Prompt Engineering Mastery",
+          "levels": [
+            {
+              "level": "Beginner",
+              "characteristics": "Short, vague",
+              "examplePrompt": "Explain photosynthesis"
+            },
+            {
+              "level": "Developing",
+              "characteristics": "Some context",
+              "examplePrompt": "Explain photosynthesis to a 10th grader"
+            },
+            {
+              "level": "Proficient",
+              "characteristics": "Clear structure",
+              "examplePrompt": "I'm a 10th grade student. Explain photosynthesis focusing on light/dark reactions with simple analogies"
+            },
+            {
+              "level": "Advanced",
+              "characteristics": "Strategic design",
+              "examplePrompt": "Acting as a biology tutor, explain photosynthesis to a visual learner in 10th grade. Break down: 1) Light reactions 2) Dark reactions 3) Their connection. Use a factory analogy and create a memorable acronym"
+            },
+            {
+              "level": "Expert",
+              "characteristics": "Meta-prompting",
+              "examplePrompt": "Generate 3 different explanations of photosynthesis for different learning styles. Then analyze which would be most effective for a 10th grader struggling with chemistry concepts. Adjust based on this analysis"
+            }
+          ]
+        },
+        {
+          "title": "AI Ethics Assessment",
+          "dimensions": [
+            {
+              "dimension": "Bias Recognition",
+              "unaware": "No awareness",
+              "aware": "Notices obvious bias",
+              "considerate": "Identifies subtle bias",
+              "advocate": "Actively mitigates bias"
+            },
+            {
+              "dimension": "Privacy Concerns",
+              "unaware": "Shares all data",
+              "aware": "Some caution",
+              "considerate": "Careful with data",
+              "advocate": "Teaches data protection"
+            },
+            {
+              "dimension": "Attribution Ethics",
+              "unaware": "No citation",
+              "aware": "Sometimes cites",
+              "considerate": "Always cites",
+              "advocate": "Models best practices"
+            },
+            {
+              "dimension": "Access Equity",
+              "unaware": "Ignores issues",
+              "aware": "Acknowledges",
+              "considerate": "Considers in work",
+              "advocate": "Promotes solutions"
+            },
+            {
+              "dimension": "Environmental Impact",
+              "unaware": "Unaware",
+              "aware": "Knows issues",
+              "considerate": "Minimizes use",
+              "advocate": "Optimizes and educates"
+            }
+          ],
+          "scoreScale": {
+            "unaware": 0,
+            "aware": 1,
+            "considerate": 2,
+            "advocate": 3
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Portfolio Assessment",
+      "assessments": [
+        {
+          "title": "AI Learning Portfolio Rubric",
+          "componentsRequired": [
+            {
+              "element": "Prompt Evolution",
+              "weight": "15%",
+              "excellent": "Shows sophisticated growth",
+              "satisfactory": "Clear improvement",
+              "needsImprovement": "Minimal change"
+            },
+            {
+              "element": "Best AI Interactions",
+              "weight": "20%",
+              "excellent": "Exemplary exchanges",
+              "satisfactory": "Good examples",
+              "needsImprovement": "Basic interactions"
+            },
+            {
+              "element": "Critical Reflections",
+              "weight": "20%",
+              "excellent": "Deep insights",
+              "satisfactory": "Adequate analysis",
+              "needsImprovement": "Surface observations"
+            },
+            {
+              "element": "Original Creations",
+              "weight": "20%",
+              "excellent": "Innovative work",
+              "satisfactory": "Solid projects",
+              "needsImprovement": "Limited originality"
+            },
+            {
+              "element": "Peer Teaching",
+              "weight": "15%",
+              "excellent": "Teaches others",
+              "satisfactory": "Shares knowledge",
+              "needsImprovement": "Minimal sharing"
+            },
+            {
+              "element": "Ethical Considerations",
+              "weight": "10%",
+              "excellent": "Thoughtful integration",
+              "satisfactory": "Present",
+              "needsImprovement": "Missing/minimal"
+            }
+          ]
+        },
+        {
+          "title": "Growth Over Time Assessment",
+          "description": "Track progression across semester",
+          "timeline": [
+            {
+              "month": 1,
+              "promptQuality": "Basic",
+              "criticalThinking": "Accepts most",
+              "creativeUse": "Follows examples",
+              "ethicsIntegration": "Unaware"
+            },
+            {
+              "month": 2,
+              "promptQuality": "Improving",
+              "criticalThinking": "Questions some",
+              "creativeUse": "Tries variations",
+              "ethicsIntegration": "Learning"
+            },
+            {
+              "month": 3,
+              "promptQuality": "Structured",
+              "criticalThinking": "Analyzes well",
+              "creativeUse": "Experiments",
+              "ethicsIntegration": "Considering"
+            },
+            {
+              "month": 4,
+              "promptQuality": "Strategic",
+              "criticalThinking": "Deep critique",
+              "creativeUse": "Innovates",
+              "ethicsIntegration": "Advocating"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Self-Assessment Tools",
+      "tools": [
+        {
+          "title": "AI Literacy Self-Check",
+          "instructions": "Rate yourself 1-5 (1=Never, 5=Always)",
+          "items": [
+            "Write effective prompts",
+            "Choose appropriate AI tools",
+            "Identify AI hallucinations",
+            "Verify AI information",
+            "Use AI ethically",
+            "Integrate AI with traditional methods",
+            "Explain AI to others",
+            "Critically evaluate AI output",
+            "Create original work with AI",
+            "Document my AI process"
+          ],
+          "totalPossible": 50,
+          "includesEvidenceColumn": true
+        },
+        {
+          "title": "Weekly AI Reflection Prompts",
+          "frequency": "Students complete weekly",
+          "prompts": [
+            "Most effective AI use this week: ________________",
+            "AI mistake I caught: ________________",
+            "New AI technique learned: ________________",
+            "How AI enhanced my learning: ________________",
+            "Ethical consideration faced: ________________"
+          ]
+        },
+        {
+          "title": "Peer Assessment Framework",
+          "description": "Students evaluate partners",
+          "criteria": [
+            "Shares AI knowledge",
+            "Uses AI responsibly",
+            "Helps others learn",
+            "Innovates with AI",
+            "Models good practices"
+          ],
+          "ratingScale": "1-4",
+          "includesComments": true
+        }
+      ]
+    },
+    {
+      "heading": "Implementation Guide",
+      "guides": [
+        {
+          "audience": "For Instructors",
+          "strategies": [
+            {
+              "strategy": "Start Simple",
+              "actions": [
+                "Use beginner rubrics first",
+                "Build complexity gradually",
+                "Celebrate growth"
+              ]
+            },
+            {
+              "strategy": "Be Transparent",
+              "actions": [
+                "Share rubrics upfront",
+                "Explain expectations",
+                "Provide examples"
+              ]
+            },
+            {
+              "strategy": "Focus on Learning",
+              "actions": [
+                "Emphasize process",
+                "Reward improvement",
+                "Encourage experimentation"
+              ]
+            }
+          ]
+        },
+        {
+          "audience": "For Students",
+          "strategies": [
+            {
+              "strategy": "Self-Assess Regularly",
+              "actions": [
+                "Track your growth",
+                "Identify weak areas",
+                "Set improvement goals"
+              ]
+            },
+            {
+              "strategy": "Document Everything",
+              "actions": [
+                "Save AI conversations",
+                "Note what worked",
+                "Reflect on learning"
+              ]
+            },
+            {
+              "strategy": "Share Knowledge",
+              "actions": [
+                "Teach classmates",
+                "Share strategies",
+                "Learn from others"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Holistic AI Literacy Evaluation",
+      "subsections": [
+        {
+          "title": "End-of-Course Comprehensive Assessment",
+          "competencyAreas": [
+            {
+              "area": "Technical Understanding",
+              "beginner": "Basic awareness",
+              "developing": "General knowledge",
+              "proficient": "Solid understanding",
+              "advanced": "Deep expertise"
+            },
+            {
+              "area": "Practical Application",
+              "beginner": "Simple uses",
+              "developing": "Varied applications",
+              "proficient": "Strategic deployment",
+              "advanced": "Innovative integration"
+            },
+            {
+              "area": "Critical Evaluation",
+              "beginner": "Limited critique",
+              "developing": "Some analysis",
+              "proficient": "Consistent evaluation",
+              "advanced": "Sophisticated analysis"
+            },
+            {
+              "area": "Ethical Practice",
+              "beginner": "Rule following",
+              "developing": "Conscious choices",
+              "proficient": "Principled approach",
+              "advanced": "Ethical leadership"
+            },
+            {
+              "area": "Learning Enhancement",
+              "beginner": "Occasional benefit",
+              "developing": "Regular improvement",
+              "proficient": "Transformed learning",
+              "advanced": "Transcendent use"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "These rubrics should evolve with technology and student needs. The goal is developing thoughtful, capable AI users who enhance their human intelligence with artificial intelligence."
+  }
+}

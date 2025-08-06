@@ -1,0 +1,157 @@
+{
+  "title": "Getting Started as a Student",
+  "sections": [
+    {
+      "heading": "Welcome to AI Engagement Hub",
+      "content": "AI Engagement Hub is your gateway to learning with artificial intelligence. This platform provides you with access to multiple AI models while allowing your instructors to monitor and guide your AI usage for educational purposes.",
+      "subsections": []
+    },
+    {
+      "heading": "Initial Setup",
+      "content": "Follow these steps to get started with your AI Engagement Hub account.",
+      "subsections": [
+        {
+          "heading": "Account Creation",
+          "content": "Sign up using your school email address. Create a strong password (minimum 6 characters). Verify your email if required by your institution.",
+          "subsections": []
+        },
+        {
+          "heading": "Course Enrollment",
+          "content": "Get the course access code from your instructor. Navigate to 'Join Course' from your dashboard. Enter the access code to enroll. Wait for instructor approval if required.",
+          "subsections": []
+        },
+        {
+          "heading": "Profile Setup",
+          "content": "Complete your profile with your full name. Add any additional information requested by your instructor. Review your notification preferences in Settings.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Using AI Chat",
+      "content": "The AI Chat feature is your primary tool for interacting with various AI models.",
+      "subsections": [
+        {
+          "heading": "Starting a Conversation",
+          "content": "Click 'New Chat' from your dashboard. Select an AI model from the dropdown menu. Type your question or prompt in the text box. Press Enter or click Send to submit.",
+          "subsections": []
+        },
+        {
+          "heading": "Available AI Models",
+          "content": "**GPT-4.1 Mini** - Fast, cost-effective for general tasks. **GPT-4.1** - Advanced reasoning and coding. **Claude Sonnet 4** - Balanced performance. **Claude Opus 4** - Research-grade model (higher cost). **Gemini Flash** - Quick responses. **Gemini 2.5 Pro** - Educational focus with LearnLM. **Sonar Pro** - Web-connected responses.",
+          "subsections": []
+        },
+        {
+          "heading": "Model Selection Tips",
+          "content": "Start with GPT-4.1 Mini for most tasks. Use Claude Opus 4 for complex research or writing. Choose Gemini 2.5 Pro for educational content and learning assistance. Check the cost indicator before using premium models.",
+          "subsections": []
+        },
+        {
+          "heading": "Chat Features",
+          "content": "**Markdown Support** - Responses include formatted text, code blocks, and lists. **Copy Function** - Copy AI responses for use in your work. **Conversation History** - All chats are saved and searchable. **PDF Upload** - Analyze documents by uploading PDF files.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Project Management",
+      "content": "Organize your AI interactions using the Projects feature.",
+      "subsections": [
+        {
+          "heading": "Creating Projects",
+          "content": "Click 'Projects' in the navigation menu. Select 'New Project'. Name your project descriptively. Add project description and goals.",
+          "subsections": []
+        },
+        {
+          "heading": "Organizing Chats",
+          "content": "Associate new chats with projects during creation. Move existing chats to projects from the chat interface. Use projects to group related assignments or topics.",
+          "subsections": []
+        },
+        {
+          "heading": "Project Benefits",
+          "content": "Keep assignment-related chats organized. Track progress on long-term projects. Share project summaries with instructors. Review all interactions for a specific topic.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Academic Features",
+      "content": "Tools designed specifically for your educational success.",
+      "subsections": [
+        {
+          "heading": "Assignment Support",
+          "content": "Use AI to brainstorm ideas and outline essays. Get help understanding complex concepts. Generate study guides and summaries. Remember to follow your institution's AI usage policies.",
+          "subsections": []
+        },
+        {
+          "heading": "Research Assistance",
+          "content": "Use Claude Opus 4 for in-depth research questions. Upload PDFs for document analysis. Generate citations and bibliographies. Fact-check information with web-connected models.",
+          "subsections": []
+        },
+        {
+          "heading": "Study Tools",
+          "content": "Create flashcards and practice questions. Get explanations in different learning styles. Use Gemini 2.5 Pro for personalized tutoring. Generate summaries of lecture notes.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices",
+      "content": "Guidelines for effective and responsible AI usage.",
+      "subsections": [
+        {
+          "heading": "Prompt Writing",
+          "content": "Be specific and clear in your requests. Provide context and background information. Ask follow-up questions for clarification. Break complex tasks into smaller steps.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Integrity",
+          "content": "Always cite AI assistance in your work. Use AI as a learning tool, not a replacement for your own work. Follow your instructor's guidelines on AI usage. Never submit AI-generated content as your own original work.",
+          "subsections": []
+        },
+        {
+          "heading": "Cost Management",
+          "content": "Monitor the cost indicators for each model. Start with lower-cost models when possible. Use premium models only when necessary. Track your usage in the dashboard.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Getting Help",
+      "content": "Resources available when you need assistance.",
+      "subsections": [
+        {
+          "heading": "Help Documentation",
+          "content": "Access the Help section from the main menu. Search for specific topics or browse categories. Review FAQs for common questions.",
+          "subsections": []
+        },
+        {
+          "heading": "Instructor Support",
+          "content": "Contact your instructor through the platform. Ask questions during class about AI usage. Review instructor-provided guidelines and resources.",
+          "subsections": []
+        },
+        {
+          "heading": "Technical Issues",
+          "content": "Check your internet connection first. Try refreshing the page or logging out and back in. Clear your browser cache if experiencing issues. Contact your school's IT support for persistent problems.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Privacy and Data",
+      "content": "Understanding how your data is handled and protected.",
+      "subsections": [
+        {
+          "heading": "Data Collection",
+          "content": "All AI interactions are logged for educational purposes. Instructors can view your chat history and usage patterns. Your data is used to improve your learning experience.",
+          "subsections": []
+        },
+        {
+          "heading": "Privacy Protection",
+          "content": "Personal information is protected according to FERPA guidelines. Chat data is only accessible to you and your instructors. Never share passwords or personal information in chats.",
+          "subsections": []
+        }
+      ]
+    }
+  ]
+}

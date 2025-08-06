@@ -1,0 +1,476 @@
+{
+  "title": "AI Classroom Policy Templates",
+  "tableOfContents": [
+    "Sample Syllabus Statements",
+    "AI Usage Guidelines",
+    "Honor Code Additions",
+    "Assignment-Specific Policies",
+    "Violation Procedures",
+    "Communication Templates"
+  ],
+  "sections": [
+    {
+      "heading": "Sample Syllabus Statements",
+      "policies": [
+        {
+          "type": "Embracing AI Policy",
+          "recommendation": "Recommended",
+          "title": "AI Usage Policy",
+          "content": "This course recognizes AI as a powerful learning tool. You are encouraged to use AI assistants (ChatGPT, Claude, etc.) to enhance your learning, with these guidelines:",
+          "permittedUses": [
+            "Brainstorming and ideation",
+            "Understanding complex concepts",
+            "Checking your work",
+            "Generating practice problems",
+            "Improving writing clarity"
+          ],
+          "required": [
+            "Document all AI interactions",
+            "Cite AI contributions",
+            "Verify AI-generated information",
+            "Add your original analysis",
+            "Complete process reflections"
+          ],
+          "prohibited": [
+            "Submitting AI-generated work as your own",
+            "Using AI during exams (unless specified)",
+            "Bypassing learning objectives",
+            "Misrepresenting your understanding"
+          ],
+          "philosophy": "Think of AI as a study partner, not a homework service. Your grade reflects YOUR learning, not the AI's capabilities."
+        },
+        {
+          "type": "Selective AI Policy",
+          "title": "AI Usage Policy",
+          "content": "AI tools may be used for specific assignments as indicated. Look for the \"AI-Permitted\" or \"AI-Required\" designation on each assignment. When AI use is permitted:",
+          "requirements": [
+            "You must include an AI citation statement",
+            "Document your prompts and AI responses",
+            "Demonstrate understanding in your own words",
+            "Be prepared to explain your work orally"
+          ],
+          "consequence": "Unauthorized AI use will be treated as an academic integrity violation."
+        },
+        {
+          "type": "Restrictive AI Policy",
+          "recommendation": "Not Recommended",
+          "title": "AI Usage Policy",
+          "content": "To ensure authentic assessment of your personal learning, AI tools are not permitted for assignments in this course unless explicitly stated. This includes:",
+          "restrictions": [
+            "ChatGPT, Claude, Bard, and similar tools",
+            "AI-powered writing assistants beyond basic grammar check",
+            "Code generation tools"
+          ],
+          "note": "Exceptions will be clearly marked. Focus on developing your own critical thinking and problem-solving skills."
+        }
+      ]
+    },
+    {
+      "heading": "AI Usage Guidelines",
+      "subsections": [
+        {
+          "title": "Student Quick Reference Card",
+          "format": "checklist",
+          "icon": "🤖",
+          "heading": "AI DO's and DON'Ts for This Class",
+          "dos": [
+            "Use AI to explain confusing concepts",
+            "Ask AI for practice problems",
+            "Have AI check your logic",
+            "Use AI for brainstorming",
+            "Document all AI interactions",
+            "Cite AI like any source",
+            "Verify AI information",
+            "Add your own insights"
+          ],
+          "donts": [
+            "Copy-paste AI responses",
+            "Submit AI work as yours",
+            "Use AI on closed-book exams",
+            "Skip assigned readings",
+            "Trust AI blindly",
+            "Hide your AI use",
+            "Let AI do your thinking",
+            "Avoid learning struggle"
+          ]
+        },
+        {
+          "title": "Detailed Usage Framework",
+          "levels": [
+            {
+              "level": "Level 1: AI as Tutor",
+              "context": "When You're Stuck",
+              "allowed": [
+                "\"Explain this concept differently\"",
+                "\"Why is my answer wrong?\"",
+                "\"Give me a hint, not the answer\""
+              ],
+              "notAllowed": [
+                "\"Do this problem for me\""
+              ]
+            },
+            {
+              "level": "Level 2: AI as Reviewer",
+              "context": "After Your Work",
+              "allowed": [
+                "\"Check my logic\"",
+                "\"What am I missing?\"",
+                "\"Suggest improvements\""
+              ],
+              "notAllowed": [
+                "\"Write this better for me\""
+              ]
+            },
+            {
+              "level": "Level 3: AI as Collaborator",
+              "context": "For Complex Projects",
+              "allowed": [
+                "\"Help me brainstorm\"",
+                "\"Challenge my thesis\"",
+                "\"Find counterarguments\""
+              ],
+              "notAllowed": [
+                "\"Write my conclusion\""
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Honor Code Additions",
+      "subsections": [
+        {
+          "title": "AI-Age Academic Integrity Pledge",
+          "pledgeItems": [
+            {
+              "category": "Use AI Ethically",
+              "commitments": [
+                "I will use AI to enhance, not replace, my learning",
+                "I will document all AI assistance received",
+                "I will verify AI information before using it"
+              ]
+            },
+            {
+              "category": "Maintain Authenticity",
+              "commitments": [
+                "All submitted work reflects my understanding",
+                "I can explain any work I submit",
+                "My voice and ideas remain central"
+              ]
+            },
+            {
+              "category": "Practice Transparency",
+              "commitments": [
+                "I will cite AI use appropriately",
+                "I will save AI conversations when required",
+                "I will be honest about my process"
+              ]
+            },
+            {
+              "category": "Respect Learning",
+              "commitments": [
+                "I will engage with challenging material",
+                "I will use AI to go deeper, not to avoid work",
+                "I will embrace productive struggle"
+              ]
+            }
+          ],
+          "signatureLine": "Signature: _________________ Date: _______"
+        },
+        {
+          "title": "AI Citation Format",
+          "instructions": "Students must use this format for AI citations:",
+          "template": {
+            "format": "AI Assistance Statement:\nI used [AI Tool Name] on [Date] for [Specific Purpose].\nThe AI helped me [Specific Contribution].\nAll written work and analysis are my own.",
+            "example": "I used Claude on January 20, 2025 for brainstorming thesis statements about climate change impacts. The AI suggested exploring economic angles, which I researched independently and developed into my argument about agricultural costs."
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Assignment-Specific Policies",
+      "policyTypes": [
+        {
+          "type": "AI-Required Assignment Policy",
+          "icon": "🤖",
+          "title": "AI REQUIRED for This Assignment",
+          "requirements": [
+            "Use at least 2 different AI models",
+            "Document all interactions",
+            "Compare AI responses critically",
+            "Submit AI conversation logs",
+            "Reflect on AI's impact on your learning"
+          ],
+          "gradingNote": "Grading includes quality of AI interaction (30%)"
+        },
+        {
+          "type": "AI-Permitted Assignment Policy",
+          "icon": "🤖",
+          "title": "AI PERMITTED for This Assignment",
+          "restrictions": [
+            "For brainstorming and planning only",
+            "Not for generating final text",
+            "Must cite all AI contributions",
+            "Must submit process documentation"
+          ],
+          "requirement": "Your original thinking must be evident"
+        },
+        {
+          "type": "AI-Prohibited Assignment Policy",
+          "icon": "🚫",
+          "title": "NO AI for This Assignment",
+          "description": "This assessment measures your independent abilities. AI tools are not permitted. This includes:",
+          "prohibited": [
+            "Chat-based AI assistants",
+            "Writing enhancement tools",
+            "Code generation tools",
+            "Translation tools (beyond dictionary)"
+          ],
+          "focus": "Focus on demonstrating your personal understanding"
+        }
+      ]
+    },
+    {
+      "heading": "Violation Procedures",
+      "subsections": [
+        {
+          "title": "First Violation Response",
+          "emailTemplate": {
+            "subject": "AI Policy Clarification Needed",
+            "body": "Dear [Student],\n\nI noticed potential undocumented AI use in your recent [assignment]. Let's discuss this to ensure we're aligned on course AI policies.\n\nPlease:\n1. Review the syllabus AI policy\n2. Prepare to discuss your work process\n3. Bring any AI conversations used\n\nThis is a learning opportunity. I want to help you use AI effectively and ethically.\n\nMeeting times: [Options]\n\nBest,\n[Instructor]"
+          }
+        },
+        {
+          "title": "Investigation Process",
+          "steps": [
+            {
+              "step": "Initial Review",
+              "actions": [
+                "Compare to student's typical work",
+                "Check for AI writing patterns",
+                "Note specific concerns"
+              ]
+            },
+            {
+              "step": "Student Meeting",
+              "actions": [
+                "Ask about process",
+                "Request work explanation",
+                "Review AI policies together"
+              ]
+            },
+            {
+              "step": "Determination",
+              "considerations": [
+                "Intentional violation?",
+                "Misunderstanding?",
+                "Carelessness?"
+              ]
+            },
+            {
+              "step": "Resolution",
+              "options": [
+                "Education (first time)",
+                "Redo opportunity",
+                "Grade impact",
+                "Formal report (severe)"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Progressive Consequences",
+          "consequences": [
+            {
+              "violation": "1st (Minor)",
+              "response": "Education, redo",
+              "impact": "No grade penalty"
+            },
+            {
+              "violation": "1st (Major)",
+              "response": "Formal warning",
+              "impact": "Assignment = 0"
+            },
+            {
+              "violation": "2nd",
+              "response": "Academic probation",
+              "impact": "Course impact"
+            },
+            {
+              "violation": "3rd",
+              "response": "Honor board referral",
+              "impact": "Possible failure"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Communication Templates",
+      "templates": [
+        {
+          "title": "Beginning of Semester Email",
+          "emailTemplate": {
+            "subject": "How We'll Use AI in [Course Name]",
+            "sections": [
+              {
+                "greeting": "Dear Students,\n\nWelcome! This course embraces AI as a learning tool. Here's what you need to know:"
+              },
+              {
+                "heading": "AI = Your Study Partner",
+                "points": [
+                  "Use it to understand, not to avoid learning",
+                  "Document your AI interactions",
+                  "Always add your own analysis"
+                ]
+              },
+              {
+                "heading": "First Assignment",
+                "instructions": "Try using AI to:",
+                "steps": [
+                  "Understand the prompt better",
+                  "Brainstorm ideas",
+                  "Check your outline"
+                ],
+                "note": "Then complete the work yourself!"
+              },
+              {
+                "heading": "Resources",
+                "items": [
+                  "AI Guidelines (attached)",
+                  "Citation format (in syllabus)",
+                  "Office hours for questions"
+                ]
+              },
+              {
+                "closing": "Let's learn how to learn with AI!\n\nDr. [Name]"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Mid-Semester Reminder",
+          "emailTemplate": {
+            "subject": "AI Usage Reminder",
+            "content": "Quick reminder about AI in our class:",
+            "sections": [
+              {
+                "icon": "✅",
+                "heading": "Great AI use I've seen:",
+                "items": [
+                  "Using AI to generate practice problems",
+                  "Asking AI to explain concepts differently",
+                  "Having AI challenge your arguments"
+                ]
+              },
+              {
+                "icon": "⚠️",
+                "heading": "Concerning patterns:",
+                "items": [
+                  "Work that doesn't sound like you",
+                  "Perfect but generic responses",
+                  "Missing process documentation"
+                ]
+              }
+            ],
+            "reminder": "Remember: I grade YOUR learning, not AI's output!",
+            "closing": "Questions? Let's talk!"
+          }
+        },
+        {
+          "title": "Assignment-Specific Instructions",
+          "emailTemplate": {
+            "subject": "AI Instructions for Essay #2",
+            "intro": "For Tuesday's essay on economic inequality:",
+            "sections": [
+              {
+                "heading": "AI Permitted For:",
+                "items": [
+                  "Topic brainstorming",
+                  "Finding research directions",
+                  "Checking argument logic",
+                  "Grammar/clarity (with documentation)"
+                ]
+              },
+              {
+                "heading": "AI Not Permitted For:",
+                "items": [
+                  "Writing any paragraphs",
+                  "Creating your thesis",
+                  "Generating citations"
+                ]
+              },
+              {
+                "heading": "Required Submission:",
+                "items": [
+                  "Your essay",
+                  "AI interaction log",
+                  "Process reflection (1 paragraph)"
+                ]
+              }
+            ],
+            "focus": "Focus: YOUR analysis of the issue!"
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Policy Development Worksheet",
+      "intro": "Use this to create your own policy:",
+      "steps": [
+        {
+          "step": "Step 1: Philosophy",
+          "options": [
+            "AI as learning enhancer",
+            "AI as limited tool",
+            "AI as prohibited technology"
+          ]
+        },
+        {
+          "step": "Step 2: Specific Rules",
+          "category": "Permitted uses:",
+          "options": [
+            "Brainstorming",
+            "Concept explanation",
+            "Practice generation",
+            "Writing improvement",
+            "Code debugging",
+            "Research assistance"
+          ]
+        },
+        {
+          "step": "Step 3: Documentation Requirements",
+          "options": [
+            "Citation required",
+            "Process log required",
+            "Reflection required",
+            "AI transcripts required"
+          ]
+        },
+        {
+          "step": "Step 4: Consequences",
+          "category": "First violation:",
+          "options": [
+            "Warning",
+            "Redo opportunity",
+            "Grade reduction",
+            "Formal report"
+          ]
+        },
+        {
+          "step": "Step 5: Communication Plan",
+          "options": [
+            "Syllabus statement",
+            "First day discussion",
+            "Regular reminders",
+            "Assignment instructions"
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "Clear, consistent policies that focus on learning outcomes create the best environment for ethical AI use. Students appreciate transparency and fairness!"
+  }
+}

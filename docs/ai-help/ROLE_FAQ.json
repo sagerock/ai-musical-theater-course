@@ -1,0 +1,340 @@
+{
+  "title": "Frequently Asked Questions About Roles",
+  "sections": [
+    {
+      "heading": "General Role Questions",
+      "questions": [
+        {
+          "question": "What's the difference between global roles and course roles?",
+          "answer": [
+            "Global roles are set in your user profile and apply platform-wide",
+            "Course roles are specific to each course you're enrolled in",
+            "Course roles override global roles within that course",
+            "Example: You can be a global Instructor but enrolled as a Student in someone else's course"
+          ]
+        },
+        {
+          "question": "Can I have different roles in different courses?",
+          "answer": "Yes! Your role is specific to each course. You might be:",
+          "examples": [
+            "An Instructor in \"Introduction to AI\"",
+            "A Student in \"Advanced Machine Learning\"",
+            "A Teaching Assistant in \"Data Science 101\""
+          ]
+        },
+        {
+          "question": "How do I know what role I have?",
+          "answer": [
+            "Check your dashboard - your role appears under each course",
+            "Look at your navigation menu - different roles see different options",
+            "In a course, your role is shown in the member list"
+          ]
+        },
+        {
+          "question": "Who can change my role?",
+          "answer": [
+            {
+              "context": "In a course",
+              "who": "The course instructor"
+            },
+            {
+              "context": "Global role",
+              "who": "Global Administrators only"
+            },
+            {
+              "context": "School Admin role",
+              "who": "Global Administrators only"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Student Questions",
+      "questions": [
+        {
+          "question": "I can't see other students' projects. Is this a bug?",
+          "answer": "No, this is by design. Regular students can only see their own work to maintain privacy. If you need to help other students, ask your instructor about becoming a Student Assistant."
+        },
+        {
+          "question": "How do I become a Student Assistant?",
+          "answer": [
+            "Excel in your coursework",
+            "Show willingness to help classmates",
+            "Ask your instructor about the role",
+            "The instructor can promote you through the Students page"
+          ]
+        },
+        {
+          "question": "What extra features do I get as a Student Assistant?",
+          "answer": [
+            "View other students' projects (read-only)",
+            "See the course member list",
+            "Access peer work to provide help",
+            "Keep all your regular student permissions"
+          ]
+        },
+        {
+          "question": "Can I edit other students' work as a Student Assistant?",
+          "answer": "No, Student Assistants have read-only access to peer work. This maintains academic integrity while allowing you to help."
+        }
+      ]
+    },
+    {
+      "heading": "Teaching Assistant Questions",
+      "questions": [
+        {
+          "question": "I'm a TA but I see \"Unknown User\" instead of student names",
+          "answer": "This has been fixed. Try:",
+          "solutions": [
+            "Refresh your browser",
+            "Log out and back in",
+            "Clear your browser cache"
+          ]
+        },
+        {
+          "question": "Can I grade student work as a Teaching Assistant?",
+          "answer": "The platform doesn't have built-in grading. As a TA you can:",
+          "capabilities": [
+            "View all student work",
+            "Add instructor notes",
+            "Track student progress",
+            "Report to the instructor"
+          ]
+        },
+        {
+          "question": "What's the difference between Student Assistant and Teaching Assistant?",
+          "answer": {
+            "comparison": [
+              {
+                "feature": "View analytics",
+                "studentAssistant": "No",
+                "teachingAssistant": "Yes"
+              },
+              {
+                "feature": "Approve enrollments",
+                "studentAssistant": "No",
+                "teachingAssistant": "Yes"
+              },
+              {
+                "feature": "Add instructor notes",
+                "studentAssistant": "No",
+                "teachingAssistant": "Yes"
+              },
+              {
+                "feature": "View reflections",
+                "studentAssistant": "No",
+                "teachingAssistant": "Yes"
+              },
+              {
+                "feature": "Course management",
+                "studentAssistant": "No",
+                "teachingAssistant": "Limited"
+              }
+            ]
+          }
+        },
+        {
+          "question": "How do I approve student enrollments?",
+          "answer": [
+            "Go to Instructor Dashboard",
+            "Click on \"Overview\"",
+            "Find \"Pending Approvals\" section",
+            "Click Approve or Deny for each request"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Instructor Questions",
+      "questions": [
+        {
+          "question": "How do I add a co-instructor?",
+          "answer": [
+            "Make sure they're enrolled in your course",
+            "Go to Students page",
+            "Find them in the list",
+            "Click Edit → Select \"Instructor\" → Confirm"
+          ]
+        },
+        {
+          "question": "Can I remove another instructor?",
+          "answer": "No, instructors cannot remove each other. Only Global Admins can remove instructors for security reasons."
+        },
+        {
+          "question": "Should I make my TA a Teaching Assistant or Student Assistant?",
+          "answer": {
+            "teachingAssistant": {
+              "condition": "Teaching Assistant if they need to:",
+              "capabilities": [
+                "View course analytics",
+                "Approve enrollments",
+                "See all student details"
+              ]
+            },
+            "studentAssistant": {
+              "condition": "Student Assistant if they only need to:",
+              "capabilities": [
+                "Help peers with projects",
+                "Provide tutoring",
+                "Lead study groups"
+              ]
+            }
+          }
+        },
+        {
+          "question": "How many Teaching Assistants can I have?",
+          "answer": "There's no limit. Assign as many as needed for your course size and structure."
+        },
+        {
+          "question": "Can I temporarily assign roles?",
+          "answer": "Currently roles are permanent until manually changed. Best practice:",
+          "bestPractices": [
+            "Document why you assigned roles",
+            "Review roles each semester",
+            "Remove roles when no longer needed"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "School Administrator Questions",
+      "questions": [
+        {
+          "question": "I'm a School Admin but can't see all courses at my school",
+          "answer": "Check that:",
+          "checks": [
+            "Courses are properly assigned to your school",
+            "You're logged in with the correct account",
+            "Your school assignment is correct in your profile"
+          ]
+        },
+        {
+          "question": "Can I edit courses as a School Administrator?",
+          "answer": "No, School Administrators have oversight permissions only. You can view but not modify courses to maintain instructor autonomy."
+        },
+        {
+          "question": "How do I become a School Administrator?",
+          "answer": "This role is assigned by Global Administrators. Contact your platform administrator with:",
+          "requirements": [
+            "Your institution affiliation",
+            "Your oversight responsibilities",
+            "Courses/departments you'll oversee"
+          ]
+        },
+        {
+          "question": "Can I enroll students as a School Administrator?",
+          "answer": "No, enrollment management remains with course instructors. School Admins monitor but don't directly manage courses."
+        }
+      ]
+    },
+    {
+      "heading": "Technical Issues",
+      "questions": [
+        {
+          "question": "My role was changed but I don't see new features",
+          "answer": [
+            "Refresh your browser (Ctrl/Cmd + R)",
+            "Log out and log back in",
+            "Clear browser cache",
+            "Check you're in the right course"
+          ]
+        },
+        {
+          "question": "I got an email about a role change I didn't request",
+          "answer": "Contact your instructor immediately. All role changes are logged and can be investigated."
+        },
+        {
+          "question": "The role dropdown doesn't show all options",
+          "answer": "The available roles depend on your current role:",
+          "dependencies": [
+            "Instructors can assign most roles",
+            "Only Global Admins can assign School Administrator",
+            "You can't assign a role higher than your own"
+          ]
+        },
+        {
+          "question": "Can I decline a role assignment?",
+          "answer": "Roles are assigned by instructors/admins. If you're uncomfortable with a role:",
+          "steps": [
+            "Contact your instructor",
+            "Explain your concerns",
+            "They can change you back to Student"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices",
+      "audiences": [
+        {
+          "audience": "For Students",
+          "practices": [
+            "Use your role responsibly",
+            "Ask before accepting assistant roles",
+            "Communicate availability if you're an assistant",
+            "Report any access issues"
+          ]
+        },
+        {
+          "audience": "For Instructors",
+          "practices": [
+            "Document why you assign roles",
+            "Communicate expectations clearly",
+            "Review roles each semester",
+            "Use roles to build community"
+          ]
+        },
+        {
+          "audience": "For Administrators",
+          "practices": [
+            "Audit role assignments regularly",
+            "Ensure proper school associations",
+            "Monitor for unusual access patterns",
+            "Keep role assignments current"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Privacy and Security",
+      "questions": [
+        {
+          "question": "Can Student Assistants see my private reflections?",
+          "answer": "No, only Teaching Assistants and above can view reflections."
+        },
+        {
+          "question": "Is my data safe with peer assistants?",
+          "answer": "Yes, Student Assistants have read-only access and all access is logged."
+        },
+        {
+          "question": "Can someone access my work after I leave a course?",
+          "answer": "When you're removed from a course, all course-specific access is revoked immediately."
+        },
+        {
+          "question": "Are role changes tracked?",
+          "answer": "Yes, all role changes are logged with:",
+          "loggedInfo": [
+            "Who made the change",
+            "When it was made",
+            "Previous and new roles",
+            "Email notifications sent"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Still Have Questions?",
+      "content": "If your question isn't answered here:",
+      "nextSteps": [
+        "Check the main User Roles Guide",
+        "Ask your instructor",
+        "Contact platform support",
+        "Submit a help request through the platform"
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "Roles are designed to facilitate learning and collaboration while maintaining privacy and academic integrity."
+  }
+}

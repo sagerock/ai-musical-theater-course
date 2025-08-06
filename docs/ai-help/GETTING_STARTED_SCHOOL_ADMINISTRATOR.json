@@ -1,0 +1,209 @@
+{
+  "title": "Getting Started as a School Administrator",
+  "sections": [
+    {
+      "heading": "Welcome to AI Engagement Hub",
+      "content": "As a School Administrator, you have oversight and administrative access across all courses in your institution. This role enables you to manage instructors, monitor institution-wide AI usage, and ensure policy compliance.",
+      "subsections": []
+    },
+    {
+      "heading": "Initial Setup",
+      "content": "Configure your administrative account and institutional settings.",
+      "subsections": [
+        {
+          "heading": "Account Activation",
+          "content": "Your account requires special administrative privileges. Contact the platform support to enable School Administrator status. Complete your profile with institutional details. Configure institution-wide notification settings.",
+          "subsections": []
+        },
+        {
+          "heading": "Institutional Configuration",
+          "content": "Set up your school's branding and customization. Configure default AI model availability. Establish institution-wide usage policies. Set budget limits and cost controls.",
+          "subsections": []
+        },
+        {
+          "heading": "Department Structure",
+          "content": "Create department categories for course organization. Assign department heads if applicable. Set up reporting hierarchies. Configure cross-department visibility settings.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "User Management",
+      "content": "Comprehensive tools for managing all users in your institution.",
+      "subsections": [
+        {
+          "heading": "Instructor Management",
+          "content": "Grant instructor privileges to faculty members. Assign instructors to departments or programs. Monitor instructor activity and course creation. Revoke or modify instructor permissions as needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Student Oversight",
+          "content": "View enrollment statistics across all courses. Monitor overall student engagement metrics. Identify at-risk students across the institution. Generate compliance reports for administration.",
+          "subsections": []
+        },
+        {
+          "heading": "Role Administration",
+          "content": "Promote users to various administrative roles. Manage Teaching Assistant assignments. Configure Student Assistant permissions. Maintain role hierarchy and permissions.",
+          "subsections": []
+        },
+        {
+          "heading": "Account Maintenance",
+          "content": "Bulk create accounts for new semesters. Deactivate accounts for graduated students. Reset passwords and resolve access issues. Manage account suspension and reactivation.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Course Oversight",
+      "content": "Monitor and manage all courses within your institution.",
+      "subsections": [
+        {
+          "heading": "Course Monitoring",
+          "content": "View all active courses and enrollments. Track course-level AI usage and costs. Monitor compliance with institutional policies. Generate cross-course comparison reports.",
+          "subsections": []
+        },
+        {
+          "heading": "Course Approval",
+          "content": "Review and approve new course creation. Set course-specific AI model restrictions. Establish enrollment caps and prerequisites. Archive completed courses for records.",
+          "subsections": []
+        },
+        {
+          "heading": "Quality Assurance",
+          "content": "Review course content and AI usage patterns. Ensure alignment with academic standards. Monitor for policy violations or concerns. Provide feedback to instructors on best practices.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Analytics and Reporting",
+      "content": "Institution-wide data analysis and reporting capabilities.",
+      "subsections": [
+        {
+          "heading": "Usage Analytics",
+          "content": "Track total AI usage across the institution. Monitor cost distribution by department or course. Identify usage trends and patterns. Forecast future usage and budget needs.",
+          "subsections": []
+        },
+        {
+          "heading": "Performance Metrics",
+          "content": "Measure student engagement levels institution-wide. Compare AI adoption rates across departments. Track instructor utilization of platform features. Analyze correlation between AI use and outcomes.",
+          "subsections": []
+        },
+        {
+          "heading": "Compliance Reporting",
+          "content": "Generate FERPA compliance documentation. Create audit trails for data access. Monitor academic integrity metrics. Export reports for accreditation reviews.",
+          "subsections": []
+        },
+        {
+          "heading": "Custom Reports",
+          "content": "Create tailored reports for stakeholders. Schedule automated report generation. Export data in various formats. Share reports with board members or committees.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Policy Management",
+      "content": "Establish and enforce institutional AI usage policies.",
+      "subsections": [
+        {
+          "heading": "Policy Creation",
+          "content": "Develop comprehensive AI usage guidelines. Set academic integrity standards. Create model-specific usage restrictions. Establish data retention policies.",
+          "subsections": []
+        },
+        {
+          "heading": "Policy Enforcement",
+          "content": "Monitor compliance across all courses. Flag policy violations automatically. Review and address reported concerns. Implement consequences for violations.",
+          "subsections": []
+        },
+        {
+          "heading": "Communication",
+          "content": "Distribute policy updates to all users. Create policy acknowledgment requirements. Provide training materials and resources. Maintain policy documentation archive.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Budget and Cost Management",
+      "content": "Control and monitor institutional AI spending.",
+      "subsections": [
+        {
+          "heading": "Budget Allocation",
+          "content": "Set department or course-level budgets. Allocate resources based on enrollment. Create cost centers for tracking. Establish spending approval workflows.",
+          "subsections": []
+        },
+        {
+          "heading": "Cost Monitoring",
+          "content": "Track real-time spending across the institution. Receive alerts for budget threshold breaches. Analyze cost-per-student metrics. Identify cost optimization opportunities.",
+          "subsections": []
+        },
+        {
+          "heading": "Model Management",
+          "content": "Control access to premium AI models. Set usage limits for expensive models. Negotiate institutional pricing if available. Optimize model selection for cost efficiency.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Security and Compliance",
+      "content": "Maintain data security and regulatory compliance.",
+      "subsections": [
+        {
+          "heading": "Data Security",
+          "content": "Monitor data access patterns. Review security audit logs. Implement data encryption standards. Manage user authentication requirements.",
+          "subsections": []
+        },
+        {
+          "heading": "Privacy Compliance",
+          "content": "Ensure FERPA compliance for student data. Manage consent and disclosure requirements. Handle data deletion requests. Maintain privacy policy documentation.",
+          "subsections": []
+        },
+        {
+          "heading": "Incident Response",
+          "content": "Develop incident response procedures. Document and investigate security events. Coordinate with IT security teams. Communicate incidents to stakeholders.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Support and Training",
+      "content": "Provide support and training resources for your institution.",
+      "subsections": [
+        {
+          "heading": "Instructor Training",
+          "content": "Organize platform onboarding sessions. Provide AI literacy workshops. Share best practices documentation. Create instructor support channels.",
+          "subsections": []
+        },
+        {
+          "heading": "Student Resources",
+          "content": "Develop student orientation materials. Create AI usage tutorials. Establish help desk procedures. Maintain FAQ documentation.",
+          "subsections": []
+        },
+        {
+          "heading": "Technical Support",
+          "content": "Coordinate with platform support team. Escalate critical issues promptly. Maintain known issues documentation. Communicate updates to users.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices",
+      "content": "Guidelines for effective institutional AI management.",
+      "subsections": [
+        {
+          "heading": "Change Management",
+          "content": "Plan phased rollouts of new features. Communicate changes well in advance. Gather feedback from stakeholders. Adjust policies based on outcomes.",
+          "subsections": []
+        },
+        {
+          "heading": "Stakeholder Engagement",
+          "content": "Regular meetings with department heads. Student feedback collection mechanisms. Board reporting and updates. Community communication strategies.",
+          "subsections": []
+        },
+        {
+          "heading": "Continuous Improvement",
+          "content": "Regular review of usage patterns. Benchmark against peer institutions. Adopt emerging best practices. Iterate on policies and procedures.",
+          "subsections": []
+        }
+      ]
+    }
+  ]
+}

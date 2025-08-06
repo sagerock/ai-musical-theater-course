@@ -1,0 +1,650 @@
+{
+  "title": "Role Permissions Quick Reference",
+  "sections": [
+    {
+      "heading": "Permission Matrix",
+      "matrix": {
+        "categories": [
+          {
+            "category": "Projects",
+            "permissions": [
+              {
+                "action": "Create own projects",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View own projects",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Edit own projects",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Delete own projects",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View peer projects",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": "read-only",
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Edit peer projects",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          },
+          {
+            "category": "AI Chat",
+            "permissions": [
+              {
+                "action": "Use AI models",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View own chats",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View peer chats",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": "read-only",
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Add reflections",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          },
+          {
+            "category": "Course Management",
+            "permissions": [
+              {
+                "action": "View course info",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View course members",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Edit course details",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Delete course",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Create new course",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          },
+          {
+            "category": "Member Management",
+            "permissions": [
+              {
+                "action": "Approve enrollments",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Reject enrollments",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Remove members",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Assign roles",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Add members",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          },
+          {
+            "category": "Analytics",
+            "permissions": [
+              {
+                "action": "View own analytics",
+                "roles": {
+                  "student": true,
+                  "studentAssistant": true,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View course analytics",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View student analytics",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View school analytics",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          },
+          {
+            "category": "Instructor Tools",
+            "permissions": [
+              {
+                "action": "Add instructor notes",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View all reflections",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Manage tags",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": true,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Download data",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": true,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          },
+          {
+            "category": "School Management",
+            "permissions": [
+              {
+                "action": "View all school courses",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Access any school course",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "View school dashboard",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": true,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Assign school admins",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          },
+          {
+            "category": "Platform Admin",
+            "permissions": [
+              {
+                "action": "Access admin panel",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Manage all users",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Create schools",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "System diagnostics",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              },
+              {
+                "action": "Data repair tools",
+                "roles": {
+                  "student": false,
+                  "studentAssistant": false,
+                  "teachingAssistant": false,
+                  "instructor": false,
+                  "schoolAdmin": false,
+                  "globalAdmin": true
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "heading": "Navigation Access by Role",
+      "navigationByRole": [
+        {
+          "role": "Student",
+          "navigation": [
+            "📚 Dashboard",
+            "📁 Projects (own only)",
+            "💬 AI Chat",
+            "📊 Analytics (personal)",
+            "❓ Help"
+          ]
+        },
+        {
+          "role": "Student Assistant",
+          "navigation": [
+            "📚 Dashboard",
+            "📁 Projects (own + peer view)",
+            "  └─ Course Members link",
+            "💬 AI Chat",
+            "📊 Analytics (personal)",
+            "❓ Help"
+          ]
+        },
+        {
+          "role": "Teaching Assistant",
+          "navigation": [
+            "📚 Dashboard",
+            "🎓 Instructor Dashboard",
+            "  ├─ Overview",
+            "  ├─ Students",
+            "  ├─ Student Activity",
+            "  └─ AI Assistant",
+            "📁 Projects (all in course)",
+            "💬 AI Chat",
+            "📊 Analytics (course + personal)",
+            "❓ Help"
+          ]
+        },
+        {
+          "role": "Instructor",
+          "navigation": [
+            "📚 Dashboard",
+            "🎓 Instructor Dashboard",
+            "  ├─ Overview",
+            "  ├─ Students",
+            "  ├─ Student Activity",
+            "  ├─ AI Assistant",
+            "  └─ File Management",
+            "📁 Projects (all in course)",
+            "💬 AI Chat",
+            "📊 Analytics (course + personal)",
+            "⚙️ Course Settings",
+            "❓ Help"
+          ]
+        },
+        {
+          "role": "School Administrator",
+          "navigation": [
+            "📚 Dashboard",
+            "🏫 School Dashboard",
+            "🎓 Instructor Dashboard (per course)",
+            "📁 Projects (all in school)",
+            "💬 AI Chat",
+            "📊 Analytics (school-wide)",
+            "❓ Help"
+          ]
+        },
+        {
+          "role": "Global Administrator",
+          "navigation": [
+            "📚 Dashboard",
+            "👤 Admin Panel",
+            "  ├─ Users",
+            "  ├─ Courses",
+            "  ├─ Schools",
+            "  ├─ Approvals",
+            "  ├─ Messaging",
+            "  └─ Analytics",
+            "🏫 School Dashboard (any school)",
+            "🎓 Instructor Dashboard (any course)",
+            "📁 Projects (all)",
+            "💬 AI Chat",
+            "📊 Analytics (platform-wide)",
+            "🔧 System Tools",
+            "❓ Help"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Special Permissions Notes",
+      "subsections": [
+        {
+          "heading": "Course Context",
+          "notes": [
+            "Roles can be course-specific",
+            "Course role overrides global role within that course",
+            "Example: Global instructor can be enrolled as student in another's course"
+          ]
+        },
+        {
+          "heading": "Data Access Philosophy",
+          "philosophy": [
+            {
+              "role": "Students",
+              "access": "Own data only"
+            },
+            {
+              "role": "Student Assistants",
+              "access": "Read peer data for helping"
+            },
+            {
+              "role": "Teaching Assistants",
+              "access": "Read all course data for support"
+            },
+            {
+              "role": "Instructors",
+              "access": "Full course control"
+            },
+            {
+              "role": "School Admins",
+              "access": "Cross-course visibility in school"
+            },
+            {
+              "role": "Global Admins",
+              "access": "Complete platform access"
+            }
+          ]
+        },
+        {
+          "heading": "Security Boundaries",
+          "boundaries": [
+            "Students cannot see other students' work (privacy)",
+            "Student Assistants cannot modify peer work (integrity)",
+            "Teaching Assistants cannot delete courses (safety)",
+            "Instructors cannot access other instructors' courses (isolation)",
+            "School Admins cannot modify courses (oversight only)",
+            "Only Global Admins can assign School Admin role (control)"
+          ]
+        },
+        {
+          "heading": "Email Notifications",
+          "details": [
+            "All role changes trigger email to affected user",
+            "Email includes: old role, new role, who changed it",
+            "Users can't opt out (audit trail requirement)"
+          ]
+        },
+        {
+          "heading": "Progressive Permissions",
+          "content": "Each role builds on the previous:",
+          "progression": [
+            "Student",
+            "  + peer viewing = Student Assistant",
+            "  + course analytics = Teaching Assistant",
+            "  + course control = Instructor",
+            "  + school visibility = School Administrator",
+            "  + platform control = Global Administrator"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Common Permission Questions",
+      "questions": [
+        {
+          "question": "Can a Teaching Assistant become an Instructor mid-course?",
+          "answer": "Yes, any Instructor can promote them immediately."
+        },
+        {
+          "question": "Can Student Assistants see private reflections?",
+          "answer": "No, only Teaching Assistants and above can view reflections."
+        },
+        {
+          "question": "Can two Instructors manage the same course?",
+          "answer": "Yes, multiple co-instructors are supported."
+        },
+        {
+          "question": "Can School Admins change student grades?",
+          "answer": "No, School Admins have view-only access to maintain academic integrity."
+        },
+        {
+          "question": "What happens to permissions when someone leaves a course?",
+          "answer": "All course-specific permissions are immediately revoked."
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "Permissions are enforced at multiple levels (UI, API, and database) for security. If you can't see something, you don't have permission to access it."
+  }
+}

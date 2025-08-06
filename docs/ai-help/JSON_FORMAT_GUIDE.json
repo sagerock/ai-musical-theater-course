@@ -1,0 +1,89 @@
+{
+  "title": "JSON Documentation Format Guide",
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "This guide defines the standard JSON structure for all AI Engagement Hub documentation files. Following this format ensures consistency and optimal processing across the help system.",
+      "subsections": []
+    },
+    {
+      "heading": "Required Structure",
+      "content": "Every JSON documentation file must follow this exact structure for proper parsing and display in the help system.",
+      "subsections": [
+        {
+          "heading": "Root Object",
+          "content": "The root object must contain exactly two properties: 'title' (string) and 'sections' (array).",
+          "subsections": []
+        },
+        {
+          "heading": "Title Property",
+          "content": "A string that serves as the main title of the document. This appears at the top of the help article and in search results.",
+          "subsections": []
+        },
+        {
+          "heading": "Sections Array",
+          "content": "An array of section objects that contain the document's content. Each section can have nested subsections for hierarchical organization.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Section Object Properties",
+      "content": "Each section object must contain specific properties to maintain consistency.",
+      "subsections": [
+        {
+          "heading": "heading",
+          "content": "Required string property that defines the section's title. Use clear, descriptive headings that help users navigate the content.",
+          "subsections": []
+        },
+        {
+          "heading": "content",
+          "content": "Required string property containing the section's main text. Can include markdown formatting for emphasis, lists, and links.",
+          "subsections": []
+        },
+        {
+          "heading": "subsections",
+          "content": "Required array property that can contain nested section objects. Use empty array [] if no subsections exist. Supports unlimited nesting depth.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Example Structure",
+      "content": "Here's a complete example of a properly formatted documentation file:",
+      "subsections": [
+        {
+          "heading": "Basic Example",
+          "content": "```json\n{\n  \"title\": \"Your Document Title\",\n  \"sections\": [\n    {\n      \"heading\": \"Section Name\",\n      \"content\": \"Your content here\",\n      \"subsections\": [\n        {\n          \"heading\": \"Subsection Name\",\n          \"content\": \"Subsection content\",\n          \"subsections\": []\n        }\n      ]\n    }\n  ]\n}\n```",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices",
+      "content": "Follow these guidelines when creating JSON documentation files.",
+      "subsections": [
+        {
+          "heading": "Content Guidelines",
+          "content": "Write clear, concise content focused on user needs. Use active voice and direct instructions. Include specific examples where helpful.",
+          "subsections": []
+        },
+        {
+          "heading": "Organizational Tips",
+          "content": "Limit nesting to 3 levels for readability. Group related information in the same section. Order sections by importance or typical workflow.",
+          "subsections": []
+        },
+        {
+          "heading": "Formatting Recommendations",
+          "content": "Use markdown for emphasis (*italic* or **bold**). Create bulleted lists with proper markdown syntax. Include code examples in backticks.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Validation",
+      "content": "Always validate your JSON files before committing to ensure they parse correctly and follow the required structure. Use a JSON validator to check syntax and structure compliance.",
+      "subsections": []
+    }
+  ]
+}

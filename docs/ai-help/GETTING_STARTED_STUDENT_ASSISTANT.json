@@ -1,0 +1,230 @@
+{
+  "title": "Getting Started as a Student Assistant",
+  "sections": [
+    {
+      "heading": "Welcome to AI Engagement Hub",
+      "content": "As a Student Assistant, you play a vital role in supporting your peers and helping them navigate AI-assisted learning. This position allows you to develop leadership skills while assisting both students and instructors.",
+      "subsections": []
+    },
+    {
+      "heading": "Understanding Your Role",
+      "content": "Student Assistants bridge the gap between students and instructors, providing peer support and basic administrative assistance.",
+      "subsections": [
+        {
+          "heading": "Core Responsibilities",
+          "content": "Help fellow students with platform navigation. Answer basic questions about AI usage. Report technical issues to instructors. Assist with peer learning activities.",
+          "subsections": []
+        },
+        {
+          "heading": "Your Permissions",
+          "content": "Access to view class-wide usage statistics. Ability to help moderate discussions. Limited administrative functions. Enhanced project collaboration features.",
+          "subsections": []
+        },
+        {
+          "heading": "Role Boundaries",
+          "content": "Cannot access individual student chat histories. Cannot modify grades or assessments. Cannot change course settings. Must respect student privacy and confidentiality.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Getting Started",
+      "content": "Steps to begin your role as a Student Assistant effectively.",
+      "subsections": [
+        {
+          "heading": "Role Activation",
+          "content": "Your instructor will promote you to Student Assistant. You'll receive a notification of your new role. Review the additional features now available to you. Attend any training sessions provided by your instructor.",
+          "subsections": []
+        },
+        {
+          "heading": "Dashboard Overview",
+          "content": "Access your enhanced dashboard features. View class activity summaries. Monitor help requests from students. Track your assistance contributions.",
+          "subsections": []
+        },
+        {
+          "heading": "Communication Setup",
+          "content": "Enable notifications for student help requests. Join any Student Assistant communication channels. Coordinate with other assistants if applicable. Establish regular check-ins with your instructor.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Supporting Your Peers",
+      "content": "Best practices for providing effective peer assistance.",
+      "subsections": [
+        {
+          "heading": "Technical Support",
+          "content": "Help students navigate the platform interface. Assist with AI model selection. Troubleshoot common technical issues. Guide students to appropriate resources.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Support",
+          "content": "Share effective prompting techniques. Demonstrate proper AI usage for assignments. Help interpret AI responses. Encourage academic integrity practices.",
+          "subsections": []
+        },
+        {
+          "heading": "Study Groups",
+          "content": "Organize peer learning sessions. Facilitate group discussions about AI usage. Share successful strategies and tips. Create collaborative learning opportunities.",
+          "subsections": []
+        },
+        {
+          "heading": "Resource Sharing",
+          "content": "Compile helpful tips and guides. Share exemplary prompt examples. Create FAQ documents for common issues. Maintain a resource library for students.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Working with AI Tools",
+      "content": "Leveraging AI effectively in your assistant role.",
+      "subsections": [
+        {
+          "heading": "Model Expertise",
+          "content": "Understand each AI model's strengths. Guide students to appropriate model choices. Demonstrate cost-effective usage. Share model-specific tips and tricks.",
+          "subsections": []
+        },
+        {
+          "heading": "Creating Examples",
+          "content": "Develop sample prompts for common tasks. Show before/after prompt improvements. Create templates for different assignment types. Document successful interaction patterns.",
+          "subsections": []
+        },
+        {
+          "heading": "Troubleshooting AI Issues",
+          "content": "Identify when AI responses are problematic. Help students refine unclear prompts. Recognize model limitations. Escalate complex issues to instructors.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Administrative Tasks",
+      "content": "Supporting course administration and organization.",
+      "subsections": [
+        {
+          "heading": "Activity Monitoring",
+          "content": "Review class participation metrics. Identify students who may need help. Report usage patterns to instructors. Track common challenges and questions.",
+          "subsections": []
+        },
+        {
+          "heading": "Documentation",
+          "content": "Maintain logs of common issues. Document solutions and workarounds. Create help guides for recurring problems. Update FAQ sections as needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Feedback Collection",
+          "content": "Gather student feedback on AI tools. Report platform issues to instructors. Suggest improvements based on peer input. Help evaluate new features or models.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Communication Best Practices",
+      "content": "Effective communication strategies for Student Assistants.",
+      "subsections": [
+        {
+          "heading": "With Students",
+          "content": "Be approachable and patient. Provide clear, step-by-step guidance. Encourage questions and exploration. Maintain professional boundaries.",
+          "subsections": []
+        },
+        {
+          "heading": "With Instructors",
+          "content": "Provide regular status updates. Report significant issues promptly. Share student feedback constructively. Request clarification when needed.",
+          "subsections": []
+        },
+        {
+          "heading": "In Groups",
+          "content": "Facilitate inclusive discussions. Encourage participation from all students. Moderate respectfully and fairly. Keep conversations focused and productive.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Professional Development",
+      "content": "Growing your skills as a Student Assistant.",
+      "subsections": [
+        {
+          "heading": "Leadership Skills",
+          "content": "Practice active listening. Develop problem-solving abilities. Build confidence in public speaking. Learn conflict resolution techniques.",
+          "subsections": []
+        },
+        {
+          "heading": "Technical Skills",
+          "content": "Master all platform features. Stay updated on AI developments. Learn advanced prompting techniques. Understand data privacy principles.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Skills",
+          "content": "Improve tutoring abilities. Develop teaching strategies. Enhance communication skills. Build subject matter expertise.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Ethics and Responsibilities",
+      "content": "Maintaining integrity in your assistant role.",
+      "subsections": [
+        {
+          "heading": "Privacy and Confidentiality",
+          "content": "Never share student information. Respect individual privacy. Keep academic discussions confidential. Report concerns through proper channels.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Integrity",
+          "content": "Model appropriate AI usage. Never complete work for other students. Encourage original thinking. Report suspected violations appropriately.",
+          "subsections": []
+        },
+        {
+          "heading": "Professional Conduct",
+          "content": "Maintain respectful interactions. Avoid favoritism or bias. Stay within role boundaries. Seek help when uncertain.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Common Scenarios",
+      "content": "How to handle typical situations you may encounter.",
+      "subsections": [
+        {
+          "heading": "Student Struggles with AI",
+          "content": "Start with basic navigation help. Demonstrate simple prompt examples. Break complex tasks into steps. Refer to instructor if needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Technical Problems",
+          "content": "Try basic troubleshooting first. Document the issue clearly. Report to technical support. Follow up on resolution.",
+          "subsections": []
+        },
+        {
+          "heading": "Academic Concerns",
+          "content": "Listen without judgment. Provide appropriate resources. Maintain confidentiality. Escalate serious concerns to instructor.",
+          "subsections": []
+        },
+        {
+          "heading": "Time Management",
+          "content": "Prioritize urgent requests. Set realistic availability hours. Delegate when appropriate. Communicate delays promptly.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Resources and Support",
+      "content": "Where to find help and additional resources.",
+      "subsections": [
+        {
+          "heading": "Getting Help",
+          "content": "Contact your instructor for guidance. Connect with other Student Assistants. Access platform documentation. Use the Help section for reference.",
+          "subsections": []
+        },
+        {
+          "heading": "Training Materials",
+          "content": "Review onboarding documentation. Attend training sessions. Watch tutorial videos. Practice with sample scenarios.",
+          "subsections": []
+        },
+        {
+          "heading": "Ongoing Support",
+          "content": "Regular check-ins with instructor. Peer support from other assistants. Platform updates and announcements. Professional development opportunities.",
+          "subsections": []
+        }
+      ]
+    }
+  ]
+}

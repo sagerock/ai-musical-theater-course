@@ -1,0 +1,172 @@
+{
+  "title": "Getting Started as an Instructor",
+  "sections": [
+    {
+      "heading": "Welcome to AI Engagement Hub",
+      "content": "As an instructor, AI Engagement Hub empowers you to monitor, guide, and enhance your students' AI-assisted learning. This platform provides comprehensive oversight tools while maintaining educational best practices.",
+      "subsections": []
+    },
+    {
+      "heading": "Initial Setup",
+      "content": "Configure your instructor account and course settings to get started.",
+      "subsections": [
+        {
+          "heading": "Account Configuration",
+          "content": "Sign up with your institutional email address. Your account will be upgraded to instructor status by an administrator. Complete your profile with full name and department information. Set up notification preferences for student activity alerts.",
+          "subsections": []
+        },
+        {
+          "heading": "Creating Your First Course",
+          "content": "Navigate to 'Course Management' from your dashboard. Click 'Create New Course'. Enter course name, description, and section number. Generate an access code for student enrollment. Configure enrollment settings (open or approval required).",
+          "subsections": []
+        },
+        {
+          "heading": "Course Settings",
+          "content": "Set enrollment approval requirements. Configure AI model availability for students. Establish usage guidelines and policies. Create course-specific tags for organizing student work.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Managing Students",
+      "content": "Tools and features for overseeing student enrollment and participation.",
+      "subsections": [
+        {
+          "heading": "Enrollment Management",
+          "content": "Share access codes with students via email or LMS. Review and approve pending enrollments. Monitor active student roster. Remove or suspend student access if needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Role Assignment",
+          "content": "Promote students to Student Assistants for peer support. Assign Teaching Assistants for grading help. Manage permissions for each role level. Track role-based activities and contributions.",
+          "subsections": []
+        },
+        {
+          "heading": "Student Groups",
+          "content": "Create project groups for collaborative work. Assign students to teams or sections. Monitor group interactions and progress. Set group-specific permissions and access.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Monitoring AI Usage",
+      "content": "Comprehensive tools for tracking and analyzing student AI interactions.",
+      "subsections": [
+        {
+          "heading": "Dashboard Overview",
+          "content": "View real-time student activity metrics. Track total interactions and model usage. Monitor cost distribution across AI models. Identify usage patterns and trends.",
+          "subsections": []
+        },
+        {
+          "heading": "Individual Student Analysis",
+          "content": "Access complete chat histories for each student. Review project submissions and AI assistance levels. Track progress over time with engagement metrics. Identify students who may need additional support.",
+          "subsections": []
+        },
+        {
+          "heading": "Chat Review Features",
+          "content": "Read full conversation transcripts. Add instructor notes to specific interactions. Flag concerning or exemplary usage. Export chat data for grading or records.",
+          "subsections": []
+        },
+        {
+          "heading": "Analytics and Reports",
+          "content": "Generate usage reports by student or time period. Compare model preferences and effectiveness. Track assignment completion with AI assistance. Export analytics for institutional reporting.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Educational Features",
+      "content": "Tools designed to enhance teaching with AI integration.",
+      "subsections": [
+        {
+          "heading": "Assignment Design",
+          "content": "Create AI-enhanced assignments with clear guidelines. Set appropriate model restrictions for different tasks. Develop rubrics that account for AI assistance. Share best practices for AI usage.",
+          "subsections": []
+        },
+        {
+          "heading": "Tag Management",
+          "content": "Create custom tags for organizing student work. Apply tags to categorize interaction types. Use tags to track assignment-specific usage. Generate reports based on tag categories.",
+          "subsections": []
+        },
+        {
+          "heading": "Feedback Tools",
+          "content": "Add comments directly to student chats. Provide guidance on prompt improvement. Share exemplary interactions with the class. Create feedback templates for common issues.",
+          "subsections": []
+        },
+        {
+          "heading": "Resource Sharing",
+          "content": "Upload course materials and guidelines. Share prompt templates and examples. Distribute AI literacy resources. Create custom help documentation.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices",
+      "content": "Guidelines for effective course management and AI integration.",
+      "subsections": [
+        {
+          "heading": "Setting Expectations",
+          "content": "Clearly communicate AI usage policies at course start. Provide examples of appropriate and inappropriate use. Establish citation requirements for AI assistance. Create consequences for policy violations.",
+          "subsections": []
+        },
+        {
+          "heading": "Promoting AI Literacy",
+          "content": "Teach students to evaluate AI responses critically. Demonstrate effective prompt engineering. Discuss ethical considerations of AI use. Encourage experimentation within guidelines.",
+          "subsections": []
+        },
+        {
+          "heading": "Assessment Strategies",
+          "content": "Design assessments that leverage AI appropriately. Use AI interaction quality as a learning metric. Balance AI-assisted and independent work. Develop AI-aware grading rubrics.",
+          "subsections": []
+        },
+        {
+          "heading": "Supporting Students",
+          "content": "Identify students struggling with AI tools. Provide additional guidance for effective usage. Celebrate creative and appropriate AI use. Address academic integrity concerns promptly.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Administrative Tasks",
+      "content": "Managing course logistics and institutional requirements.",
+      "subsections": [
+        {
+          "heading": "Grade Integration",
+          "content": "Export student activity for gradebook import. Track participation through AI engagement. Generate progress reports for administration. Document AI usage for accreditation.",
+          "subsections": []
+        },
+        {
+          "heading": "Communication Tools",
+          "content": "Send announcements to all enrolled students. Message individual students about their usage. Coordinate with teaching assistants. Report to department administrators.",
+          "subsections": []
+        },
+        {
+          "heading": "Data Management",
+          "content": "Export course data for archival purposes. Maintain FERPA compliance in data handling. Delete sensitive information as required. Backup important course materials.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Troubleshooting",
+      "content": "Common issues and their solutions.",
+      "subsections": [
+        {
+          "heading": "Student Access Issues",
+          "content": "Verify student email addresses are correct. Check enrollment approval status. Confirm access codes are current. Reset student passwords if needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Technical Problems",
+          "content": "Clear browser cache for display issues. Check internet connectivity. Verify AI model availability. Contact support for persistent problems.",
+          "subsections": []
+        },
+        {
+          "heading": "Getting Support",
+          "content": "Access help documentation in the platform. Contact school administrators for account issues. Reach out to technical support for bugs. Join instructor community forums.",
+          "subsections": []
+        }
+      ]
+    }
+  ]
+}

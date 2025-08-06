@@ -1,0 +1,448 @@
+{
+  "title": "AI Engagement Hub User Roles Guide",
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "AI Engagement Hub uses a role-based access control system to manage permissions and capabilities within the platform. Each role is designed to support different responsibilities in the educational environment.",
+      "quickReference": [
+        {
+          "role": "Student",
+          "description": "Default role for learners"
+        },
+        {
+          "role": "Student Assistant",
+          "description": "Students who help peers"
+        },
+        {
+          "role": "Teaching Assistant",
+          "description": "Support instructors with course management"
+        },
+        {
+          "role": "Instructor",
+          "description": "Full course control and student management"
+        },
+        {
+          "role": "School Administrator",
+          "description": "Institutional oversight"
+        },
+        {
+          "role": "Global Administrator",
+          "description": "Platform-wide control"
+        }
+      ]
+    },
+    {
+      "heading": "Role Hierarchy",
+      "hierarchy": [
+        "Global Administrator",
+        "School Administrator",
+        "Instructor",
+        "Teaching Assistant",
+        "Student Assistant",
+        "Student"
+      ],
+      "note": "Higher roles inherit all permissions from lower roles."
+    },
+    {
+      "heading": "Detailed Role Descriptions",
+      "roles": [
+        {
+          "role": "🎓 Student (Default Role)",
+          "purpose": "Standard learner role for course participants",
+          "capabilities": [
+            "Create and manage own projects",
+            "Use all AI models for learning",
+            "Submit reflections on AI interactions",
+            "View own analytics and progress",
+            "Upload PDFs for AI analysis",
+            "Join courses with access codes",
+            "Request enrollment in courses"
+          ],
+          "limitations": [
+            "Cannot view other students' work",
+            "Cannot access course analytics",
+            "Cannot approve enrollments",
+            "Cannot create or manage courses"
+          ],
+          "bestFor": "Regular course participants focused on their own learning journey"
+        },
+        {
+          "role": "🤝 Student Assistant",
+          "purpose": "Peer support role for students helping classmates",
+          "capabilities": [
+            "All Student permissions plus:",
+            "View all projects in their courses (read-only)",
+            "Access course member list",
+            "See other students' AI interactions (read-only)",
+            "Help peers with their projects",
+            "Provide peer tutoring and support"
+          ],
+          "limitations": [
+            "Cannot edit other students' work",
+            "Cannot approve enrollments",
+            "Cannot access instructor features",
+            "Cannot view course analytics"
+          ],
+          "bestFor": [
+            "Peer tutors",
+            "Study group leaders",
+            "Students excelling in the course who can help others",
+            "Teaching assistant candidates"
+          ]
+        },
+        {
+          "role": "🧑‍🏫 Teaching Assistant",
+          "purpose": "Support instructors with course management",
+          "capabilities": [
+            "All Student Assistant permissions plus:",
+            "View complete course analytics",
+            "Access all student projects and interactions",
+            "Approve or deny enrollment requests",
+            "Monitor student activity and engagement",
+            "Add instructor notes to student work",
+            "Manage course tags",
+            "View student reflections",
+            "Access AI usage analytics"
+          ],
+          "limitations": [
+            "Cannot delete courses",
+            "Cannot remove instructors",
+            "Cannot assign School Administrator role",
+            "Cannot access platform-wide settings"
+          ],
+          "bestFor": [
+            "Graduate students assisting with courses",
+            "Junior instructors learning course management",
+            "Lab assistants",
+            "Course facilitators"
+          ]
+        },
+        {
+          "role": "👨‍🏫 Instructor",
+          "purpose": "Full course management and teaching capabilities",
+          "capabilities": [
+            "All Teaching Assistant permissions plus:",
+            "Create new courses",
+            "Edit course details (name, description, school)",
+            "Assign roles to course members (except School Admin)",
+            "Remove students from courses",
+            "Download course data",
+            "Send announcements to students",
+            "Full control over course settings",
+            "Co-instructor collaboration"
+          ],
+          "limitations": [
+            "Cannot delete other instructors' courses",
+            "Cannot assign School Administrator role",
+            "Cannot access courses outside their enrollment",
+            "Cannot modify platform settings"
+          ],
+          "bestFor": [
+            "Course professors",
+            "Lead teachers",
+            "Workshop facilitators",
+            "Course creators"
+          ]
+        },
+        {
+          "role": "🏫 School Administrator",
+          "purpose": "Institutional oversight and support",
+          "capabilities": [
+            "All Instructor permissions plus:",
+            "View all courses in assigned school",
+            "Access analytics across institution",
+            "Monitor AI usage patterns school-wide",
+            "Support instructors with course issues",
+            "View aggregate student progress",
+            "Generate institutional reports"
+          ],
+          "limitations": [
+            "Cannot access courses outside their school",
+            "Cannot modify platform settings",
+            "Cannot create schools",
+            "Cannot assign other School Administrators"
+          ],
+          "assignment": "Only Global Administrators can assign this role",
+          "bestFor": [
+            "Department heads",
+            "Academic technology staff",
+            "Institutional administrators",
+            "Curriculum coordinators"
+          ]
+        },
+        {
+          "role": "🛡️ Global Administrator",
+          "purpose": "Platform-wide administration",
+          "capabilities": [
+            "All permissions across the platform",
+            "Create and manage schools",
+            "Assign any role including School Administrator",
+            "Access all courses and data",
+            "Modify platform settings",
+            "Manage user accounts",
+            "View platform-wide analytics",
+            "Data repair and maintenance tools"
+          ],
+          "assignment": "Set at account creation or by other Global Admins",
+          "bestFor": [
+            "Platform administrators",
+            "Technical support staff",
+            "System maintainers"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "How to Assign Roles",
+      "subsections": [
+        {
+          "heading": "For Instructors",
+          "steps": [
+            "Navigate to your course dashboard",
+            "Click \"Students\" in the course navigation",
+            "Find the course member you want to update",
+            "Click the \"Edit\" button next to their current role",
+            "Select the new role from the dropdown menu",
+            "Click the green checkmark to confirm"
+          ],
+          "availableAssignments": [
+            "Student → Student Assistant",
+            "Student → Teaching Assistant",
+            "Student → Instructor (co-instructor)",
+            "Any role back to Student"
+          ]
+        },
+        {
+          "heading": "For Global Administrators",
+          "steps": [
+            "Go to Admin Panel → Users tab",
+            "Find the user to update",
+            "Click \"Edit User\"",
+            "Select their global role",
+            "For School Administrators, also select their school",
+            "Save changes"
+          ],
+          "note": "School Administrator role can only be assigned by Global Admins"
+        },
+        {
+          "heading": "Role Change Notifications",
+          "effects": [
+            "The user receives an email notification",
+            "The change is logged in the system",
+            "Permissions update immediately",
+            "The user may need to refresh to see new features"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Common Questions",
+      "questions": [
+        {
+          "question": "Can someone have different roles in different courses?",
+          "answer": "Yes! A user can be a Student in one course, a Teaching Assistant in another, and an Instructor in a third. Course-specific roles override global roles within that course context."
+        },
+        {
+          "question": "What happens when someone has multiple roles?",
+          "answer": "The highest role takes precedence. For example, if someone is globally an Instructor but enrolled as a Student in a specific course, they'll have Student permissions in that course."
+        },
+        {
+          "question": "Can Student Assistants grade or evaluate work?",
+          "answer": "No, Student Assistants have read-only access to peer work. They can help and guide but cannot modify or formally evaluate."
+        },
+        {
+          "question": "How do I request a role change?",
+          "answer": "Students should contact their instructor. For School Administrator roles, contact your institution's Global Administrator."
+        },
+        {
+          "question": "Can roles be temporary?",
+          "answer": "Currently, roles persist until manually changed. Instructors should review and update roles each semester as needed."
+        }
+      ]
+    },
+    {
+      "heading": "Troubleshooting",
+      "issues": [
+        {
+          "issue": "\"Access Denied\" Errors",
+          "solutions": {
+            "forStudentAssistants": [
+              "Ensure you're accessing projects within your enrolled courses",
+              "Verify your enrollment is approved",
+              "Try refreshing the page"
+            ],
+            "forTeachingAssistants": [
+              "Confirm your role was properly assigned",
+              "Check that you're in the correct course",
+              "Clear browser cache if issues persist"
+            ]
+          }
+        },
+        {
+          "issue": "\"Unknown User\" Display",
+          "description": "Teaching Assistants seeing \"Unknown User\" instead of student names",
+          "solution": "This has been fixed in the latest update. If you still see this:",
+          "steps": [
+            "Log out and log back in",
+            "Clear browser cache",
+            "Contact support if the issue persists"
+          ]
+        },
+        {
+          "issue": "Missing Features After Role Assignment",
+          "solutions": [
+            "Refresh the browser page",
+            "Log out and log back in",
+            "Check that the role was saved properly",
+            "Verify you're in the correct course context"
+          ]
+        },
+        {
+          "issue": "Cannot Assign Roles",
+          "solutions": {
+            "forInstructors": [
+              "Verify you have Instructor role in the course",
+              "Check that the student is enrolled",
+              "Ensure their enrollment is approved"
+            ],
+            "forSchoolAdminAssignment": [
+              "Only Global Admins can assign this role",
+              "Contact your platform administrator"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Best Practices",
+      "audiences": [
+        {
+          "audience": "For Instructors",
+          "practices": [
+            {
+              "practice": "Start Simple",
+              "description": "Begin with basic Student/Instructor roles"
+            },
+            {
+              "practice": "Add Assistants as Needed",
+              "description": "Promote high-performing students to Student Assistants"
+            },
+            {
+              "practice": "Clear Expectations",
+              "description": "Communicate role responsibilities to assistants"
+            },
+            {
+              "practice": "Regular Reviews",
+              "description": "Update roles each semester"
+            },
+            {
+              "practice": "Document Changes",
+              "description": "Keep track of why roles were assigned"
+            }
+          ]
+        },
+        {
+          "audience": "For Teaching Assistants",
+          "practices": [
+            {
+              "practice": "Respect Privacy",
+              "description": "Use access responsibly"
+            },
+            {
+              "practice": "Support, Don't Judge",
+              "description": "Focus on helping students improve"
+            },
+            {
+              "practice": "Communicate with Instructor",
+              "description": "Report issues or concerns"
+            },
+            {
+              "practice": "Be Available",
+              "description": "Set office hours for student support"
+            },
+            {
+              "practice": "Document Interactions",
+              "description": "Keep notes on student assistance"
+            }
+          ]
+        },
+        {
+          "audience": "For Student Assistants",
+          "practices": [
+            {
+              "practice": "Lead by Example",
+              "description": "Maintain high-quality work"
+            },
+            {
+              "practice": "Be Encouraging",
+              "description": "Support peer learning"
+            },
+            {
+              "practice": "Ask Before Helping",
+              "description": "Respect peer autonomy"
+            },
+            {
+              "practice": "Share Resources",
+              "description": "Help peers find solutions"
+            },
+            {
+              "practice": "Report Issues",
+              "description": "Inform instructors of systemic problems"
+            }
+          ]
+        },
+        {
+          "audience": "For School Administrators",
+          "practices": [
+            {
+              "practice": "Regular Monitoring",
+              "description": "Check course health weekly"
+            },
+            {
+              "practice": "Support Instructors",
+              "description": "Be available for questions"
+            },
+            {
+              "practice": "Identify Patterns",
+              "description": "Look for institution-wide trends"
+            },
+            {
+              "practice": "Protect Privacy",
+              "description": "Access data only as needed"
+            },
+            {
+              "practice": "Collaborate",
+              "description": "Work with instructors on improvements"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Security Considerations",
+      "considerations": [
+        "Roles are enforced at both UI and database levels",
+        "All role changes are logged",
+        "Email notifications ensure transparency",
+        "Regular audits should verify appropriate access",
+        "Report any suspected misuse immediately"
+      ]
+    },
+    {
+      "heading": "Future Enhancements",
+      "content": "Planned improvements to the role system:",
+      "enhancements": [
+        "Temporary role assignments with expiration dates",
+        "Custom role creation for specific needs",
+        "Bulk role assignment tools",
+        "Role assignment templates",
+        "Enhanced audit trails"
+      ]
+    }
+  ],
+  "footer": {
+    "lastUpdated": "January 2025",
+    "version": "1.0",
+    "contact": "For questions about roles, contact your instructor or administrator"
+  }
+}

@@ -1,0 +1,352 @@
+{
+  "title": "Role Assignment Tutorial",
+  "sections": [
+    {
+      "heading": "Step-by-Step Guide for Instructors",
+      "subsections": [
+        {
+          "heading": "Accessing the Students Page",
+          "steps": [
+            "Log in to AI Engagement Hub",
+            "Navigate to your course dashboard",
+            "Click \"Students\" in the navigation menu"
+          ]
+        },
+        {
+          "heading": "Understanding the Students View",
+          "content": "The Students page is organized into sections:",
+          "sections": [
+            {
+              "section": "Course Instructors",
+              "description": "Purple cards showing all instructors"
+            },
+            {
+              "section": "Teaching Assistants",
+              "description": "Green cards (if any assigned)"
+            },
+            {
+              "section": "Students",
+              "description": "Blue cards showing enrolled students"
+            },
+            {
+              "section": "Other Course Members",
+              "description": "Gray cards for Student Assistants and other roles"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Assigning a Role",
+      "subsections": [
+        {
+          "heading": "Visual Guide",
+          "studentCardLayout": {
+            "description": "Student Card Layout:",
+            "elements": [
+              "👤 Student Name",
+              "📧 student@email.com",
+              "[Student ▼] [Edit] ← Click \"Edit\" here",
+              "📊 AI Interactions: 45",
+              "📅 Last Activity: Jan 15",
+              "💭 Reflections: 3",
+              "🤖 AI Models Used: 5/7"
+            ]
+          }
+        },
+        {
+          "heading": "Step-by-Step Process",
+          "steps": [
+            {
+              "step": "Locate the Student",
+              "details": [
+                "Use the search bar to find students quickly",
+                "Students are shown with blue user icons"
+              ]
+            },
+            {
+              "step": "Click Edit",
+              "details": [
+                "Find the \"Edit\" button next to their current role",
+                "The role selector will appear"
+              ]
+            },
+            {
+              "step": "Choose New Role",
+              "dropdownOptions": [
+                "Student (default)",
+                "Student Assistant",
+                "Teaching Assistant",
+                "Instructor"
+              ]
+            },
+            {
+              "step": "Confirm Selection",
+              "details": [
+                "Click the green checkmark ✓",
+                "Wait for \"Role updated\" confirmation"
+              ]
+            },
+            {
+              "step": "Automatic Updates",
+              "details": [
+                "Student receives email notification",
+                "Page refreshes automatically",
+                "Student moves to appropriate section"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Role Assignment Scenarios",
+      "scenarios": [
+        {
+          "scenario": "Promoting a Student to Student Assistant",
+          "whenToDo": [
+            "Student consistently helps classmates",
+            "Shows leadership in group work",
+            "Volunteers for peer tutoring"
+          ],
+          "process": [
+            "Find student in Students section",
+            "Click Edit → Select \"Student Assistant\"",
+            "Confirm with green checkmark",
+            "Student now appears in \"Other Course Members\""
+          ]
+        },
+        {
+          "scenario": "Adding a Teaching Assistant",
+          "whenToDo": [
+            "Graduate student assigned to help",
+            "Need help managing large class",
+            "Someone to review student work"
+          ],
+          "process": [
+            "Ensure person is enrolled in course first",
+            "Find them in Students section",
+            "Click Edit → Select \"Teaching Assistant\"",
+            "Confirm change",
+            "They'll move to Teaching Assistants section"
+          ]
+        },
+        {
+          "scenario": "Creating a Co-Instructor",
+          "whenToDo": [
+            "Team teaching arrangement",
+            "Guest instructor for module",
+            "Shared course responsibility"
+          ],
+          "process": [
+            "Add person to course if needed",
+            "Find in Students section",
+            "Click Edit → Select \"Instructor\"",
+            "Confirm change",
+            "They appear in Instructors section"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "What Happens After Assignment",
+      "effects": [
+        {
+          "audience": "For the User",
+          "outcomes": [
+            "Receives email notification",
+            "New features appear on next login",
+            "Can immediately access new permissions"
+          ]
+        },
+        {
+          "audience": "For You (Instructor)",
+          "outcomes": [
+            "See updated member count",
+            "Can monitor their new activities",
+            "Can change role again if needed"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Managing Roles Throughout Semester",
+      "timeline": [
+        {
+          "period": "Beginning of Semester",
+          "tasks": [
+            "Review all enrollments",
+            "Assign Teaching Assistants",
+            "Identify potential Student Assistants"
+          ]
+        },
+        {
+          "period": "Mid-Semester",
+          "tasks": [
+            "Promote high performers to Student Assistant",
+            "Adjust roles based on needs",
+            "Add co-instructors for specific units"
+          ]
+        },
+        {
+          "period": "End of Semester",
+          "tasks": [
+            "Consider role changes for next term",
+            "Document why roles were assigned",
+            "Plan for continuity"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Common Workflows",
+      "workflows": [
+        {
+          "workflow": "Setting Up a New Course",
+          "steps": [
+            "Create course",
+            "Add co-instructors first",
+            "Add Teaching Assistants",
+            "Open enrollment for students",
+            "Assign Student Assistants after first week"
+          ]
+        },
+        {
+          "workflow": "Large Course Management",
+          "steps": [
+            "Assign multiple Teaching Assistants",
+            "Create Student Assistants for each section",
+            "Use roles to delegate responsibilities",
+            "Monitor through analytics"
+          ]
+        },
+        {
+          "workflow": "Peer Learning Structure",
+          "steps": [
+            "Identify top performers",
+            "Invite to be Student Assistants",
+            "Create peer support groups",
+            "Monitor peer interactions"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Tips and Best Practices",
+      "guidelines": [
+        {
+          "category": "Do's",
+          "practices": [
+            "Communicate role changes to students",
+            "Set clear expectations for each role",
+            "Review roles regularly",
+            "Use roles to build learning community",
+            "Document your role decisions"
+          ]
+        },
+        {
+          "category": "Don'ts",
+          "practices": [
+            "Change roles without informing student",
+            "Assign roles as punishment/reward only",
+            "Forget to remove roles at semester end",
+            "Assign conflicting roles",
+            "Ignore role-related feedback"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Troubleshooting Role Assignment",
+      "issues": [
+        {
+          "issue": "\"Edit\" Button Not Appearing",
+          "solutions": [
+            "Verify you're an Instructor in the course",
+            "Check that student is enrolled",
+            "Refresh the page"
+          ]
+        },
+        {
+          "issue": "Role Change Not Saving",
+          "solutions": [
+            "Ensure you clicked the green checkmark",
+            "Check for error messages",
+            "Try logging out and back in"
+          ]
+        },
+        {
+          "issue": "Student Not Seeing New Features",
+          "solutions": [
+            "Ask them to refresh their browser",
+            "Have them log out and back in",
+            "Verify the role saved correctly"
+          ]
+        },
+        {
+          "issue": "Wrong Section After Role Change",
+          "solutions": [
+            "This is normal - students move sections by role",
+            "Use search to find them quickly",
+            "Check \"Other Course Members\" for assistants"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Role Assignment Matrix",
+      "matrix": [
+        {
+          "fromRole": "Student",
+          "canChangeTo": ["Student Assistant", "Teaching Assistant", "Instructor"],
+          "whoCanChange": "Instructor"
+        },
+        {
+          "fromRole": "Student Assistant",
+          "canChangeTo": ["Student", "Teaching Assistant"],
+          "whoCanChange": "Instructor"
+        },
+        {
+          "fromRole": "Teaching Assistant",
+          "canChangeTo": ["Student", "Instructor"],
+          "whoCanChange": "Instructor"
+        },
+        {
+          "fromRole": "Any Role",
+          "canChangeTo": ["School Administrator"],
+          "whoCanChange": "Global Admin Only"
+        }
+      ]
+    },
+    {
+      "heading": "Quick Reference Commands",
+      "content": "While there aren't keyboard shortcuts, here's the fastest workflow:",
+      "workflow": [
+        {
+          "action": "Ctrl/Cmd + F",
+          "description": "Find student on page"
+        },
+        {
+          "action": "Click",
+          "description": "Edit button"
+        },
+        {
+          "action": "Arrow Keys",
+          "description": "Navigate dropdown"
+        },
+        {
+          "action": "Enter",
+          "description": "Select role"
+        },
+        {
+          "action": "Click",
+          "description": "Green checkmark"
+        }
+      ],
+      "totalTime": "~5 seconds per role change"
+    }
+  ],
+  "footer": {
+    "proTip": "Assign roles in batches at the start of semester for efficiency. Plan your course role structure before the first class!"
+  }
+}

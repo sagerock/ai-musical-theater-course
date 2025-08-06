@@ -1,0 +1,352 @@
+{
+  "title": "AI Engagement Hub Documentation",
+  "welcome": "Welcome to the AI Engagement Hub documentation! This folder contains detailed guides and references for the AI help bot system.",
+  "sections": [
+    {
+      "heading": "📚 Available Documentation",
+      "subsections": [
+        {
+          "heading": "Platform Overview",
+          "document": {
+            "title": "About AI Engagement Hub",
+            "file": "./ABOUT_AI_ENGAGEMENT_HUB.md",
+            "topics": [
+              "What is AI Engagement Hub?",
+              "Why teachers need this (high school & college)",
+              "Why students need this (high school & college)",
+              "Key features and benefits",
+              "The story behind the platform"
+            ]
+          }
+        },
+        {
+          "heading": "Core Guides",
+          "documents": [
+            {
+              "number": 1,
+              "title": "User Roles Guide",
+              "file": "./USER_ROLES_GUIDE.md",
+              "topics": [
+                "Complete overview of all roles",
+                "Role hierarchy and permissions",
+                "Best practices for each role",
+                "Security considerations"
+              ]
+            },
+            {
+              "number": 2,
+              "title": "Role Assignment Tutorial",
+              "file": "./ROLE_ASSIGNMENT_TUTORIAL.md",
+              "topics": [
+                "Step-by-step instructions with visuals",
+                "Common assignment scenarios",
+                "Workflow examples",
+                "Troubleshooting tips"
+              ]
+            },
+            {
+              "number": 3,
+              "title": "Role Permissions Reference",
+              "file": "./ROLE_PERMISSIONS_REFERENCE.md",
+              "topics": [
+                "Complete permission matrix",
+                "Navigation access by role",
+                "Security boundaries",
+                "Quick lookup tables"
+              ]
+            },
+            {
+              "number": 4,
+              "title": "Role FAQ",
+              "file": "./ROLE_FAQ.md",
+              "topics": [
+                "Common questions and answers",
+                "Troubleshooting guide",
+                "Best practices",
+                "Privacy and security info"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Educational AI Guides",
+          "documents": [
+            {
+              "number": 5,
+              "title": "Effective AI Usage Guide",
+              "file": "./EFFECTIVE_AI_USAGE_GUIDE.md",
+              "topics": [
+                "Teaching students to use AI effectively",
+                "Model selection strategies",
+                "Prompt engineering techniques",
+                "Academic integrity guidelines"
+              ]
+            },
+            {
+              "number": 6,
+              "title": "AI Assignment Design Guide",
+              "file": "./AI_ASSIGNMENT_DESIGN_GUIDE.md",
+              "topics": [
+                "Creating AI-enhanced assignments",
+                "Assessment strategies",
+                "Rubric examples",
+                "Common pitfalls to avoid"
+              ]
+            },
+            {
+              "number": 7,
+              "title": "AI Classroom Policies Template",
+              "file": "./AI_CLASSROOM_POLICIES_TEMPLATE.md",
+              "topics": [
+                "Sample syllabus statements",
+                "Honor code additions",
+                "Violation procedures",
+                "Communication templates"
+              ]
+            },
+            {
+              "number": 8,
+              "title": "AI Literacy Assessment Rubrics",
+              "file": "./AI_LITERACY_ASSESSMENT_RUBRICS.md",
+              "topics": [
+                "Core competency frameworks",
+                "Skill-level rubrics",
+                "Portfolio assessment tools",
+                "Self-assessment guides"
+              ]
+            },
+            {
+              "number": 9,
+              "title": "AI-Integrated Lesson Plans",
+              "file": "./AI_INTEGRATED_LESSON_PLANS.md",
+              "topics": [
+                "Subject-specific lesson examples",
+                "Cross-curricular projects",
+                "Implementation strategies",
+                "Assessment approaches"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Platform Features & Privacy",
+          "documents": [
+            {
+              "number": 10,
+              "title": "Student Data Privacy Guide",
+              "file": "./STUDENT_DATA_PRIVACY_GUIDE.md",
+              "topics": [
+                "Privacy rights and protections",
+                "What instructors can see",
+                "Security measures",
+                "FERPA compliance"
+              ]
+            },
+            {
+              "number": 11,
+              "title": "PDF Upload Guide",
+              "file": "./PDF_UPLOAD_GUIDE.md",
+              "topics": [
+                "How to upload documents",
+                "Best practices for students",
+                "Instructor monitoring tools",
+                "Troubleshooting tips"
+              ]
+            },
+            {
+              "number": 12,
+              "title": "Advanced Features Guide",
+              "file": "./ADVANCED_FEATURES_GUIDE.md",
+              "topics": [
+                "Multi-model comparison",
+                "Analytics and insights",
+                "Tag management",
+                "Power user tips"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "🤖 For AI Bot Integration",
+      "content": "When building your AI help bot, these documents provide:",
+      "features": [
+        {
+          "category": "Structured Information",
+          "items": [
+            "Clear hierarchies and relationships",
+            "Detailed permission matrices",
+            "Step-by-step procedures",
+            "Troubleshooting workflows"
+          ]
+        },
+        {
+          "category": "User-Friendly Language",
+          "items": [
+            "Plain English explanations",
+            "Visual examples and diagrams",
+            "Common scenarios",
+            "Quick reference sections"
+          ]
+        },
+        {
+          "category": "Search-Friendly Content",
+          "items": [
+            "Descriptive headers",
+            "Keyword-rich content",
+            "Cross-referenced topics",
+            "Multiple ways to find answers"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "💡 Usage Tips for AI Bot",
+      "subsections": [
+        {
+          "heading": "Answer Patterns",
+          "content": "The bot can use these patterns from the documentation:",
+          "patterns": [
+            {
+              "type": "Direct Answers",
+              "example": "According to the User Roles Guide, a Teaching Assistant can..."
+            },
+            {
+              "type": "Step-by-Step",
+              "example": "To assign a role, follow these steps from the tutorial..."
+            },
+            {
+              "type": "Comparisons",
+              "example": "The difference between Student Assistant and Teaching Assistant is..."
+            },
+            {
+              "type": "Troubleshooting",
+              "example": "If you see 'Unknown User', try these solutions..."
+            }
+          ]
+        },
+        {
+          "heading": "Common Queries Covered",
+          "queryCategories": [
+            {
+              "category": "Role & Permission Questions",
+              "queries": [
+                "What can a [role] do?",
+                "How do I assign roles?",
+                "Why can't I see other students' work?",
+                "What's the difference between roles?",
+                "How do I become a Teaching Assistant?",
+                "Who can change my role?",
+                "I can't access [feature], why?"
+              ]
+            },
+            {
+              "category": "AI Usage Questions",
+              "queries": [
+                "How should students use AI?",
+                "Which AI model should I choose?",
+                "How do I write better prompts?",
+                "Is using AI cheating?",
+                "How do I cite AI in my work?",
+                "What are the AI usage policies?"
+              ]
+            },
+            {
+              "category": "Teaching with AI Questions",
+              "queries": [
+                "How do I design AI-friendly assignments?",
+                "What's a good AI classroom policy?",
+                "How do I assess AI literacy?",
+                "Can you suggest AI lesson plans?",
+                "How do I prevent AI misuse?",
+                "What rubrics work for AI projects?"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Response Framework",
+          "framework": [
+            "Acknowledge the question",
+            "Provide direct answer from docs",
+            "Offer additional context if needed",
+            "Suggest next steps or related topics",
+            "Reference specific guide for details"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "📈 Maintenance",
+      "subsections": [
+        {
+          "heading": "Keeping Documentation Current",
+          "content": "When platform updates occur:",
+          "steps": [
+            "Update relevant sections",
+            "Add new FAQ entries",
+            "Update permission matrices",
+            "Document new workflows"
+          ]
+        },
+        {
+          "heading": "Version History",
+          "versions": [
+            {
+              "version": "v1.0",
+              "date": "January 2025",
+              "description": "Initial role system documentation"
+            },
+            {
+              "version": "v1.1",
+              "date": "January 2025",
+              "description": "Added comprehensive AI usage guides for educators",
+              "additions": [
+                "Effective AI Usage Guide",
+                "AI Assignment Design Guide",
+                "AI Classroom Policies Template",
+                "AI Literacy Assessment Rubrics",
+                "AI-Integrated Lesson Plans"
+              ]
+            },
+            {
+              "version": "v1.2",
+              "date": "January 2025",
+              "description": "Added platform features and privacy guides",
+              "additions": [
+                "Student Data Privacy Guide",
+                "PDF Upload Guide",
+                "Advanced Features Guide"
+              ]
+            },
+            {
+              "version": "Future",
+              "description": "Future updates logged here"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "🔗 Quick Links",
+      "links": [
+        {
+          "title": "Platform Homepage",
+          "url": "https://ai-engagement-hub.com"
+        },
+        {
+          "title": "GitHub Repository",
+          "url": "https://github.com/sagerock/ai-musical-theater-course"
+        },
+        {
+          "title": "Platform Support",
+          "contact": "help@ai-engagement-hub.com"
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "forDevelopers": "These markdown files can be easily parsed and indexed for chatbot training. Each document follows consistent formatting for reliable extraction."
+  }
+}

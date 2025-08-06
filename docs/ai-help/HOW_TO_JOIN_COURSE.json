@@ -1,0 +1,204 @@
+{
+  "title": "How to Join a Course",
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "Joining a course in AI Engagement Hub connects you with your instructor and classmates, enabling access to course-specific features and AI tools. This guide walks you through the enrollment process step by step.",
+      "subsections": []
+    },
+    {
+      "heading": "Before You Begin",
+      "content": "Ensure you have the necessary information and access before attempting to join a course.",
+      "subsections": [
+        {
+          "heading": "Requirements",
+          "content": "You must have an active AI Engagement Hub account. Your instructor must have provided you with a course access code. You should be using a supported web browser (Chrome, Firefox, Safari, or Edge).",
+          "subsections": []
+        },
+        {
+          "heading": "Getting Your Access Code",
+          "content": "Your instructor will share the access code via email, learning management system (LMS), or during class. The code is typically 6-8 characters long and may contain letters and numbers. Each course has a unique access code that doesn't expire unless changed by the instructor.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Step-by-Step Enrollment Process",
+      "content": "Follow these steps to successfully join your course.",
+      "subsections": [
+        {
+          "heading": "Step 1: Log In",
+          "content": "Navigate to the AI Engagement Hub platform. Enter your email and password. Click 'Sign In' to access your dashboard.",
+          "subsections": []
+        },
+        {
+          "heading": "Step 2: Navigate to Course Join",
+          "content": "From your dashboard, look for the 'Join Course' button in the navigation menu or on the main dashboard. Click 'Join Course' to open the enrollment form.",
+          "subsections": []
+        },
+        {
+          "heading": "Step 3: Enter Access Code",
+          "content": "Type or paste the access code provided by your instructor. Ensure you enter it exactly as provided (codes are case-sensitive). Double-check for any typos or extra spaces.",
+          "subsections": []
+        },
+        {
+          "heading": "Step 4: Submit Enrollment",
+          "content": "Click the 'Join' or 'Enroll' button to submit your request. Wait for the system to process your enrollment. You'll see a confirmation message once submitted.",
+          "subsections": []
+        },
+        {
+          "heading": "Step 5: Await Approval",
+          "content": "Some courses require instructor approval before you can access content. If approval is required, you'll see a 'Pending Approval' status. If the course has open enrollment, you'll gain immediate access. Check your email for enrollment confirmation or approval notifications.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Enrollment Settings",
+      "content": "Understanding different enrollment configurations your instructor may use.",
+      "subsections": [
+        {
+          "heading": "Open Enrollment",
+          "content": "You gain immediate access after entering the correct code. No waiting period or approval needed. You can start using course features right away.",
+          "subsections": []
+        },
+        {
+          "heading": "Approval Required",
+          "content": "Your enrollment enters a pending state after code submission. The instructor must manually approve your enrollment. You'll receive an email notification once approved. Approval typically occurs within 24-48 hours.",
+          "subsections": []
+        },
+        {
+          "heading": "Enrollment Deadlines",
+          "content": "Some courses may have enrollment cutoff dates. Late enrollment might require special permission. Contact your instructor if you miss the enrollment window.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "After Joining",
+      "content": "What to expect once you've successfully joined a course.",
+      "subsections": [
+        {
+          "heading": "Course Access",
+          "content": "The course will appear in your dashboard's course list. You can access course-specific chat features. Your AI interactions will be associated with this course. You'll see course announcements and resources.",
+          "subsections": []
+        },
+        {
+          "heading": "Initial Setup",
+          "content": "Review the course syllabus and AI usage guidelines. Check for any required introductory assignments. Familiarize yourself with course-specific features. Set up your project workspace if needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Notifications",
+          "content": "Enable notifications for course announcements. You'll receive updates about assignments and deadlines. Important messages from your instructor will be highlighted.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Troubleshooting Common Issues",
+      "content": "Solutions for problems you might encounter during enrollment.",
+      "subsections": [
+        {
+          "heading": "Invalid Access Code",
+          "content": "Double-check the code with your instructor. Ensure you're entering it exactly as provided (case-sensitive). Remove any extra spaces before or after the code. Try copying and pasting instead of typing manually.",
+          "subsections": []
+        },
+        {
+          "heading": "Code Not Working",
+          "content": "Verify the code hasn't expired or been changed. Confirm you're enrolled in the correct institution. Check if the course has reached its enrollment limit. Contact your instructor for a new code if needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Stuck in Pending Status",
+          "content": "Allow 24-48 hours for instructor approval. Check your email for any approval requests or issues. Contact your instructor directly if approval is delayed. Verify your student email is correct in your profile.",
+          "subsections": []
+        },
+        {
+          "heading": "Can't Find Join Course Button",
+          "content": "Ensure you're logged into your account. Check both the navigation menu and dashboard. Try refreshing your browser or clearing cache. Switch to a supported browser if issues persist.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Multiple Course Enrollment",
+      "content": "Information about joining multiple courses simultaneously.",
+      "subsections": [
+        {
+          "heading": "Enrolling in Multiple Courses",
+          "content": "You can join multiple courses using different access codes. Each course requires separate enrollment. Courses will be listed individually in your dashboard. You can switch between courses easily.",
+          "subsections": []
+        },
+        {
+          "heading": "Managing Multiple Courses",
+          "content": "Use the course selector to switch between courses. Keep track of different course requirements and policies. Organize your projects by course. Monitor usage and costs per course.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Special Circumstances",
+      "content": "Handling unique enrollment situations.",
+      "subsections": [
+        {
+          "heading": "Trial or Demo Courses",
+          "content": "Some institutions offer trial courses for testing. These may have limited features or duration. Use the same enrollment process with the trial code. Trial courses may automatically expire.",
+          "subsections": []
+        },
+        {
+          "heading": "Course Transfers",
+          "content": "Contact your instructor to transfer between course sections. Previous chat history may or may not transfer. Project associations might need to be updated. Verify access to correct course materials.",
+          "subsections": []
+        },
+        {
+          "heading": "Re-enrollment",
+          "content": "If you were removed from a course, you may need special permission to rejoin. Use a new access code if provided by the instructor. Previous course data may be restored upon re-enrollment.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Getting Help",
+      "content": "Resources available if you need assistance with course enrollment.",
+      "subsections": [
+        {
+          "heading": "Contact Your Instructor",
+          "content": "Reach out via email or during office hours. Provide your student ID and email address. Explain the specific issue you're encountering. Request a new access code if needed.",
+          "subsections": []
+        },
+        {
+          "heading": "Technical Support",
+          "content": "Use the platform's help documentation. Submit a support ticket for technical issues. Include screenshots of any error messages. Provide your browser and operating system details.",
+          "subsections": []
+        },
+        {
+          "heading": "Peer Support",
+          "content": "Ask classmates if they're experiencing similar issues. Verify you have the correct access code. Check class forums or discussion boards. Connect with Student Assistants if available.",
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "heading": "Important Notes",
+      "content": "Key information to remember about course enrollment.",
+      "subsections": [
+        {
+          "heading": "Privacy and Data",
+          "content": "Joining a course allows your instructor to view your AI interactions. Your chat history becomes part of the course records. Enrollment data is protected under FERPA guidelines.",
+          "subsections": []
+        },
+        {
+          "heading": "Course Policies",
+          "content": "Each course may have different AI usage policies. Review and understand the academic integrity guidelines. Familiarize yourself with model restrictions if any. Understand the consequences of policy violations.",
+          "subsections": []
+        },
+        {
+          "heading": "Withdrawal",
+          "content": "You cannot remove yourself from a course directly. Contact your instructor to request removal. Course data may be retained for academic records. Withdrawal doesn't delete your chat history.",
+          "subsections": []
+        }
+      ]
+    }
+  ]
+}

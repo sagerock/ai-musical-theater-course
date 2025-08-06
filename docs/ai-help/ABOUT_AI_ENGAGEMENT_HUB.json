@@ -1,0 +1,424 @@
+{
+  "title": "About AI Engagement Hub",
+  "sections": [
+    {
+      "heading": "What is AI Engagement Hub?",
+      "content": "AI Engagement Hub is an educational analytics platform that transforms how teachers and students interact with artificial intelligence in the classroom. Built in Summer 2025 by Sage Lewis using Claude Code, this platform provides real-time visibility into AI usage patterns, helping educators guide students toward effective and ethical AI use.",
+      "highlights": [
+        "Think of it as a \"learning management system for the AI age\" - a place where:",
+        {
+          "list": [
+            "Students can safely explore AI tools with guidance",
+            "Teachers can monitor and mentor AI usage",
+            "Learning is enhanced, not replaced, by AI"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Why AI Engagement Hub?",
+      "subsections": [
+        {
+          "heading": "The Challenge",
+          "content": "As AI tools like ChatGPT, Claude, and Gemini become ubiquitous, educators face new challenges:",
+          "questions": [
+            "How do students actually use AI for learning?",
+            "Are they using it to understand or to avoid thinking?",
+            "Which AI tools work best for different subjects?",
+            "How can we teach responsible AI use?"
+          ],
+          "conclusion": "Traditional learning platforms weren't designed for the AI era. Teachers are flying blind while students navigate powerful tools without guidance."
+        },
+        {
+          "heading": "The Solution",
+          "content": "AI Engagement Hub bridges this gap by providing:",
+          "features": [
+            "Transparency - See how students interact with AI",
+            "Guidance - Direct students to appropriate AI tools",
+            "Analytics - Understand usage patterns and effectiveness",
+            "Community - Enable peer learning and support"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For High School Teachers",
+      "subsections": [
+        {
+          "heading": "Why You Need This",
+          "intro": "High school students are already using AI - the question is whether they're using it well. AI Engagement Hub helps you:",
+          "benefits": [
+            {
+              "title": "Make AI Use Visible",
+              "items": [
+                "See when students use AI for homework",
+                "Track which models they choose",
+                "Monitor prompt quality and iteration",
+                "Identify who needs help with AI literacy"
+              ]
+            },
+            {
+              "title": "Guide Better Practices",
+              "items": [
+                "Teach effective prompt engineering",
+                "Show model selection strategies",
+                "Demonstrate verification techniques",
+                "Build critical thinking skills"
+              ]
+            },
+            {
+              "title": "Maintain Academic Integrity",
+              "items": [
+                "Transparent AI use reduces cheating",
+                "Students cite AI contributions",
+                "Focus shifts from \"catching\" to \"coaching\"",
+                "Build trust through openness"
+              ]
+            },
+            {
+              "title": "Prepare Students for the Future",
+              "items": [
+                "AI literacy is becoming essential",
+                "Colleges expect AI competence",
+                "Workplace skills development",
+                "Ethical AI use habits"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Real Classroom Examples",
+          "examples": [
+            {
+              "subject": "English Class",
+              "scenario": "Students use AI to brainstorm essay ideas, but you can see who's copying vs. who's thinking critically. Guide them toward using AI as a writing partner, not a ghost writer."
+            },
+            {
+              "subject": "Science Class",
+              "scenario": "Watch students use AI to understand complex concepts. Identify misconceptions early when AI gives incorrect information and students don't catch it."
+            },
+            {
+              "subject": "History Class",
+              "scenario": "Students explore multiple perspectives using different AI models. You see their research process and can guide deeper inquiry."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For College Instructors",
+      "subsections": [
+        {
+          "heading": "Why You Need This",
+          "intro": "College students will use AI in their careers - shouldn't they learn to use it effectively in your class? AI Engagement Hub enables:",
+          "benefits": [
+            {
+              "title": "Advanced AI Integration",
+              "items": [
+                "Support research-grade AI tools (Claude Opus 4)",
+                "Enable complex, multi-model assignments",
+                "Track sophisticated usage patterns",
+                "Develop professional AI skills"
+              ]
+            },
+            {
+              "title": "Research & Writing Support",
+              "items": [
+                "Monitor literature review processes",
+                "See how students synthesize AI insights",
+                "Track citation and attribution",
+                "Ensure original thinking"
+              ]
+            },
+            {
+              "title": "Collaborative Learning",
+              "items": [
+                "Teaching Assistants can monitor AI use",
+                "Student Assistants can help peers",
+                "Build AI literacy communities",
+                "Share effective strategies"
+              ]
+            },
+            {
+              "title": "Academic Innovation",
+              "items": [
+                "Design AI-enhanced assignments",
+                "Create new assessment methods",
+                "Research AI's impact on learning",
+                "Lead pedagogical change"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "University Use Cases",
+          "examples": [
+            {
+              "department": "Computer Science",
+              "scenario": "Students use AI for debugging, but you ensure they understand the code. Track who's learning vs. copying."
+            },
+            {
+              "department": "Business School",
+              "scenario": "Students analyze cases with AI assistance. You see their analytical process and can guide strategic thinking."
+            },
+            {
+              "department": "Liberal Arts",
+              "scenario": "Students explore philosophical questions with AI. Monitor depth of engagement and critical analysis."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For High School Students",
+      "subsections": [
+        {
+          "heading": "Why You'll Love This",
+          "intro": "AI Engagement Hub isn't about restricting your AI use - it's about making you better at it!",
+          "benefits": [
+            {
+              "title": "Learn AI Superpowers",
+              "items": [
+                "Discover which AI models work best for different tasks",
+                "Learn prompt engineering from examples",
+                "See what successful students do",
+                "Build skills colleges want"
+              ]
+            },
+            {
+              "title": "Get Real Help",
+              "items": [
+                "Your teacher sees when you're stuck",
+                "Get guidance, not judgment",
+                "Learn from classmates' strategies",
+                "Student Assistants can help you"
+              ]
+            },
+            {
+              "title": "Show Your Work",
+              "items": [
+                "Prove you're learning, not cheating",
+                "Build trust with teachers",
+                "Document your growth",
+                "Create impressive portfolios"
+              ]
+            },
+            {
+              "title": "Prepare for Your Future",
+              "items": [
+                "Every career will involve AI",
+                "Learn ethical use now",
+                "Build competitive advantages",
+                "Develop critical thinking"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Student Success Stories",
+          "testimonials": [
+            {
+              "quote": "I used to just copy from ChatGPT. Now I know how to use different models to actually understand calculus.",
+              "author": "Sarah, 11th grade"
+            },
+            {
+              "quote": "The platform helped me discover Claude Opus 4 for my research paper. My teacher could see I was using it thoughtfully.",
+              "author": "James, 12th grade"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For College Students",
+      "subsections": [
+        {
+          "heading": "Why You Need This",
+          "intro": "In college and beyond, AI literacy isn't optional - it's essential. AI Engagement Hub helps you:",
+          "benefits": [
+            {
+              "title": "Professional Skill Development",
+              "items": [
+                "Master advanced AI tools",
+                "Build verifiable AI competencies",
+                "Create usage portfolios",
+                "Stand out to employers"
+              ]
+            },
+            {
+              "title": "Research Excellence",
+              "items": [
+                "Access research-grade AI models",
+                "Document your methodology",
+                "Show sophisticated analysis",
+                "Improve research efficiency"
+              ]
+            },
+            {
+              "title": "Academic Success",
+              "items": [
+                "Get help when stuck",
+                "Learn from TAs and peers",
+                "Track your progress",
+                "Optimize study strategies"
+              ]
+            },
+            {
+              "title": "Ethical Leadership",
+              "items": [
+                "Model responsible AI use",
+                "Help other students",
+                "Build integrity habits",
+                "Lead by example"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "College Student Perspectives",
+          "testimonials": [
+            {
+              "quote": "As a Teaching Assistant, I can actually help students use AI effectively instead of just telling them not to use it.",
+              "author": "Maria, Graduate Student"
+            },
+            {
+              "quote": "The analytics showed me I was spending too much on premium models when free ones worked fine. Saved me money!",
+              "author": "Alex, Sophomore"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Key Features for Everyone",
+      "features": [
+        {
+          "icon": "🤖",
+          "title": "7 Leading AI Models",
+          "items": [
+            "GPT-4.1 and 4.1 Mini (OpenAI)",
+            "Claude Sonnet 4 and Opus 4 (Anthropic)",
+            "Gemini Flash and 2.5 Pro (Google)",
+            "Sonar Pro (Perplexity)"
+          ]
+        },
+        {
+          "icon": "📊",
+          "title": "Comprehensive Analytics",
+          "items": [
+            "Usage patterns and trends",
+            "Cost tracking and optimization",
+            "Model effectiveness comparison",
+            "Learning outcome correlation"
+          ]
+        },
+        {
+          "icon": "👥",
+          "title": "Role-Based Access",
+          "items": [
+            "Students see their own work",
+            "Teachers see class analytics",
+            "TAs can help with oversight",
+            "Admins manage institutions"
+          ]
+        },
+        {
+          "icon": "🔒",
+          "title": "Privacy-First Design",
+          "items": [
+            "Educational data protection",
+            "FERPA compliance considerations",
+            "Transparent data practices",
+            "Student consent workflows"
+          ]
+        },
+        {
+          "icon": "📚",
+          "title": "Learning Tools",
+          "items": [
+            "Prompt engineering guides",
+            "Model selection help",
+            "Citation templates",
+            "Reflection prompts"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "The Story Behind AI Engagement Hub",
+      "subsections": [
+        {
+          "heading": "Created with Claude Code",
+          "content": "This platform was built in Summer 2025 through an innovative collaboration between Sage Lewis and Claude Code, Anthropic's AI coding assistant. This partnership demonstrates the very principles the platform teaches:",
+          "principles": [
+            "Human Vision: Sage identified the need for educational AI transparency",
+            "AI Enhancement: Claude Code helped implement sophisticated features",
+            "Iterative Development: Continuous refinement through human-AI collaboration",
+            "Ethical Focus: Built with student privacy and learning outcomes in mind"
+          ]
+        },
+        {
+          "heading": "Why This Matters",
+          "content": "The creation story itself is a testament to effective human-AI collaboration. Just as students learn to work with AI in their studies, this platform emerged from thoughtful AI partnership - not replacement of human creativity, but amplification of human vision."
+        }
+      ]
+    },
+    {
+      "heading": "Getting Started",
+      "guides": [
+        {
+          "audience": "For Teachers",
+          "steps": [
+            "Create your account",
+            "Set up your first course",
+            "Invite students with access codes",
+            "Configure AI policies",
+            "Watch learning happen"
+          ]
+        },
+        {
+          "audience": "For Students",
+          "steps": [
+            "Join with your teacher's code",
+            "Explore AI models safely",
+            "Document your learning",
+            "Get help when needed",
+            "Build AI skills"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "The Future of Education",
+      "intro": "AI Engagement Hub represents a fundamental shift in education:",
+      "transformations": [
+        {
+          "from": "Don't use AI",
+          "to": "Use AI wisely"
+        },
+        {
+          "from": "Hidden AI use",
+          "to": "Transparent collaboration"
+        },
+        {
+          "from": "Avoiding technology",
+          "to": "Mastering technology"
+        },
+        {
+          "from": "Catching cheaters",
+          "to": "Coaching learners"
+        }
+      ]
+    },
+    {
+      "heading": "Join the Movement",
+      "content": "Whether you're a teacher wanting to guide AI use or a student wanting to master it, AI Engagement Hub provides the transparency, tools, and community you need.",
+      "tagline": "Built by educators, for educators, with AI assistance - just like the future of learning itself."
+    }
+  ],
+  "footer": {
+    "quote": "The best way to predict the future is to teach it.",
+    "callToAction": "Start your AI-enhanced learning journey today at AI Engagement Hub",
+    "credits": "Created with ❤️ and 🤖 by Sage Lewis using Claude Code, Summer 2025"
+  }
+}

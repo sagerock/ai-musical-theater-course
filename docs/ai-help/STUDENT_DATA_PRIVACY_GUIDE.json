@@ -1,0 +1,289 @@
+{
+  "title": "Student Data Privacy Guide",
+  "sections": [
+    {
+      "heading": "What This Means for You",
+      "content": "AI Engagement Hub takes your privacy seriously. This guide explains how we protect your data and what you can expect."
+    },
+    {
+      "heading": "For Students",
+      "subsections": [
+        {
+          "heading": "Your Privacy Rights",
+          "private": [
+            {
+              "item": "Your AI Conversations",
+              "description": "Only you and your instructor can see them"
+            },
+            {
+              "item": "Your Projects",
+              "description": "Other students cannot access your work"
+            },
+            {
+              "item": "Your Documents",
+              "description": "PDFs and files you upload are protected"
+            },
+            {
+              "item": "Your Reflections",
+              "description": "Personal thoughts remain private"
+            }
+          ],
+          "instructorCanSee": [
+            "Your AI chat history (to help guide your learning)",
+            "Documents you upload for assignments",
+            "Your projects and coursework",
+            "Basic information (name, email)"
+          ],
+          "otherStudentsCannotSee": [
+            "Your AI conversations",
+            "Your uploaded documents",
+            "Your personal reflections",
+            "Your grades or instructor notes"
+          ]
+        },
+        {
+          "heading": "Privacy Tips",
+          "tips": [
+            {
+              "tip": "Be Yourself",
+              "description": "Your AI conversations are private from other students"
+            },
+            {
+              "tip": "Ask Questions",
+              "description": "Don't worry about looking silly, only your instructor sees"
+            },
+            {
+              "tip": "Learn Freely",
+              "description": "Experiment with AI without peer judgment"
+            },
+            {
+              "tip": "Document Everything",
+              "description": "Your work is protected and timestamped"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For Instructors",
+      "subsections": [
+        {
+          "heading": "What You Can Access",
+          "canAccess": [
+            "All student AI interactions",
+            "Uploaded documents and PDFs",
+            "Student projects and work",
+            "Analytics and usage patterns"
+          ],
+          "privacyBoundaries": [
+            "Cannot see students from other courses",
+            "Cannot access other instructors' course data",
+            "Cannot view student data after they leave your course"
+          ]
+        },
+        {
+          "heading": "Best Practices",
+          "practices": [
+            {
+              "practice": "Inform Students",
+              "description": "Let them know you can see their AI usage"
+            },
+            {
+              "practice": "Guide, Don't Judge",
+              "description": "Use visibility to help, not penalize"
+            },
+            {
+              "practice": "Respect Privacy",
+              "description": "Don't share student AI conversations"
+            },
+            {
+              "practice": "Model Good Behavior",
+              "description": "Show appropriate AI usage"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For Parents & Administrators",
+      "subsections": [
+        {
+          "heading": "Our Privacy Commitment",
+          "dataProtection": [
+            "FERPA compliant design",
+            "No data mining or selling",
+            "No third-party sharing",
+            "Educational use only"
+          ],
+          "technicalSecurity": [
+            "Database-level protection (Firebase Security Rules)",
+            "Encrypted data transmission",
+            "Secure cloud storage",
+            "Complete audit trails"
+          ],
+          "studentSafety": [
+            "Age-appropriate access controls",
+            "No student-to-student messaging",
+            "Instructor oversight built-in",
+            "Clear data boundaries"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "How Privacy Works",
+      "subsections": [
+        {
+          "heading": "The Technology Behind It",
+          "content": "We use Firebase Security Rules - think of it as a smart filter that automatically shows each person only the data they're allowed to see:",
+          "example": {
+            "description": "Data access flow:",
+            "flows": [
+              "Student A logs in → Sees only Student A's data",
+              "Instructor logs in → Sees only their course students' data",
+              "Student B logs in → Sees only Student B's data"
+            ]
+          },
+          "security": "This happens automatically at the database level, making it nearly impossible to accidentally expose private data."
+        },
+        {
+          "heading": "Real Examples",
+          "scenarios": [
+            {
+              "scenario": "Group Project",
+              "details": [
+                "Students work on separate AI conversations",
+                "Each student sees only their own work",
+                "Instructor sees all student work",
+                "Privacy maintained while enabling collaboration"
+              ]
+            },
+            {
+              "scenario": "Peer Review",
+              "details": [
+                "Student Assistants can view (not edit) peer work",
+                "Original student maintains ownership",
+                "Instructor oversees the process",
+                "Clear audit trail of who viewed what"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Frequently Asked Questions",
+      "categories": [
+        {
+          "category": "Student Questions",
+          "questions": [
+            {
+              "question": "Can my classmates see my AI chats?",
+              "answer": "No, your AI conversations are private. Only you and your instructor can see them."
+            },
+            {
+              "question": "What if I make a mistake or ask a \"dumb\" question?",
+              "answer": "Your questions are private from peers. Your instructor sees them to help guide your learning, not to judge."
+            },
+            {
+              "question": "Can I delete my data?",
+              "answer": "Yes, you can delete your own projects and conversations. Contact your instructor for help with permanent deletion."
+            }
+          ]
+        },
+        {
+          "category": "Instructor Questions",
+          "questions": [
+            {
+              "question": "Can I share examples of good student work?",
+              "answer": "Only with explicit student permission. Consider anonymizing examples or asking students to volunteer work for sharing."
+            },
+            {
+              "question": "How long can I access student data?",
+              "answer": "As long as the student is enrolled in your course. After course completion, access may be restricted based on institutional policy."
+            },
+            {
+              "question": "Can I export student data?",
+              "answer": "Yes, for legitimate educational purposes like grading or assessment. Always follow your institution's data handling policies."
+            }
+          ]
+        },
+        {
+          "category": "Parent Questions",
+          "questions": [
+            {
+              "question": "Is my child's data safe?",
+              "answer": "Yes, we implement multiple layers of security including encryption, access controls, and audit logging."
+            },
+            {
+              "question": "Who can see my child's work?",
+              "answer": "Only your child and their instructor. Other students cannot access your child's work or AI conversations."
+            },
+            {
+              "question": "What happens to data after the course ends?",
+              "answer": "Data is retained according to your institution's policy. Students can request their data or deletion at any time."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Privacy Incident Response",
+      "content": "If you have privacy concerns:",
+      "contacts": [
+        {
+          "audience": "Students",
+          "action": "Talk to your instructor first"
+        },
+        {
+          "audience": "Instructors",
+          "action": "Contact your IT administrator"
+        },
+        {
+          "audience": "Parents",
+          "action": "Reach out to the school's privacy officer"
+        },
+        {
+          "audience": "Everyone",
+          "action": "Email privacy@aiengagementhub.com for platform-specific issues"
+        }
+      ]
+    },
+    {
+      "heading": "Your Privacy Checklist",
+      "checklists": [
+        {
+          "audience": "For Students",
+          "items": [
+            "Understand what's private vs. visible",
+            "Know your instructor can see AI chats (for help!)",
+            "Feel free to explore and learn",
+            "Ask if you have privacy questions"
+          ]
+        },
+        {
+          "audience": "For Instructors",
+          "items": [
+            "Explain privacy settings to students",
+            "Use data access responsibly",
+            "Protect student information",
+            "Model good privacy practices"
+          ]
+        },
+        {
+          "audience": "For Administrators",
+          "items": [
+            "Review privacy settings regularly",
+            "Ensure FERPA compliance",
+            "Train instructors on privacy",
+            "Have incident response plan"
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "reminder": "Privacy enables better learning. When students know their data is protected, they're more likely to engage authentically with AI tools and develop real skills.",
+    "lastUpdated": "January 2025"
+  }
+}

@@ -1,0 +1,372 @@
+{
+  "title": "PDF Upload Guide for Students and Instructors",
+  "sections": [
+    {
+      "heading": "Overview",
+      "content": "AI Engagement Hub allows you to upload PDF documents to share with AI models. This feature helps you get better assistance by providing context documents, research papers, assignments, and other materials directly to the AI."
+    },
+    {
+      "heading": "For Students",
+      "subsections": [
+        {
+          "heading": "How to Upload a PDF",
+          "steps": [
+            {
+              "step": "Open a Chat Project",
+              "details": [
+                "Navigate to your course",
+                "Click on a project or create a new one",
+                "Open the AI chat interface"
+              ]
+            },
+            {
+              "step": "Upload Your PDF",
+              "details": [
+                "Look for the 📎 paperclip icon next to the message input",
+                "Click the paperclip icon",
+                "Select your PDF file (max 10MB)",
+                "Wait for upload confirmation"
+              ]
+            },
+            {
+              "step": "Send with Your Question",
+              "details": [
+                "Type your question about the PDF",
+                "The AI will analyze your document",
+                "You'll see a PDF attachment indicator in your message"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "What You Can Upload",
+          "allowed": [
+            "Course materials and textbooks (excerpts)",
+            "Research papers and articles",
+            "Your own essays and assignments",
+            "Study guides and notes",
+            "Homework problems",
+            "Max file size: 10MB"
+          ],
+          "notAllowed": [
+            "Files larger than 10MB",
+            "Non-PDF formats (use PDF only)",
+            "Copyrighted materials without permission",
+            "Sensitive personal information",
+            "Inappropriate content"
+          ]
+        },
+        {
+          "heading": "Best Practices for Students",
+          "practices": [
+            {
+              "title": "Be Specific",
+              "good": "Can you explain the concept on page 3 about quantum entanglement?",
+              "bad": "Help with this PDF"
+            },
+            {
+              "title": "Provide Context",
+              "example": "This is my essay draft. Can you help me improve the introduction?"
+            },
+            {
+              "title": "Ask Targeted Questions",
+              "example": "In this research paper, what methodology did they use in Section 2?"
+            }
+          ]
+        },
+        {
+          "heading": "Common Use Cases",
+          "useCases": [
+            {
+              "case": "Essay Review",
+              "description": "Upload drafts for feedback"
+            },
+            {
+              "case": "Problem Sets",
+              "description": "Get help understanding homework"
+            },
+            {
+              "case": "Research",
+              "description": "Analyze academic papers"
+            },
+            {
+              "case": "Study Help",
+              "description": "Upload notes for quiz preparation"
+            },
+            {
+              "case": "Citation Help",
+              "description": "Format references correctly"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "For Instructors",
+      "subsections": [
+        {
+          "heading": "Viewing Student PDFs",
+          "steps": [
+            {
+              "step": "Access Student Work",
+              "details": [
+                "Go to Instructor Dashboard",
+                "Navigate to Student Activity",
+                "Click on a student's session",
+                "View their uploaded PDFs"
+              ]
+            },
+            {
+              "step": "Download PDFs",
+              "details": [
+                "Click the PDF attachment in chat",
+                "Select \"Download\" option",
+                "File saves to your computer"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Monitoring PDF Usage",
+          "canSee": [
+            "All PDFs uploaded by your students",
+            "When PDFs were uploaded",
+            "Which AI models analyzed them",
+            "Student questions about PDFs"
+          ],
+          "privacyNotes": [
+            "Only see PDFs from your enrolled students",
+            "Cannot access PDFs from other courses",
+            "Downloads are logged for security"
+          ]
+        },
+        {
+          "heading": "Educational Benefits",
+          "benefits": [
+            {
+              "title": "Assignment Help",
+              "description": "Students can get targeted help on specific problems",
+              "details": [
+                "AI explains concepts from their actual materials",
+                "Better than generic AI responses"
+              ]
+            },
+            {
+              "title": "Writing Support",
+              "description": "Students upload drafts for improvement",
+              "details": [
+                "AI provides specific feedback",
+                "Maintains academic integrity"
+              ]
+            },
+            {
+              "title": "Research Skills",
+              "description": "Students learn to analyze papers",
+              "details": [
+                "AI helps break down complex texts",
+                "Develops critical thinking"
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Setting Classroom Policies",
+          "content": "Consider establishing guidelines:",
+          "samplePolicy": {
+            "title": "PDF Upload Policy for [Course Name]",
+            "rules": [
+              "Upload only course-related materials",
+              "Include specific questions with uploads",
+              "Cite AI assistance in your work",
+              "Don't upload answer keys or solutions",
+              "Respect copyright and fair use"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "heading": "Technical Details",
+      "subsections": [
+        {
+          "heading": "File Requirements",
+          "requirements": [
+            {
+              "requirement": "Format",
+              "details": "PDF only"
+            },
+            {
+              "requirement": "Max Size",
+              "details": "10MB"
+            },
+            {
+              "requirement": "Text",
+              "details": "Text-based PDFs work best"
+            },
+            {
+              "requirement": "Images",
+              "details": "Scanned PDFs may have limited analysis"
+            },
+            {
+              "requirement": "Security",
+              "details": "Files are virus-scanned"
+            }
+          ]
+        },
+        {
+          "heading": "How AI Processes PDFs",
+          "steps": [
+            {
+              "step": "Text Extraction",
+              "description": "AI reads the text content"
+            },
+            {
+              "step": "Structure Analysis",
+              "description": "Identifies sections, headings"
+            },
+            {
+              "step": "Content Understanding",
+              "description": "Comprehends the material"
+            },
+            {
+              "step": "Contextual Response",
+              "description": "Answers based on PDF content"
+            }
+          ]
+        },
+        {
+          "heading": "Troubleshooting",
+          "issues": [
+            {
+              "error": "File too large error",
+              "solutions": [
+                "Reduce PDF size using online compressors",
+                "Split into smaller sections",
+                "Remove unnecessary images"
+              ]
+            },
+            {
+              "error": "Upload failed error",
+              "solutions": [
+                "Check internet connection",
+                "Ensure file is actually PDF format",
+                "Try refreshing and re-uploading"
+              ]
+            },
+            {
+              "error": "AI can't read my PDF",
+              "solutions": [
+                "Ensure PDF contains actual text (not just images)",
+                "Try OCR software for scanned documents",
+                "Upload clearer version"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Privacy & Security",
+      "subsections": [
+        {
+          "heading": "Data Protection",
+          "protections": [
+            "PDFs are stored securely in cloud storage",
+            "Only accessible to you and your instructor",
+            "Not shared with other students",
+            "Deleted according to retention policy"
+          ]
+        },
+        {
+          "heading": "Best Practices",
+          "practices": [
+            "Don't upload sensitive personal info",
+            "Avoid sharing passwords or private data",
+            "Be mindful of copyright restrictions",
+            "Report any privacy concerns immediately"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Tips for Effective PDF Usage",
+      "audiences": [
+        {
+          "audience": "For Students",
+          "tips": [
+            {
+              "title": "Highlight Key Sections",
+              "items": [
+                "Tell AI which pages/sections to focus on",
+                "Reference specific paragraphs",
+                "Ask about particular concepts"
+              ]
+            },
+            {
+              "title": "Compare Understanding",
+              "example": "The PDF says X on page 5. I understood it as Y. Am I correct?"
+            },
+            {
+              "title": "Request Summaries",
+              "example": "Can you summarize the main arguments from pages 10-15 of this paper?"
+            }
+          ]
+        },
+        {
+          "audience": "For Instructors",
+          "tips": [
+            {
+              "title": "Create PDF Resources",
+              "items": [
+                "Upload course guides for AI reference",
+                "Share example problems with solutions",
+                "Provide writing samples"
+              ]
+            },
+            {
+              "title": "Monitor Usage Patterns",
+              "items": [
+                "See which materials students struggle with",
+                "Identify common questions",
+                "Adjust teaching based on insights"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Examples of Good PDF Usage",
+      "examples": [
+        {
+          "title": "Example 1: Math Problem Help",
+          "scenario": {
+            "upload": "homework_set_3.pdf",
+            "question": "Can you walk me through problem 5 on page 2? I'm stuck on the integration step.",
+            "aiResponse": "Step-by-step explanation referencing the specific problem"
+          }
+        },
+        {
+          "title": "Example 2: Essay Feedback",
+          "scenario": {
+            "upload": "draft_essay.pdf",
+            "question": "How can I make my thesis statement in the introduction more compelling?",
+            "aiResponse": "Specific suggestions based on the actual thesis"
+          }
+        },
+        {
+          "title": "Example 3: Research Paper Analysis",
+          "scenario": {
+            "upload": "journal_article.pdf",
+            "question": "What research methodology did the authors use, and what are its limitations?",
+            "aiResponse": "Detailed analysis of methodology section with critique"
+          }
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "proTip": "The more specific your question about the PDF, the better the AI can help. Always reference specific pages, sections, or concepts for best results!",
+    "support": "Need help? Ask your instructor or check the Help section."
+  }
+}

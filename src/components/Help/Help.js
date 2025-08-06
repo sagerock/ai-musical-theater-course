@@ -9,6 +9,7 @@ import {
   LightBulbIcon
 } from '@heroicons/react/24/outline';
 import HelpRequestModal from './HelpRequestModal';
+import FlowiseChatbot from './FlowiseChatbot';
 
 export default function Help() {
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -22,6 +23,9 @@ export default function Help() {
           Welcome to AI Engagement Hub! Find answers to common questions or get in touch with our support team.
         </p>
       </div>
+
+      {/* AI Help Assistant */}
+      <FlowiseChatbot />
 
       {/* Contact Support */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
