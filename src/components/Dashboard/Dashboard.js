@@ -270,7 +270,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-md">
@@ -291,18 +291,6 @@ export default function Dashboard() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Chats</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalChats}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-md">
-              <ClockIcon className="h-6 w-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">This Week</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.recentChats}</p>
             </div>
           </div>
         </div>
