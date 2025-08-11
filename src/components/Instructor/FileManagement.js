@@ -34,17 +34,49 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
       const attachmentsData = await attachmentApi.getCourseAttachments(selectedCourseId, currentUser.id);
       
       // Map the data structure to match what the component expects
-      const mappedAttachments = attachmentsData.map(attachment => ({
-        ...attachment,
-        // Map field names from Firebase structure to component expectations
-        file_name: attachment.fileName || attachment.file_name || 'Unknown File',
-        file_size: attachment.fileSize || attachment.file_size || 0,
-        file_type: attachment.fileType || attachment.file_type || 'application/pdf',
-        uploaded_at: attachment.createdAt || attachment.uploaded_at || attachment.uploadedAt,
-        storage_path: attachment.storagePath || attachment.storage_path,
-        student_name: attachment.chats?.users?.name || 'Unknown Student',
-        project_title: attachment.chats?.projects?.title || 'Unknown Project'
-      }));
+      const mappedAttachments = attachmentsData.map(attachment => {
+        // Infer file type from file name if fileType is missing
+        let inferredFileType = attachment.fileType || attachment.file_type;
+        const fileName = attachment.fileName || attachment.file_name || 'Unknown File';
+        
+        if (!inferredFileType || inferredFileType === 'application/pdf') {
+          // If no file type or default PDF type, try to infer from filename
+          const lowerFileName = fileName.toLowerCase();
+          if (lowerFileName.endsWith('.txt')) {
+            inferredFileType = 'text/plain';
+          } else if (lowerFileName.endsWith('.doc')) {
+            inferredFileType = 'application/msword';
+          } else if (lowerFileName.endsWith('.docx')) {
+            inferredFileType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          } else if (lowerFileName.endsWith('.pdf')) {
+            inferredFileType = 'application/pdf';
+          } else {
+            // Default to PDF if we can't determine
+            inferredFileType = 'application/pdf';
+          }
+        }
+        
+        return {
+          ...attachment,
+          // Map field names from Firebase structure to component expectations
+          file_name: fileName,
+          file_size: attachment.fileSize || attachment.file_size || 0,
+          file_type: inferredFileType,
+          uploaded_at: attachment.createdAt || attachment.uploaded_at || attachment.uploadedAt,
+          storage_path: attachment.storagePath || attachment.storage_path || attachment.storageRef,
+          student_name: attachment.chats?.users?.name || 'Unknown Student',
+          project_title: attachment.chats?.projects?.title || 'Unknown Project'
+        };
+      });
+      
+      console.log('📎 Raw attachments data from Firebase:', attachmentsData);
+      console.log('📎 Loaded attachments with types:', mappedAttachments.map((a, index) => ({
+        name: a.file_name,
+        type: a.file_type,
+        originalType: attachmentsData[index]?.fileType,
+        hasFileType: !!attachmentsData[index]?.fileType,
+        storagePath: a.storage_path
+      })));
       
       setAttachments(mappedAttachments);
     } catch (error) {
@@ -105,12 +137,21 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
 
   const handleDownloadFile = async (attachment) => {
     try {
-      console.log('📎 Downloading file:', attachment.file_name);
-      const downloadUrl = await attachmentApi.getAttachmentDownloadUrl(attachment.storage_path);
+      console.log('📎 Downloading file:', attachment.file_name, 'with path:', attachment.storage_path);
       
-      // Open in new tab for download
-      window.open(downloadUrl, '_blank');
-      toast.success('File download started');
+      // Use storage_path if available, otherwise try to get downloadURL directly
+      if (attachment.downloadURL) {
+        // If we already have a download URL, use it directly
+        window.open(attachment.downloadURL, '_blank');
+        toast.success('File download started');
+      } else if (attachment.storage_path) {
+        // Get download URL from storage path
+        const downloadUrl = await attachmentApi.getAttachmentDownloadUrl(attachment.storage_path);
+        window.open(downloadUrl, '_blank');
+        toast.success('File download started');
+      } else {
+        throw new Error('No storage path or download URL available');
+      }
     } catch (error) {
       console.error('Error downloading file:', error);
       toast.error('Failed to download file');

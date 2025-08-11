@@ -2171,30 +2171,62 @@ export const attachmentApi = {
         return [];
       }
       
-      // Get all chats for these projects
-      const chatsQuery = query(
-        collection(db, 'chats'),
-        where('projectId', 'in', projectIds.slice(0, 10)) // Firestore 'in' limit is 10
-      );
-      const chatsSnapshot = await getDocs(chatsQuery);
-      const chatIds = chatsSnapshot.docs.map(doc => doc.id);
+      console.log('🔥 Found projects for course:', projectIds.length);
       
-      if (chatIds.length === 0) {
+      // Batch project IDs into chunks of 10 (Firestore 'in' limit)
+      const projectBatches = [];
+      for (let i = 0; i < projectIds.length; i += 10) {
+        projectBatches.push(projectIds.slice(i, i + 10));
+      }
+      
+      // Get all chats for these projects (in batches)
+      const allChatIds = [];
+      for (const projectBatch of projectBatches) {
+        const chatsQuery = query(
+          collection(db, 'chats'),
+          where('projectId', 'in', projectBatch)
+        );
+        const chatsSnapshot = await getDocs(chatsQuery);
+        const chatIds = chatsSnapshot.docs.map(doc => doc.id);
+        allChatIds.push(...chatIds);
+      }
+      
+      if (allChatIds.length === 0) {
         console.log('🔥 No chats found for course projects');
         return [];
       }
       
-      // Get all attachments for these chats  
-      const attachmentsQuery = query(
-        collection(db, 'pdfAttachments'),
-        where('chatId', 'in', chatIds.slice(0, 10)), // Firestore 'in' limit is 10
-        orderBy('createdAt', 'desc')
+      console.log('🔥 Found chats for course:', allChatIds.length);
+      
+      // Batch chat IDs into chunks of 10 (Firestore 'in' limit)
+      const chatBatches = [];
+      for (let i = 0; i < allChatIds.length; i += 10) {
+        chatBatches.push(allChatIds.slice(i, i + 10));
+      }
+      
+      // Get all attachments for these chats (in batches)
+      const allAttachments = [];
+      for (const chatBatch of chatBatches) {
+        const attachmentsQuery = query(
+          collection(db, 'pdfAttachments'),
+          where('chatId', 'in', chatBatch),
+          orderBy('createdAt', 'desc')
+        );
+        const attachmentsSnapshot = await getDocs(attachmentsQuery);
+        allAttachments.push(...attachmentsSnapshot.docs);
+      }
+      
+      console.log('🔥 Found raw attachments for course:', allAttachments.length);
+      
+      // Deduplicate attachments by ID (in case of duplicate queries)
+      const uniqueAttachmentDocs = Array.from(
+        new Map(allAttachments.map(doc => [doc.id, doc])).values()
       );
-      const attachmentsSnapshot = await getDocs(attachmentsQuery);
+      console.log('🔥 Unique attachments after deduplication:', uniqueAttachmentDocs.length);
       
       // Get detailed data for each attachment with user and project info
       const attachments = [];
-      for (const attachmentDoc of attachmentsSnapshot.docs) {
+      for (const attachmentDoc of uniqueAttachmentDocs) {
         const attachment = { id: attachmentDoc.id, ...attachmentDoc.data() };
         
         // Get chat details to find user and project info
@@ -2226,6 +2258,13 @@ export const attachmentApi = {
         
         attachments.push(attachment);
       }
+      
+      // Sort attachments by createdAt date (newest first)
+      attachments.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
       
       console.log('🔥 Found attachments for course:', attachments.length);
       return attachments;
