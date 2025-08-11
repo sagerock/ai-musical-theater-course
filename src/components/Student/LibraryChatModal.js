@@ -9,7 +9,9 @@ import {
   ChatBubbleLeftRightIcon,
   DocumentTextIcon,
   SparklesIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  DocumentDuplicateIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import MarkdownRenderer from '../Chat/MarkdownRenderer';
 
@@ -25,6 +27,7 @@ export default function LibraryChatModal({
   const [prompt, setPrompt] = useState('');
   const [selectedTool, setSelectedTool] = useState('GPT-5 Mini');
   const [sending, setSending] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -68,6 +71,22 @@ export default function LibraryChatModal({
   const isExpensiveModel = () => {
     const pricing = getModelPricing(selectedTool);
     return pricing?.isExpensive || false;
+  };
+
+  const handleCopyResponse = async (chatId, response) => {
+    try {
+      await navigator.clipboard.writeText(response);
+      setCopiedId(chatId);
+      toast.success('Response copied to clipboard!');
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedId(null);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast.error('Failed to copy response');
+    }
   };
 
   const handleSendMessage = async (e) => {
@@ -211,12 +230,23 @@ export default function LibraryChatModal({
                   </div>
                 )}
                 <div className="flex justify-start">
-                  <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg max-w-2xl">
+                  <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg max-w-2xl relative group">
+                    <button
+                      onClick={() => handleCopyResponse(chat.id, chat.response)}
+                      className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded-md transition-all opacity-0 group-hover:opacity-100"
+                      title="Copy response"
+                    >
+                      {copiedId === chat.id ? (
+                        <CheckIcon className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <DocumentDuplicateIcon className="h-4 w-4" />
+                      )}
+                    </button>
                     <div className="flex items-center mb-1">
                       <SparklesIcon className="h-4 w-4 text-primary-600 mr-1" />
                       <span className="text-xs text-gray-500">{chat.tool_used || chat.users?.name}</span>
                     </div>
-                    <div className="text-sm">
+                    <div className="text-sm pr-6">
                       <MarkdownRenderer>{chat.response}</MarkdownRenderer>
                     </div>
                   </div>

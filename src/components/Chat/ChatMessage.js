@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useAuth } from '../../contexts/AuthContext';
 import { attachmentApi } from '../../services/firebaseApi';
+import toast from 'react-hot-toast';
 import {
   UserIcon,
   ComputerDesktopIcon,
@@ -10,7 +11,9 @@ import {
   ChatBubbleBottomCenterTextIcon,
   PlusIcon,
   DocumentIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  DocumentDuplicateIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 
 export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentUserId }) {
@@ -20,6 +23,7 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
   const hasTags = chat.chat_tags && chat.chat_tags.length > 0;
   const [attachments, setAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   // Detect if this is a Firebase user (Firebase UIDs don't follow UUID format)
   // Using Firebase API
@@ -53,6 +57,22 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
       window.open(downloadUrl, '_blank');
     } catch (error) {
       console.error('Error downloading attachment:', error);
+    }
+  };
+
+  const handleCopyResponse = async () => {
+    try {
+      await navigator.clipboard.writeText(chat.response);
+      setCopied(true);
+      toast.success('Response copied to clipboard!');
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast.error('Failed to copy response');
     }
   };
 
@@ -125,8 +145,19 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
               AI
             </span>
           </div>
-          <div className="mt-1 bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-900">
+          <div className="mt-1 bg-gray-50 rounded-lg p-3 relative group">
+            <button
+              onClick={handleCopyResponse}
+              className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded-md transition-all opacity-0 group-hover:opacity-100"
+              title="Copy response"
+            >
+              {copied ? (
+                <CheckIcon className="h-4 w-4 text-green-600" />
+              ) : (
+                <DocumentDuplicateIcon className="h-4 w-4" />
+              )}
+            </button>
+            <div className="text-sm text-gray-900 pr-8">
               <MarkdownRenderer>{chat.response}</MarkdownRenderer>
             </div>
           </div>
