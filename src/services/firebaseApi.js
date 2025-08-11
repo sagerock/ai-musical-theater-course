@@ -23,9 +23,47 @@ import {
 } from 'firebase/storage';
 import { db, storage, functions, auth } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { extractTextFromPDF, isPDFFile } from '../utils/pdfExtractor';
+import { extractTextFromDocument, isSupportedDocument, getDocumentType } from '../utils/documentExtractor';
 import emailService from './emailService';
 import approvalEmailService from './approvalEmailService';
+
+// Simple in-memory cache for frequently accessed data
+const dataCache = {
+  users: new Map(),
+  projects: new Map(),
+  lastClearTime: Date.now(),
+  
+  // Clear cache if it's older than 5 minutes
+  checkAndClear() {
+    const now = Date.now();
+    if (now - this.lastClearTime > 5 * 60 * 1000) { // 5 minutes
+      this.users.clear();
+      this.projects.clear();
+      this.lastClearTime = now;
+      console.log('🗑️ Cleared data cache after 5 minutes');
+    }
+  },
+  
+  getUser(userId) {
+    this.checkAndClear();
+    return this.users.get(userId);
+  },
+  
+  setUser(userId, userData) {
+    this.checkAndClear();
+    this.users.set(userId, userData);
+  },
+  
+  getProject(projectId) {
+    this.checkAndClear();
+    return this.projects.get(projectId);
+  },
+  
+  setProject(projectId, projectData) {
+    this.checkAndClear();
+    this.projects.set(projectId, projectData);
+  }
+};
 
 // Helper function to convert Firestore timestamp to Date
 const convertTimestamp = (timestamp) => {
@@ -1668,6 +1706,165 @@ export const chatApi = {
     return chats;
   },
 
+  // Optimized version with batch fetching for better performance
+  async getChatsWithFiltersOptimized(filters = {}) {
+    console.log('🚀 getChatsWithFiltersOptimized:', filters);
+    
+    // Build query based on filters (same as before)
+    let queryConstraints = [orderBy('createdAt', 'desc')];
+    
+    if (filters.courseId) {
+      queryConstraints.unshift(where('courseId', '==', filters.courseId));
+    }
+    
+    if (filters.userId) {
+      queryConstraints.unshift(where('userId', '==', filters.userId));
+    }
+    
+    if (filters.projectId) {
+      queryConstraints.unshift(where('projectId', '==', filters.projectId));
+    }
+    
+    if (filters.toolUsed) {
+      queryConstraints.unshift(where('tool_used', '==', filters.toolUsed));
+    }
+    
+    if (filters.startDate) {
+      queryConstraints.unshift(where('createdAt', '>=', new Date(filters.startDate)));
+    }
+    
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setDate(endDate.getDate() + 1);
+      queryConstraints.unshift(where('createdAt', '<', endDate));
+    }
+    
+    if (filters.limit) {
+      queryConstraints.push(limit(filters.limit));
+    }
+    
+    const chatsQuery = query(collection(db, 'chats'), ...queryConstraints);
+    const snapshot = await getDocs(chatsQuery);
+    
+    // First pass: collect all chats and unique IDs
+    const chats = [];
+    const userIds = new Set();
+    const projectIds = new Set();
+    const chatIdsWithReflections = [];
+    
+    snapshot.forEach(doc => {
+      const chatData = { id: doc.id, ...doc.data() };
+      
+      // Normalize field names
+      chatData.createdAt = convertTimestamp(chatData.createdAt);
+      chatData.updatedAt = convertTimestamp(chatData.updatedAt);
+      chatData.created_at = chatData.createdAt;
+      chatData.user_id = chatData.userId;
+      chatData.project_id = chatData.projectId;
+      chatData.course_id = chatData.courseId;
+      chatData.user_message = chatData.userMessage;
+      chatData.ai_response = chatData.aiResponse;
+      chatData.tool_used = chatData.tool_used || chatData.toolUsed;
+      
+      // Collect unique IDs for batch fetching
+      if (chatData.userId) userIds.add(chatData.userId);
+      if (chatData.projectId) projectIds.add(chatData.projectId);
+      if (chatData.has_reflection) chatIdsWithReflections.push(chatData.id);
+      
+      chats.push(chatData);
+    });
+    
+    // Batch fetch users (max 10 per batch due to Firestore limits)
+    const userMap = new Map();
+    const userIdArray = Array.from(userIds);
+    const uncachedUserIds = [];
+    
+    // Check cache first
+    userIdArray.forEach(userId => {
+      const cachedUser = dataCache.getUser(userId);
+      if (cachedUser) {
+        userMap.set(userId, cachedUser);
+      } else {
+        uncachedUserIds.push(userId);
+      }
+    });
+    
+    // Fetch only uncached users
+    for (let i = 0; i < uncachedUserIds.length; i += 10) {
+      const batch = uncachedUserIds.slice(i, i + 10);
+      const userQuery = query(collection(db, 'users'), where('__name__', 'in', batch));
+      const userSnapshot = await getDocs(userQuery);
+      
+      userSnapshot.forEach(doc => {
+        const userData = { id: doc.id, ...doc.data() };
+        userMap.set(doc.id, userData);
+        dataCache.setUser(doc.id, userData); // Cache for future use
+      });
+    }
+    
+    console.log(`📊 Cache performance: ${userIdArray.length - uncachedUserIds.length}/${userIdArray.length} users from cache`);
+    
+    // Batch fetch projects
+    const projectMap = new Map();
+    const projectIdArray = Array.from(projectIds);
+    const uncachedProjectIds = [];
+    
+    // Check cache first
+    projectIdArray.forEach(projectId => {
+      const cachedProject = dataCache.getProject(projectId);
+      if (cachedProject) {
+        projectMap.set(projectId, cachedProject);
+      } else {
+        uncachedProjectIds.push(projectId);
+      }
+    });
+    
+    // Fetch only uncached projects
+    for (let i = 0; i < uncachedProjectIds.length; i += 10) {
+      const batch = uncachedProjectIds.slice(i, i + 10);
+      const projectQuery = query(collection(db, 'projects'), where('__name__', 'in', batch));
+      const projectSnapshot = await getDocs(projectQuery);
+      
+      projectSnapshot.forEach(doc => {
+        const projectData = { id: doc.id, ...doc.data() };
+        projectMap.set(doc.id, projectData);
+        dataCache.setProject(doc.id, projectData); // Cache for future use
+      });
+    }
+    
+    console.log(`📊 Cache performance: ${projectIdArray.length - uncachedProjectIds.length}/${projectIdArray.length} projects from cache`);
+    
+    // Skip individual reflection and tag fetching for now (can be loaded on-demand)
+    // This saves hundreds of additional queries
+    
+    // Enrich chats with batch-fetched data
+    for (const chatData of chats) {
+      // Add user data from cache
+      if (chatData.userId) {
+        chatData.users = userMap.get(chatData.userId) || { 
+          name: 'Unknown User', 
+          email: 'No email' 
+        };
+      }
+      
+      // Add project data from cache
+      if (chatData.projectId) {
+        chatData.projects = projectMap.get(chatData.projectId) || { 
+          title: 'Untitled Project' 
+        };
+      }
+      
+      // Initialize empty arrays for reflections and tags (load on-demand if needed)
+      chatData.reflections = [];
+      chatData.chat_tags = [];
+    }
+    
+    console.log(`✅ getChatsWithFiltersOptimized loaded ${chats.length} chats with batch fetching`);
+    console.log(`📊 Performance: ${userIds.size} users and ${projectIds.size} projects fetched in ${Math.ceil(userIds.size/10) + Math.ceil(projectIds.size/10)} batches instead of ${chats.length * 2} individual queries`);
+    
+    return chats;
+  },
+
   async updateChat(chatId, updates) {
     console.log('🔥 updateChat:', chatId, updates);
     await updateDoc(doc(db, 'chats', chatId), {
@@ -1719,8 +1916,8 @@ export const chatApi = {
       }
       
       // Set default tool_used based on creation date
-      // Newer chats (after 2024) likely used Claude Sonnet 4 (default)
-      // Older chats might have used GPT-4o or other tools
+      // Newer chats (after 2025) likely used GPT-5 Mini (default)
+      // Older chats might have used Claude Sonnet 4 or other tools
       const batch = writeBatch(db);
       let fixCount = 0;
       
@@ -1728,8 +1925,8 @@ export const chatApi = {
         const chatData = chatDoc.data();
         const createdAt = chatData.createdAt?.toDate?.() || new Date(chatData.createdAt || Date.now());
         
-        // Default to Claude Sonnet 4 for recent chats, GPT-4o for older ones
-        const defaultTool = createdAt > new Date('2024-06-01') ? 'Claude Sonnet 4' : 'GPT-4o';
+        // Default to GPT-5 Mini for recent chats, Claude Sonnet 4 for older ones
+        const defaultTool = createdAt > new Date('2025-01-01') ? 'GPT-5 Mini' : 'Claude Sonnet 4';
         
         console.log(`🔧 Fixing chat ${chatDoc.id}: setting tool_used to "${defaultTool}"`);
         
@@ -1866,14 +2063,15 @@ export const attachmentApi = {
     console.log('🔥 uploadPDFAttachment:', file.name, chatId, userId);
     
     try {
-      // Extract text from PDF first
+      // Extract text from document
       let extractedText = '';
-      if (isPDFFile(file)) {
-        console.log('📄 Extracting text from PDF...');
-        extractedText = await extractTextFromPDF(file);
-        console.log('📄 Text extraction completed:', extractedText.length, 'characters');
+      if (isSupportedDocument(file)) {
+        const docType = getDocumentType(file);
+        console.log(`📄 Extracting text from ${docType} document...`);
+        extractedText = await extractTextFromDocument(file);
+        console.log(`📄 Text extraction completed for ${docType}:`, extractedText.length, 'characters');
       } else {
-        extractedText = '[This file is not a PDF or text extraction is not supported for this file type]';
+        extractedText = `[This file type is not supported. Supported formats: PDF, TXT, DOC, DOCX]`;
       }
       
       // Create storage reference

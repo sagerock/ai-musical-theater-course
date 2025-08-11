@@ -11,6 +11,7 @@ This folder contains comprehensive documentation for the AI Engagement Hub codeb
 - **[React Architecture Guide](./react-architecture-guide.md)** - Component patterns, hooks, and state management
 - **[Tailwind CSS Patterns](./tailwind-css-patterns.md)** - Design system and styling conventions
 - **[AI APIs Integration Guide](./ai-apis-integration-guide.md)** - OpenAI, Anthropic, Google, and Perplexity APIs
+- **[GPT-5 Integration Guide](./gpt-5-integration-guide.md)** - GPT-5 series models with Responses API
 
 ## Using Context 7
 

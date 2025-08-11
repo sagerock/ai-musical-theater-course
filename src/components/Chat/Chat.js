@@ -34,7 +34,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [selectedTool, setSelectedTool] = useState('GPT-4.1 Mini');
+  const [selectedTool, setSelectedTool] = useState('GPT-5 Mini');
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -218,14 +218,23 @@ export default function Chat() {
       const fileType = file.type.toLowerCase();
       const fileName = file.name.toLowerCase();
       
-      const isValidType = allowedTypes.some(type => 
-        fileType.includes(type) || fileName.endsWith(`.${type}`)
-      );
+      // More comprehensive file type checking
+      const isValidType = 
+        // Check by MIME type
+        fileType === 'application/pdf' ||
+        fileType === 'text/plain' ||
+        fileType === 'application/msword' ||
+        fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        // Check by file extension as fallback
+        allowedTypes.some(type => fileName.endsWith(`.${type}`));
       
       if (!isValidType) {
-        toast.error('Supported formats: PDF, TXT, DOC, DOCX');
+        console.log('File validation failed:', { fileType, fileName });
+        toast.error('Supported formats: PDF, TXT, DOC, DOCX. Your file type: ' + (fileType || 'unknown'));
         return;
       }
+      
+      console.log('File validation passed:', { fileType, fileName });
       
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB
@@ -638,7 +647,7 @@ export default function Chat() {
             
             <div className="mt-3 flex items-center text-xs text-gray-500">
               <SparklesIcon className="h-4 w-4 mr-1" />
-              <span>Press Enter to send, Shift+Enter for new line • Upload PDF, TXT, DOC, DOCX up to 10MB • Large files auto-summarized</span>
+              <span>Press Enter to send, Shift+Enter for new line • Upload PDF (full text), TXT (full text), DOC/DOCX (reference only) up to 10MB</span>
             </div>
           </>
         ) : (

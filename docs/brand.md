@@ -8,3 +8,7 @@ Rather than generating content, AI Engagement Hub empowers teachers to observe, 
 With rich filtering, tagging, and intuitive dashboards, it supports accountability, academic integrity, and deeper insight into the evolving relationship between students and artificial intelligence.
 
 > *Understanding how students engage with AI—intelligently.*
+
+## Part of New Human Education
+
+AI Engagement Hub is a practical implementation of the [New Human Education](https://www.newhumaneducation.com/) movement—a human-centered philosophy for education in the age of intelligent machines. Learn more about the foundational theories and join the broader conversation about equipping humans to thrive alongside AI while developing uniquely human capacities.

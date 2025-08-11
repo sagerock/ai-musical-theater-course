@@ -122,7 +122,7 @@ export default function PrivacyPolicy() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr>
-                  <td className="py-3 font-medium text-gray-900">OpenAI (GPT-4.1 Mini & GPT-4.1)</td>
+                  <td className="py-3 font-medium text-gray-900">OpenAI (GPT-5 Series)</td>
                   <td className="py-3 text-red-600 font-medium">❌ No</td>
                   <td className="py-3 text-gray-600">30 days or less</td>
                   <td className="py-3 text-blue-600">Enterprise API</td>
@@ -163,8 +163,8 @@ export default function PrivacyPolicy() {
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">OpenAI (GPT-4.1 Mini & GPT-4.1)</h3>
-                <p className="text-sm text-gray-600">Cost-effective and advanced models for general AI interactions</p>
+                <h3 className="text-lg font-medium text-gray-900">OpenAI (GPT-5 Series)</h3>
+                <p className="text-sm text-gray-600">Fast, balanced, and premium models for all educational needs</p>
               </div>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">

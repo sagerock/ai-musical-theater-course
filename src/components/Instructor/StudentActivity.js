@@ -62,12 +62,14 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     if (!toolName) return 'Unknown Tool';
     
     const toolMap = {
-      // OpenAI Models (new)
-      'gpt-4.1-mini': 'GPT-4.1 Mini',
-      'gpt-4.1': 'GPT-4.1',
-      // OpenAI Models (legacy - for backward compatibility)
-      'gpt-4o-2024-08-06': 'GPT-4o',
-      'gpt-4o': 'GPT-4o',
+      // OpenAI Models (GPT-5 Series)
+      'gpt-5-nano': 'GPT-5 Nano',
+      'gpt-5-mini': 'GPT-5 Mini',
+      'gpt-5': 'GPT-5',
+      // Dated OpenAI IDs
+      'gpt-5-nano-2025-08-07': 'GPT-5 Nano',
+      'gpt-5-mini-2025-08-07': 'GPT-5 Mini',
+      'gpt-5-2025-08-07': 'GPT-5',
       // Anthropic Models
       'claude-sonnet-4-20250514': 'Claude Sonnet 4',
       'claude-sonnet-4': 'Claude Sonnet 4',
@@ -78,9 +80,9 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       'sonar-pro': 'Sonar Pro',
       // Display name mappings
       'Claude Sonnet 4': 'Claude Sonnet 4',
-      'GPT-4.1 Mini': 'GPT-4.1 Mini',
-      'GPT-4.1': 'GPT-4.1',
-      'GPT-4o': 'GPT-4o',
+      'GPT-5 Nano': 'GPT-5 Nano',
+      'GPT-5 Mini': 'GPT-5 Mini',
+      'GPT-5': 'GPT-5',
       'Gemini Flash': 'Gemini Flash',
       'Sonar Pro': 'Sonar Pro'
     };
@@ -98,20 +100,19 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       // Use actual database values that might exist in chats
       const allConfiguredTools = [
         // Current models
-        'gpt-4.1-mini',
-        'gpt-4.1',
+        'gpt-5-nano-2025-08-07',
+        'gpt-5-mini-2025-08-07',
+        'gpt-5-2025-08-07',
         'claude-sonnet-4-20250514', 
         'gemini-1.5-flash',
         'sonar-pro',
         // Display name formats
-        'GPT-4.1 Mini',    // Display format
-        'GPT-4.1',         // Display format
+        'GPT-5 Nano',      // Display format
+        'GPT-5 Mini',      // Display format
+        'GPT-5',           // Display format
         'Claude Sonnet 4', // Display format
         'Gemini Flash',    // Display format
-        'Sonar Pro',       // Display format
-        // Legacy formats (for backward compatibility)
-        'gpt-4o-2024-08-06',
-        'GPT-4o'           // Legacy format that might exist in database
+        'Sonar Pro'        // Display format
       ];
       
       // Remove duplicates based on display name but keep one representative value
@@ -127,24 +128,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       }
       
       setAvailableTools(uniqueTools);
-      console.log('📊 Available AI tools (unique):', uniqueTools);
-      
-      // Debug: Load all chats to see what tool values actually exist in the database
-      try {
-        const allChatsForDebug = await chatApi.getChatsWithFilters({ courseId: selectedCourseId, limit: 100 });
-        const actualToolsInDB = [...new Set(allChatsForDebug.map(chat => chat.tool_used).filter(Boolean))];
-        console.log('🔍 Debug: Actual tools in database:', actualToolsInDB);
-        console.log('🔍 Debug: Sample chat with tool_used:', allChatsForDebug.find(chat => chat.tool_used));
-        console.log('🔍 Debug: Sample chat full data:', allChatsForDebug[0]);
-        
-        // Update available tools to match what's actually in the database
-        if (actualToolsInDB.length > 0) {
-          console.log('🔄 Updating available tools to match database values');
-          setAvailableTools(actualToolsInDB);
-        }
-      } catch (debugError) {
-        console.log('Debug query failed:', debugError);
-      }
+      console.log('📊 Available AI tools configured:', uniqueTools);
 
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -159,7 +143,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     try {
       console.log('👥📁🏷️ Loading recent chats to extract filter metadata');
       
-      const recentChats = await chatApi.getChatsWithFilters({
+      const recentChats = await chatApi.getChatsWithFiltersOptimized({
         courseId: selectedCourseId,
         limit: 200 // Only load recent chats for metadata extraction
       });
@@ -234,7 +218,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       setFiltersLoading(true);
       console.log(`📊 Loading page ${page} of chats with filters:`, filters);
       
-      const chatsData = await chatApi.getChatsWithFilters({
+      const chatsData = await chatApi.getChatsWithFiltersOptimized({
         courseId: selectedCourseId,
         userId: filters.userId || undefined,
         projectId: filters.projectId || undefined,

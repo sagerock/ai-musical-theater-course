@@ -128,7 +128,7 @@ export default function Help() {
             <div>
               <h4 className="font-medium text-gray-900 mb-2">What AI models are available?</h4>
               <p className="text-gray-600">
-                We offer 7 powerful AI models: GPT-4.1 Mini and GPT-4.1 (OpenAI), Claude Sonnet 4 and Claude Opus 4 (Anthropic), 
+                We offer 8 powerful AI models: GPT-5 Nano, GPT-5 Mini, and GPT-5 (OpenAI), Claude Sonnet 4 and Claude Opus 4 (Anthropic), 
                 Gemini Flash and Gemini 2.5 Pro (Google), and Sonar Pro (Perplexity for research). Each has unique strengths 
                 for different types of conversations and tasks.
               </p>

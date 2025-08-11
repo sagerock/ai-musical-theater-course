@@ -3,6 +3,8 @@
 ## Project Overview
 AI Engagement Hub - An educational analytics platform that helps educators understand how students interact with AI in real time. Designed for classrooms at any level—from high school to higher ed—it provides a smarter lens on AI usage, offering teachers clear visibility into prompt activity, model selection, and engagement patterns across leading AI tools.
 
+**Vision & Mission:** See [docs/WHY.md](docs/WHY.md) for the project's core purpose, guiding principles, and human-centered approach. This document serves as the north star for all development decisions.
+
 ## Current Architecture (Firebase-Only)
 **Migration Completed:** January 24, 2025 - Successfully migrated to 100% Firebase architecture
 
@@ -16,11 +18,12 @@ AI Engagement Hub - An educational analytics platform that helps educators under
 
 ## AI Models Configuration
 
-### Supported Models (7 streamlined models across 4 providers)
+### Supported Models (8 streamlined models across 4 providers)
 
-#### OpenAI Models
-- GPT-4.1 Mini: `gpt-4.1-mini` (default model - 83% cheaper than GPT-4o)
-- GPT-4.1: `gpt-4.1` (premium model - superior coding performance)
+#### OpenAI Models (GPT-5 Series - 2025)
+- GPT-5 Nano: `gpt-5-nano-2025-08-07` (fastest, most cost-efficient - $0.05/$0.40 per million tokens)
+- GPT-5 Mini: `gpt-5-mini-2025-08-07` (default model - balanced performance - $0.25/$2 per million tokens)
+- GPT-5: `gpt-5-2025-08-07` (premium model - best for coding and complex reasoning - $1.25/$10 per million tokens)
 
 #### Anthropic Models
 - Claude Sonnet 4: `claude-sonnet-4-20250514` (standard model - balanced performance and cost)
@@ -82,8 +85,8 @@ npm run test        # Run tests (if configured)
 - Session persistence across page reloads
 
 ### Educational Features
-- **AI Chat Interface** with 7 different AI models including research-grade Claude Opus 4 and educational-optimized Gemini 2.5 Pro
-- **Smart Model Selection** with cost warnings and research mode indicators
+- **AI Chat Interface** with 8 different AI models including the new GPT-5 series, research-grade Claude Opus 4, and educational-optimized Gemini 2.5 Pro
+- **Smart Model Selection** with cost warnings and performance indicators
 - **Educational AI Integration** - Gemini 2.5 Pro with LearnLM for enhanced learning
 - **Project Management** for organizing student work
 - **Course System** with enrollment and approval workflows
@@ -93,10 +96,11 @@ npm run test        # Run tests (if configured)
 - **Help & Support** system with comprehensive FAQ
 
 ### Advanced AI Capabilities
-- **Claude Opus 4 Research Mode** for superior research and writing tasks
+- **GPT-5 Premium Mode** for superior coding, reasoning, and agentic tasks across domains
+- **Claude Opus 4 Research Mode** for advanced research and writing tasks
 - **Gemini 2.5 Pro Education Mode** with LearnLM integration and privacy protections
-- **Multimodal Learning** - analyze images, documents, and text with Gemini 2.5 Pro
-- **Large Context Processing** - 1 million token context window for comprehensive analysis
+- **Multimodal Learning** - analyze images, documents, and text with Gemini models
+- **Large Context Processing** - up to 400K tokens (GPT-5) and 1M tokens (Gemini) for comprehensive analysis
 - **Privacy-First Design** - educational data protection and student safety features
 - **Automatic cost warnings** when using premium research models
 - **Hybrid model selection** allowing students to choose appropriate tools for their tasks

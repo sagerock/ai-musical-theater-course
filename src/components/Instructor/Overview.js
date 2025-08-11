@@ -31,12 +31,14 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
     if (!toolName) return 'Unknown Tool';
     
     const toolMap = {
-      // OpenAI Models (new)
-      'gpt-4.1-mini': 'GPT-4.1 Mini',
-      'gpt-4.1': 'GPT-4.1',
-      // OpenAI Models (legacy - for backward compatibility)
-      'gpt-4o-2024-08-06': 'GPT-4o',
-      'gpt-4o': 'GPT-4o',
+      // OpenAI Models (GPT-5 Series)
+      'gpt-5-nano': 'GPT-5 Nano',
+      'gpt-5-mini': 'GPT-5 Mini',
+      'gpt-5': 'GPT-5',
+      // Dated OpenAI IDs
+      'gpt-5-nano-2025-08-07': 'GPT-5 Nano',
+      'gpt-5-mini-2025-08-07': 'GPT-5 Mini',
+      'gpt-5-2025-08-07': 'GPT-5',
       // Anthropic Models
       'claude-sonnet-4-20250514': 'Claude Sonnet 4',
       'claude-sonnet-4': 'Claude Sonnet 4',
@@ -50,9 +52,9 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
       // Display name mappings
       'Claude Sonnet 4': 'Claude Sonnet 4',
       'Claude Opus 4': 'Claude Opus 4',
-      'GPT-4.1 Mini': 'GPT-4.1 Mini',
-      'GPT-4.1': 'GPT-4.1',
-      'GPT-4o': 'GPT-4o',
+      'GPT-5 Nano': 'GPT-5 Nano',
+      'GPT-5 Mini': 'GPT-5 Mini',
+      'GPT-5': 'GPT-5',
       'Gemini Flash': 'Gemini Flash',
       'Gemini 2.5 Pro': 'Gemini 2.5 Pro',
       'Sonar Pro': 'Sonar Pro'

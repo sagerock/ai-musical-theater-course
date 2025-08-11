@@ -140,39 +140,69 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
 
   const loadStudentStats = async (students) => {
     try {
+      console.log('🚀 Loading student stats with optimized batch fetching');
+      const startTime = Date.now();
+      
+      // Get ALL chats for the course in a single optimized query
+      const allChats = await chatApi.getChatsWithFiltersOptimized({
+        courseId: selectedCourseId,
+        limit: 1000 // Get a reasonable amount of recent chats
+      });
+      
+      // Get ALL projects for the course in a single query
+      const allProjects = await projectApi.getCourseProjects(selectedCourseId);
+      
+      // Create lookup maps for O(1) access
+      const chatsByUser = {};
+      const projectsByUser = {};
+      
+      // Group chats by user
+      allChats.forEach(chat => {
+        if (!chatsByUser[chat.userId]) {
+          chatsByUser[chat.userId] = [];
+        }
+        chatsByUser[chat.userId].push(chat);
+      });
+      
+      // Group projects by user
+      allProjects.forEach(project => {
+        if (!projectsByUser[project.createdBy]) {
+          projectsByUser[project.createdBy] = [];
+        }
+        projectsByUser[project.createdBy].push(project);
+      });
+      
+      // Calculate stats for each student from cached data
       const stats = {};
       
-      // Get statistics for each student
-      for (const student of students) {
-        // Get student's AI interactions in this course
-        const chats = await chatApi.getChatsWithFilters({
-          courseId: selectedCourseId,
-          userId: student.id
-        });
+      students.forEach(student => {
+        const studentChats = chatsByUser[student.id] || [];
+        const studentProjects = projectsByUser[student.id] || [];
         
-        // Get student's projects in this course
-        const projects = await projectApi.getUserProjects(student.id, selectedCourseId);
-        
-        // Calculate number of reflections across all chats
-        const totalReflections = chats.filter(chat => chat.has_reflection).length;
+        // Calculate number of reflections
+        const totalReflections = studentChats.filter(chat => chat.has_reflection).length;
         
         // Calculate unique AI models used
-        const uniqueModels = [...new Set(chats.map(chat => chat.tool_used || chat.toolUsed).filter(Boolean))];
+        const uniqueModels = [...new Set(studentChats.map(chat => chat.tool_used || chat.toolUsed).filter(Boolean))];
         const modelsUsed = uniqueModels.length;
         
         // Find most recent activity
-        const lastActivity = chats.length > 0 
-          ? new Date(Math.max(...chats.map(chat => new Date(chat.created_at).getTime())))
-          : new Date(student.created_at);
+        const lastActivity = studentChats.length > 0 
+          ? new Date(Math.max(...studentChats.map(chat => new Date(chat.created_at || chat.createdAt).getTime())))
+          : new Date(student.created_at || student.createdAt);
         
         stats[student.id] = {
-          interactions: chats.length,
+          interactions: studentChats.length,
           lastActivity,
           reflections: totalReflections,
           modelsUsed: modelsUsed,
-          projects: projects.length
+          projects: studentProjects.length
         };
-      }
+      });
+      
+      const endTime = Date.now();
+      console.log(`✅ Student stats loaded in ${endTime - startTime}ms for ${students.length} students`);
+      console.log(`📊 Performance: 2 batch queries instead of ${students.length * 2} individual queries`);
       
       setStudentStats(stats);
     } catch (error) {

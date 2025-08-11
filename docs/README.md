@@ -2,6 +2,11 @@
 
 Welcome to the comprehensive documentation for AI Engagement Hub. This folder contains all technical documentation, guides, and references organized by category.
 
+## 🎯 Essential Reading
+
+### [The Why: Project Vision & Mission](./WHY.md)
+**Start here to understand our core purpose.** This document outlines why we're building the AI Engagement Hub, our guiding principles, and the human-centered approach to AI education. It serves as the north star for all development decisions.
+
 ## 📁 Documentation Structure
 
 ### 🤖 `/ai-help/`

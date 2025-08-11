@@ -16,15 +16,38 @@ const MODEL_SPECIFIC_PROMPTS = {
 • Focus on clear, concise explanations with key references
 • Use your multimodal capabilities for comprehensive analysis when applicable`,
   
-  'gpt-4.1-mini': `COST-EFFECTIVE LEARNING MODE: As GPT-4.1 Mini, provide excellent educational value:
-• Focus on clear, accessible explanations for student understanding
-• Encourage students to verify important claims with additional sources
-• Provide foundational knowledge while maintaining academic standards`,
+  'gpt-5-nano': `ULTRA-FAST LEARNING MODE: As GPT-5 Nano, provide quick, efficient educational support:
+• Deliver concise, clear explanations optimized for summarization and classification
+• Focus on essential concepts and quick comprehension
+• Ideal for rapid review and basic understanding tasks`,
   
-  'gpt-4.1': `ADVANCED CODING & ANALYSIS MODE: As GPT-4.1, excel at technical and analytical tasks:
-• Provide detailed technical explanations with proper documentation
-• Focus on problem-solving methodologies and best practices
-• Include relevant technical sources and standards when applicable`,
+  'gpt-5-mini': `BALANCED PERFORMANCE MODE: As GPT-5 Mini, provide excellent educational value with enhanced reasoning:
+• Deliver well-structured explanations with improved logical reasoning
+• Excel at well-defined tasks with precise educational outcomes
+• Balance speed and depth for optimal learning efficiency`,
+  
+  'gpt-5': `PREMIUM CODING & REASONING MODE: As GPT-5, excel at complex coding and agentic tasks:
+• Provide comprehensive technical analysis with superior reasoning capabilities
+• Excel at complex problem-solving across all domains
+• Leverage 400K context window for extensive code and document analysis
+• Ideal for advanced coding, mathematical reasoning, and multi-step problems`,
+  
+  // Dated OpenAI IDs (2025-08-07) for GPT-5 series
+  'gpt-5-nano-2025-08-07': `ULTRA-FAST LEARNING MODE: As GPT-5 Nano, provide quick, efficient educational support:
+  • Deliver concise, clear explanations optimized for summarization and classification
+  • Focus on essential concepts and quick comprehension
+  • Ideal for rapid review and basic understanding tasks`,
+  
+  'gpt-5-mini-2025-08-07': `BALANCED PERFORMANCE MODE: As GPT-5 Mini, provide excellent educational value with enhanced reasoning:
+  • Deliver well-structured explanations with improved logical reasoning
+  • Excel at well-defined tasks with precise educational outcomes
+  • Balance speed and depth for optimal learning efficiency`,
+  
+  'gpt-5-2025-08-07': `PREMIUM CODING & REASONING MODE: As GPT-5, excel at complex coding and agentic tasks:
+  • Provide comprehensive technical analysis with superior reasoning capabilities
+  • Excel at complex problem-solving across all domains
+  • Leverage 400K context window for extensive code and document analysis
+  • Ideal for advanced coding, mathematical reasoning, and multi-step problems`,
   
   'claude-sonnet-4-20250514': `ANALYTICAL EXCELLENCE MODE: As Claude Sonnet 4, leverage your analytical strengths:
 • Focus on thoughtful, nuanced analysis with clear reasoning chains
@@ -113,7 +136,7 @@ const getProviderFromModel = (tool) => {
 // Unified AI API service
 export const aiApi = {
   // Send chat completion request (automatically routes to correct provider)
-  async sendChatCompletion(prompt, tool = 'GPT-4.1 Mini', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = []) {
     const provider = getProviderFromModel(tool);
     const modelId = AI_TOOLS[tool];
     const enhancedSystemPrompt = getModelSpecificPrompt(modelId);

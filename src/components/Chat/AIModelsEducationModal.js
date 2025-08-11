@@ -45,21 +45,29 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
 
   // Model details with educational information
   const modelDetails = {
-    'GPT-4.1 Mini': {
+    'GPT-5 Nano': {
       company: 'OpenAI',
-      description: 'A cost-effective model that provides excellent performance for most tasks while being 83% cheaper than GPT-4o.',
-      bestFor: ['General questions', 'Writing assistance', 'Basic analysis', 'Everyday tasks'],
-      notBestFor: ['Complex research', 'Advanced coding', 'Long-form writing'],
-      whenToUse: 'Default choice for most student work. Great for homework help, brainstorming, and general questions.',
-      pricing: getModelInfo('GPT-4.1 Mini').pricing
+      description: 'The fastest and most cost-efficient GPT-5 model, perfect for summarization and classification tasks.',
+      bestFor: ['Quick summaries', 'Classification tasks', 'Simple questions', 'Rapid responses'],
+      notBestFor: ['Complex reasoning', 'Advanced coding', 'Long-form writing', 'Deep analysis'],
+      whenToUse: 'When you need ultra-fast responses for simple tasks or quick information retrieval.',
+      pricing: getModelInfo('GPT-5 Nano').pricing
     },
-    'GPT-4.1': {
+    'GPT-5 Mini': {
       company: 'OpenAI',
-      description: 'OpenAI\'s premium model with superior coding performance and advanced reasoning capabilities.',
-      bestFor: ['Complex coding', 'Technical analysis', 'Advanced problem-solving', 'Detailed explanations'],
-      notBestFor: ['Simple questions', 'Cost-sensitive tasks', 'Creative writing'],
-      whenToUse: 'When you need advanced technical help or complex problem-solving that GPT-4.1 Mini can\'t handle.',
-      pricing: getModelInfo('GPT-4.1').pricing
+      description: 'A balanced GPT-5 model that provides excellent performance for well-defined tasks with enhanced reasoning.',
+      bestFor: ['General questions', 'Writing assistance', 'Structured analysis', 'Well-defined tasks'],
+      notBestFor: ['Complex research', 'Advanced coding', 'Agentic tasks'],
+      whenToUse: 'Default choice for most student work. Great for homework help, brainstorming, and general questions with better reasoning than Nano.',
+      pricing: getModelInfo('GPT-5 Mini').pricing
+    },
+    'GPT-5': {
+      company: 'OpenAI',
+      description: 'OpenAI\'s flagship model for coding, reasoning, and agentic tasks across all domains with 400K context window.',
+      bestFor: ['Complex coding', 'Advanced reasoning', 'Multi-step problems', 'Agentic tasks', 'Large document analysis'],
+      notBestFor: ['Simple questions', 'Cost-sensitive tasks', 'Quick lookups'],
+      whenToUse: 'When you need the best coding assistance, complex reasoning, or handling sophisticated multi-step problems.',
+      pricing: getModelInfo('GPT-5').pricing
     },
     'Claude Sonnet 4': {
       company: 'Anthropic',
@@ -184,7 +192,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                   <h4 className="font-semibold text-yellow-800 mb-2">💡 Quick Start Tips</h4>
                   <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• <strong>General use:</strong> Start with GPT-4.1 Mini (cost-effective default)</li>
+                    <li>• <strong>General use:</strong> Start with GPT-5 Mini (balanced performance default)</li>
                     <li>• <strong>Research with citations:</strong> 🏆 Gemini 2.5 Pro (superior academic sources)</li>
                     <li>• <strong>Advanced analysis:</strong> Claude Opus 4 for premium insights</li>
                     <li>• <strong>Current events:</strong> Sonar Pro for real-time information</li>
@@ -576,33 +584,49 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                       </div>
                     </div>
 
-                    <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                    <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
                       <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-blue-900">GPT-4.1 Mini - Cost-Effective Learning Mode</h5>
+                        <h5 className="font-semibold text-yellow-900">GPT-5 Nano - Ultra-Fast Learning Mode</h5>
                       </div>
-                      <p className="text-sm text-blue-800 mb-2">
-                        <strong>Why this optimization:</strong> Optimized for excellent educational value while being cost-effective.
+                      <p className="text-sm text-yellow-800 mb-2">
+                        <strong>Why this optimization:</strong> Optimized for speed with the lowest cost in the GPT-5 series.
                       </p>
                       <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"COST-EFFECTIVE LEARNING MODE: As GPT-4.1 Mini, provide excellent educational value:
-• Focus on clear, accessible explanations for student understanding
-• Encourage students to verify important claims with additional sources
-• Provide foundational knowledge while maintaining academic standards"`}
+                        {`"ULTRA-FAST LEARNING MODE: As GPT-5 Nano, provide quick, efficient educational support:
+• Deliver concise, clear explanations optimized for summarization and classification
+• Focus on essential concepts and quick comprehension
+• Ideal for rapid review and basic understanding tasks"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-blue-900">GPT-5 Mini - Balanced Performance Mode</h5>
+                      </div>
+                      <p className="text-sm text-blue-800 mb-2">
+                        <strong>Why this optimization:</strong> Balanced performance with enhanced reasoning capabilities.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"BALANCED PERFORMANCE MODE: As GPT-5 Mini, provide excellent educational value with enhanced reasoning:
+• Deliver well-structured explanations with improved logical reasoning
+• Excel at well-defined tasks with precise educational outcomes
+• Balance speed and depth for optimal learning efficiency"`}
                       </div>
                     </div>
 
                     <div className="border border-indigo-200 rounded-lg p-4 bg-indigo-50">
                       <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-indigo-900">GPT-4.1 - Advanced Coding & Analysis Mode</h5>
+                        <h5 className="font-semibold text-indigo-900">GPT-5 - Premium Coding & Reasoning Mode</h5>
                       </div>
                       <p className="text-sm text-indigo-800 mb-2">
-                        <strong>Why this optimization:</strong> GPT-4.1 has superior coding performance and technical analysis.
+                        <strong>Why this optimization:</strong> GPT-5 is the flagship model for coding and complex reasoning.
                       </p>
                       <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"ADVANCED CODING & ANALYSIS MODE: As GPT-4.1, excel at technical and analytical tasks:
-• Provide detailed technical explanations with proper documentation
-• Focus on problem-solving methodologies and best practices
-• Include relevant technical sources and standards when applicable"`}
+                        {`"PREMIUM CODING & REASONING MODE: As GPT-5, excel at complex coding and agentic tasks:
+• Provide comprehensive technical analysis with superior reasoning capabilities
+• Excel at complex problem-solving across all domains
+• Leverage 400K context window for extensive code and document analysis
+• Ideal for advanced coding, mathematical reasoning, and multi-step problems"`}
                       </div>
                     </div>
                   </div>
@@ -694,7 +718,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                     <div className="space-y-3 text-sm text-green-800">
                       <div>
                         <strong>Quick Questions & Homework Help:</strong>
-                        <p>Use GPT-4.1 Mini for cost-effective, reliable responses</p>
+                        <p>Use GPT-5 Mini for balanced performance or GPT-5 Nano for ultra-fast responses</p>
                       </div>
                       <div>
                         <strong>Educational Research & Analysis:</strong>
@@ -706,7 +730,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                       </div>
                       <div>
                         <strong>Advanced Research Projects:</strong>
-                        <p>Claude Opus 4 for premium quality, or Sonar Pro for current information</p>
+                        <p>Claude Opus 4 for premium quality, GPT-5 for complex reasoning, or Sonar Pro for current information</p>
                       </div>
                       <div>
                         <strong>Multimodal Tasks (Images/Documents):</strong>
@@ -718,8 +742,8 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-3">💰 Cost Management</h4>
                     <ul className="space-y-2 text-sm text-blue-800">
-                      <li>• Start with less expensive models (GPT-4.1 Mini, Claude Sonnet 4)</li>
-                      <li>• Use premium models (Claude Opus 4, GPT-4.1) only when needed</li>
+                      <li>• Start with less expensive models (GPT-5 Nano, GPT-5 Mini, Claude Sonnet 4)</li>
+                      <li>• Use premium models (GPT-5, Claude Opus 4) only when needed</li>
                       <li>• Keep conversations focused to reduce token usage</li>
                       <li>• Remember that longer conversations cost more due to history</li>
                       <li>• Check the cost warning indicators before sending messages</li>

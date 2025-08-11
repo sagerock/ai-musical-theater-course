@@ -59,8 +59,8 @@ export const analyticsApi = {
         if (!modelName) {
           // Check if there's a response that might indicate the model
           if (chat.response && chat.response.length > 0) {
-            // For now, assume GPT-4.1 Mini as default since that's our new default
-            modelName = 'GPT-4.1 Mini';
+            // For now, assume GPT-5 Mini as default since that's our new default
+            modelName = 'GPT-5 Mini';
           } else {
             modelName = 'unknown';
           }
