@@ -15,7 +15,8 @@ import {
   CogIcon,
   AcademicCapIcon,
   DocumentTextIcon,
-  QuestionMarkCircleIcon
+  QuestionMarkCircleIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
@@ -171,6 +172,22 @@ export default function Layout() {
                           Projects
                         </Link>
                         
+                        {/* Show Library for students */}
+                        {courseMembership.role === 'student' && (
+                          <Link
+                            to={`/course/${courseMembership.courses.id}/library`}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                              location.pathname === `/course/${courseMembership.courses.id}/library`
+                                ? 'bg-primary-50 text-primary-600'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                            }`}
+                          >
+                            <BookOpenIcon className="mr-2 h-4 w-4" />
+                            Library
+                          </Link>
+                        )}
+                        
                         {/* Show Instructor Notes for users with teaching permissions */}
                         {hasTeachingPermissions(courseMembership.role) && (
                           <Link
@@ -285,6 +302,21 @@ export default function Layout() {
                             <FolderIcon className="mr-2 h-4 w-4" />
                             Projects
                           </Link>
+                          
+                          {/* Show Library for students */}
+                          {courseMembership.role === 'student' && (
+                            <Link
+                              to={`/course/${courseMembership.courses.id}/library`}
+                              className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                location.pathname === `/course/${courseMembership.courses.id}/library`
+                                  ? 'bg-primary-50 text-primary-600'
+                                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                              }`}
+                            >
+                              <BookOpenIcon className="mr-2 h-4 w-4" />
+                              Library
+                            </Link>
+                          )}
                           
                           {/* Show Instructor Notes for users with teaching permissions */}
                           {hasTeachingPermissions(courseMembership.role) && (

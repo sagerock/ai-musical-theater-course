@@ -69,16 +69,37 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
         };
       });
       
-      console.log('📎 Raw attachments data from Firebase:', attachmentsData);
-      console.log('📎 Loaded attachments with types:', mappedAttachments.map((a, index) => ({
+      // Deduplicate by file name and size, keeping the newest version
+      const uniqueAttachments = [];
+      const seenFiles = new Map();
+      
+      // Sort by date first (newest first) so we keep the newest when deduplicating
+      mappedAttachments.sort((a, b) => {
+        const dateA = a.uploaded_at ? (a.uploaded_at.toDate ? a.uploaded_at.toDate() : new Date(a.uploaded_at)) : new Date(0);
+        const dateB = b.uploaded_at ? (b.uploaded_at.toDate ? b.uploaded_at.toDate() : new Date(b.uploaded_at)) : new Date(0);
+        return dateB - dateA;
+      });
+      
+      mappedAttachments.forEach(attachment => {
+        const key = `${attachment.file_name}_${attachment.file_size}`;
+        
+        if (!seenFiles.has(key)) {
+          seenFiles.set(key, true);
+          uniqueAttachments.push(attachment);
+        } else {
+          console.log(`📎 Skipping duplicate: ${attachment.file_name} (keeping newer version)`);
+        }
+      });
+      
+      console.log(`📎 Deduplicated attachments: ${mappedAttachments.length} → ${uniqueAttachments.length}`);
+      console.log('📎 Final attachments:', uniqueAttachments.map(a => ({
+        id: a.id,
         name: a.file_name,
         type: a.file_type,
-        originalType: attachmentsData[index]?.fileType,
-        hasFileType: !!attachmentsData[index]?.fileType,
-        storagePath: a.storage_path
+        size: a.file_size
       })));
       
-      setAttachments(mappedAttachments);
+      setAttachments(uniqueAttachments);
     } catch (error) {
       console.error('Error loading attachments:', error);
       toast.error('Failed to load attachments');

@@ -2154,6 +2154,132 @@ export const attachmentApi = {
     }
   },
 
+  async getStudentAttachments(courseId, studentId) {
+    console.log('📚 getStudentAttachments:', courseId, studentId);
+    
+    try {
+      // Get all projects for this student in the course
+      // Based on createProject, fields are: createdBy and courseId (camelCase)
+      const projectsQuery = query(
+        collection(db, 'projects'),
+        where('courseId', '==', courseId),
+        where('createdBy', '==', studentId)
+      );
+      const projectsSnapshot = await getDocs(projectsQuery);
+      let projectIds = projectsSnapshot.docs.map(doc => doc.id);
+      
+      if (projectIds.length === 0) {
+        console.log('📚 No projects found for student in course');
+        return [];
+      }
+      
+      console.log('📚 Found student projects:', projectIds.length);
+      
+      // Get all chats for these projects (in batches if needed)
+      const allChatIds = [];
+      for (let i = 0; i < projectIds.length; i += 10) {
+        const projectBatch = projectIds.slice(i, i + 10);
+        
+        // Try with projectId field first
+        let chatsQuery = query(
+          collection(db, 'chats'),
+          where('projectId', 'in', projectBatch),
+          where('userId', '==', studentId)
+        );
+        let chatsSnapshot = await getDocs(chatsQuery);
+        
+        // If no results, try with underscore field names
+        if (chatsSnapshot.empty) {
+          chatsQuery = query(
+            collection(db, 'chats'),
+            where('project_id', 'in', projectBatch),
+            where('user_id', '==', studentId)
+          );
+          chatsSnapshot = await getDocs(chatsQuery);
+        }
+        
+        const chatIds = chatsSnapshot.docs.map(doc => doc.id);
+        allChatIds.push(...chatIds);
+      }
+      
+      if (allChatIds.length === 0) {
+        console.log('📚 No chats found for student projects');
+        return [];
+      }
+      
+      console.log('📚 Found student chats:', allChatIds.length);
+      
+      // Get all attachments for these chats (in batches if needed)
+      const allAttachments = [];
+      for (let i = 0; i < allChatIds.length; i += 10) {
+        const chatBatch = allChatIds.slice(i, i + 10);
+        const attachmentsQuery = query(
+          collection(db, 'pdfAttachments'),
+          where('chatId', 'in', chatBatch),
+          orderBy('createdAt', 'desc')
+        );
+        const attachmentsSnapshot = await getDocs(attachmentsQuery);
+        allAttachments.push(...attachmentsSnapshot.docs);
+      }
+      
+      // Deduplicate attachments by ID
+      const uniqueAttachmentDocs = Array.from(
+        new Map(allAttachments.map(doc => [doc.id, doc])).values()
+      );
+      
+      console.log('📚 Found student attachments:', uniqueAttachmentDocs.length);
+      
+      // Get project details for each attachment
+      const attachments = [];
+      const projectCache = new Map();
+      
+      for (const attachmentDoc of uniqueAttachmentDocs) {
+        const attachment = { id: attachmentDoc.id, ...attachmentDoc.data() };
+        
+        // Get project info from chat
+        const chatDoc = await getDoc(doc(db, 'chats', attachment.chatId));
+        if (chatDoc.exists()) {
+          const chatData = chatDoc.data();
+          
+          // Get or cache project details (try both field names)
+          const projectId = chatData.projectId || chatData.project_id;
+          if (projectId) {
+            let projectData;
+            if (projectCache.has(projectId)) {
+              projectData = projectCache.get(projectId);
+            } else {
+              const projectDoc = await getDoc(doc(db, 'projects', projectId));
+              if (projectDoc.exists()) {
+                projectData = projectDoc.data();
+                projectCache.set(projectId, projectData);
+              }
+            }
+            
+            if (projectData) {
+              attachment.project = projectData;
+            }
+          }
+        }
+        
+        attachments.push(attachment);
+      }
+      
+      // Sort by date (newest first)
+      attachments.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      console.log('📚 Returning student attachments:', attachments.length);
+      return attachments;
+      
+    } catch (error) {
+      console.error('❌ Error getting student attachments:', error);
+      return [];
+    }
+  },
+
   async getCourseAttachments(courseId, instructorId) {
     console.log('🔥 getCourseAttachments:', courseId, instructorId);
     

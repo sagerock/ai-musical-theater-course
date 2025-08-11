@@ -14,6 +14,7 @@ import Projects from './components/Projects/Projects';
 import InstructorDashboardContainer from './components/Instructor/InstructorDashboardContainer';
 import InstructorNotesList from './components/Instructor/InstructorNotesList';
 import Students from './components/Instructor/Students';
+import StudentLibraryWrapper from './components/Student/StudentLibraryWrapper';
 import AdminPanel from './components/Admin/AdminPanel';
 import SchoolAdminDashboard from './components/SchoolAdmin/SchoolAdminDashboard';
 import CourseJoin from './components/Course/CourseJoin';
@@ -49,6 +50,9 @@ function App() {
           </Route>
           <Route path="/course/:courseId/projects" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Projects />} />
+          </Route>
+          <Route path="/course/:courseId/library" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<StudentLibraryWrapper />} />
           </Route>
           <Route path="/course/:courseId/instructor-notes" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<InstructorRoute><InstructorNotesList /></InstructorRoute>} />
