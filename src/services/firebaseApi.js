@@ -2088,6 +2088,7 @@ export const attachmentApi = {
         userId,
         fileName: file.name,
         fileSize: file.size,
+        fileType: file.type || 'application/octet-stream', // Add file type
         storageRef: snapshot.ref.fullPath,
         downloadURL,
         extractedText,

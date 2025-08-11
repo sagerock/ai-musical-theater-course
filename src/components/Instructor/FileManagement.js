@@ -103,17 +103,17 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
     setFilteredAttachments(filtered);
   };
 
-  const handleDownloadPDF = async (attachment) => {
+  const handleDownloadFile = async (attachment) => {
     try {
-      console.log('📎 Downloading PDF:', attachment.file_name);
+      console.log('📎 Downloading file:', attachment.file_name);
       const downloadUrl = await attachmentApi.getAttachmentDownloadUrl(attachment.storage_path);
       
       // Open in new tab for download
       window.open(downloadUrl, '_blank');
-      toast.success('PDF download started');
+      toast.success('File download started');
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast.error('Failed to download PDF');
+      console.error('Error downloading file:', error);
+      toast.error('Failed to download file');
     }
   };
 
@@ -128,10 +128,31 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
   };
 
   const getFileIcon = (fileType) => {
+    // Handle different file types
     if (fileType === 'application/pdf') {
       return <DocumentTextIcon className="h-5 w-5 text-red-500" />;
+    } else if (fileType === 'text/plain') {
+      return <DocumentTextIcon className="h-5 w-5 text-blue-500" />;
+    } else if (fileType === 'application/msword' || 
+               fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      return <DocumentTextIcon className="h-5 w-5 text-indigo-500" />;
     }
     return <DocumentTextIcon className="h-5 w-5 text-gray-500" />;
+  };
+
+  const getFileTypeLabel = (fileType, fileName) => {
+    // Determine file type label based on MIME type or file extension
+    if (fileType === 'application/pdf' || fileName?.toLowerCase().endsWith('.pdf')) {
+      return 'PDF';
+    } else if (fileType === 'text/plain' || fileName?.toLowerCase().endsWith('.txt')) {
+      return 'TXT';
+    } else if (fileType === 'application/msword' || fileName?.toLowerCase().endsWith('.doc')) {
+      return 'DOC';
+    } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+               fileName?.toLowerCase().endsWith('.docx')) {
+      return 'DOCX';
+    }
+    return 'File';
   };
 
   if (loading) {
@@ -210,6 +231,9 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
                         <h3 className="text-sm font-medium text-gray-900 truncate">
                           {attachment.file_name}
                         </h3>
+                        <span className="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                          {getFileTypeLabel(attachment.file_type, attachment.file_name)}
+                        </span>
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           {formatFileSize(attachment.file_size)}
                         </span>
@@ -253,7 +277,7 @@ export default function FileManagement({ selectedCourseId, selectedCourse, curre
                   {/* Actions */}
                   <div className="flex-shrink-0 ml-4">
                     <button
-                      onClick={() => handleDownloadPDF(attachment)}
+                      onClick={() => handleDownloadFile(attachment)}
                       className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
