@@ -40,7 +40,19 @@ export default function MarkdownRenderer({ children }) {
       '<em>$1</em>'
     );
 
-    // Handle headers
+    // Handle headers (h1-h6)
+    formatted = formatted.replace(
+      /^###### (.*$)/gm,
+      '<h6>$1</h6>'
+    );
+    formatted = formatted.replace(
+      /^##### (.*$)/gm,
+      '<h5>$1</h5>'
+    );
+    formatted = formatted.replace(
+      /^#### (.*$)/gm,
+      '<h4>$1</h4>'
+    );
     formatted = formatted.replace(
       /^### (.*$)/gm,
       '<h3>$1</h3>'
