@@ -13,7 +13,8 @@ import {
   onSnapshot,
   serverTimestamp,
   writeBatch,
-  setDoc
+  setDoc,
+  increment
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -23,7 +24,7 @@ import {
 } from 'firebase/storage';
 import { db, storage, functions, auth } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { extractTextFromDocument, isSupportedDocument, getDocumentType } from '../utils/documentExtractor';
+import { extractTextFromDocument, isSupportedDocument, getDocumentType } from '../utils/documentExtractorWithOCR';
 import emailService from './emailService';
 import approvalEmailService from './approvalEmailService';
 
@@ -2398,6 +2399,235 @@ export const attachmentApi = {
     } catch (error) {
       console.error('❌ Error getting course attachments:', error);
       return [];
+    }
+  },
+
+  // Course Materials API (for instructor-managed library)
+  async uploadCourseMaterial(materialData) {
+    console.log('📚 uploadCourseMaterial:', materialData.file.name);
+    
+    try {
+      const { file, courseId, uploadedBy, category, visibility, title, description } = materialData;
+      
+      // Extract text from document if supported
+      let extractedText = '';
+      if (isSupportedDocument(file)) {
+        const docType = getDocumentType(file);
+        console.log(`📄 Extracting text from ${docType} document...`);
+        extractedText = await extractTextFromDocument(file);
+      }
+      
+      // Create storage reference for course materials
+      const fileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `course-materials/${courseId}/${fileName}`);
+      
+      // Upload file
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      // Create course material document
+      const materialDoc = {
+        courseId,
+        uploadedBy,
+        title: title || file.name.replace(/\.[^/.]+$/, ''),
+        description: description || '',
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type || 'application/octet-stream',
+        category: category || 'resource',
+        visibility: visibility || 'visible',
+        storageRef: snapshot.ref.fullPath,
+        downloadURL,
+        extractedText,
+        uploadedAt: serverTimestamp(),
+        accessCount: 0,
+        lastAccessed: null
+      };
+      
+      const docRef = await addDoc(collection(db, 'courseMaterials'), materialDoc);
+      
+      return {
+        id: docRef.id,
+        ...materialDoc,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        uploaded_at: new Date()
+      };
+      
+    } catch (error) {
+      console.error('❌ Error uploading course material:', error);
+      throw error;
+    }
+  },
+
+  async getCourseMaterials(courseId) {
+    console.log('📚 getCourseMaterials:', courseId);
+    
+    try {
+      const materialsQuery = query(
+        collection(db, 'courseMaterials'),
+        where('courseId', '==', courseId),
+        orderBy('uploadedAt', 'desc')
+      );
+      
+      const snapshot = await getDocs(materialsQuery);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          file_name: data.fileName,
+          file_size: data.fileSize,
+          file_type: data.fileType,
+          uploaded_at: data.uploadedAt?.toDate ? data.uploadedAt.toDate() : new Date(data.uploadedAt || 0)
+        };
+      });
+    } catch (error) {
+      console.error('❌ Error getting course materials:', error);
+      return [];
+    }
+  },
+
+  async getVisibleCourseMaterials(courseId) {
+    console.log('📚 getVisibleCourseMaterials:', courseId);
+    
+    try {
+      // Simplified query - just filter by courseId and visibility
+      const materialsQuery = query(
+        collection(db, 'courseMaterials'),
+        where('courseId', '==', courseId),
+        where('visibility', '==', 'visible')
+      );
+      
+      const snapshot = await getDocs(materialsQuery);
+      const materials = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          file_name: data.fileName,
+          file_size: data.fileSize,
+          file_type: data.fileType,
+          uploaded_at: data.uploadedAt?.toDate ? data.uploadedAt.toDate() : new Date(data.uploadedAt || 0)
+        };
+      });
+      
+      // Sort in JavaScript instead of Firestore
+      materials.sort((a, b) => {
+        // First by category
+        const catCompare = (a.category || '').localeCompare(b.category || '');
+        if (catCompare !== 0) return catCompare;
+        // Then by date (newest first)
+        return (b.uploaded_at || new Date(0)) - (a.uploaded_at || new Date(0));
+      });
+      
+      console.log(`📚 Found ${materials.length} visible course materials for course ${courseId}`);
+      return materials;
+    } catch (error) {
+      console.error('❌ Error getting visible course materials:', error);
+      console.error('Error details:', error.message);
+      return [];
+    }
+  },
+
+  async updateCourseMaterial(materialId, updates) {
+    console.log('📚 updateCourseMaterial:', materialId);
+    
+    try {
+      const materialRef = doc(db, 'courseMaterials', materialId);
+      await updateDoc(materialRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating course material:', error);
+      throw error;
+    }
+  },
+
+  async deleteCourseMaterial(materialId) {
+    console.log('📚 deleteCourseMaterial:', materialId);
+    
+    try {
+      // Get the material first to delete the storage file
+      const materialRef = doc(db, 'courseMaterials', materialId);
+      const materialDoc = await getDoc(materialRef);
+      
+      if (materialDoc.exists()) {
+        const data = materialDoc.data();
+        
+        // Delete from storage if path exists
+        if (data.storageRef) {
+          try {
+            const storageRefObj = ref(storage, data.storageRef);
+            await deleteObject(storageRefObj);
+          } catch (storageError) {
+            console.warn('Could not delete storage file:', storageError);
+          }
+        }
+        
+        // Delete the document
+        await deleteDoc(materialRef);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting course material:', error);
+      throw error;
+    }
+  },
+
+  async trackMaterialAccess(materialId, userId) {
+    console.log('📚 trackMaterialAccess:', materialId);
+    
+    try {
+      const materialRef = doc(db, 'courseMaterials', materialId);
+      await updateDoc(materialRef, {
+        accessCount: increment(1),
+        lastAccessed: serverTimestamp(),
+        lastAccessedBy: userId
+      });
+    } catch (error) {
+      console.error('Warning: Could not track material access:', error);
+    }
+  },
+
+  async deleteAttachment(attachmentId) {
+    console.log('🗑️ deleteAttachment:', attachmentId);
+    
+    try {
+      // Get the attachment first to delete the storage file
+      const attachmentRef = doc(db, 'pdfAttachments', attachmentId);
+      const attachmentDoc = await getDoc(attachmentRef);
+      
+      if (attachmentDoc.exists()) {
+        const data = attachmentDoc.data();
+        
+        // Delete from storage if path exists
+        if (data.storageRef || data.storagePath) {
+          try {
+            const storagePath = data.storageRef || data.storagePath;
+            const storageRefObj = ref(storage, storagePath);
+            await deleteObject(storageRefObj);
+            console.log('🗑️ Deleted file from storage:', storagePath);
+          } catch (storageError) {
+            console.warn('Could not delete storage file:', storageError);
+          }
+        }
+        
+        // Delete the document from Firestore
+        await deleteDoc(attachmentRef);
+        console.log('🗑️ Deleted attachment document from Firestore');
+        
+        return { success: true };
+      } else {
+        throw new Error('Attachment not found');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting attachment:', error);
+      throw error;
     }
   }
 };

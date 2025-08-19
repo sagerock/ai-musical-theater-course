@@ -415,5 +415,33 @@ service cloud.firestore {
       // Users can query their own requests, admins can query all
       allow list: if isAuthenticated();
     }
+    
+    // COURSE MATERIALS - Instructor-managed library of course documents
+    match /courseMaterials/{materialId} {
+      // All course members can read visible materials, instructors can read all materials
+      allow read: if isAuthenticated() && (
+        // Students can read visible materials in their courses
+        (resource.data.visibility == 'visible' && isMemberOfCourse(resource.data.courseId)) ||
+        // Instructors and TAs can read all materials in their courses
+        hasTeachingPermissionsInCourse(resource.data.courseId) ||
+        // Global admins can read all materials
+        isGlobalAdmin()
+      );
+      
+      // Allow collection queries for course members
+      allow list: if isAuthenticated();
+      
+      // Only instructors and TAs can create course materials
+      allow create: if isAuthenticated() && (
+        hasTeachingPermissionsInCourse(request.resource.data.courseId) ||
+        isGlobalAdmin()
+      );
+      
+      // Only instructors and TAs can update/delete course materials
+      allow update, delete: if isAuthenticated() && (
+        hasTeachingPermissionsInCourse(resource.data.courseId) ||
+        isGlobalAdmin()
+      );
+    }
   }
 }

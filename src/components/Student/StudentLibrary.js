@@ -15,13 +15,16 @@ import {
   ChatBubbleLeftRightIcon,
   CloudArrowUpIcon,
   PlusIcon,
-  ClockIcon as HistoryIcon
+  ClockIcon as HistoryIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 export default function StudentLibrary({ selectedCourseId, selectedCourse, currentUser }) {
   const navigate = useNavigate();
   const [attachments, setAttachments] = useState([]);
+  const [courseMaterials, setCourseMaterials] = useState([]);
   const [filteredAttachments, setFilteredAttachments] = useState([]);
+  const [filteredMaterials, setFilteredMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -29,18 +32,20 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [libraryProjectId, setLibraryProjectId] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('personal'); // 'personal' or 'course'
   const fileInputRef = React.useRef();
 
   useEffect(() => {
     if (selectedCourseId && currentUser) {
       loadAttachments();
+      loadCourseMaterials();
       findOrCreateLibraryProject();
     }
   }, [selectedCourseId, currentUser]);
 
   useEffect(() => {
     applyFilters();
-  }, [attachments, searchTerm, sortBy]);
+  }, [attachments, courseMaterials, searchTerm, sortBy, activeTab]);
 
   const loadAttachments = async () => {
     try {
@@ -112,51 +117,96 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...attachments];
+  const loadCourseMaterials = async () => {
+    try {
+      const materials = await attachmentApi.getVisibleCourseMaterials(selectedCourseId);
+      
+      // Format materials for consistent display
+      const formattedMaterials = materials.map(material => ({
+        ...material,
+        isCourseMaterial: true,
+        project_title: material.category ? 
+          MATERIAL_CATEGORIES.find(c => c.value === material.category)?.label || 'Resource' : 
+          'Course Material'
+      }));
+      
+      console.log(`📚 Course Library: Loaded ${formattedMaterials.length} course materials`);
+      setCourseMaterials(formattedMaterials);
+    } catch (error) {
+      console.error('Error loading course materials:', error);
+      // Don't show error toast - course materials might not exist yet
+    }
+  };
 
-    // Apply search filter
+  const MATERIAL_CATEGORIES = [
+    { value: 'syllabus', label: 'Syllabus' },
+    { value: 'required', label: 'Required Reading' },
+    { value: 'supplemental', label: 'Supplemental' },
+    { value: 'template', label: 'Templates' },
+    { value: 'assignment', label: 'Assignments' },
+    { value: 'resource', label: 'Resources' }
+  ];
+
+  const applyFilters = () => {
+    // Filter personal attachments
+    let filteredPersonal = [...attachments];
+    
+    // Filter course materials
+    let filteredCourse = [...courseMaterials];
+
+    // Apply search filter to both
     if (searchTerm) {
-      filtered = filtered.filter(attachment =>
+      filteredPersonal = filteredPersonal.filter(attachment =>
         attachment.file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         attachment.project_title?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      
+      filteredCourse = filteredCourse.filter(material =>
+        material.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        material.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        material.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        material.project_title?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
-    // Apply sorting
-    switch (sortBy) {
-      case 'newest':
-        filtered.sort((a, b) => {
-          const dateA = a.uploaded_at ? (a.uploaded_at.toDate ? a.uploaded_at.toDate() : new Date(a.uploaded_at)) : new Date(0);
-          const dateB = b.uploaded_at ? (b.uploaded_at.toDate ? b.uploaded_at.toDate() : new Date(b.uploaded_at)) : new Date(0);
-          return dateB - dateA;
-        });
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => {
-          const dateA = a.uploaded_at ? (a.uploaded_at.toDate ? a.uploaded_at.toDate() : new Date(a.uploaded_at)) : new Date(0);
-          const dateB = b.uploaded_at ? (b.uploaded_at.toDate ? b.uploaded_at.toDate() : new Date(b.uploaded_at)) : new Date(0);
-          return dateA - dateB;
-        });
-        break;
-      case 'filename':
-        filtered.sort((a, b) => a.file_name.localeCompare(b.file_name));
-        break;
-      case 'project':
-        filtered.sort((a, b) => (a.project_title || '').localeCompare(b.project_title || ''));
-        break;
-      case 'size':
-        filtered.sort((a, b) => {
-          const sizeA = a.file_size || 0;
-          const sizeB = b.file_size || 0;
-          return sizeB - sizeA;
-        });
-        break;
-      default:
-        break;
-    }
+    // Apply sorting function
+    const sortDocuments = (docs) => {
+      switch (sortBy) {
+        case 'newest':
+          docs.sort((a, b) => {
+            const dateA = a.uploaded_at ? (a.uploaded_at.toDate ? a.uploaded_at.toDate() : new Date(a.uploaded_at)) : new Date(0);
+            const dateB = b.uploaded_at ? (b.uploaded_at.toDate ? b.uploaded_at.toDate() : new Date(b.uploaded_at)) : new Date(0);
+            return dateB - dateA;
+          });
+          break;
+        case 'oldest':
+          docs.sort((a, b) => {
+            const dateA = a.uploaded_at ? (a.uploaded_at.toDate ? a.uploaded_at.toDate() : new Date(a.uploaded_at)) : new Date(0);
+            const dateB = b.uploaded_at ? (b.uploaded_at.toDate ? b.uploaded_at.toDate() : new Date(b.uploaded_at)) : new Date(0);
+            return dateA - dateB;
+          });
+          break;
+        case 'filename':
+          docs.sort((a, b) => (a.file_name || a.title || '').localeCompare(b.file_name || b.title || ''));
+          break;
+        case 'project':
+          docs.sort((a, b) => (a.project_title || '').localeCompare(b.project_title || ''));
+          break;
+        case 'size':
+          docs.sort((a, b) => {
+            const sizeA = a.file_size || 0;
+            const sizeB = b.file_size || 0;
+            return sizeB - sizeA;
+          });
+          break;
+        default:
+          break;
+      }
+      return docs;
+    };
 
-    setFilteredAttachments(filtered);
+    setFilteredAttachments(sortDocuments(filteredPersonal));
+    setFilteredMaterials(sortDocuments(filteredCourse));
   };
 
   const handleDownloadFile = async (attachment) => {
@@ -216,6 +266,31 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
     };
     setSelectedDocument(documentWithText);
     setShowChatModal(true);
+  };
+
+  const handleDeleteDocument = async (attachment) => {
+    // Check if it's a personal document or course material
+    if (attachment.isCourseMaterial) {
+      toast.error('Only instructors can delete course materials');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete "${attachment.file_name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Delete the attachment
+      await attachmentApi.deleteAttachment(attachment.id);
+      
+      toast.success('Document deleted successfully');
+      
+      // Reload attachments
+      loadAttachments();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast.error('Failed to delete document');
+    }
   };
 
   const handleFileUpload = async (event) => {
@@ -329,16 +404,20 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center">
             <BookOpenIcon className="h-7 w-7 mr-2 text-primary-600" />
-            My Library
+            Course Library
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            All your uploaded documents for {selectedCourse?.name || 'this course'}
+            Documents and resources for {selectedCourse?.name || 'this course'}
           </p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <div className="text-2xl font-bold text-primary-600">{attachments.length}</div>
-            <div className="text-sm text-gray-600">Total Files</div>
+            <div className="text-2xl font-bold text-primary-600">
+              {activeTab === 'personal' ? attachments.length : courseMaterials.length}
+            </div>
+            <div className="text-sm text-gray-600">
+              {activeTab === 'personal' ? 'My Files' : 'Course Files'}
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             {libraryProjectId && (
@@ -358,11 +437,12 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
               onChange={handleFileUpload}
               className="hidden"
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || !libraryProjectId}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            {activeTab === 'personal' && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || !libraryProjectId}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
               {uploading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
@@ -374,7 +454,47 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
                   Upload Document
                 </>
               )}
-            </button>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('personal')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'personal'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            My Documents ({attachments.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('course')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'course'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Course Materials ({courseMaterials.length})
+          </button>
+        </nav>
+      </div>
+
+      {/* Document Capabilities Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+        <div className="flex items-start">
+          <DocumentTextIcon className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <span className="font-semibold">Supported formats:</span> PDF (with OCR for scanned docs), Word (.doc/.docx), 
+            Text (.txt), PowerPoint (.ppt/.pptx), Excel (.xls/.xlsx) • 
+            <span className="font-semibold">Features:</span> Full text extraction for PDF/Word/TXT, 
+            chat with documents, search within content
           </div>
         </div>
       </div>
@@ -412,17 +532,26 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
 
       {/* Files Grid */}
       <div className="bg-white rounded-lg shadow border border-gray-200">
-        {filteredAttachments.length === 0 ? (
-          <div className="text-center py-12">
-            <DocumentIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No files found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm ? 'Try adjusting your search terms' : 'Upload files in your projects to see them here'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-            {filteredAttachments.map((attachment) => (
+        {(() => {
+          const displayItems = activeTab === 'personal' ? filteredAttachments : filteredMaterials;
+          
+          if (displayItems.length === 0) {
+            return (
+              <div className="text-center py-12">
+                <DocumentIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No files found</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {searchTerm ? 'Try adjusting your search terms' : 
+                   activeTab === 'personal' ? 'Upload files in your projects to see them here' : 
+                   'No course materials have been shared yet'}
+                </p>
+              </div>
+            );
+          }
+          
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+              {displayItems.map((attachment) => (
               <div key={attachment.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center">
@@ -446,12 +575,25 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
                     >
                       <ArrowDownTrayIcon className="h-5 w-5" />
                     </button>
+                    {/* Only show delete for personal documents, not course materials */}
+                    {!attachment.isCourseMaterial && (
+                      <button
+                        onClick={() => handleDeleteDocument(attachment)}
+                        className="p-1 text-gray-500 hover:text-red-600 transition-colors"
+                        title="Delete document"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 
-                <h3 className="text-sm font-medium text-gray-900 truncate mb-1" title={attachment.file_name}>
-                  {attachment.file_name}
+                <h3 className="text-sm font-medium text-gray-900 truncate mb-1" title={attachment.title || attachment.file_name}>
+                  {attachment.title || attachment.file_name}
                 </h3>
+                {attachment.description && (
+                  <p className="text-xs text-gray-500 truncate">{attachment.description}</p>
+                )}
                 
                 <div className="space-y-1 text-xs text-gray-500">
                   <div className="flex items-center">
@@ -484,8 +626,9 @@ export default function StudentLibrary({ selectedCourseId, selectedCourse, curre
                 </div>
               </div>
             ))}
-          </div>
-        )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Summary Stats */}

@@ -22,6 +22,7 @@ import TaggingModal from './TaggingModal';
 import ReflectionModal from './ReflectionModal';
 import InstructorNotes from '../Instructor/InstructorNotes';
 import AIModelsEducationModal from './AIModelsEducationModal';
+import DocumentSelectionModal from './DocumentSelectionModal';
 
 export default function Chat() {
   const { projectId } = useParams();
@@ -43,6 +44,7 @@ export default function Chat() {
   const [showTaggingModal, setShowTaggingModal] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [showAIModelsModal, setShowAIModelsModal] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [currentChatForModal, setCurrentChatForModal] = useState(null);
 
   // Access control - check if user can send AI messages
@@ -210,11 +212,13 @@ export default function Chat() {
     }
   };
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleDocumentSelect = async (document, source) => {
+    if (source === 'upload') {
+      // Handle new file upload
+      const file = document;
+      
       // Validate file type - accept multiple formats
-      const allowedTypes = ['pdf', 'txt', 'docx', 'doc'];
+      const allowedTypes = ['pdf', 'txt', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
       const fileType = file.type.toLowerCase();
       const fileName = file.name.toLowerCase();
       
@@ -225,12 +229,16 @@ export default function Chat() {
         fileType === 'text/plain' ||
         fileType === 'application/msword' ||
         fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        fileType === 'application/vnd.ms-powerpoint' ||
+        fileType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+        fileType === 'application/vnd.ms-excel' ||
+        fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
         // Check by file extension as fallback
         allowedTypes.some(type => fileName.endsWith(`.${type}`));
       
       if (!isValidType) {
         console.log('File validation failed:', { fileType, fileName });
-        toast.error('Supported formats: PDF, TXT, DOC, DOCX. Your file type: ' + (fileType || 'unknown'));
+        toast.error('Supported formats: PDF, TXT, DOC, DOCX, PPT, PPTX, XLS, XLSX. Your file type: ' + (fileType || 'unknown'));
         return;
       }
       
@@ -259,7 +267,24 @@ export default function Chat() {
       }
       
       toast.success(`File selected: ${file.name}`);
+    } else if (source === 'personal' || source === 'course') {
+      // Handle document from library
+      // For library documents, we'll use the existing document data
+      // Store it in a different format so we can handle it differently in handleSendMessage
+      setSelectedFile({
+        isLibraryDocument: true,
+        source: source,
+        documentId: document.id,
+        fileName: document.file_name || document.fileName,
+        extractedText: document.extracted_text || document.extractedText,
+        downloadURL: document.downloadURL
+      });
+      
+      toast.success(`Document selected from ${source === 'personal' ? 'your' : 'course'} library: ${document.file_name || document.fileName}`);
     }
+    
+    // Close the modal
+    setShowDocumentModal(false);
   };
 
   const removeSelectedFile = () => {
@@ -278,7 +303,8 @@ export default function Chat() {
     
     // If there's a file but no text prompt, create a default prompt
     if (selectedFile && !userPrompt) {
-      finalPrompt = `I've uploaded a PDF file "${selectedFile.name}". Please analyze its content and provide insights.`;
+      const fileName = selectedFile.isLibraryDocument ? selectedFile.fileName : selectedFile.name;
+      finalPrompt = `I've uploaded a document "${fileName}". Please analyze its content and provide insights.`;
     }
     
     setPrompt('');
@@ -290,46 +316,52 @@ export default function Chat() {
         .filter(chat => chat.user_id === currentUser.id)
         .slice(-5);
 
-      // Upload PDF first if selected
+      // Handle document attachment
       let pdfContent = '';
       let tempChatId = null;
       
       if (selectedFile) {
-        try {
-          setUploading(true);
-          // Create a temporary chat record to get an ID for the PDF upload
-          const tempChatData = {
-            user_id: currentUser.id,
-            created_by: currentUser.id,
-            project_id: projectId,
-            tool_used: selectedTool,
-            prompt: finalPrompt,
-            response: 'Extracting text from PDF...', // Temporary response to satisfy NOT NULL constraint
-            title: finalPrompt.length > 50 ? finalPrompt.substring(0, 50) + '...' : finalPrompt
-          };
-          
-          const tempChat = await chatApi.createChat(tempChatData, project?.course_id);
-          tempChatId = tempChat.id;
-          
-          const attachment = await attachmentApi.uploadPDFAttachment(
-            selectedFile, 
-            tempChat.id, 
-            currentUser.id
-          );
-          
-          pdfContent = `\n\n[PDF Attachment: ${attachment.file_name}]\n${attachment.extracted_text}`;
-          
-          // Check if it was summarized (large file)
-          if (attachment.extracted_text.includes('Large PDF Document Summary')) {
-            toast.success('Large PDF uploaded and summarized successfully!');
-          } else {
-            toast.success('PDF uploaded successfully!');
+        if (selectedFile.isLibraryDocument) {
+          // Document from library - just use the extracted text
+          pdfContent = `\n\n[Document from ${selectedFile.source === 'personal' ? 'Personal' : 'Course'} Library: ${selectedFile.fileName}]\n${selectedFile.extractedText || '[No text content available]'}`;
+        } else {
+          // New file upload
+          try {
+            setUploading(true);
+            // Create a temporary chat record to get an ID for the PDF upload
+            const tempChatData = {
+              user_id: currentUser.id,
+              created_by: currentUser.id,
+              project_id: projectId,
+              tool_used: selectedTool,
+              prompt: finalPrompt,
+              response: 'Extracting text from document...', // Temporary response to satisfy NOT NULL constraint
+              title: finalPrompt.length > 50 ? finalPrompt.substring(0, 50) + '...' : finalPrompt
+            };
+            
+            const tempChat = await chatApi.createChat(tempChatData, project?.course_id);
+            tempChatId = tempChat.id;
+            
+            const attachment = await attachmentApi.uploadPDFAttachment(
+              selectedFile, 
+              tempChat.id, 
+              currentUser.id
+            );
+            
+            pdfContent = `\n\n[Document Attachment: ${attachment.file_name}]\n${attachment.extracted_text}`;
+            
+            // Check if it was summarized (large file)
+            if (attachment.extracted_text.includes('Large PDF Document Summary')) {
+              toast.success('Large document uploaded and summarized successfully!');
+            } else {
+              toast.success('Document uploaded successfully!');
+            }
+          } catch (uploadError) {
+            console.error('Document upload failed:', uploadError);
+            toast.error('Document upload failed, but message will be sent without attachment');
+          } finally {
+            setUploading(false);
           }
-        } catch (uploadError) {
-          console.error('PDF upload failed:', uploadError);
-          toast.error('PDF upload failed, but message will be sent without attachment');
-        } finally {
-          setUploading(false);
         }
       }
 
@@ -577,7 +609,18 @@ export default function Chat() {
                   <div className="flex items-center">
                     <DocumentIcon className="h-5 w-5 text-blue-600 mr-2" />
                     <span className="text-sm text-blue-800">
-                      {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                      {selectedFile.isLibraryDocument ? (
+                        <>
+                          {selectedFile.fileName} 
+                          <span className="text-xs ml-2 text-blue-600">
+                            (from {selectedFile.source === 'personal' ? 'Personal' : 'Course'} Library)
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                        </>
+                      )}
                     </span>
                   </div>
                   <button
@@ -607,22 +650,15 @@ export default function Chat() {
                 />
               </div>
               <div className="flex flex-col justify-end space-y-2">
-                {/* File Upload Button */}
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".pdf,.txt,.doc,.docx"
-                    onChange={handleFileSelect}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-                    title="Upload PDF"
-                  >
-                    <PaperClipIcon className="h-4 w-4" />
-                  </button>
-                </div>
+                {/* Document Selection Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowDocumentModal(true)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                  title="Add Document"
+                >
+                  <PaperClipIcon className="h-4 w-4" />
+                </button>
                 
                 {/* Send Button */}
                 <button
@@ -647,7 +683,7 @@ export default function Chat() {
             
             <div className="mt-3 flex items-center text-xs text-gray-500">
               <SparklesIcon className="h-4 w-4 mr-1" />
-              <span>Press Enter to send, Shift+Enter for new line • Upload PDF (full text), TXT (full text), DOC/DOCX (reference only) up to 10MB</span>
+              <span>Press Enter to send, Shift+Enter for new line • Upload PDF (with OCR), Word, TXT, PowerPoint, Excel files up to 10MB</span>
             </div>
           </>
         ) : (
@@ -692,6 +728,16 @@ export default function Chat() {
       <AIModelsEducationModal
         isOpen={showAIModelsModal}
         onClose={() => setShowAIModelsModal(false)}
+      />
+
+      {/* Document Selection Modal */}
+      <DocumentSelectionModal
+        isOpen={showDocumentModal}
+        onClose={() => setShowDocumentModal(false)}
+        onSelectDocument={handleDocumentSelect}
+        courseId={project?.course_id}
+        userId={currentUser?.id}
+        currentProjectId={projectId}
       />
     </div>
   );

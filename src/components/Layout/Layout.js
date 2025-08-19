@@ -103,7 +103,7 @@ export default function Layout() {
               <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
-          <nav className="flex-1 px-4 py-4 space-y-2">
+          <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -172,8 +172,8 @@ export default function Layout() {
                           Projects
                         </Link>
                         
-                        {/* Show Library for students */}
-                        {courseMembership.role === 'student' && (
+                        {/* Show Library for students and assistants */}
+                        {['student', 'student_assistant', 'teaching_assistant'].includes(courseMembership.role) && (
                           <Link
                             to={`/course/${courseMembership.courses.id}/library`}
                             onClick={() => setSidebarOpen(false)}
@@ -185,6 +185,22 @@ export default function Layout() {
                           >
                             <BookOpenIcon className="mr-2 h-4 w-4" />
                             Library
+                          </Link>
+                        )}
+                        
+                        {/* Show Library Management for instructors */}
+                        {hasTeachingPermissions(courseMembership.role) && (
+                          <Link
+                            to={`/course/${courseMembership.courses.id}/instructor-library`}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                              location.pathname === `/course/${courseMembership.courses.id}/instructor-library`
+                                ? 'bg-primary-50 text-primary-600'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                            }`}
+                          >
+                            <BookOpenIcon className="mr-2 h-4 w-4" />
+                            Library Mgmt
                           </Link>
                         )}
                         
@@ -222,6 +238,32 @@ export default function Layout() {
               </Link>
             </div>
           </nav>
+          
+          {/* User profile section - Mobile */}
+          <div className="flex-shrink-0 border-t border-gray-200 p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                {currentUser?.photoURL ? (
+                  <img className="h-8 w-8 rounded-full" src={currentUser.photoURL} alt="" />
+                ) : (
+                  <UserCircleIcon className="h-8 w-8 text-gray-400" />
+                )}
+              </div>
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {currentUser?.displayName || currentUser?.email?.split('@')[0]}
+                </p>
+                <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="ml-3 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Sign out"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -237,7 +279,7 @@ export default function Layout() {
               </div>
               <span className="ml-2 text-lg font-semibold text-gray-900">AI Engagement Hub</span>
             </div>
-            <nav className="flex-1 px-4 py-4 space-y-2">
+            <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
@@ -303,8 +345,8 @@ export default function Layout() {
                             Projects
                           </Link>
                           
-                          {/* Show Library for students */}
-                          {courseMembership.role === 'student' && (
+                          {/* Show Library for students and assistants */}
+                          {['student', 'student_assistant', 'teaching_assistant'].includes(courseMembership.role) && (
                             <Link
                               to={`/course/${courseMembership.courses.id}/library`}
                               className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -315,6 +357,21 @@ export default function Layout() {
                             >
                               <BookOpenIcon className="mr-2 h-4 w-4" />
                               Library
+                            </Link>
+                          )}
+                          
+                          {/* Show Library Management for instructors */}
+                          {hasTeachingPermissions(courseMembership.role) && (
+                            <Link
+                              to={`/course/${courseMembership.courses.id}/instructor-library`}
+                              className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                location.pathname === `/course/${courseMembership.courses.id}/instructor-library`
+                                  ? 'bg-primary-50 text-primary-600'
+                                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                              }`}
+                            >
+                              <BookOpenIcon className="mr-2 h-4 w-4" />
+                              Library Mgmt
                             </Link>
                           )}
                           
