@@ -406,14 +406,8 @@ export default function Chat() {
       // Clear selected file
       setSelectedFile(null);
 
-      // Show success message and offer tagging
+      // Show success message
       toast.success('Message sent successfully!');
-      
-      // Prompt for tagging after a brief delay
-      setTimeout(() => {
-        setCurrentChatForModal(finalChat);
-        setShowTaggingModal(true);
-      }, 1000);
 
     } catch (error) {
       console.error('Error sending message:', error);
