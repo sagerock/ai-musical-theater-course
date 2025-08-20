@@ -202,12 +202,12 @@ export default function DocumentSelectionModal({
                       Click to upload or drag and drop
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      PDF (with OCR), Word, TXT, PowerPoint, Excel up to 10MB
+                      PDF (OCR-enabled, 50 pages), Word, TXT, CSV, Markdown, PowerPoint, Excel • Max 10MB
                     </p>
                     <input
                       type="file"
                       onChange={handleFileUpload}
-                      accept=".pdf,.txt,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+                      accept=".pdf,.txt,.csv,.md,.markdown,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
                       className="hidden"
                       id="file-upload"
                     />

@@ -23,6 +23,7 @@ import ReflectionModal from './ReflectionModal';
 import InstructorNotes from '../Instructor/InstructorNotes';
 import AIModelsEducationModal from './AIModelsEducationModal';
 import DocumentSelectionModal from './DocumentSelectionModal';
+import { getSmartConversationHistory, getHistorySummary, isLongContextModel } from '../../utils/conversationHistory';
 
 export default function Chat() {
   const { projectId } = useParams();
@@ -218,7 +219,7 @@ export default function Chat() {
       const file = document;
       
       // Validate file type - accept multiple formats
-      const allowedTypes = ['pdf', 'txt', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
+      const allowedTypes = ['pdf', 'txt', 'csv', 'md', 'markdown', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
       const fileType = file.type.toLowerCase();
       const fileName = file.name.toLowerCase();
       
@@ -227,6 +228,8 @@ export default function Chat() {
         // Check by MIME type
         fileType === 'application/pdf' ||
         fileType === 'text/plain' ||
+        fileType === 'text/csv' ||
+        fileType === 'text/markdown' ||
         fileType === 'application/msword' ||
         fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
         fileType === 'application/vnd.ms-powerpoint' ||
@@ -238,7 +241,7 @@ export default function Chat() {
       
       if (!isValidType) {
         console.log('File validation failed:', { fileType, fileName });
-        toast.error('Supported formats: PDF, TXT, DOC, DOCX, PPT, PPTX, XLS, XLSX. Your file type: ' + (fileType || 'unknown'));
+        toast.error('Supported formats: PDF, TXT, CSV, MD, DOC, DOCX, PPT, PPTX, XLS, XLSX. Your file type: ' + (fileType || 'unknown'));
         return;
       }
       
@@ -311,10 +314,24 @@ export default function Chat() {
     setSending(true);
 
     try {
-      // Get conversation history for context (last 5 messages)
-      const recentChats = chats
-        .filter(chat => chat.user_id === currentUser.id)
-        .slice(-5);
+      // Get smart conversation history based on the selected model
+      const userChats = chats.filter(chat => chat.user_id === currentUser.id);
+      const recentChats = getSmartConversationHistory(
+        userChats,
+        selectedTool,
+        finalPrompt,
+        '' // We'll add PDF content later
+      );
+      
+      // Log history summary for debugging
+      const historySummary = getHistorySummary(userChats, selectedTool, finalPrompt, '');
+      console.log('💬 Conversation Context:', {
+        model: selectedTool,
+        includingMessages: historySummary.messagesIncluded,
+        totalMessages: historySummary.totalMessages,
+        estimatedTokens: historySummary.estimatedTokens,
+        contextWindow: historySummary.maxTokens
+      });
 
       // Handle document attachment
       let pdfContent = '';
@@ -556,6 +573,30 @@ export default function Chat() {
         </div>
       )}
 
+      {/* Context Indicator - Shows how much conversation history will be included */}
+      {chats.length > 0 && (
+        <div className="px-6 py-2 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-between text-xs text-gray-600">
+            <div className="flex items-center space-x-2">
+              <ChatBubbleLeftRightIcon className="h-4 w-4" />
+              <span>
+                Context: Including {(() => {
+                  const userChats = chats.filter(chat => chat.user_id === currentUser.id);
+                  const summary = getHistorySummary(userChats, selectedTool, '', '');
+                  return summary.messagesIncluded;
+                })()} of {chats.filter(chat => chat.user_id === currentUser.id).length} messages
+              </span>
+              {isLongContextModel(selectedTool) && (
+                <span className="text-green-600 font-medium">(Extended context model)</span>
+              )}
+            </div>
+            <div className="text-gray-500">
+              Model: {selectedTool}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {chats.length === 0 ? (
@@ -677,7 +718,7 @@ export default function Chat() {
             
             <div className="mt-3 flex items-center text-xs text-gray-500">
               <SparklesIcon className="h-4 w-4 mr-1" />
-              <span>Press Enter to send, Shift+Enter for new line • Upload PDF (with OCR), Word, TXT, PowerPoint, Excel files up to 10MB</span>
+              <span>Press Enter to send, Shift+Enter for new line • Upload PDF (OCR, 50 pages), Word, TXT, CSV, Markdown, PowerPoint, Excel • Max 10MB</span>
             </div>
           </>
         ) : (

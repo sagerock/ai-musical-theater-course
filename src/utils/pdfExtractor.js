@@ -57,9 +57,9 @@ export async function extractTextFromPDF(file) {
     
     console.log('📄 PDF text extraction completed:', cleanedText.length, 'characters');
     
-    // If the text is too long (over 10000 characters), provide a summary
-    if (cleanedText.length > 10000) {
-      const truncatedText = cleanedText.substring(0, 10000);
+    // If the text is too long (over 100000 characters), provide a summary
+    if (cleanedText.length > 100000) {
+      const truncatedText = cleanedText.substring(0, 100000);
       return `${truncatedText}...\n\n[Document truncated - Full document has ${cleanedText.length} characters from ${pdf.numPages} pages]`;
     }
     

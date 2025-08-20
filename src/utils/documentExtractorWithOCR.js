@@ -81,7 +81,7 @@ async function extractTextFromPDFWithOCR(file, forceOCR = false) {
     console.log('📄 PDF loaded, pages:', pdf.numPages);
     
     let fullText = '';
-    const maxPages = Math.min(pdf.numPages, 10); // Limit pages for OCR (it's slow)
+    const maxPages = Math.min(pdf.numPages, 50); // Increased limit to 50 pages for better document support
     let needsOCR = false;
     
     // First pass: Try to extract embedded text
@@ -121,8 +121,8 @@ async function extractTextFromPDFWithOCR(file, forceOCR = false) {
       // Show warning about OCR being slow
       fullText = '[Note: This appears to be a scanned PDF. Using OCR to extract text - this may take a moment...]\n\n';
       
-      // Limit OCR to fewer pages due to performance
-      const ocrMaxPages = Math.min(pdf.numPages, 5); // OCR is slow, limit to 5 pages
+      // Limit OCR to reasonable number of pages for performance
+      const ocrMaxPages = Math.min(pdf.numPages, 20); // OCR is slow, but increased limit to 20 pages
       
       for (let pageNum = 1; pageNum <= ocrMaxPages; pageNum++) {
         try {
@@ -158,9 +158,9 @@ async function extractTextFromPDFWithOCR(file, forceOCR = false) {
     
     console.log('📄 PDF text extraction completed:', cleanedText.length, 'characters');
     
-    // If the text is too long (over 10000 characters), provide a summary
-    if (cleanedText.length > 10000) {
-      const truncatedText = cleanedText.substring(0, 10000);
+    // If the text is too long (over 100000 characters), provide a summary
+    if (cleanedText.length > 100000) {
+      const truncatedText = cleanedText.substring(0, 100000);
       return `${truncatedText}...\n\n[Document truncated - Full document has ${cleanedText.length} characters from ${pdf.numPages} pages]`;
     }
     
@@ -184,8 +184,8 @@ async function extractTextFromTXT(file) {
     console.log('📝 TXT text extraction completed:', text.length, 'characters');
     
     // Truncate if too long
-    if (text.length > 10000) {
-      const truncatedText = text.substring(0, 10000);
+    if (text.length > 100000) {
+      const truncatedText = text.substring(0, 100000);
       return `${truncatedText}...\n\n[Document truncated - Full document has ${text.length} characters]`;
     }
     
@@ -193,6 +193,72 @@ async function extractTextFromTXT(file) {
   } catch (error) {
     console.error('📝 TXT text extraction failed:', error);
     return `[TXT text extraction failed: ${error.message}]`;
+  }
+}
+
+/**
+ * Extract text content from a CSV file
+ * @param {File} file - The CSV file to extract text from
+ * @returns {Promise<string>} - The extracted text content
+ */
+async function extractTextFromCSV(file) {
+  try {
+    console.log('📊 Starting CSV text extraction for:', file.name);
+    const text = await file.text();
+    
+    // Add some basic formatting to make CSV more readable
+    const lines = text.split('\n');
+    let formattedText = `CSV File: ${file.name}\n\n`;
+    
+    if (lines.length > 0) {
+      // First line is usually headers
+      formattedText += `Headers: ${lines[0]}\n\n`;
+      formattedText += `Data (${lines.length - 1} rows):\n`;
+      formattedText += text;
+    } else {
+      formattedText += text;
+    }
+    
+    console.log('📊 CSV text extraction completed:', formattedText.length, 'characters');
+    
+    // Truncate if too long
+    if (formattedText.length > 100000) {
+      const truncatedText = formattedText.substring(0, 100000);
+      return `${truncatedText}...\n\n[Document truncated - Full CSV has ${formattedText.length} characters]`;
+    }
+    
+    return formattedText || '[No text found in this CSV file]';
+  } catch (error) {
+    console.error('📊 CSV text extraction failed:', error);
+    return `[CSV text extraction failed: ${error.message}]`;
+  }
+}
+
+/**
+ * Extract text content from a Markdown file
+ * @param {File} file - The Markdown file to extract text from
+ * @returns {Promise<string>} - The extracted text content
+ */
+async function extractTextFromMarkdown(file) {
+  try {
+    console.log('📝 Starting Markdown text extraction for:', file.name);
+    const text = await file.text();
+    
+    // Markdown is already readable as plain text, but add a header
+    let formattedText = `Markdown File: ${file.name}\n\n${text}`;
+    
+    console.log('📝 Markdown text extraction completed:', formattedText.length, 'characters');
+    
+    // Truncate if too long
+    if (formattedText.length > 100000) {
+      const truncatedText = formattedText.substring(0, 100000);
+      return `${truncatedText}...\n\n[Document truncated - Full Markdown has ${formattedText.length} characters]`;
+    }
+    
+    return formattedText || '[No text found in this Markdown file]';
+  } catch (error) {
+    console.error('📝 Markdown text extraction failed:', error);
+    return `[Markdown text extraction failed: ${error.message}]`;
   }
 }
 
@@ -224,8 +290,8 @@ async function extractTextFromDOC(file) {
             .replace(/\n\s*\n/g, '\n\n')
             .trim();
           
-          if (cleanedText.length > 10000) {
-            return cleanedText.substring(0, 10000) + `...\n\n[Document truncated - Full document has ${cleanedText.length} characters]`;
+          if (cleanedText.length > 100000) {
+            return cleanedText.substring(0, 100000) + `...\n\n[Document truncated - Full document has ${cleanedText.length} characters]`;
           }
           return cleanedText;
         }
@@ -286,8 +352,8 @@ The file has been uploaded and is available for download.`;
       .trim();
     
     // Truncate if too long
-    if (cleanedText.length > 10000) {
-      const truncatedText = cleanedText.substring(0, 10000);
+    if (cleanedText.length > 100000) {
+      const truncatedText = cleanedText.substring(0, 100000);
       return `${truncatedText}...\n\n[Document truncated - Full document has ${cleanedText.length} characters]`;
     }
     
@@ -425,8 +491,8 @@ The file has been uploaded and is available for download.`;
       .replace(/\n\s*\n/g, '\n\n')
       .trim();
     
-    if (cleanedText.length > 10000) {
-      return cleanedText.substring(0, 10000) + `...\n\n[Content truncated - Full presentation has ${cleanedText.length} characters]`;
+    if (cleanedText.length > 100000) {
+      return cleanedText.substring(0, 100000) + `...\n\n[Content truncated - Full presentation has ${cleanedText.length} characters]`;
     }
     
     console.log('📊 PPTX text extraction completed:', cleanedText.length, 'characters');
@@ -524,6 +590,10 @@ export async function extractTextFromDocument(file, forceOCR = false) {
     return await extractTextFromPDFWithOCR(file, forceOCR);
   } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
     return await extractTextFromTXT(file);
+  } else if (fileType === 'text/csv' || fileName.endsWith('.csv')) {
+    return await extractTextFromCSV(file);
+  } else if (fileType === 'text/markdown' || fileName.endsWith('.md') || fileName.endsWith('.markdown')) {
+    return await extractTextFromMarkdown(file);
   } else if (
     fileType === 'application/msword' || 
     fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
@@ -546,7 +616,7 @@ export async function extractTextFromDocument(file, forceOCR = false) {
   ) {
     return await extractTextFromExcel(file);
   } else {
-    return `[Unsupported file type: ${fileType || 'Unknown'}. Supported formats: PDF, TXT, DOC, DOCX, PPT, PPTX, XLS, XLSX]`;
+    return `[Unsupported file type: ${fileType || 'Unknown'}. Supported formats: PDF, TXT, CSV, MD, DOC, DOCX, PPT, PPTX, XLS, XLSX]`;
   }
 }
 
@@ -562,6 +632,8 @@ export function isSupportedDocument(file) {
   const supportedTypes = [
     'application/pdf',
     'text/plain',
+    'text/csv',
+    'text/markdown',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-powerpoint',
@@ -570,7 +642,7 @@ export function isSupportedDocument(file) {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ];
   
-  const supportedExtensions = ['.pdf', '.txt', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx'];
+  const supportedExtensions = ['.pdf', '.txt', '.csv', '.md', '.markdown', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx'];
   
   return supportedTypes.includes(fileType) || 
          supportedExtensions.some(ext => fileName.endsWith(ext));
@@ -579,7 +651,7 @@ export function isSupportedDocument(file) {
 /**
  * Get the document type from a file
  * @param {File} file - The file to check
- * @returns {string} - The document type (PDF, TXT, DOC, DOCX, PPT, PPTX, XLS, XLSX, or Unknown)
+ * @returns {string} - The document type (PDF, TXT, CSV, MD, DOC, DOCX, PPT, PPTX, XLS, XLSX, or Unknown)
  */
 export function getDocumentType(file) {
   const fileName = file.name.toLowerCase();
@@ -589,6 +661,10 @@ export function getDocumentType(file) {
     return 'PDF';
   } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
     return 'TXT';
+  } else if (fileType === 'text/csv' || fileName.endsWith('.csv')) {
+    return 'CSV';
+  } else if (fileType === 'text/markdown' || fileName.endsWith('.md') || fileName.endsWith('.markdown')) {
+    return 'Markdown';
   } else if (fileType === 'application/msword' || fileName.endsWith('.doc')) {
     return 'DOC';
   } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileName.endsWith('.docx')) {
