@@ -52,6 +52,16 @@ export default function InstructorDashboard() {
   const [tags, setTags] = useState([]);
   const [attachments, setAttachments] = useState([]);
   
+  // Course creation state
+  const [showCreateCourseModal, setShowCreateCourseModal] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    name: '',
+    description: '',
+    semester: 'Spring',
+    year: new Date().getFullYear(),
+    schoolId: ''
+  });
+  
   // Pending approvals state
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [approvalsLoading, setApprovalsLoading] = useState(false);
@@ -775,16 +785,175 @@ export default function InstructorDashboard() {
     );
   }
 
+  const handleCreateCourse = async (e) => {
+    e.preventDefault();
+    
+    try {
+      // Generate course code
+      const courseCode = await courseApi.generateCourseCode(
+        newCourse.name,
+        newCourse.semester,
+        newCourse.year
+      );
+      
+      // Create course data
+      const courseData = {
+        title: newCourse.name,  // Map name to title for database
+        description: newCourse.description,
+        semester: newCourse.semester,
+        year: newCourse.year,
+        course_code: courseCode,
+        schoolId: newCourse.schoolId || null,
+        createdBy: currentUser.id  // Firebase uses createdBy
+      };
+      
+      // Create the course
+      const createdCourse = await courseApi.createCourse(courseData);
+      
+      // Automatically add the instructor as a member of the new course
+      await courseApi.addUserToCourse(
+        currentUser.id,
+        createdCourse.id,
+        'instructor',
+        currentUser.id
+      );
+      
+      toast.success(`Course created successfully! Code: ${courseCode}`);
+      setShowCreateCourseModal(false);
+      setNewCourse({
+        name: '',
+        description: '',
+        semester: 'Spring',
+        year: new Date().getFullYear(),
+        schoolId: ''
+      });
+      
+      // Reload courses to include the new one
+      loadCourses();
+    } catch (error) {
+      console.error('Error creating course:', error);
+      toast.error('Failed to create course');
+    }
+  };
+
   if (instructorCourses.length === 0) {
     return (
       <div className="p-6">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Instructor Dashboard</h1>
+              <p className="text-gray-600 mt-1">
+                Create your first course to get started.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCreateCourseModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Create Course
+            </button>
+          </div>
+        </div>
+        
         <div className="text-center py-12">
           <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No Courses Found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You are not currently an instructor in any courses.
+            You are not currently an instructor in any courses. Create a course to get started.
           </p>
         </div>
+        
+        {/* Create Course Modal */}
+        {showCreateCourseModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowCreateCourseModal(false)}></div>
+              
+              <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Course</h3>
+                
+                <form onSubmit={handleCreateCourse} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Course Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newCourse.name}
+                      onChange={(e) => setNewCourse(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Introduction to AI"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      value={newCourse.description}
+                      onChange={(e) => setNewCourse(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      rows={3}
+                      placeholder="Course description (optional)"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Semester
+                      </label>
+                      <select
+                        value={newCourse.semester}
+                        onChange={(e) => setNewCourse(prev => ({ ...prev, semester: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="Spring">Spring</option>
+                        <option value="Summer">Summer</option>
+                        <option value="Fall">Fall</option>
+                        <option value="Winter">Winter</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Year
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        value={newCourse.year}
+                        onChange={(e) => setNewCourse(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        min={new Date().getFullYear()}
+                        max={new Date().getFullYear() + 5}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateCourseModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                    >
+                      Create Course
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -792,10 +961,21 @@ export default function InstructorDashboard() {
   return (
     <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Instructor Dashboard</h1>
-        <p className="text-gray-600 mt-1">
-          Monitor student projects, AI interactions, and export course data for analysis.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Instructor Dashboard</h1>
+            <p className="text-gray-600 mt-1">
+              Monitor student projects, AI interactions, and export course data for analysis.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateCourseModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Course
+          </button>
+        </div>
       </div>
 
       {/* Course Selection */}
@@ -1637,6 +1817,96 @@ export default function InstructorDashboard() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Course Modal */}
+      {showCreateCourseModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowCreateCourseModal(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Course</h3>
+              
+              <form onSubmit={handleCreateCourse} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Course Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCourse.name}
+                    onChange={(e) => setNewCourse(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Introduction to AI"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={newCourse.description}
+                    onChange={(e) => setNewCourse(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Course description (optional)"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Semester
+                    </label>
+                    <select
+                      value={newCourse.semester}
+                      onChange={(e) => setNewCourse(prev => ({ ...prev, semester: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Spring">Spring</option>
+                      <option value="Summer">Summer</option>
+                      <option value="Fall">Fall</option>
+                      <option value="Winter">Winter</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Year
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={newCourse.year}
+                      onChange={(e) => setNewCourse(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      min={new Date().getFullYear()}
+                      max={new Date().getFullYear() + 5}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateCourseModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                  >
+                    Create Course
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
