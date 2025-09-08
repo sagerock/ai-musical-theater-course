@@ -116,10 +116,14 @@ service cloud.firestore {
       // Allow authenticated users to query courses by accessCode for joining
       allow list: if isAuthenticated();
       
-      // Admins can create/update/delete all courses, instructors can update courses they teach
-      allow create: if isGlobalAdmin();
+      // Admins and instructors can create courses, instructors can update courses they teach
+      allow create: if isGlobalAdmin() || hasInstructorRole();
       allow update: if isGlobalAdmin() || isInstructorInCourse(courseId) || hasInstructorRole();
-      allow delete: if isGlobalAdmin();
+      // Admins can delete any course, instructors can delete courses they created or teach
+      allow delete: if isGlobalAdmin() || 
+                       (exists(/databases/$(database)/documents/courses/$(courseId)) &&
+                        get(/databases/$(database)/documents/courses/$(courseId)).data.createdBy == request.auth.uid) ||
+                       isInstructorInCourse(courseId);
     }
 
     // COURSE MEMBERSHIPS - User can see their own, instructors can see their course members
@@ -147,6 +151,11 @@ service cloud.firestore {
         (membershipId.matches(request.auth.uid + '_.*') &&
          request.resource.data.userId == request.auth.uid &&
          request.resource.data.status == 'pending') ||
+        // Course creator can add themselves as instructor (check if they created the course)
+        (exists(/databases/$(database)/documents/courses/$(request.resource.data.courseId)) &&
+         get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.createdBy == request.auth.uid &&
+         request.resource.data.role == 'instructor' &&
+         request.resource.data.status == 'approved') ||
         // Instructors can create memberships for their courses
         isInstructorInCourse(request.resource.data.courseId) ||
         // Global admins can create any membership

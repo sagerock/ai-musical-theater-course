@@ -832,7 +832,17 @@ export default function InstructorDashboard() {
       loadCourses();
     } catch (error) {
       console.error('Error creating course:', error);
-      toast.error('Failed to create course');
+      
+      // Provide specific error messages based on the error type
+      if (error.message && error.message.includes('already exists')) {
+        toast.error(error.message, { duration: 6000 });
+      } else if (error.message && error.message.includes('Missing or insufficient permissions')) {
+        toast.error('Permission denied. You may not have the required permissions to create courses. Please contact an administrator.', { duration: 5000 });
+      } else if (error.message && error.message.includes('Failed to fetch')) {
+        toast.error('Network error. Please check your connection and try again.', { duration: 4000 });
+      } else {
+        toast.error(`Failed to create course: ${error.message || 'Unknown error'}`, { duration: 5000 });
+      }
     }
   };
 

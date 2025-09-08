@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { tagApi, courseApi } from '../../services/firebaseApi';
+import { tagApi, courseApi, schoolsApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import TaggedChatsModal from './TaggedChatsModal';
 import {
@@ -11,10 +11,10 @@ import {
   XMarkIcon,
   CheckIcon,
   SwatchIcon,
-  AcademicCapIcon,
   BuildingOfficeIcon,
   UserIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 export default function CourseManagement({ selectedCourseId, selectedCourse, currentUser, onCourseUpdated }) {
@@ -36,9 +36,18 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
     year: '',
     school: '',
     instructor: '',
-    instructor_email: ''
+    instructor_email: '',
+    customSchool: ''
   });
   const [courseSaving, setCourseSaving] = useState(false);
+  
+  // Course deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Schools state
+  const [schools, setSchools] = useState([]);
+  const [loadingSchools, setLoadingSchools] = useState(false);
   
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -69,8 +78,24 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
   useEffect(() => {
     if (selectedCourseId) {
       loadTags();
+      loadSchools();
     }
   }, [selectedCourseId]);
+  
+  const loadSchools = async () => {
+    try {
+      setLoadingSchools(true);
+      const schoolsData = await schoolsApi.getAllSchools();
+      // Filter to only show active schools
+      const activeSchools = schoolsData.filter(school => school.isActive);
+      setSchools(activeSchools);
+    } catch (error) {
+      console.error('Error loading schools:', error);
+      // Don't show error toast as schools are optional
+    } finally {
+      setLoadingSchools(false);
+    }
+  };
 
   // Load course data when selectedCourse changes
   useEffect(() => {
@@ -198,13 +223,19 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
         return;
       }
 
+      // Handle custom school if "other" was selected
+      let schoolValue = courseData.school;
+      if (courseData.school === 'other' && courseData.customSchool) {
+        schoolValue = courseData.customSchool.trim();
+      }
+      
       // Update the course (excluding course_code since it's not editable)
       const updateData = {
         title: courseData.name.trim(),  // Map name to title (actual database field)
         description: courseData.description.trim(),
         semester: courseData.semester.trim(),
         year: courseData.year ? parseInt(courseData.year) : null,
-        school: courseData.school.trim(),
+        school: schoolValue.trim(),
         instructor: courseData.instructor.trim(),
         instructor_email: courseData.instructor_email.trim()
       };
@@ -242,6 +273,29 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
       });
     }
     setIsEditingCourse(false);
+  };
+
+  const handleDeleteCourse = async () => {
+    try {
+      setIsDeleting(true);
+      await courseApi.deleteCourse(selectedCourseId);
+      toast.success('Course deleted successfully');
+      setShowDeleteConfirm(false);
+      
+      // Redirect to instructor dashboard after deletion
+      window.location.href = '/instructor';
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      
+      // Provide specific error messages
+      if (error.message && error.message.includes('Missing or insufficient permissions')) {
+        toast.error('You do not have permission to delete this course. Only course creators and administrators can delete courses.', { duration: 5000 });
+      } else {
+        toast.error(`Failed to delete course: ${error.message || 'Unknown error'}`, { duration: 5000 });
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleTagUsageClick = (tag) => {
@@ -288,13 +342,22 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-gray-900">Course Information</h3>
           {!isEditingCourse ? (
-            <button
-              onClick={() => setIsEditingCourse(true)}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <PencilIcon className="h-4 w-4 mr-2" />
-              Edit Course
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setIsEditingCourse(true)}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <PencilIcon className="h-4 w-4 mr-2" />
+                Edit Course
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="inline-flex items-center px-3 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+              >
+                <TrashIcon className="h-4 w-4 mr-2" />
+                Delete Course
+              </button>
+            </div>
           ) : (
             <div className="flex items-center space-x-2">
               <button
@@ -349,17 +412,45 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
               <p className="mt-1 text-xs text-gray-500">Course code cannot be modified</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">School/Institution</label>
               <div className="relative">
                 <BuildingOfficeIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                {schools.length > 0 ? (
+                  <select
+                    value={courseData.school}
+                    onChange={(e) => handleCourseInputChange('school', e.target.value)}
+                    className="w-full pl-10 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">No School (Independent)</option>
+                    {schools.map(school => (
+                      <option key={school.id} value={school.name}>
+                        {school.name}
+                      </option>
+                    ))}
+                    <option value="other">Other (Type Below)</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={courseData.school}
+                    onChange={(e) => handleCourseInputChange('school', e.target.value)}
+                    className="w-full pl-10 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter school name"
+                  />
+                )}
+              </div>
+              {courseData.school === 'other' && (
                 <input
                   type="text"
-                  value={courseData.school}
-                  onChange={(e) => handleCourseInputChange('school', e.target.value)}
-                  className="w-full pl-10 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter school name"
+                  value={courseData.customSchool || ''}
+                  onChange={(e) => handleCourseInputChange('customSchool', e.target.value)}
+                  className="w-full mt-2 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter custom school name"
                 />
-              </div>
+              )}
+              {loadingSchools && (
+                <p className="mt-1 text-xs text-gray-500">Loading schools...</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
@@ -708,6 +799,66 @@ export default function CourseManagement({ selectedCourseId, selectedCourse, cur
         courseId={selectedCourseId}
         tagColor={selectedTag?.color}
       />
+
+      {/* Delete Course Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowDeleteConfirm(false)}></div>
+            
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <div className="flex items-center mb-4">
+                <ExclamationTriangleIcon className="h-8 w-8 text-red-500 mr-3" />
+                <h3 className="text-lg font-medium text-gray-900">Delete Course</h3>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-3">
+                  Are you sure you want to delete <strong>{selectedCourse?.courses?.title}</strong>?
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                  <p className="text-sm text-red-800">
+                    <strong>Warning:</strong> This action cannot be undone. This will permanently delete:
+                  </p>
+                  <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+                    <li>The course and all its settings</li>
+                    <li>All course memberships</li>
+                    <li>All student enrollments</li>
+                    <li>Associated tags and categories</li>
+                  </ul>
+                  <p className="mt-2 text-sm text-red-800">
+                    <strong>Note:</strong> Student projects and AI interactions will be preserved but unlinked from this course.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteCourse}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Course'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

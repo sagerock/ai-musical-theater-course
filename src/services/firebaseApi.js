@@ -319,21 +319,61 @@ export const courseApi = {
   async createCourse(courseData) {
     console.log('🔥 createCourse:', courseData);
     
-    // Ensure accessCode is set for student enrollment
-    const accessCode = courseData.accessCode || courseData.course_code;
-    
-    const docRef = await addDoc(collection(db, 'courses'), {
-      ...courseData,
-      accessCode: accessCode, // Set accessCode for student joining
-      memberCount: 0,
-      instructorCount: 0,
-      studentCount: 0,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ Course created with accessCode:', accessCode);
-    return this.getCourseById(docRef.id);
+    try {
+      // Check if a course with the same name and semester/year already exists
+      const duplicateQuery = query(
+        collection(db, 'courses'),
+        where('title', '==', courseData.title),
+        where('semester', '==', courseData.semester),
+        where('year', '==', courseData.year)
+      );
+      
+      const duplicateSnapshot = await getDocs(duplicateQuery);
+      
+      if (!duplicateSnapshot.empty) {
+        const existingCourse = duplicateSnapshot.docs[0].data();
+        throw new Error(`A course named "${courseData.title}" already exists for ${courseData.semester} ${courseData.year}. Please use a different name or check if you're already an instructor for this course.`);
+      }
+      
+      // Check if the course code already exists
+      const codeQuery = query(
+        collection(db, 'courses'),
+        where('course_code', '==', courseData.course_code)
+      );
+      
+      const codeSnapshot = await getDocs(codeQuery);
+      
+      if (!codeSnapshot.empty) {
+        // If code exists, generate a new one
+        const newCode = await this.generateCourseCode(
+          courseData.title,
+          courseData.semester,
+          courseData.year + '_' + Date.now() // Add timestamp to ensure uniqueness
+        );
+        courseData.course_code = newCode;
+        courseData.accessCode = newCode;
+        console.log('⚠️ Course code already existed, generated new one:', newCode);
+      }
+      
+      // Ensure accessCode is set for student enrollment
+      const accessCode = courseData.accessCode || courseData.course_code;
+      
+      const docRef = await addDoc(collection(db, 'courses'), {
+        ...courseData,
+        accessCode: accessCode, // Set accessCode for student joining
+        memberCount: 0,
+        instructorCount: 0,
+        studentCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log('✅ Course created with accessCode:', accessCode);
+      return this.getCourseById(docRef.id);
+    } catch (error) {
+      console.error('❌ Error creating course:', error);
+      throw error;
+    }
   },
 
   async getCourseById(courseId) {
