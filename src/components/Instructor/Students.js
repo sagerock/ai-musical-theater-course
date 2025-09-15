@@ -150,7 +150,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       });
       
       // Get ALL projects for the course in a single query
-      const allProjects = await projectApi.getCourseProjects(selectedCourseId);
+      const allProjects = await projectApi.getAllProjects(selectedCourseId);
       
       // Create lookup maps for O(1) access
       const chatsByUser = {};
@@ -775,7 +775,7 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
                         <UsersIcon className="h-4 w-4" />
                         <span>AI Models Used</span>
                       </div>
-                      <span className="font-medium text-gray-900">{stats.modelsUsed}/7</span>
+                      <span className="font-medium text-gray-900">{stats.modelsUsed}</span>
                     </div>
                   </div>
 

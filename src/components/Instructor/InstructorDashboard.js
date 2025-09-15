@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { chatApi, projectApi, userApi, tagApi, courseApi, attachmentApi } from '../../services/firebaseApi';
+import { chatApi, projectApi, userApi, tagApi, courseApi, attachmentApi, analyticsApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import { 
   ROLES, 
@@ -47,6 +47,9 @@ export default function InstructorDashboard() {
   });
   const [chats, setChats] = useState([]);
   const [filteredChats, setFilteredChats] = useState([]);
+  const [displayedChats, setDisplayedChats] = useState([]);
+  const [chatsPage, setChatsPage] = useState(1);
+  const CHATS_PER_PAGE = 25;
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [tags, setTags] = useState([]);
@@ -83,14 +86,19 @@ export default function InstructorDashboard() {
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    students: false,
+    projects: false,
+    attachments: false
+  });
 
-  // Using Firebase-only APIs after migration
+  // Using Firebase APIs with server-side analytics for performance
   const apis = {
     chatApi,
     projectApi,
     userApi,
     tagApi,
-    analyticsApi: null, // Firebase doesn't have analytics API yet
+    analyticsApi,
     courseApi,
     attachmentApi
   };
@@ -144,6 +152,13 @@ export default function InstructorDashboard() {
     applyFilters();
   }, [chats, filters.tagId, filters.hasReflection]); // Only apply client-side for tag and reflection filters
 
+  // Paginate the displayed chats
+  useEffect(() => {
+    const startIndex = 0;
+    const endIndex = chatsPage * CHATS_PER_PAGE;
+    setDisplayedChats(filteredChats.slice(startIndex, endIndex));
+  }, [filteredChats, chatsPage]);
+
   const loadInstructorCourses = async () => {
     try {
       const userCourses = await apis.courseApi.getUserCourses(currentUser.id);
@@ -174,10 +189,10 @@ export default function InstructorDashboard() {
       console.log('🎯 InstructorDashboard.loadDashboardData - selectedCourseId:', selectedCourseId);
       console.log('🎯 InstructorDashboard.loadDashboardData - selectedCourseId type:', typeof selectedCourseId);
       
-      // Prepare backend filters (excluding tag and reflection filters which are handled client-side)
+      // Prepare backend filters - limit initial load for better performance
       const backendFilters = {
         courseId: selectedCourseId,
-        limit: 1000,
+        limit: 100, // Reduced from 1000 for faster initial load
         ...(filters.userId && { userId: filters.userId }),
         ...(filters.projectId && { projectId: filters.projectId }),
         ...(filters.toolUsed && { toolUsed: filters.toolUsed }),
@@ -192,10 +207,16 @@ export default function InstructorDashboard() {
       
       // Load all data in parallel for the selected course
       // Use Promise.allSettled to handle individual failures gracefully
-      // Note: Firebase users won't have analytics API, so we provide a default
+      // Use server-side analytics for better performance
       const promises = [
-        analyticsApi ? analyticsApi.getOverallStats(selectedCourseId) : Promise.resolve({ totalChats: 0, totalUsers: 0, totalProjects: 0, reflectionCompletionRate: 0 }),
-        chatApi.getChatsWithFilters(backendFilters),
+        analyticsApi.getCourseAnalytics(selectedCourseId).catch(err => {
+          console.warn('Analytics not available, computing locally:', err);
+          return { 
+            courseInfo: { totalChats: 0, totalUsers: 0, totalProjects: 0 },
+            engagementPatterns: { reflectionCompletionRate: 0 }
+          };
+        }),
+        chatApi.getChatsWithFiltersOptimized ? chatApi.getChatsWithFiltersOptimized(backendFilters) : chatApi.getChatsWithFilters(backendFilters),
         projectApi.getAllProjects(selectedCourseId),
         userApi.getAllUsers(selectedCourseId),
         tagApi.getAllTags(selectedCourseId),
@@ -205,7 +226,14 @@ export default function InstructorDashboard() {
       const results = await Promise.allSettled(promises);
 
       // Extract successful results or defaults
-      const overallStats = results[0].status === 'fulfilled' ? results[0].value : { totalChats: 0, totalUsers: 0, totalProjects: 0, reflectionCompletionRate: 0 };
+      const analyticsData = results[0].status === 'fulfilled' ? results[0].value : null;
+      const overallStats = analyticsData ? {
+        totalChats: analyticsData.courseInfo?.totalInteractions || 0,
+        totalUsers: analyticsData.courseInfo?.totalStudents || 0,
+        totalProjects: analyticsData.courseInfo?.totalProjects || 0,
+        reflectionCompletionRate: analyticsData.engagementPatterns?.reflectionCompletionRate || 0
+      } : { totalChats: 0, totalUsers: 0, totalProjects: 0, reflectionCompletionRate: 0 };
+      
       const allChats = results[1].status === 'fulfilled' ? results[1].value : [];
       const allProjects = results[2].status === 'fulfilled' ? results[2].value : [];
       const allUsers = results[3].status === 'fulfilled' ? results[3].value : [];
@@ -215,10 +243,15 @@ export default function InstructorDashboard() {
       // Log any failures
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const names = ['analyticsApi.getOverallStats', 'chatApi.getChatsWithFilters', 'projectApi.getAllProjects', 'userApi.getAllUsers', 'tagApi.getAllTags', 'attachmentApi.getCourseAttachments'];
+          const names = ['analyticsApi.getCourseAnalytics', 'chatApi.getChatsWithFiltersOptimized', 'projectApi.getAllProjects', 'userApi.getAllUsers', 'tagApi.getAllTags', 'attachmentApi.getCourseAttachments'];
           console.error(`❌ ${names[index]} failed:`, result.reason);
         }
       });
+      
+      // Log performance info if using cached analytics
+      if (analyticsData?.cached) {
+        console.log('⚡ Using cached analytics for faster loading');
+      }
 
       console.log('📊 Dashboard data loaded:');
       console.log('  - overallStats:', overallStats);
@@ -395,7 +428,7 @@ export default function InstructorDashboard() {
   // Get unique AI tools for filter
   const aiTools = [...new Set(chats.map(chat => chat.tool_used))];
 
-  // Generate student statistics
+  // Generate student statistics with enhanced metrics
   console.log('📊 Calculating studentStats. Total users:', users.length);
   const studentStats = users.map(user => {
     const userProjects = projects.filter(project => project.user_id === user.id);
@@ -405,25 +438,39 @@ export default function InstructorDashboard() {
     const projectIdsWithChats = [...new Set(userChats.map(chat => chat.project_id))];
     const actualProjectCount = Math.max(userProjects.length, projectIdsWithChats.length);
     
+    // Calculate reflection count
+    const reflectionCount = userChats.filter(chat => 
+      chat.reflections && chat.reflections.length > 0
+    ).length;
+    
+    // Calculate unique AI models used
+    const aiModelsUsed = [...new Set(userChats.map(chat => chat.tool_used).filter(Boolean))];
+    
+    // Calculate last activity date
+    const lastActivity = userChats.length > 0 
+      ? userChats[0].created_at 
+      : userProjects.length > 0 
+        ? userProjects[0].created_at 
+        : null;
+    
     // Debug logging for the inconsistency
     if (userProjects.length === 0 && userChats.length > 0) {
       console.log('🔍 Data inconsistency found for user:', user.name);
       console.log('  - User ID:', user.id);
       console.log('  - Projects found in course:', userProjects.length);
       console.log('  - Chats found:', userChats.length);
-      console.log('  - Unique project IDs from chats:', projectIdsWithChats);
-      console.log('  - All projects in course:', projects.length);
-      console.log('  - All chats in course:', chats.length);
-      console.log('  - User chats project IDs:', userChats.map(chat => chat.project_id));
-      console.log('  - Available project IDs:', projects.map(p => p.id));
-      console.log('  - Adjusted project count:', actualProjectCount);
+      console.log('  - Reflections:', reflectionCount);
+      console.log('  - AI Models used:', aiModelsUsed);
     }
     
     return {
       ...user,
       projectCount: actualProjectCount,
       chatCount: userChats.length,
-      lastActivity: userChats.length > 0 ? userChats[0].created_at : userProjects.length > 0 ? userProjects[0].created_at : null
+      reflectionCount,
+      aiModelsUsed,
+      reflectionRate: userChats.length > 0 ? Math.round((reflectionCount / userChats.length) * 100) : 0,
+      lastActivity
     };
   });
 
@@ -1247,19 +1294,29 @@ export default function InstructorDashboard() {
       <div className="mb-8">
         {console.log('🎓 Rendering Student Overview - studentStats.length:', studentStats.length)}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Student Overview</h2>
-          <button
-            onClick={handleAddStudent}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Add Student
-          </button>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Student Overview ({studentStats.length})
+          </h2>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setExpandedSections(prev => ({ ...prev, students: !prev.students }))}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              {expandedSections.students ? 'Show Less' : 'Show All'}
+            </button>
+            <button
+              onClick={handleAddStudent}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              <PlusIcon className="h-4 w-4 mr-1" />
+              Add Student
+            </button>
+          </div>
         </div>
         <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
           {studentStats.length > 0 ? (
             <div className="divide-y divide-gray-200">
-              {studentStats.map((student) => (
+              {(expandedSections.students ? studentStats : studentStats.slice(0, 5)).map((student) => (
                 <div key={student.id} className="p-6 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -1288,9 +1345,25 @@ export default function InstructorDashboard() {
                             <ChatBubbleLeftRightIcon className="h-4 w-4" />
                             <span>{student.chatCount} AI interactions</span>
                           </div>
+                          {student.reflectionCount > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <DocumentTextIcon className="h-4 w-4" />
+                              <span>{student.reflectionCount} reflections ({student.reflectionRate}%)</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                          {student.aiModelsUsed.length > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <SparklesIcon className="h-4 w-4" />
+                              <span>Models: {student.aiModelsUsed.slice(0, 3).join(', ')}
+                                {student.aiModelsUsed.length > 3 && ` +${student.aiModelsUsed.length - 3} more`}
+                              </span>
+                            </div>
+                          )}
                           {student.lastActivity && (
                             <div className="flex items-center space-x-1">
-                              <span>Last activity: {format(new Date(student.lastActivity), 'MMM dd, yyyy')}</span>
+                              <span>Last active: {format(new Date(student.lastActivity), 'MMM dd, yyyy')}</span>
                             </div>
                           )}
                         </div>
@@ -1312,6 +1385,16 @@ export default function InstructorDashboard() {
                 </div>
               ))}
             </div>
+            {!expandedSections.students && studentStats.length > 5 && (
+              <div className="p-3 text-center bg-gray-50 border-t">
+                <button
+                  onClick={() => setExpandedSections(prev => ({ ...prev, students: true }))}
+                  className="text-sm text-primary-600 hover:text-primary-700"
+                >
+                  Show {studentStats.length - 5} more students
+                </button>
+              </div>
+            )}
           ) : (
             <div className="text-center py-12">
               <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -1326,11 +1409,23 @@ export default function InstructorDashboard() {
 
       {/* Student Projects Section */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Student Projects</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Student Projects ({projects.length})
+          </h2>
+          {projects.length > 5 && (
+            <button
+              onClick={() => setExpandedSections(prev => ({ ...prev, projects: !prev.projects }))}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              {expandedSections.projects ? 'Show Less' : 'Show All'}
+            </button>
+          )}
+        </div>
         <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
           {projects.length > 0 ? (
             <div className="divide-y divide-gray-200">
-              {projects.map((project) => (
+              {(expandedSections.projects ? projects : projects.slice(0, 5)).map((project) => (
                 <div key={project.id} className="p-6 hover:bg-gray-50">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3 flex-1 min-w-0">
@@ -1614,8 +1709,9 @@ export default function InstructorDashboard() {
       {/* Chat Interactions List */}
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         {filteredChats.length > 0 ? (
-          <div className="divide-y divide-gray-200">
-            {filteredChats.map((chat) => (
+          <>
+            <div className="divide-y divide-gray-200">
+              {displayedChats.map((chat) => (
               <div 
                 key={chat.id} 
                 className="p-6 hover:bg-gray-50 cursor-pointer"
@@ -1687,8 +1783,19 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            {filteredChats.length > displayedChats.length && (
+              <div className="p-4 text-center border-t">
+                <button
+                  onClick={() => setChatsPage(prev => prev + 1)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Load More ({displayedChats.length} of {filteredChats.length} shown)
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
             <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
