@@ -22,7 +22,11 @@ export default async function handler(req, res) {
       apiKey: apiKey,
     });
 
-    const { messages, model = 'gpt-4o-mini', temperature = 0.7, stream = false } = req.body;
+    const { messages, model = 'gpt-4o-mini', stream = false } = req.body;
+
+    // GPT-5 models only support temperature = 1
+    const isGPT5Model = model.startsWith('gpt-5');
+    const temperature = isGPT5Model ? 1 : (req.body.temperature || 0.7);
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });
