@@ -1293,6 +1293,33 @@ export const courseApi = {
     }
   },
 
+  // Get a specific user's membership in a course
+  async getUserCourseMembership(userId, courseId) {
+    console.log('🔥 getUserCourseMembership:', { userId, courseId });
+
+    try {
+      const membershipId = `${userId}_${courseId}`;
+      const membershipDoc = await getDoc(doc(db, 'courseMemberships', membershipId));
+
+      if (!membershipDoc.exists()) {
+        return null;
+      }
+
+      return {
+        id: membershipDoc.id,
+        ...membershipDoc.data()
+      };
+    } catch (error) {
+      console.error('❌ Error getting user course membership:', error);
+      throw error;
+    }
+  },
+
+  // Alias for getCourseById for backwards compatibility
+  async getCourse(courseId) {
+    return this.getCourseById(courseId);
+  },
+
   async cleanupOrphanedChats(courseId = null, dryRun = true) {
     console.log('🔥 cleanupOrphanedChats:', { courseId, dryRun });
     
