@@ -113,3 +113,4 @@ Thumbs.db
 *.tmp
 *.temp
 .vercel
+.env.backup
