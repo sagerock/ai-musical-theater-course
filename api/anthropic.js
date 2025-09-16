@@ -81,6 +81,11 @@ export default async function handler(req, res) {
         system: systemMessage?.content,
       });
 
+      // Extract the text content safely
+      const textContent = message.content && message.content[0] && message.content[0].text
+        ? message.content[0].text
+        : 'I apologize, but I was unable to generate a response.';
+
       // Convert Anthropic response to OpenAI format for consistency
       const response = {
         id: message.id,
@@ -91,13 +96,13 @@ export default async function handler(req, res) {
           index: 0,
           message: {
             role: 'assistant',
-            content: message.content[0].text
+            content: textContent
           },
-          finish_reason: message.stop_reason
+          finish_reason: message.stop_reason || 'stop'
         }],
         usage: {
-          prompt_tokens: message.usage?.input_tokens,
-          completion_tokens: message.usage?.output_tokens,
+          prompt_tokens: message.usage?.input_tokens || 0,
+          completion_tokens: message.usage?.output_tokens || 0,
           total_tokens: (message.usage?.input_tokens || 0) + (message.usage?.output_tokens || 0)
         }
       };

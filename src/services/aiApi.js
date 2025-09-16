@@ -176,11 +176,14 @@ export const aiApi = {
       );
 
       // Extract the message content from the response
-      if (response.choices && response.choices[0]) {
+      if (response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.content) {
         return response.choices[0].message.content;
       } else if (response.content) {
         return response.content;
+      } else if (response.error) {
+        throw new Error(response.error);
       } else {
+        console.error('Unexpected response format:', response);
         throw new Error('Unexpected response format from AI service');
       }
     } catch (error) {
