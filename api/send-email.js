@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     // Initialize SendGrid
     sgMail.setApiKey(apiKey);
 
-    const { to, subject, htmlContent, textContent } = req.body;
+    const { to, subject, htmlContent, textContent, replyTo } = req.body;
 
     if (!to || !subject || (!htmlContent && !textContent)) {
       return res.status(400).json({
@@ -35,11 +35,19 @@ export default async function handler(req, res) {
     // Prepare email message
     const msg = {
       to: to,
-      from: fromEmail,
+      from: {
+        email: fromEmail,
+        name: 'AI Engagement Hub'
+      },
       subject: subject,
       text: textContent || htmlContent.replace(/<[^>]*>/g, ''), // Strip HTML tags for text version
       html: htmlContent || textContent
     };
+
+    // Add reply-to header if provided
+    if (replyTo) {
+      msg.replyTo = replyTo;
+    }
 
     console.log('📧 Sending email to:', to);
     console.log('📧 Subject:', subject);

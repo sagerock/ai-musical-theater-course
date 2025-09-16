@@ -161,6 +161,7 @@ export default function InstructorMessaging() {
         subject: formData.subject,
         messageContent: formData.message.replace(/\n/g, '<br>'),
         instructorName: getDisplayNameForEmail(currentUser, 'instructor'),
+        instructorEmail: currentUser.email, // Add instructor email for reply-to
         courseName: selectedCourse.courses.title,
         courseCode: selectedCourse.courses.course_code,
         courseId: formData.courseId

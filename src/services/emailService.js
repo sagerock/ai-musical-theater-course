@@ -763,13 +763,18 @@ class EmailService {
     this.baseUrl = 'https://api.sendgrid.com/v3/mail/send';
   }
 
-  async sendEmail(to, subject, htmlContent, textContent) {
+  async sendEmail(to, subject, htmlContent, textContent, replyTo = null) {
     const emailData = {
       to: to,
       subject: subject,
       htmlContent: htmlContent,
       textContent: textContent
     };
+
+    // Add replyTo if provided
+    if (replyTo) {
+      emailData.replyTo = replyTo;
+    }
 
     // Try to use backend server first (works in both dev and prod)
     try {
@@ -921,11 +926,15 @@ class EmailService {
     const htmlContent = template.getHtml(data);
     const textContent = template.getText(data);
 
+    // Include instructor email as reply-to
+    const replyTo = data.instructorEmail || null;
+
     return await this.sendEmail(
       data.studentEmail,
       subject,
       htmlContent,
-      textContent
+      textContent,
+      replyTo
     );
   }
 
@@ -1118,14 +1127,15 @@ export const emailNotifications = {
       if (Array.isArray(messageData.students)) {
         // Bulk send to multiple students
         const results = [];
-        
+
         for (const student of messageData.students) {
           const studentEmailData = {
             ...emailData,
             studentName: student.name,
-            studentEmail: student.email
+            studentEmail: student.email,
+            instructorEmail: messageData.instructorEmail // Pass instructor email for reply-to
           };
-          
+
           const result = await emailService.sendInstructorMessage(studentEmailData);
           results.push({
             email: student.email,
@@ -1134,10 +1144,10 @@ export const emailNotifications = {
             error: result.error
           });
         }
-        
+
         const successCount = results.filter(r => r.success).length;
         console.log(`✅ Instructor messages sent: ${successCount}/${results.length}`);
-        
+
         return { success: successCount > 0, results };
       } else {
         // Single student
