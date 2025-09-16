@@ -250,6 +250,5 @@ export const aiApi = {
   }
 };
 
-// Export everything for backward compatibility
-export { AI_TOOLS, openaiApi, anthropicApi, googleApi, perplexityApi, ANTHROPIC_MODELS, GOOGLE_MODELS, PERPLEXITY_MODELS };
+// Export default
 export default aiApi;
