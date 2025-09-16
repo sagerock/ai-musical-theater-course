@@ -57,33 +57,20 @@ export default function InstructorMessaging() {
       console.log('🚨 DEBUG - loadCourseStudents called with courseId:', courseId);
       const courseMembers = await userApi.getAllUsers(courseId);
       console.log('🔍 Debug - getAllUsers result:', courseMembers);
-      
-      // Filter for students only - handle different data structures
-      const students = courseMembers.filter(member => {
-        const memberRole = member.course_role || 
-                           member.course_memberships?.[0]?.role || 
-                           member.course_memberships?.role || 
-                           member.role;
-        
-        console.log('🔍 Debug - member role check:', { 
-          email: member.email,
-          name: member.name,
-          memberRole,
-          course_role: member.course_role,
-          role: member.role,
-          status: member.status,
-          isStudent: memberRole === 'student'
-        });
-        
-        return memberRole === 'student';
+
+      // Include ALL course members (students, instructors, assistants, admins)
+      // No filtering - everyone in the course gets the message
+      const allMembers = courseMembers.filter(member => {
+        // Just check they have an email address
+        return member.email;
       });
-      
-      console.log('🔍 Debug - filtered students:', students);
-      console.log('🚨 DEBUG - Setting selectedCourseStudents to:', students.length, 'students');
-      setSelectedCourseStudents(students);
+
+      console.log('🔍 Debug - all course members:', allMembers);
+      console.log('🚨 DEBUG - Setting selectedCourseStudents to:', allMembers.length, 'members (all roles)');
+      setSelectedCourseStudents(allMembers);
     } catch (error) {
-      console.error('Error loading course students:', error);
-      toast.error('Failed to load course students');
+      console.error('Error loading course members:', error);
+      toast.error('Failed to load course members');
     }
   }, []);
 
@@ -127,9 +114,9 @@ export default function InstructorMessaging() {
     }
 
     if (selectedCourseStudents.length === 0) {
-      console.log('❌ DEBUG - No students in selected course');
+      console.log('❌ DEBUG - No members in selected course');
       console.log('🔍 DEBUG - selectedCourseStudents array:', selectedCourseStudents);
-      toast.error('No students found in selected course');
+      toast.error('No members found in selected course');
       return;
     }
 
@@ -145,24 +132,25 @@ export default function InstructorMessaging() {
         return;
       }
 
-      // Format students for email service
+      // Format members for email service
       console.log('🔍 Debug - selectedCourseStudents:', selectedCourseStudents);
-      
-      const formattedStudents = selectedCourseStudents.map(student => {
-        console.log('🔍 Debug - processing student:', student);
-        
+
+      const formattedStudents = selectedCourseStudents.map(member => {
+        console.log('🔍 Debug - processing member:', member);
+
         // The getAllUsers method returns user data directly (not nested under 'users')
-        const email = student.email;
-        
+        const email = member.email;
+        const memberRole = member.course_role || member.course_memberships?.[0]?.role || member.role || 'student';
+
         return {
           email: email,
-          name: getDisplayNameForEmail(student, 'student')
+          name: getDisplayNameForEmail(member, memberRole)
         };
-      }).filter(student => {
-        if (!student.email) {
-          console.warn('⚠️ Student missing email:', student);
+      }).filter(member => {
+        if (!member.email) {
+          console.warn('⚠️ Member missing email:', member);
         }
-        return student.email;
+        return member.email;
       });
 
       console.log('📧 Debug - formattedStudents:', formattedStudents);
@@ -183,7 +171,7 @@ export default function InstructorMessaging() {
 
       if (results.success) {
         const successCount = results.results.filter(r => r.success).length;
-        toast.success(`Message sent successfully to ${successCount} students!`);
+        toast.success(`Message sent successfully to ${successCount} course members!`);
         
         // Clear form
         setFormData({
@@ -230,7 +218,7 @@ export default function InstructorMessaging() {
             Instructor Messaging
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-            Send messages to students in your courses
+            Send messages to all course members (students, instructors, assistants)
           </p>
         </div>
         
@@ -241,7 +229,7 @@ export default function InstructorMessaging() {
           </div>
           <div className="flex items-center">
             <UserGroupIcon className="h-4 w-4 mr-1" />
-            <span>{selectedCourseStudents.length} students</span>
+            <span>{selectedCourseStudents.length} recipients</span>
           </div>
         </div>
       </div>
@@ -287,7 +275,7 @@ export default function InstructorMessaging() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-blue-800">
-                    <span className="font-medium">{selectedCourseStudents.length}</span> students
+                    <span className="font-medium">{selectedCourseStudents.length}</span> course members
                   </p>
                 </div>
               </div>
@@ -328,9 +316,9 @@ export default function InstructorMessaging() {
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
               {formData.courseId ? (
-                `This message will be sent to ${selectedCourseStudents.length} students`
+                `This message will be sent to ${selectedCourseStudents.length} course members`
               ) : (
-                'Select a course to see student count'
+                'Select a course to see member count'
               )}
             </div>
             <button
