@@ -50,12 +50,21 @@ export default function AnnouncementComments({
 
     setSubmitting(true);
     try {
+      console.log('🔍 Creating comment with currentUser:', {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+        displayName: currentUser.displayName
+      });
+
       const commentData = {
         authorId: currentUser.id,
         authorName: currentUser.name || currentUser.email,
         authorRole: courseMembership?.role || 'student',
         content: newComment.trim()
       };
+
+      console.log('🔍 Comment data being sent:', commentData);
 
       const newCommentObj = await announcementApi.addComment(announcementId, commentData);
       setComments([...comments, newCommentObj]);

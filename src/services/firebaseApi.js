@@ -4115,14 +4115,19 @@ export const announcementApi = {
       };
 
       const docRef = await addDoc(collection(db, 'announcementComments'), commentDoc);
-
-      // Update comment count on announcement
-      const announcementRef = doc(db, 'announcements', announcementId);
-      await updateDoc(announcementRef, {
-        commentCount: increment(1)
-      });
-
       console.log('✅ Comment added with ID:', docRef.id);
+
+      // Try to update comment count, but don't fail if it doesn't work
+      try {
+        const announcementRef = doc(db, 'announcements', announcementId);
+        await updateDoc(announcementRef, {
+          commentCount: increment(1)
+        });
+        console.log('✅ Comment count updated');
+      } catch (countError) {
+        console.warn('⚠️ Could not update comment count:', countError);
+        // This is non-critical, so we continue
+      }
 
       return {
         id: docRef.id,
@@ -4155,6 +4160,20 @@ export const announcementApi = {
       }));
 
       console.log(`✅ Found ${comments.length} comments`);
+
+      // Fix the comment count if it's incorrect
+      const announcementRef = doc(db, 'announcements', announcementId);
+      const announcementDoc = await getDoc(announcementRef);
+      if (announcementDoc.exists()) {
+        const currentCount = announcementDoc.data().commentCount || 0;
+        if (currentCount !== comments.length) {
+          console.log(`🔧 Fixing comment count: ${currentCount} -> ${comments.length}`);
+          await updateDoc(announcementRef, {
+            commentCount: comments.length
+          });
+        }
+      }
+
       return comments;
     } catch (error) {
       console.error('❌ Error getting comments:', error);
@@ -4187,14 +4206,20 @@ export const announcementApi = {
 
     try {
       await deleteDoc(doc(db, 'announcementComments', commentId));
-
-      // Update comment count on announcement
-      const announcementRef = doc(db, 'announcements', announcementId);
-      await updateDoc(announcementRef, {
-        commentCount: increment(-1)
-      });
-
       console.log('✅ Comment deleted');
+
+      // Try to update comment count, but don't fail if it doesn't work
+      try {
+        const announcementRef = doc(db, 'announcements', announcementId);
+        await updateDoc(announcementRef, {
+          commentCount: increment(-1)
+        });
+        console.log('✅ Comment count updated');
+      } catch (countError) {
+        console.warn('⚠️ Could not update comment count:', countError);
+        // This is non-critical, so we continue
+      }
+
       return { success: true };
     } catch (error) {
       console.error('❌ Error deleting comment:', error);

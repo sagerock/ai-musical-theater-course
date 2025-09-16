@@ -471,10 +471,13 @@ service cloud.firestore {
       );
 
       // Authors can update their own announcements, instructors can update any
+      // OR any authenticated user can update only the commentCount field
       allow update: if isAuthenticated() && (
         isOwner(resource.data.authorId) ||
         hasTeachingPermissionsInCourse(resource.data.courseId) ||
-        isGlobalAdmin()
+        isGlobalAdmin() ||
+        // Allow any authenticated user to update only commentCount
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']))
       );
 
       // Authors can delete their own, instructors can delete any
@@ -487,32 +490,26 @@ service cloud.firestore {
 
     // ANNOUNCEMENT COMMENTS - All course members can comment
     match /announcementComments/{commentId} {
-      // Helper function to get announcement's course ID
-      function getAnnouncementCourseId() {
-        return get(/databases/$(database)/documents/announcements/$(resource.data.announcementId)).data.courseId;
-      }
-
       // Anyone can read comments (filtered by announcement access)
       allow read: if isAuthenticated();
 
       // Allow collection queries
       allow list: if isAuthenticated();
 
-      // Course members can create comments - simplified for now
-      // The announcement itself requires course membership, so if they can see it, they can comment
+      // Any authenticated user can create comments if they set themselves as the author
       allow create: if isAuthenticated() &&
-        exists(/databases/$(database)/documents/announcements/$(request.resource.data.announcementId));
+                      request.resource.data.authorId == request.auth.uid;
 
       // Authors can update their own comments
-      allow update: if isAuthenticated() && (
-        isOwner(resource.data.authorId) ||
-        isGlobalAdmin()
-      );
+      allow update: if isAuthenticated() &&
+                      resource.data.authorId == request.auth.uid ||
+                      isGlobalAdmin();
 
-      // Authors can delete their own, instructors can delete any
+      // Authors can delete their own comments, instructors can delete any comment in their course, admins can delete any
       allow delete: if isAuthenticated() && (
-        isOwner(resource.data.authorId) ||
-        hasTeachingPermissionsInCourse(getAnnouncementCourseId()) ||
+        resource.data.authorId == request.auth.uid ||
+        // Check if user is instructor for the course (via announcement)
+        hasTeachingPermissionsInCourse(get(/databases/$(database)/documents/announcements/$(resource.data.announcementId)).data.courseId) ||
         isGlobalAdmin()
       );
     }

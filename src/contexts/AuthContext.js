@@ -112,26 +112,39 @@ export function AuthProvider({ children }) {
       if (updates.display_name || updates.displayName) {
         const displayName = updates.display_name || updates.displayName;
         await firebaseUpdateProfile(auth.currentUser, { displayName });
-        
+
         // Also update the Firestore user document
         await setDoc(doc(db, 'users', auth.currentUser.uid), {
           name: displayName,
           updatedAt: new Date()
         }, { merge: true });
-        
+
+        // Update the currentUser state with the new name
+        setCurrentUser(prev => ({
+          ...prev,
+          name: displayName,
+          displayName: displayName
+        }));
+
         console.log('✅ Display name updated successfully');
       }
 
       // Handle email updates
       if (updates.email) {
         await updateEmail(auth.currentUser, updates.email);
-        
+
         // Update the Firestore user document
         await setDoc(doc(db, 'users', auth.currentUser.uid), {
           email: updates.email,
           updatedAt: new Date()
         }, { merge: true });
-        
+
+        // Update the currentUser state with the new email
+        setCurrentUser(prev => ({
+          ...prev,
+          email: updates.email
+        }));
+
         console.log('✅ Email updated successfully');
       }
 
@@ -261,14 +274,49 @@ export function AuthProvider({ children }) {
       console.log('🔥 Auth state changed:', user ? user.uid : 'signed out');
       
       if (user) {
-        // Map Firebase user to include both uid and id for backward compatibility
-        const mappedUser = {
-          ...user,
-          id: user.uid, // Add id property for components that expect it
-          uid: user.uid  // Keep uid for backward compatibility
-        };
-        
-        setCurrentUser(mappedUser);
+        // First get the Firestore user document to get the full user data
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          let userData = {};
+
+          if (userDoc.exists()) {
+            userData = userDoc.data();
+            console.log('🔥 Loaded Firestore user data:', userData);
+          } else {
+            console.log('⚠️ No Firestore user document found for:', user.uid);
+          }
+
+          // Map Firebase user to include both uid and id for backward compatibility
+          // and merge with Firestore user data
+          const mappedUser = {
+            ...user,
+            id: user.uid, // Add id property for components that expect it
+            uid: user.uid, // Keep uid for backward compatibility
+            name: userData.name || user.displayName || user.email?.split('@')[0], // Use Firestore name, then displayName, then email prefix
+            email: user.email,
+            role: userData.role || 'student',
+            ...userData // Merge any additional fields from Firestore
+          };
+
+          console.log('🔥 Final mappedUser object:', {
+            uid: mappedUser.uid,
+            email: mappedUser.email,
+            name: mappedUser.name,
+            displayName: mappedUser.displayName
+          });
+
+          setCurrentUser(mappedUser);
+        } catch (error) {
+          console.error('Error loading user data from Firestore:', error);
+          // Fallback to basic user object if Firestore fails
+          const mappedUser = {
+            ...user,
+            id: user.uid,
+            uid: user.uid,
+            name: user.displayName || user.email?.split('@')[0]
+          };
+          setCurrentUser(mappedUser);
+        }
         
         // Check if this is the designated admin email and auto-promote if needed
         if (user.email === 'sage+admin@sagerock.com') {
