@@ -436,19 +436,83 @@ service cloud.firestore {
         // Global admins can read all materials
         isGlobalAdmin()
       );
-      
+
       // Allow collection queries for course members
       allow list: if isAuthenticated();
-      
+
       // Only instructors and TAs can create course materials
       allow create: if isAuthenticated() && (
         hasTeachingPermissionsInCourse(request.resource.data.courseId) ||
         isGlobalAdmin()
       );
-      
+
       // Only instructors and TAs can update/delete course materials
       allow update, delete: if isAuthenticated() && (
         hasTeachingPermissionsInCourse(resource.data.courseId) ||
+        isGlobalAdmin()
+      );
+    }
+
+    // ANNOUNCEMENTS - Course announcements with instructor control
+    match /announcements/{announcementId} {
+      // All course members can read announcements
+      allow read: if isAuthenticated() && (
+        isMemberOfCourse(resource.data.courseId) ||
+        isGlobalAdmin()
+      );
+
+      // Allow collection queries for course members
+      allow list: if isAuthenticated();
+
+      // Only instructors and TAs can create announcements
+      allow create: if isAuthenticated() && (
+        hasTeachingPermissionsInCourse(request.resource.data.courseId) ||
+        isGlobalAdmin()
+      );
+
+      // Authors can update their own announcements, instructors can update any
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.authorId) ||
+        hasTeachingPermissionsInCourse(resource.data.courseId) ||
+        isGlobalAdmin()
+      );
+
+      // Authors can delete their own, instructors can delete any
+      allow delete: if isAuthenticated() && (
+        isOwner(resource.data.authorId) ||
+        hasTeachingPermissionsInCourse(resource.data.courseId) ||
+        isGlobalAdmin()
+      );
+    }
+
+    // ANNOUNCEMENT COMMENTS - All course members can comment
+    match /announcementComments/{commentId} {
+      // Helper function to get announcement's course ID
+      function getAnnouncementCourseId() {
+        return get(/databases/$(database)/documents/announcements/$(resource.data.announcementId)).data.courseId;
+      }
+
+      // Anyone can read comments (filtered by announcement access)
+      allow read: if isAuthenticated();
+
+      // Allow collection queries
+      allow list: if isAuthenticated();
+
+      // Course members can create comments
+      allow create: if isAuthenticated() &&
+        exists(/databases/$(database)/documents/announcements/$(request.resource.data.announcementId)) &&
+        isMemberOfCourse(get(/databases/$(database)/documents/announcements/$(request.resource.data.announcementId)).data.courseId);
+
+      // Authors can update their own comments
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.authorId) ||
+        isGlobalAdmin()
+      );
+
+      // Authors can delete their own, instructors can delete any
+      allow delete: if isAuthenticated() && (
+        isOwner(resource.data.authorId) ||
+        hasTeachingPermissionsInCourse(getAnnouncementCourseId()) ||
         isGlobalAdmin()
       );
     }

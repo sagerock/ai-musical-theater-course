@@ -3917,4 +3917,286 @@ export const schoolsApi = {
   }
 };
 
+// Announcements API
+export const announcementApi = {
+  // Create a new announcement
+  async createAnnouncement(announcementData) {
+    console.log('📢 Creating announcement for course:', announcementData.courseId);
+
+    try {
+      const announcementDoc = {
+        courseId: announcementData.courseId,
+        authorId: announcementData.authorId,
+        authorName: announcementData.authorName,
+        authorRole: announcementData.authorRole,
+        title: announcementData.title,
+        content: announcementData.content,
+        attachments: announcementData.attachments || [],
+        isPinned: announcementData.isPinned || false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        commentCount: 0
+      };
+
+      const docRef = await addDoc(collection(db, 'announcements'), announcementDoc);
+      console.log('✅ Announcement created with ID:', docRef.id);
+
+      return {
+        id: docRef.id,
+        ...announcementDoc,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    } catch (error) {
+      console.error('❌ Error creating announcement:', error);
+      throw error;
+    }
+  },
+
+  // Get all announcements for a course
+  async getAnnouncements(courseId) {
+    console.log('📢 Getting announcements for course:', courseId);
+
+    try {
+      // First get pinned announcements
+      const pinnedQuery = query(
+        collection(db, 'announcements'),
+        where('courseId', '==', courseId),
+        where('isPinned', '==', true),
+        orderBy('createdAt', 'desc')
+      );
+
+      // Then get regular announcements
+      const regularQuery = query(
+        collection(db, 'announcements'),
+        where('courseId', '==', courseId),
+        where('isPinned', '==', false),
+        orderBy('createdAt', 'desc')
+      );
+
+      const [pinnedSnapshot, regularSnapshot] = await Promise.all([
+        getDocs(pinnedQuery),
+        getDocs(regularQuery)
+      ]);
+
+      const pinnedAnnouncements = pinnedSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: convertTimestamp(doc.data().createdAt),
+        updatedAt: convertTimestamp(doc.data().updatedAt)
+      }));
+
+      const regularAnnouncements = regularSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: convertTimestamp(doc.data().createdAt),
+        updatedAt: convertTimestamp(doc.data().updatedAt)
+      }));
+
+      // Combine pinned first, then regular
+      const allAnnouncements = [...pinnedAnnouncements, ...regularAnnouncements];
+
+      console.log(`✅ Found ${allAnnouncements.length} announcements (${pinnedAnnouncements.length} pinned)`);
+      return allAnnouncements;
+    } catch (error) {
+      console.error('❌ Error getting announcements:', error);
+      return [];
+    }
+  },
+
+  // Update an announcement
+  async updateAnnouncement(announcementId, updates) {
+    console.log('📢 Updating announcement:', announcementId);
+
+    try {
+      const announcementRef = doc(db, 'announcements', announcementId);
+      await updateDoc(announcementRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log('✅ Announcement updated');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating announcement:', error);
+      throw error;
+    }
+  },
+
+  // Delete an announcement
+  async deleteAnnouncement(announcementId) {
+    console.log('📢 Deleting announcement:', announcementId);
+
+    try {
+      // Delete all comments for this announcement first
+      const commentsQuery = query(
+        collection(db, 'announcementComments'),
+        where('announcementId', '==', announcementId)
+      );
+
+      const commentsSnapshot = await getDocs(commentsQuery);
+      const deletePromises = commentsSnapshot.docs.map(doc =>
+        deleteDoc(doc.ref)
+      );
+
+      await Promise.all(deletePromises);
+      console.log(`🗑️ Deleted ${commentsSnapshot.size} comments`);
+
+      // Now delete the announcement
+      await deleteDoc(doc(db, 'announcements', announcementId));
+      console.log('✅ Announcement deleted');
+
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting announcement:', error);
+      throw error;
+    }
+  },
+
+  // Pin/unpin an announcement
+  async pinAnnouncement(announcementId, isPinned) {
+    console.log(`📢 ${isPinned ? 'Pinning' : 'Unpinning'} announcement:`, announcementId);
+
+    try {
+      await updateDoc(doc(db, 'announcements', announcementId), {
+        isPinned: isPinned,
+        updatedAt: serverTimestamp()
+      });
+
+      console.log(`✅ Announcement ${isPinned ? 'pinned' : 'unpinned'}`);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error pinning announcement:', error);
+      throw error;
+    }
+  },
+
+  // Add a comment to an announcement
+  async addComment(announcementId, commentData) {
+    console.log('💬 Adding comment to announcement:', announcementId);
+
+    try {
+      const commentDoc = {
+        announcementId: announcementId,
+        authorId: commentData.authorId,
+        authorName: commentData.authorName,
+        authorRole: commentData.authorRole,
+        content: commentData.content,
+        createdAt: serverTimestamp(),
+        isEdited: false,
+        editedAt: null
+      };
+
+      const docRef = await addDoc(collection(db, 'announcementComments'), commentDoc);
+
+      // Update comment count on announcement
+      const announcementRef = doc(db, 'announcements', announcementId);
+      await updateDoc(announcementRef, {
+        commentCount: increment(1)
+      });
+
+      console.log('✅ Comment added with ID:', docRef.id);
+
+      return {
+        id: docRef.id,
+        ...commentDoc,
+        createdAt: new Date()
+      };
+    } catch (error) {
+      console.error('❌ Error adding comment:', error);
+      throw error;
+    }
+  },
+
+  // Get comments for an announcement
+  async getComments(announcementId) {
+    console.log('💬 Getting comments for announcement:', announcementId);
+
+    try {
+      const commentsQuery = query(
+        collection(db, 'announcementComments'),
+        where('announcementId', '==', announcementId),
+        orderBy('createdAt', 'asc')
+      );
+
+      const snapshot = await getDocs(commentsQuery);
+      const comments = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: convertTimestamp(doc.data().createdAt),
+        editedAt: convertTimestamp(doc.data().editedAt)
+      }));
+
+      console.log(`✅ Found ${comments.length} comments`);
+      return comments;
+    } catch (error) {
+      console.error('❌ Error getting comments:', error);
+      return [];
+    }
+  },
+
+  // Update a comment
+  async updateComment(commentId, content) {
+    console.log('💬 Updating comment:', commentId);
+
+    try {
+      await updateDoc(doc(db, 'announcementComments', commentId), {
+        content: content,
+        isEdited: true,
+        editedAt: serverTimestamp()
+      });
+
+      console.log('✅ Comment updated');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error updating comment:', error);
+      throw error;
+    }
+  },
+
+  // Delete a comment
+  async deleteComment(commentId, announcementId) {
+    console.log('💬 Deleting comment:', commentId);
+
+    try {
+      await deleteDoc(doc(db, 'announcementComments', commentId));
+
+      // Update comment count on announcement
+      const announcementRef = doc(db, 'announcements', announcementId);
+      await updateDoc(announcementRef, {
+        commentCount: increment(-1)
+      });
+
+      console.log('✅ Comment deleted');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting comment:', error);
+      throw error;
+    }
+  },
+
+  // Upload attachments for announcement
+  async uploadAnnouncementAttachment(file, courseId) {
+    console.log('📎 Uploading announcement attachment:', file.name);
+
+    try {
+      const fileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `announcements/${courseId}/${fileName}`);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      return {
+        fileName: file.name,
+        fileUrl: downloadURL,
+        fileType: file.type,
+        fileSize: file.size
+      };
+    } catch (error) {
+      console.error('❌ Error uploading attachment:', error);
+      throw error;
+    }
+  }
+};
+
 console.log('🔥 Firebase API initialized');

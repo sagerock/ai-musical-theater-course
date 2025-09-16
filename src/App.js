@@ -16,6 +16,7 @@ import InstructorNotesList from './components/Instructor/InstructorNotesList';
 import Students from './components/Instructor/Students';
 import StudentLibraryWrapper from './components/Student/StudentLibraryWrapper';
 import InstructorLibraryWrapper from './components/Instructor/InstructorLibraryWrapper';
+import CourseAnnouncements from './components/Announcements/CourseAnnouncements';
 import AdminPanel from './components/Admin/AdminPanel';
 import SchoolAdminDashboard from './components/SchoolAdmin/SchoolAdminDashboard';
 import CourseJoin from './components/Course/CourseJoin';
@@ -58,6 +59,9 @@ function App() {
           </Route>
           <Route path="/course/:courseId/instructor-library" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<InstructorRoute><InstructorLibraryWrapper /></InstructorRoute>} />
+          </Route>
+          <Route path="/course/:courseId/announcements" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<CourseAnnouncements />} />
           </Route>
           <Route path="/course/:courseId/instructor-notes" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<InstructorRoute><InstructorNotesList /></InstructorRoute>} />

@@ -16,7 +16,8 @@ import {
   AcademicCapIcon,
   DocumentTextIcon,
   QuestionMarkCircleIcon,
-  BookOpenIcon
+  BookOpenIcon,
+  MegaphoneIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
@@ -171,7 +172,21 @@ export default function Layout() {
                           <FolderIcon className="mr-2 h-4 w-4" />
                           Projects
                         </Link>
-                        
+
+                        {/* Announcements - accessible to all course members */}
+                        <Link
+                          to={`/course/${courseMembership.courses.id}/announcements`}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                            location.pathname === `/course/${courseMembership.courses.id}/announcements`
+                              ? 'bg-primary-50 text-primary-600'
+                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                          }`}
+                        >
+                          <MegaphoneIcon className="mr-2 h-4 w-4" />
+                          Announcements
+                        </Link>
+
                         {/* Show Library for students and assistants */}
                         {['student', 'student_assistant', 'teaching_assistant'].includes(courseMembership.role) && (
                           <Link
@@ -344,7 +359,20 @@ export default function Layout() {
                             <FolderIcon className="mr-2 h-4 w-4" />
                             Projects
                           </Link>
-                          
+
+                          {/* Announcements - accessible to all course members */}
+                          <Link
+                            to={`/course/${courseMembership.courses.id}/announcements`}
+                            className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                              location.pathname === `/course/${courseMembership.courses.id}/announcements`
+                                ? 'bg-primary-50 text-primary-600'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                            }`}
+                          >
+                            <MegaphoneIcon className="mr-2 h-4 w-4" />
+                            Announcements
+                          </Link>
+
                           {/* Show Library for students and assistants */}
                           {['student', 'student_assistant', 'teaching_assistant'].includes(courseMembership.role) && (
                             <Link
