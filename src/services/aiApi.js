@@ -175,17 +175,39 @@ export const aiApi = {
         enhancedSystemPrompt
       );
 
+      // Log the response for debugging
+      console.log('AI Proxy Response:', JSON.stringify(response, null, 2));
+
       // Extract the message content from the response
-      if (response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.content) {
-        return response.choices[0].message.content;
-      } else if (response.content) {
-        return response.content;
-      } else if (response.error) {
-        throw new Error(response.error);
-      } else {
-        console.error('Unexpected response format:', response);
-        throw new Error('Unexpected response format from AI service');
+      let messageContent = null;
+
+      if (response) {
+        if (response.choices && response.choices[0]) {
+          if (response.choices[0].message && response.choices[0].message.content) {
+            messageContent = response.choices[0].message.content;
+          } else if (response.choices[0].text) {
+            messageContent = response.choices[0].text;
+          }
+        } else if (response.content) {
+          messageContent = response.content;
+        } else if (response.message) {
+          messageContent = response.message;
+        } else if (typeof response === 'string') {
+          messageContent = response;
+        }
       }
+
+      if (response && response.error) {
+        console.error('API returned error:', response.error);
+        throw new Error(response.error);
+      }
+
+      if (!messageContent) {
+        console.error('No content found in response:', response);
+        messageContent = 'I apologize, but I encountered an error processing your request. Please try again.';
+      }
+
+      return messageContent;
     } catch (error) {
       console.error(`AI API Error:`, error);
       throw error;

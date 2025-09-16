@@ -10,10 +10,20 @@ export default async function handler(req, res) {
     // Get API key from server-side environment variable (no REACT_APP_ prefix)
     const apiKey = process.env.OPENAI_API_KEY;
 
+    console.log('OpenAI API Key Length:', apiKey ? apiKey.length : 'undefined');
+    console.log('API Key starts with:', apiKey ? apiKey.substring(0, 20) + '...' : 'undefined');
+
     if (!apiKey) {
       console.error('OpenAI API key not configured in Vercel environment variables');
       return res.status(500).json({
         error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in Vercel environment variables.'
+      });
+    }
+
+    if (apiKey.length < 40) {
+      console.error('OpenAI API key appears to be invalid (too short)');
+      return res.status(500).json({
+        error: 'OpenAI API key appears to be invalid. Please check your environment variables.'
       });
     }
 
@@ -66,6 +76,17 @@ export default async function handler(req, res) {
         messages,
         temperature,
       });
+
+      console.log('OpenAI completion response:', JSON.stringify(completion, null, 2));
+
+      // Validate response has expected structure
+      if (!completion || !completion.choices || !completion.choices[0]) {
+        console.error('Invalid OpenAI response structure:', completion);
+        return res.status(500).json({
+          error: 'Invalid response from OpenAI API',
+          details: 'Response missing expected structure'
+        });
+      }
 
       res.status(200).json(completion);
     }
