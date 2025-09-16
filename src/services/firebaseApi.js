@@ -2444,8 +2444,13 @@ export const attachmentApi = {
 
   // Course Materials API (for instructor-managed library)
   async uploadCourseMaterial(materialData) {
-    console.log('📚 uploadCourseMaterial:', materialData.file.name);
-    
+    console.log('📚 uploadCourseMaterial START:', {
+      fileName: materialData.file.name,
+      courseId: materialData.courseId,
+      uploadedBy: materialData.uploadedBy,
+      visibility: materialData.visibility
+    });
+
     try {
       const { file, courseId, uploadedBy, category, visibility, title, description } = materialData;
       
@@ -2485,7 +2490,13 @@ export const attachmentApi = {
       };
       
       const docRef = await addDoc(collection(db, 'courseMaterials'), materialDoc);
-      
+      console.log('✅ Course material uploaded successfully:', {
+        docId: docRef.id,
+        courseId,
+        fileName: file.name,
+        visibility: materialDoc.visibility
+      });
+
       return {
         id: docRef.id,
         ...materialDoc,
@@ -2502,7 +2513,7 @@ export const attachmentApi = {
   },
 
   async getCourseMaterials(courseId) {
-    console.log('📚 getCourseMaterials:', courseId);
+    console.log('📚 getCourseMaterials START for course:', courseId);
     
     try {
       const materialsQuery = query(
@@ -2512,7 +2523,9 @@ export const attachmentApi = {
       );
       
       const snapshot = await getDocs(materialsQuery);
-      return snapshot.docs.map(doc => {
+      console.log(`📚 Found ${snapshot.docs.length} materials for course ${courseId}`);
+
+      const materials = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -2523,6 +2536,14 @@ export const attachmentApi = {
           uploaded_at: data.uploadedAt?.toDate ? data.uploadedAt.toDate() : new Date(data.uploadedAt || 0)
         };
       });
+
+      console.log('📚 Mapped materials:', materials.map(m => ({
+        id: m.id,
+        fileName: m.file_name,
+        visibility: m.visibility
+      })));
+
+      return materials;
     } catch (error) {
       console.error('❌ Error getting course materials:', error);
       return [];

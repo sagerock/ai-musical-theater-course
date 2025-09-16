@@ -55,12 +55,14 @@ export default function InstructorLibrary({ selectedCourseId, selectedCourse, cu
   const loadCourseMaterials = async () => {
     try {
       setLoading(true);
+      console.log('📚 InstructorLibrary: Starting to load materials for course:', selectedCourseId);
       const materials = await attachmentApi.getCourseMaterials(selectedCourseId);
-      
-      console.log(`📚 Loaded ${materials.length} course materials for course ${selectedCourseId}`);
+
+      console.log(`📚 InstructorLibrary: Loaded ${materials.length} course materials for course ${selectedCourseId}`);
+      console.log('📚 InstructorLibrary: Materials detail:', materials);
       setCourseMaterials(materials);
     } catch (error) {
-      console.error('Error loading course materials:', error);
+      console.error('❌ InstructorLibrary: Error loading course materials:', error);
       toast.error('Failed to load course materials');
     } finally {
       setLoading(false);
@@ -150,10 +152,13 @@ export default function InstructorLibrary({ selectedCourseId, selectedCourse, cu
       
       // Upload course material
       const result = await attachmentApi.uploadCourseMaterial(materialData);
-      
-      console.log('📚 Upload result:', result);
+
+      console.log('📚 InstructorLibrary: Upload result:', result);
       toast.success('Course material uploaded successfully!');
-      loadCourseMaterials();
+
+      // Reload materials after upload
+      console.log('📚 InstructorLibrary: Reloading materials after upload...');
+      await loadCourseMaterials();
       
     } catch (error) {
       console.error('Error uploading course material:', error);
