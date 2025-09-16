@@ -395,7 +395,7 @@ export default function Chat() {
       if (tempChatId) {
         // Update the temporary chat with the real AI response
         finalChat = await chatApi.updateChat(tempChatId, {
-          response: aiResponse.response
+          response: aiResponse // aiResponse is already the string content
         });
       } else {
         // Create a new chat without PDF
@@ -405,7 +405,7 @@ export default function Chat() {
           project_id: projectId,
           tool_used: selectedTool,
           prompt: finalPrompt,
-          response: aiResponse.response,
+          response: aiResponse, // aiResponse is already the string content
           title: finalPrompt.length > 50 ? finalPrompt.substring(0, 50) + '...' : finalPrompt
         };
         
