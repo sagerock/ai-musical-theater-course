@@ -29,18 +29,29 @@ export default async function handler(req, res) {
     // Get the model
     const generativeModel = genAI.getGenerativeModel({ model });
 
-    // Convert OpenAI format to Google AI format
-    const formattedMessages = messages.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : msg.role,
+    // Separate system message from conversation
+    const systemMessage = messages.find(msg => msg.role === 'system');
+    const conversationMessages = messages.filter(msg => msg.role !== 'system');
+
+    // Convert OpenAI format to Google AI format (excluding system messages)
+    const formattedMessages = conversationMessages.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }]
     }));
+
+    // Prepare the prompt with system context if present
+    let finalPrompt = '';
+    if (systemMessage) {
+      finalPrompt = `Context: ${systemMessage.content}\n\n`;
+    }
 
     // Google AI expects a different format for chat
     const chat = generativeModel.startChat({
       history: formattedMessages.slice(0, -1), // All messages except the last
     });
 
-    const lastMessage = messages[messages.length - 1];
+    const lastMessage = conversationMessages[conversationMessages.length - 1];
+    const messageToSend = finalPrompt + lastMessage.content;
 
     if (stream) {
       // Set headers for SSE
@@ -49,7 +60,7 @@ export default async function handler(req, res) {
       res.setHeader('Connection', 'keep-alive');
 
       try {
-        const result = await chat.sendMessageStream(lastMessage.content);
+        const result = await chat.sendMessageStream(messageToSend);
 
         for await (const chunk of result.stream) {
           const text = chunk.text();
@@ -73,7 +84,7 @@ export default async function handler(req, res) {
       }
     } else {
       // Non-streaming response
-      const result = await chat.sendMessage(lastMessage.content);
+      const result = await chat.sendMessage(messageToSend);
       const response = await result.response;
 
       // Convert Google response to OpenAI format for consistency
