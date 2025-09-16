@@ -37,6 +37,8 @@
     "test": "react-scripts test",
     "test:rules": "jest --testMatch='**/firebase-rules-test.js'",
     "eject": "react-scripts eject",
+    "features:status": "node scripts/feature-status.js",
+    "features:labels": "node scripts/setup-github-labels.js",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\""
   },
