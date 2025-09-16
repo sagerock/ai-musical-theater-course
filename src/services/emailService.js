@@ -665,6 +665,124 @@ This email was sent because you're an instructor in ${data.courseName}
     `
   },
 
+  courseAnnouncement: {
+    subject: (data) => `📢 ${data.announcementTitle}`,
+    getHtml: (data) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Course Announcement</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; }
+          .announcement-content { background: #faf5ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #8b5cf6; }
+          .button { display: inline-block; background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .button:hover { background: #7c3aed; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+          .course-info { background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 14px; color: #4b5563; }
+          .pinned-badge { background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; margin-bottom: 10px; }
+          .attachments { margin-top: 15px; padding: 15px; background: #f9fafb; border-radius: 6px; }
+          .attachment-item { padding: 8px; background: white; border: 1px solid #e5e7eb; border-radius: 4px; margin: 5px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📢 Course Announcement</h1>
+            <p>${data.courseName}</p>
+          </div>
+          <div class="content">
+            <p>Hello <strong>${data.recipientName}</strong>,</p>
+
+            ${data.isPinned ? '<div class="pinned-badge">📌 Pinned Announcement</div>' : ''}
+
+            <p>Your instructor <strong>${data.instructorName}</strong> has posted a new announcement:</p>
+
+            <div class="announcement-content">
+              <h2 style="color: #1f2937; margin-top: 0;">${data.announcementTitle}</h2>
+              <div style="white-space: pre-wrap;">${data.announcementContent}</div>
+            </div>
+
+            ${data.attachments && data.attachments.length > 0 ? `
+              <div class="attachments">
+                <h3 style="margin-top: 0; color: #4b5563;">📎 Attachments (${data.attachments.length})</h3>
+                ${data.attachments.map(att => `
+                  <div class="attachment-item">
+                    📄 ${att.fileName} (${att.fileSize ? Math.round(att.fileSize / 1024) + ' KB' : 'File'})
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <div class="course-info">
+              <strong>Course:</strong> ${data.courseName}<br>
+              <strong>Course Code:</strong> ${data.courseCode}<br>
+              <strong>Posted by:</strong> ${data.instructorName}<br>
+              <strong>Date:</strong> ${data.postedDate}
+            </div>
+
+            <p>Join the discussion and comment on this announcement directly in the platform:</p>
+
+            <div style="text-align: center;">
+              <a href="${APP_URL}/course/${data.courseId}/announcements#announcement-${data.announcementId}" class="button">💬 View Discussion & Comment</a>
+            </div>
+
+            <p>Stay engaged with your course community and don't miss important updates!</p>
+
+            <p>Best regards,<br>
+            <strong>${data.instructorName}</strong><br>
+            ${data.courseName}</p>
+          </div>
+          <div class="footer">
+            <p>AI Engagement Hub - Empowering educators and students with AI insights</p>
+            <p>This announcement was sent to all members of ${data.courseName}</p>
+            <p style="font-size: 12px;">To manage your email preferences, visit your profile settings in the platform.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    getText: (data) => `
+Course Announcement - ${data.courseName}
+
+Hello ${data.recipientName},
+
+${data.isPinned ? '📌 PINNED ANNOUNCEMENT\n\n' : ''}Your instructor ${data.instructorName} has posted a new announcement:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${data.announcementTitle}
+
+${data.announcementContent}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${data.attachments && data.attachments.length > 0 ? `Attachments (${data.attachments.length}):
+${data.attachments.map(att => `• ${att.fileName}`).join('\n')}
+
+` : ''}Course: ${data.courseName}
+Course Code: ${data.courseCode}
+Posted by: ${data.instructorName}
+Date: ${data.postedDate}
+
+Join the discussion and comment on this announcement:
+${APP_URL}/course/${data.courseId}/announcements#announcement-${data.announcementId}
+
+Stay engaged with your course community and don't miss important updates!
+
+Best regards,
+${data.instructorName}
+${data.courseName}
+
+---
+AI Engagement Hub - Empowering educators and students with AI insights
+This announcement was sent to all members of ${data.courseName}
+To manage your email preferences, visit your profile settings in the platform.
+    `
+  },
+
   instructorMessage: {
     subject: (data) => data.subject || 'Message from your instructor',
     getHtml: (data) => `
@@ -931,6 +1049,24 @@ class EmailService {
 
     return await this.sendEmail(
       data.studentEmail,
+      subject,
+      htmlContent,
+      textContent,
+      replyTo
+    );
+  }
+
+  async sendAnnouncementEmail(data) {
+    const template = EMAIL_TEMPLATES.courseAnnouncement;
+    const subject = template.subject(data);
+    const htmlContent = template.getHtml(data);
+    const textContent = template.getText(data);
+
+    // Include instructor email as reply-to
+    const replyTo = data.instructorEmail || null;
+
+    return await this.sendEmail(
+      data.recipientEmail,
       subject,
       htmlContent,
       textContent,
@@ -1379,6 +1515,117 @@ export const emailNotifications = {
       return { success: successCount > 0, results };
     } catch (error) {
       console.error('❌ Error sending course enrollment request email:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Send course announcement email to all course members
+  async notifyCourseOfAnnouncement(announcementData) {
+    try {
+      console.log('📧 Starting announcement email notifications...');
+
+      // Get all course members
+      const { courseApi } = await import('./firebaseApi.js');
+      const courseMembers = await courseApi.getCourseMembers(announcementData.courseId);
+
+      // Filter to members with email addresses (all active members)
+      // Include all roles: instructor, student, teaching_assistant, student_assistant
+      const membersToNotify = courseMembers.filter(member => {
+        // Check for email in either direct property or nested users object
+        const email = member.email || member.users?.email;
+        const status = member.status;
+
+        return email && // Must have an email
+               email !== 'No email' && // Skip placeholder emails
+               (status === 'approved' || status === 'active' || !status); // Include if approved, active, or no status field
+      });
+
+      console.log(`📧 Found ${membersToNotify.length} course members to notify (from ${courseMembers.length} total)`);
+      console.log('📧 Member details:', membersToNotify.map(m => ({
+        name: m.name || m.users?.name || 'Unknown',
+        email: m.email || m.users?.email,
+        role: m.role,
+        status: m.status,
+        userId: m.userId
+      })));
+
+      if (membersToNotify.length === 0) {
+        console.log('📧 No members with email addresses found');
+        return { success: true, skipped: true, reason: 'No members with email addresses found' };
+      }
+
+      // Get course details
+      const course = await courseApi.getCourse(announcementData.courseId);
+      console.log('📧 Course details:', { name: course.name, code: course.code });
+
+      const emailData = {
+        announcementId: announcementData.announcementId,
+        announcementTitle: announcementData.title,
+        announcementContent: announcementData.content,
+        attachments: announcementData.attachments || [],
+        isPinned: announcementData.isPinned || false,
+        courseName: course.name || course.title || 'Course',
+        courseCode: course.code || course.courseCode || 'N/A',
+        courseId: announcementData.courseId,
+        instructorName: announcementData.instructorName,
+        instructorEmail: announcementData.instructorEmail,
+        postedDate: new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      const results = [];
+
+      // Send email to each member
+      for (const member of membersToNotify) {
+        // Skip the instructor who posted the announcement (optional)
+        // if (member.userId === announcementData.instructorId) continue;
+
+        // Get email and name from either direct properties or nested users object
+        const memberEmail = member.email || member.users?.email;
+        const memberName = member.name || member.users?.name || memberEmail.split('@')[0];
+
+        const recipientEmailData = {
+          ...emailData,
+          recipientEmail: memberEmail,
+          recipientName: memberName
+        };
+
+        try {
+          const result = await emailService.sendAnnouncementEmail(recipientEmailData);
+          results.push({
+            email: memberEmail,
+            name: memberName,
+            success: result.success,
+            error: result.error
+          });
+        } catch (error) {
+          console.error(`❌ Failed to send announcement email to ${memberEmail}:`, error);
+          results.push({
+            email: memberEmail,
+            name: memberName,
+            success: false,
+            error: error.message
+          });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      console.log(`✅ Announcement emails sent: ${successCount}/${results.length}`);
+
+      return {
+        success: successCount > 0,
+        results,
+        totalSent: successCount,
+        totalFailed: results.length - successCount
+      };
+    } catch (error) {
+      console.error('❌ Error sending announcement emails:', error);
       return { success: false, error: error.message };
     }
   },

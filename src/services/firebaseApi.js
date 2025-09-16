@@ -3968,12 +3968,46 @@ export const announcementApi = {
       const docRef = await addDoc(collection(db, 'announcements'), announcementDoc);
       console.log('✅ Announcement created with ID:', docRef.id);
 
-      return {
+      const newAnnouncement = {
         id: docRef.id,
         ...announcementDoc,
         createdAt: new Date(),
         updatedAt: new Date()
       };
+
+      // Send email notifications if requested
+      if (announcementData.sendEmail) {
+        console.log('📧 Sending email notifications for announcement...');
+        try {
+          const { emailNotifications } = await import('./emailService.js');
+          const emailResult = await emailNotifications.notifyCourseOfAnnouncement({
+            announcementId: docRef.id,
+            title: announcementData.title,
+            content: announcementData.content,
+            attachments: announcementData.attachments || [],
+            isPinned: announcementData.isPinned || false,
+            courseId: announcementData.courseId,
+            instructorId: announcementData.authorId,
+            instructorName: announcementData.authorName,
+            instructorEmail: announcementData.instructorEmail || announcementData.authorEmail
+          });
+
+          if (emailResult.success) {
+            console.log(`✅ Announcement emails sent to ${emailResult.totalSent} recipients`);
+            if (emailResult.totalFailed > 0) {
+              console.warn(`⚠️ Failed to send to ${emailResult.totalFailed} recipients`);
+            }
+          } else {
+            console.error('❌ Failed to send announcement emails:', emailResult.error);
+          }
+        } catch (emailError) {
+          console.error('❌ Error sending announcement emails:', emailError);
+          // Don't throw here - the announcement was created successfully
+          // We just failed to send emails
+        }
+      }
+
+      return newAnnouncement;
     } catch (error) {
       console.error('❌ Error creating announcement:', error);
       throw error;

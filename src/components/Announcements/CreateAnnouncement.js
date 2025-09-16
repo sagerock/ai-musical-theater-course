@@ -7,7 +7,9 @@ import {
   TrashIcon,
   CloudArrowUpIcon,
   DocumentIcon,
-  BookmarkIcon
+  BookmarkIcon,
+  EnvelopeIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function CreateAnnouncement({
@@ -20,6 +22,7 @@ export default function CreateAnnouncement({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -85,11 +88,13 @@ export default function CreateAnnouncement({
         courseId,
         authorId: currentUser.id,
         authorName: currentUser.name || currentUser.email,
+        authorEmail: currentUser.email, // Include instructor's email for reply-to
         authorRole: courseMembership?.role || 'instructor',
         title: title.trim(),
         content: content.trim(),
         isPinned,
-        attachments
+        attachments,
+        sendEmail // Pass the email flag
       };
 
       const newAnnouncement = await announcementApi.createAnnouncement(announcementData);
@@ -99,6 +104,7 @@ export default function CreateAnnouncement({
       setTitle('');
       setContent('');
       setIsPinned(false);
+      setSendEmail(false);
       setAttachments([]);
     } catch (error) {
       console.error('Error creating announcement:', error);
@@ -162,8 +168,9 @@ export default function CreateAnnouncement({
           />
         </div>
 
-        {/* Pin Option */}
-        <div className="mb-4">
+        {/* Options Row */}
+        <div className="mb-4 space-y-2">
+          {/* Pin Option */}
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
               type="checkbox"
@@ -176,6 +183,29 @@ export default function CreateAnnouncement({
               Pin this announcement to the top
             </span>
           </label>
+
+          {/* Email Option */}
+          <div className="flex items-start space-x-2">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <span className="text-sm text-gray-700 flex items-center">
+                <EnvelopeIcon className="h-4 w-4 mr-1" />
+                Email this announcement to all course members
+              </span>
+            </label>
+            <div className="group relative">
+              <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
+              <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded-md p-2 bottom-full mb-1 left-1/2 transform -translate-x-1/2 w-64">
+                All approved course members will receive an email with the announcement content and a link to the discussion.
+                <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-900"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* File Upload */}

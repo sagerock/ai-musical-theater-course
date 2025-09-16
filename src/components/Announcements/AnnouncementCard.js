@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { announcementApi } from '../../services/firebaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import AnnouncementComments from './AnnouncementComments';
@@ -29,6 +29,21 @@ export default function AnnouncementCard({
   const [editTitle, setEditTitle] = useState(announcement.title);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Auto-expand comments if accessed via direct link
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === `#announcement-${announcement.id}`) {
+      setShowComments(true);
+      // Scroll to the announcement after a brief delay to ensure DOM is ready
+      setTimeout(() => {
+        const element = document.getElementById(`announcement-${announcement.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, [announcement.id]);
 
   const canEdit = currentUser?.id === announcement.authorId ||
                   hasTeachingPermissions(courseMembership?.role);
@@ -114,7 +129,10 @@ export default function AnnouncementCard({
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${announcement.isPinned ? 'border-yellow-400' : 'border-gray-200'} overflow-hidden`}>
+    <div
+      id={`announcement-${announcement.id}`}
+      className={`bg-white rounded-lg shadow-sm border ${announcement.isPinned ? 'border-yellow-400' : 'border-gray-200'} overflow-hidden`}
+    >
       {/* Announcement Header */}
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-start justify-between">
