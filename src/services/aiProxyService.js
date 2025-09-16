@@ -24,7 +24,7 @@ const TOOL_CONFIG = {
   'Gemini 2.5 Pro': { endpoint: 'google', model: 'gemini-2.5-pro' },
 
   // Perplexity Model
-  'Sonar Pro': { endpoint: 'perplexity', model: 'sonar-pro' }
+  'Sonar Pro': { endpoint: 'perplexity', model: 'sonar' }
 };
 
 export const aiProxyService = {

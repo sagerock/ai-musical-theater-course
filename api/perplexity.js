@@ -15,7 +15,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const { messages, model = 'sonar-pro', stream = false } = req.body;
+    // Perplexity model naming - they use 'sonar' not 'sonar-pro'
+    let { messages, model = 'sonar', stream = false } = req.body;
+
+    // Map common variations to correct model name
+    if (model === 'sonar-pro') {
+      model = 'sonar';
+    }
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });
@@ -80,8 +86,18 @@ export default async function handler(req, res) {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+        let errorMessage;
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || JSON.stringify(errorData);
+        } else {
+          errorMessage = await response.text();
+        }
+
+        console.error(`Perplexity API error (${response.status}):`, errorMessage);
+        throw new Error(`Perplexity API error: ${response.status} - ${errorMessage}`);
       }
 
       const data = await response.json();
