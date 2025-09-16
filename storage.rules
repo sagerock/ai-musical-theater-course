@@ -33,5 +33,13 @@ service firebase.storage {
       allow read: if isAuthenticated(); // TODO: Restrict to course members when courseId lookup is available
       allow write: if isAuthenticated(); // TODO: Restrict to instructors/admins when role lookup is available
     }
+
+    // Announcement attachments stored as: /announcements/{courseId}/{filename}
+    match /announcements/{courseId}/{filename} {
+      // All authenticated users can read announcement attachments (they're public within the course)
+      allow read: if isAuthenticated();
+      // Only authenticated users can upload (will be restricted by Firestore rules to instructors)
+      allow write: if isAuthenticated();
+    }
   }
 }
