@@ -27,6 +27,7 @@ import FAQ from './components/FAQ/FAQ';
 import SettingsPage from './components/Settings/SettingsPage';
 import Help from './components/Help/Help';
 import TestDirectQuery from './components/TestDirectQuery';
+import EmailServerTest from './components/Testing/EmailServerTest';
 
 function App() {
   return (
@@ -83,6 +84,7 @@ function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/test-direct" element={<TestDirectQuery />} />
+          <Route path="/test-email" element={<EmailServerTest />} />
           </Routes>
         </div>
       </AuthProvider>
