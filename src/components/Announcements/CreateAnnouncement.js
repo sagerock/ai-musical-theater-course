@@ -7,7 +7,7 @@ import {
   TrashIcon,
   CloudArrowUpIcon,
   DocumentIcon,
-  PinIcon
+  BookmarkIcon
 } from '@heroicons/react/24/outline';
 
 export default function CreateAnnouncement({
@@ -172,7 +172,7 @@ export default function CreateAnnouncement({
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
             <span className="text-sm text-gray-700 flex items-center">
-              <PinIcon className="h-4 w-4 mr-1" />
+              <BookmarkIcon className="h-4 w-4 mr-1" />
               Pin this announcement to the top
             </span>
           </label>

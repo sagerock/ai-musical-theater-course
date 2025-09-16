@@ -5,7 +5,7 @@ import AnnouncementComments from './AnnouncementComments';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
-  PinIcon,
+  BookmarkIcon,
   TrashIcon,
   PencilIcon,
   ChatBubbleLeftIcon,
@@ -14,6 +14,7 @@ import {
   UserCircleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
+import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 
 export default function AnnouncementCard({
   announcement,
@@ -129,7 +130,7 @@ export default function AnnouncementCard({
                 </span>
                 {announcement.isPinned && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    <PinIcon className="h-3 w-3 mr-1" />
+                    <BookmarkSolidIcon className="h-3 w-3 mr-1" />
                     Pinned
                   </span>
                 )}
@@ -147,7 +148,7 @@ export default function AnnouncementCard({
                 className={`p-1 rounded hover:bg-gray-100 ${announcement.isPinned ? 'text-yellow-600' : 'text-gray-400'}`}
                 title={announcement.isPinned ? 'Unpin announcement' : 'Pin announcement'}
               >
-                <PinIcon className={`h-5 w-5 ${announcement.isPinned ? 'fill-current' : ''}`} />
+                {announcement.isPinned ? <BookmarkSolidIcon className="h-5 w-5" /> : <BookmarkIcon className="h-5 w-5" />}
               </button>
             )}
             {canEdit && (
