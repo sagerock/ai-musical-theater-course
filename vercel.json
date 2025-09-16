@@ -2,6 +2,18 @@
   "functions": {
     "api/send-email.js": {
       "maxDuration": 30
+    },
+    "api/openai.js": {
+      "maxDuration": 30
+    },
+    "api/anthropic.js": {
+      "maxDuration": 30
+    },
+    "api/google.js": {
+      "maxDuration": 30
+    },
+    "api/perplexity.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
