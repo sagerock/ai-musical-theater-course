@@ -1,6 +1,8 @@
 // SendGrid Email Service for AI Engagement Hub
 // Handles email notifications for instructor notes and project updates
 
+import { getVideoLinks } from '../components/common/ContentRenderer';
+
 const SENDGRID_API_KEY = process.env.REACT_APP_SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.REACT_APP_SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com';
 const APP_URL = process.env.REACT_APP_URL || 'http://localhost:3000';
@@ -707,6 +709,18 @@ This email was sent because you're an instructor in ${data.courseName}
               <div style="white-space: pre-wrap;">${data.announcementContent}</div>
             </div>
 
+            ${data.videoLinks && data.videoLinks.length > 0 ? `
+              <div class="attachments">
+                <h3 style="margin-top: 0; color: #4b5563;">🎥 Videos (${data.videoLinks.length})</h3>
+                ${data.videoLinks.map((video, idx) => `
+                  <div class="attachment-item">
+                    🎬 <a href="${video.url}" style="color: #8b5cf6; text-decoration: none;">Video ${idx + 1}: Watch on YouTube</a>
+                  </div>
+                `).join('')}
+                <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">Videos are embedded in the announcement. Click the link above or view them directly in the platform.</p>
+              </div>
+            ` : ''}
+
             ${data.attachments && data.attachments.length > 0 ? `
               <div class="attachments">
                 <h3 style="margin-top: 0; color: #4b5563;">📎 Attachments (${data.attachments.length})</h3>
@@ -759,7 +773,10 @@ ${data.announcementTitle}
 ${data.announcementContent}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${data.attachments && data.attachments.length > 0 ? `Attachments (${data.attachments.length}):
+${data.videoLinks && data.videoLinks.length > 0 ? `Videos (${data.videoLinks.length}):
+${data.videoLinks.map((video, idx) => `• Video ${idx + 1}: ${video.url}`).join('\n')}
+
+` : ''}${data.attachments && data.attachments.length > 0 ? `Attachments (${data.attachments.length}):
 ${data.attachments.map(att => `• ${att.fileName}`).join('\n')}
 
 ` : ''}Course: ${data.courseName}
@@ -1558,11 +1575,15 @@ export const emailNotifications = {
       const course = await courseApi.getCourse(announcementData.courseId);
       console.log('📧 Course details:', { name: course.name, code: course.code });
 
+      // Extract video links from announcement content
+      const videoLinks = getVideoLinks(announcementData.content);
+
       const emailData = {
         announcementId: announcementData.announcementId,
         announcementTitle: announcementData.title,
         announcementContent: announcementData.content,
         attachments: announcementData.attachments || [],
+        videoLinks: videoLinks || [],
         isPinned: announcementData.isPinned || false,
         courseName: course.name || course.title || 'Course',
         courseCode: course.code || course.courseCode || 'N/A',

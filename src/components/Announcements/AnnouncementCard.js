@@ -3,6 +3,7 @@ import { announcementApi } from '../../services/firebaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import AnnouncementComments from './AnnouncementComments';
 import UserAvatar from '../common/UserAvatar';
+import ContentRenderer, { getVideoCount } from '../common/ContentRenderer';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -12,7 +13,8 @@ import {
   ChatBubbleLeftIcon,
   PaperClipIcon,
   ArrowDownTrayIcon,
-  ClockIcon
+  ClockIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 
@@ -158,6 +160,12 @@ export default function AnnouncementCard({
                     Pinned
                   </span>
                 )}
+                {getVideoCount(announcement.content) > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <VideoCameraIcon className="h-3 w-3 mr-1" />
+                    {getVideoCount(announcement.content)} Video{getVideoCount(announcement.content) > 1 ? 's' : ''}
+                  </span>
+                )}
               </div>
               <div className="flex items-center mt-1 text-xs text-gray-500">
                 <ClockIcon className="h-3 w-3 mr-1" />
@@ -239,8 +247,8 @@ export default function AnnouncementCard({
         ) : (
           <>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">{announcement.title}</h2>
-            <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-              {announcement.content}
+            <div className="prose prose-sm max-w-none text-gray-700">
+              <ContentRenderer content={announcement.content} />
             </div>
           </>
         )}
