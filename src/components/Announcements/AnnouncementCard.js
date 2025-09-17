@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { announcementApi } from '../../services/firebaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import AnnouncementComments from './AnnouncementComments';
+import UserAvatar from '../common/UserAvatar';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -11,7 +12,6 @@ import {
   ChatBubbleLeftIcon,
   PaperClipIcon,
   ArrowDownTrayIcon,
-  UserCircleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
@@ -137,7 +137,13 @@ export default function AnnouncementCard({
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3">
-            <UserCircleIcon className="h-10 w-10 text-gray-400" />
+            <UserAvatar
+              name={announcement.authorName}
+              email={announcement.authorEmail}
+              role={announcement.authorRole}
+              size={40}
+              variant="beam"
+            />
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="text-sm font-semibold text-gray-900">

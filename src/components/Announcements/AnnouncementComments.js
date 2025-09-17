@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { announcementApi } from '../../services/firebaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
+import UserAvatar from '../common/UserAvatar';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
-  UserCircleIcon,
   PaperAirplaneIcon,
   PencilIcon,
   TrashIcon,
@@ -163,7 +163,15 @@ export default function AnnouncementComments({
           {comments.map(comment => (
             <div key={comment.id} className="px-6 py-4">
               <div className="flex space-x-3">
-                <UserCircleIcon className="h-8 w-8 text-gray-400 flex-shrink-0" />
+                <div className="flex-shrink-0">
+                  <UserAvatar
+                    name={comment.authorName}
+                    email={comment.authorEmail}
+                    role={comment.authorRole}
+                    size={32}
+                    variant="beam"
+                  />
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -244,7 +252,15 @@ export default function AnnouncementComments({
       {/* New Comment Form */}
       <div className="px-6 py-4 border-t border-gray-200 bg-white">
         <form onSubmit={handleSubmitComment} className="flex space-x-3">
-          <UserCircleIcon className="h-8 w-8 text-gray-400 flex-shrink-0" />
+          <div className="flex-shrink-0">
+            <UserAvatar
+              name={currentUser.name || currentUser.email}
+              email={currentUser.email}
+              role={courseMembership?.role || 'student'}
+              size={32}
+              variant="beam"
+            />
+          </div>
           <div className="flex-1">
             <textarea
               value={newComment}
