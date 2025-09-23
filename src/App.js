@@ -29,6 +29,7 @@ import SettingsPage from './components/Settings/SettingsPage';
 import Help from './components/Help/Help';
 import TestDirectQuery from './components/TestDirectQuery';
 import EmailServerTest from './components/Testing/EmailServerTest';
+import AIDiagnostics from './components/Diagnostics/AIDiagnostics';
 
 function App() {
   return (
@@ -74,6 +75,9 @@ function App() {
           </Route>
           <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<AdminRoute><AdminPanel /></AdminRoute>} />
+          </Route>
+          <Route path="/diagnostics" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<InstructorRoute><AIDiagnostics /></InstructorRoute>} />
           </Route>
           <Route path="/school-admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<SchoolAdminRoute><SchoolAdminDashboard /></SchoolAdminRoute>} />

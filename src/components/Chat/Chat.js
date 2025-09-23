@@ -673,7 +673,7 @@ export default function Chat() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={selectedFile ? "Ask a question about your PDF (optional)..." : "Type your message here..."}
+                  placeholder={selectedFile ? "Ask a question about your PDF (optional)..." : "Enter your AI prompt or question here to start a conversation..."}
                   rows={3}
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-500 focus:border-primary-500 resize-none"
                   onKeyDown={(e) => {

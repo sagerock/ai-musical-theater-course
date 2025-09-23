@@ -7,7 +7,8 @@ import {
   EnvelopeIcon,
   DocumentTextIcon,
   CogIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
 
 const navigationItems = [
@@ -52,6 +53,12 @@ const navigationItems = [
     href: '/instructor/ai-assistant',
     icon: ChatBubbleLeftRightIcon,
     description: 'Chat with AI about teaching strategies'
+  },
+  {
+    name: 'Diagnostics',
+    href: '/diagnostics',
+    icon: WrenchScrewdriverIcon,
+    description: 'Troubleshoot AI model issues'
   }
 ];
 

@@ -1,6 +1,9 @@
 // AI Proxy Service - Routes API calls through Vercel serverless functions
 // This keeps API keys secure on the server side
 
+import errorLogger from '../utils/errorLogger';
+import retryHelper from '../utils/retryHelper';
+
 const API_ENDPOINTS = {
   openai: '/api/openai',
   anthropic: '/api/anthropic',
@@ -27,13 +30,46 @@ const TOOL_CONFIG = {
   'Sonar Pro': { endpoint: 'perplexity', model: 'sonar' }
 };
 
+// Helper function to create user-friendly error messages
+const getUserFriendlyError = (error, tool) => {
+  const errorMessage = error.message?.toLowerCase() || '';
+
+  if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+    return `The ${tool} service is temporarily rate-limited. Please wait a moment and try again.`;
+  }
+
+  if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+    return `The ${tool} service is taking longer than expected. Please try again.`;
+  }
+
+  if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+    return `Connection issue with ${tool}. Please check your internet connection and try again.`;
+  }
+
+  if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+    return `Authentication issue with ${tool}. The service configuration may need updating.`;
+  }
+
+  if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
+    return `The ${tool} service is experiencing technical difficulties. Please try again in a moment.`;
+  }
+
+  if (errorMessage.includes('capacity') || errorMessage.includes('overloaded')) {
+    return `The ${tool} service is at capacity. Please try a different model or wait a moment.`;
+  }
+
+  return `An error occurred with ${tool}: ${error.message}. Please try again or select a different model.`;
+};
+
 export const aiProxyService = {
   async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], systemPrompt = null, stream = false) {
     const config = TOOL_CONFIG[tool] || TOOL_CONFIG['GPT-5 Mini'];
     const endpoint = API_ENDPOINTS[config.endpoint];
 
     if (!endpoint) {
-      throw new Error(`Unknown AI tool: ${tool}`);
+      const error = new Error(`Unknown AI tool: ${tool}`);
+      errorLogger.logError(error, { tool, provider: 'unknown' });
+      throw error;
     }
 
     // Build messages array in OpenAI format
@@ -58,22 +94,66 @@ export const aiProxyService = {
     // Add current prompt
     messages.push({ role: 'user', content: prompt });
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages,
-          model: config.model,
-          stream
-        })
-      });
+    // Get retry configuration for this model
+    const retryConfig = retryHelper.getModelConfig(config.model);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || `API request failed: ${response.status}`);
+    // Start timing
+    const startTime = Date.now();
+
+    try {
+      // Wrap the API call with retry logic
+      const response = await retryHelper.withRetry(async () => {
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+        try {
+          const fetchResponse = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messages,
+              model: config.model,
+              stream
+            }),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!fetchResponse.ok) {
+            const errorData = await fetchResponse.json().catch(() => ({}));
+            const error = new Error(errorData.error || `API request failed: ${fetchResponse.status}`);
+            error.status = fetchResponse.status;
+            error.provider = config.endpoint;
+            error.model = config.model;
+            throw error;
+          }
+
+          return fetchResponse;
+        } catch (err) {
+          clearTimeout(timeoutId);
+          if (err.name === 'AbortError') {
+            const timeoutError = new Error('Request timeout - the AI service took too long to respond');
+            timeoutError.status = 408;
+            timeoutError.provider = config.endpoint;
+            timeoutError.model = config.model;
+            throw timeoutError;
+          }
+          throw err;
+        }
+      }, retryConfig);
+
+      // Log successful API call in diagnostic mode
+      const duration = Date.now() - startTime;
+      if (errorLogger.diagnosticMode) {
+        errorLogger.logApiCall(
+          { model: config.model, provider: config.endpoint, prompt, conversationHistory },
+          { success: true, statusCode: response.status, content: true },
+          duration
+        );
       }
 
       if (stream) {
@@ -83,8 +163,27 @@ export const aiProxyService = {
         return data;
       }
     } catch (error) {
+      // Log the error with context
+      errorLogger.logError(error, {
+        tool,
+        model: config.model,
+        provider: config.endpoint,
+        promptLength: prompt?.length,
+        historyLength: conversationHistory?.length,
+        duration: Date.now() - startTime
+      });
+
+      // Create user-friendly error message
+      const userMessage = getUserFriendlyError(error, tool);
+
+      // Throw error with user-friendly message but preserve original for debugging
+      const enhancedError = new Error(userMessage);
+      enhancedError.originalError = error;
+      enhancedError.tool = tool;
+      enhancedError.model = config.model;
+
       console.error(`Error calling ${tool} API:`, error);
-      throw error;
+      throw enhancedError;
     }
   },
 
