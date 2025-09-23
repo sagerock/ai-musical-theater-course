@@ -50,6 +50,13 @@ export default function Layout() {
   }, [currentUser?.id, loadUserCourses]);
 
   const handleLogout = async () => {
+    // Show confirmation dialog
+    const confirmLogout = window.confirm('Are you sure you want to log out?');
+
+    if (!confirmLogout) {
+      return; // User cancelled, don't log out
+    }
+
     try {
       await logout();
       navigate('/login');
