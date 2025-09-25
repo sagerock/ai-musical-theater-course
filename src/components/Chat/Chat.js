@@ -527,7 +527,7 @@ export default function Chat() {
                     console.log('Integrity check complete:', result);
                     toast.success('Check console for reflection diagnostic results');
                     // Reload chats to see fixed reflections
-                    loadProjectData();
+                    loadProjectAndChats();
                   } catch (error) {
                     console.error('Integrity check failed:', error);
                     toast.error('Integrity check failed - see console');
