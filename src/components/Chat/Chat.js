@@ -15,7 +15,9 @@ import {
   SparklesIcon,
   PaperClipIcon,
   DocumentIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  XMarkIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import ChatMessage from './ChatMessage';
 import TaggingModal from './TaggingModal';
@@ -47,6 +49,8 @@ export default function Chat() {
   const [showAIModelsModal, setShowAIModelsModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [currentChatForModal, setCurrentChatForModal] = useState(null);
+  const [showFeedbackPanel, setShowFeedbackPanel] = useState(false);
+  const [totalFeedbackCount, setTotalFeedbackCount] = useState(0);
 
   // Access control - check if user can send AI messages
   const isProjectOwner = project?.created_by === currentUser?.id;
@@ -644,18 +648,6 @@ export default function Chat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Instructor Notes Section - For instructors and project owners */}
-      {project && (isInstructor || isProjectOwner) && (
-        <div className="px-6 py-2">
-          <InstructorNotes 
-            project={project} 
-            courseId={project.course_id}
-            isInstructorView={isInstructor && !isProjectOwner}
-            isStudentView={isProjectOwner && !isInstructor}
-          />
-        </div>
-      )}
-
       {/* Message Input or Instructor Message */}
       <div className="bg-white border-t border-gray-200 p-6">
         {canSendAIMessages ? (
@@ -761,6 +753,64 @@ export default function Chat() {
           </div>
         )}
       </div>
+
+      {/* Feedback Button - Fixed position */}
+      {project && (isInstructor || isProjectOwner) && (
+        <button
+          onClick={() => setShowFeedbackPanel(!showFeedbackPanel)}
+          className="fixed right-6 bottom-6 z-40 inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 hover:scale-105"
+        >
+          <DocumentTextIcon className="h-5 w-5" />
+          {totalFeedbackCount > 0 && (
+            <span className="absolute -top-2 -right-2 inline-flex items-center justify-center h-6 w-6 text-xs font-bold leading-none text-white bg-primary-500 border-2 border-white rounded-full">
+              {totalFeedbackCount}
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Feedback Flyout Panel */}
+      {project && (isInstructor || isProjectOwner) && (
+        <div className={`fixed inset-y-0 right-0 z-50 w-96 transform transition-transform duration-300 ease-in-out ${
+          showFeedbackPanel ? 'translate-x-0' : 'translate-x-full'
+        }`}>
+          <div className="h-full bg-white shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {isProjectOwner && !isInstructor ? 'Instructor Feedback' : 'Project Feedback'}
+                </h2>
+                <button
+                  onClick={() => setShowFeedbackPanel(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <InstructorNotes
+                project={project}
+                courseId={project.course_id}
+                isInstructorView={isInstructor && !isProjectOwner}
+                isStudentView={isProjectOwner && !isInstructor}
+                onTotalCountChange={setTotalFeedbackCount}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Overlay when panel is open */}
+      {showFeedbackPanel && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setShowFeedbackPanel(false)}
+        />
+      )}
 
       {/* Modals */}
       {showTaggingModal && currentChatForModal && (

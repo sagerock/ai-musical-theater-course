@@ -3584,7 +3584,8 @@ export const reflectionApi = {
 export const instructorNotesApi = {
   async createNote(noteData) {
     console.log('🔥 createNote:', noteData);
-    
+    console.log('🔍 Author name in noteData:', noteData.authorName);
+
     const note = {
       projectId: noteData.project_id,
       instructorId: noteData.instructor_id,
@@ -3592,20 +3593,88 @@ export const instructorNotesApi = {
       title: noteData.title,
       content: noteData.content,
       is_visible_to_student: noteData.is_visible_to_student,
+      parentId: noteData.parentId || null, // Support for threading
+      authorId: noteData.authorId || noteData.instructor_id, // Track who wrote this
+      authorRole: noteData.authorRole || 'instructor', // Track if instructor or student
+      authorName: noteData.authorName || null, // Store author name
+      threadId: noteData.threadId || null, // Track root thread
+      hasReplies: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
-    
+
+    console.log('🔍 Note object to be saved:', note);
+
     const docRef = await addDoc(collection(db, 'instructorNotes'), note);
-    
+
     // Return note with generated ID and proper timestamp format
     const now = new Date();
-    return {
+    const returnNote = {
       id: docRef.id,
       ...note,
+      authorName: note.authorName, // Ensure authorName is included
       createdAt: now,
       updatedAt: now,
       created_at: now, // For compatibility with existing component
+      updated_at: now
+    };
+
+    console.log('🔍 Returning note with authorName:', returnNote.authorName);
+    return returnNote;
+  },
+
+  async replyToNote(noteId, replyData) {
+    console.log('🔥 replyToNote:', noteId, replyData);
+
+    // Get original note to get thread info
+    const originalNote = await getDoc(doc(db, 'instructorNotes', noteId));
+    if (!originalNote.exists()) {
+      throw new Error('Original note not found');
+    }
+
+    const originalData = originalNote.data();
+    const threadId = originalData.threadId || noteId; // If no threadId, this is root
+
+    const reply = {
+      projectId: originalData.projectId,
+      courseId: originalData.courseId,
+      title: replyData.title || `Re: ${originalData.title}`,
+      content: replyData.content,
+      is_visible_to_student: true, // Replies are always visible
+      parentId: noteId,
+      threadId: threadId,
+      authorId: replyData.authorId,
+      authorRole: replyData.authorRole,
+      authorName: replyData.authorName,
+      instructorId: replyData.authorRole === 'instructor' ? replyData.authorId : originalData.instructorId,
+      hasReplies: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    const docRef = await addDoc(collection(db, 'instructorNotes'), reply);
+
+    // Mark parent as having replies
+    await updateDoc(doc(db, 'instructorNotes', noteId), {
+      hasReplies: true,
+      lastReplyAt: serverTimestamp()
+    });
+
+    // If this is part of a thread, update thread root
+    if (threadId && threadId !== noteId) {
+      await updateDoc(doc(db, 'instructorNotes', threadId), {
+        hasReplies: true,
+        lastReplyAt: serverTimestamp()
+      });
+    }
+
+    const now = new Date();
+    return {
+      id: docRef.id,
+      ...reply,
+      createdAt: now,
+      updatedAt: now,
+      created_at: now,
       updated_at: now
     };
   },
@@ -3644,27 +3713,95 @@ export const instructorNotesApi = {
 
   async getProjectNotes(projectId) {
     console.log('🔥 getProjectNotes:', projectId);
-    
+
     const notesQuery = query(
       collection(db, 'instructorNotes'),
       where('projectId', '==', projectId),
       orderBy('createdAt', 'desc')
     );
-    
+
     const notesSnapshot = await getDocs(notesQuery);
-    return notesSnapshot.docs.map(doc => {
-      const data = doc.data();
+    const notes = [];
+
+    // Fetch author names for each note
+    for (const noteDoc of notesSnapshot.docs) {
+      const data = noteDoc.data();
       const createdAt = convertTimestamp(data.createdAt);
       const updatedAt = convertTimestamp(data.updatedAt);
-      return {
-        id: doc.id,
+
+      // Get author name
+      let authorName = data.authorName || 'Unknown';
+
+      // Try to fetch author name if not stored in note
+      if (!data.authorName) {
+        // Use authorId if available, otherwise fall back to instructorId
+        const authorId = data.authorId || data.instructorId;
+        console.log('🔍 Fetching author name for note, authorId:', authorId, 'instructorId:', data.instructorId);
+
+        if (authorId) {
+          try {
+            const authorData = await userApi.getUserById(authorId);
+            console.log('🔍 Author data fetched:', authorData);
+            if (authorData) {
+              authorName = authorData.displayName || authorData.name || authorData.email || 'Unknown';
+              console.log('🔍 Author name resolved to:', authorName);
+            }
+          } catch (error) {
+            console.error('Error fetching author for ID:', authorId, error);
+          }
+        }
+      }
+
+      notes.push({
+        id: noteDoc.id,
         ...data,
+        authorName,
         createdAt,
         updatedAt,
         created_at: createdAt, // For compatibility with existing component
         updated_at: updatedAt
-      };
+      });
+    }
+
+    // Organize into threaded structure
+    return this.organizeThreadedNotes(notes);
+  },
+
+  organizeThreadedNotes(notes) {
+    // Create a map for quick lookups
+    const noteMap = new Map();
+    notes.forEach(note => {
+      noteMap.set(note.id, { ...note, replies: [] });
     });
+
+    // Build the tree structure
+    const rootNotes = [];
+    notes.forEach(note => {
+      if (note.parentId) {
+        const parent = noteMap.get(note.parentId);
+        if (parent) {
+          parent.replies.push(noteMap.get(note.id));
+        }
+      } else {
+        rootNotes.push(noteMap.get(note.id));
+      }
+    });
+
+    // Sort replies by date
+    const sortReplies = (note) => {
+      if (note.replies && note.replies.length > 0) {
+        note.replies.sort((a, b) => {
+          const dateA = a.createdAt || a.created_at;
+          const dateB = b.createdAt || b.created_at;
+          return new Date(dateA) - new Date(dateB); // Oldest first for replies
+        });
+        note.replies.forEach(sortReplies);
+      }
+    };
+
+    rootNotes.forEach(sortReplies);
+
+    return rootNotes;
   },
 
   async getNotesForDashboard(instructorId, courseId) {

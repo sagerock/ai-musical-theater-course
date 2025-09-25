@@ -1177,6 +1177,67 @@ export const emailNotifications = {
     }
   },
 
+  // Send email when someone replies to a feedback conversation
+  async notifyUserOfReply(replyData) {
+    try {
+      // Check if recipient has email notifications enabled
+      const { userApi } = await import('./firebaseApi.js');
+      const hasNotificationsEnabled = await userApi.hasEmailNotificationsEnabled(
+        replyData.recipientId,
+        'instructor_note_emails' // Use same setting for replies
+      );
+
+      if (!hasNotificationsEnabled) {
+        console.log('📧 Recipient has disabled feedback email notifications');
+        return { success: true, skipped: true, reason: 'User disabled notifications' };
+      }
+
+      const emailData = {
+        recipientName: replyData.recipientName,
+        recipientEmail: replyData.recipientEmail,
+        senderName: replyData.senderName,
+        senderEmail: replyData.senderEmail, // For reply-to
+        projectTitle: replyData.projectTitle,
+        projectId: replyData.projectId,
+        replyContent: replyData.replyContent,
+        parentNoteTitle: replyData.parentNoteTitle,
+        replyDate: new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        courseName: replyData.courseName
+      };
+
+      // Send a generic reply notification email (reuse instructor note email template for now)
+      const result = await emailService.sendInstructorNoteEmail({
+        studentName: emailData.recipientName,
+        studentEmail: emailData.recipientEmail,
+        instructorName: emailData.senderName,
+        instructorEmail: emailData.senderEmail,
+        projectTitle: emailData.projectTitle,
+        projectId: emailData.projectId,
+        noteContent: `Reply to "${emailData.parentNoteTitle}":\n\n${emailData.replyContent}`,
+        noteDate: emailData.replyDate,
+        courseName: emailData.courseName
+      });
+
+      if (result.success) {
+        console.log('✅ Reply notification email sent successfully');
+      } else {
+        console.error('❌ Failed to send reply notification email:', result.error);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('❌ Error sending reply notification email:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
   // Send email when student creates a new project
   async notifyInstructorsOfNewProject(projectData) {
     try {
