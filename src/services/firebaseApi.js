@@ -3656,6 +3656,19 @@ export const instructorNotesApi = {
 
     console.log('🔍 DEBUG: Reply object to be created:', reply);
 
+    // Check if user is a member of the course
+    try {
+      const membershipId = `${replyData.authorId}_${reply.courseId}`;
+      const membershipDoc = await getDoc(doc(db, 'courseMemberships', membershipId));
+      console.log('🔍 DEBUG: Membership check:', {
+        membershipId,
+        exists: membershipDoc.exists(),
+        data: membershipDoc.exists() ? membershipDoc.data() : null
+      });
+    } catch (error) {
+      console.log('🔍 DEBUG: Error checking membership:', error);
+    }
+
     const docRef = await addDoc(collection(db, 'instructorNotes'), reply);
 
     // Mark parent as having replies
