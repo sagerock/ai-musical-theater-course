@@ -524,11 +524,11 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
         {(() => {
           const visibleNotes = notes.filter(note => isStudentView ? note.is_visible_to_student : true);
 
-          const renderNote = (note, isReply = false, depth = 0) => {
+          const renderNote = (note, isReply = false) => {
             const isUnread = !readNotes.has(note.id);
 
             return (
-            <div key={note.id} className={`${isReply ? 'ml-8 mt-3' : ''} ${isUnread ? 'relative' : ''}`}>
+            <div key={note.id} className={`${isUnread ? 'relative' : ''}`}>
               {/* Unread indicator */}
               {isUnread && (
                 <div className="absolute -left-2 top-4 w-1 h-8 bg-primary-500 rounded-r animate-pulse" />
@@ -594,8 +594,8 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
                             Hidden from student
                           </span>
                         )}
-                        {/* Reply button */}
-                        {(isInstructor || isProjectOwner) && (
+                        {/* Reply button - only show on main notes, not on replies */}
+                        {!isReply && (isInstructor || isProjectOwner) && (
                           <button
                             onClick={() => startReply(note)}
                             className="inline-flex items-center text-primary-600 hover:text-primary-800 text-xs"
@@ -680,10 +680,10 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
                 )}
               </div>
 
-              {/* Render replies */}
+              {/* Render replies as flat list */}
               {note.replies && note.replies.length > 0 && expandedThreads.has(note.id) && (
-                <div className="mt-2">
-                  {note.replies.map(reply => renderNote(reply, true, depth + 1))}
+                <div className="mt-3 space-y-2 pl-4 border-l-2 border-gray-200">
+                  {note.replies.map(reply => renderNote(reply, true))}
                 </div>
               )}
             </div>

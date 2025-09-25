@@ -3635,7 +3635,11 @@ export const instructorNotesApi = {
     const originalData = originalNote.data();
     console.log('🔍 DEBUG: Original note data:', originalData);
 
-    const threadId = originalData.threadId || noteId; // If no threadId, this is root
+    // Always reply to the root thread, not nested replies
+    // If this note has a threadId, use it. Otherwise, this IS the thread root
+    const threadId = originalData.threadId || noteId;
+    // Always set parentId to the thread root for flat threading
+    const parentId = originalData.threadId || noteId;
 
     const reply = {
       projectId: originalData.projectId,
@@ -3643,7 +3647,7 @@ export const instructorNotesApi = {
       title: replyData.title || `Re: ${originalData.title}`,
       content: replyData.content,
       is_visible_to_student: true, // Replies are always visible
-      parentId: noteId,
+      parentId: parentId,  // Always point to thread root for flat structure
       threadId: threadId,
       authorId: replyData.authorId,
       authorRole: replyData.authorRole,
