@@ -76,7 +76,8 @@ service cloud.firestore {
     function ownsProjectForNote(noteData) {
       return isAuthenticated() &&
              exists(/databases/$(database)/documents/projects/$(noteData.projectId)) &&
-             get(/databases/$(database)/documents/projects/$(noteData.projectId)).data.createdBy == request.auth.uid;
+             (get(/databases/$(database)/documents/projects/$(noteData.projectId)).data.createdBy == request.auth.uid ||
+              get(/databases/$(database)/documents/projects/$(noteData.projectId)).data.created_by == request.auth.uid);
     }
     
     // Helper function to check if user is a school administrator
@@ -176,7 +177,8 @@ service cloud.firestore {
     match /projects/{projectId} {
       // Users can read their own projects + instructors can read student projects + student assistants can read peer projects
       allow read: if isAuthenticated() && (
-        isOwner(resource.data.createdBy) ||              // Project owner
+        isOwner(resource.data.createdBy) ||              // Project owner (createdBy)
+        isOwner(resource.data.created_by) ||             // Project owner (created_by)
         isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
         hasStudentAssistantPermissionsInCourse(resource.data.courseId) ||  // Student assistants can view peer projects
         isSchoolAdministratorForCourse(resource.data.courseId) ||  // School administrators can view projects in their school's courses
@@ -184,15 +186,17 @@ service cloud.firestore {
       );
       
       // Users can create projects if they're the creator and (no course or member of course)
-      allow create: if isAuthenticated() && 
-                   request.resource.data.createdBy == request.auth.uid && (
+      allow create: if isAuthenticated() &&
+                   (request.resource.data.createdBy == request.auth.uid ||
+                    request.resource.data.created_by == request.auth.uid) && (
                      request.resource.data.courseId == null ||     // No course required
                      isMemberOfCourse(request.resource.data.courseId)  // Member of course
                    );
-      
+
       // Users can update/delete their own projects
       allow update, delete: if isAuthenticated() && (
-        isOwner(resource.data.createdBy) ||              // Project owner
+        isOwner(resource.data.createdBy) ||              // Project owner (createdBy)
+        isOwner(resource.data.created_by) ||             // Project owner (created_by)
         isGlobalAdmin()                                  // Global admin
       );
       
@@ -272,8 +276,9 @@ service cloud.firestore {
          request.resource.data.authorId == request.auth.uid &&  // Author matches current user
          exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
          (
-           // Either the student owns the project
+           // Either the student owns the project (check both field names)
            get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.createdBy == request.auth.uid ||
+           get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.created_by == request.auth.uid ||
            // Or it's an instructor in the course
            isInstructorInCourse(request.resource.data.courseId)
          )) ||

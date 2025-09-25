@@ -3633,6 +3633,8 @@ export const instructorNotesApi = {
     }
 
     const originalData = originalNote.data();
+    console.log('🔍 DEBUG: Original note data:', originalData);
+
     const threadId = originalData.threadId || noteId; // If no threadId, this is root
 
     const reply = {
@@ -3651,6 +3653,8 @@ export const instructorNotesApi = {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
+
+    console.log('🔍 DEBUG: Reply object to be created:', reply);
 
     const docRef = await addDoc(collection(db, 'instructorNotes'), reply);
 

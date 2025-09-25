@@ -194,6 +194,14 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
       return;
     }
 
+    console.log('🔍 DEBUG: Attempting to reply with:', {
+      noteId,
+      currentUserId: currentUser.id,
+      userRole,
+      projectId: project.id,
+      courseId: project.course_id
+    });
+
     try {
       const reply = await instructorNotesApi.replyToNote(noteId, {
         content: replyContent.trim(),
