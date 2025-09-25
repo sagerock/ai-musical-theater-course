@@ -251,41 +251,23 @@ service cloud.firestore {
 
     // INSTRUCTOR NOTES - Instructor annotations visible to project owners (now supports threaded conversations)
     match /instructorNotes/{noteId} {
-      // Allow reads for authenticated users who are either:
-      // - The instructor who created the note
-      // - The student who owns the project
-      // - Any instructor in the course
-      // - Admin
+      // Simple read rule - if you're in the course, you can read notes
       allow read: if isAuthenticated() && (
-        (resource.data.instructorId == request.auth.uid) ||
-        (resource.data.authorId == request.auth.uid) ||
-        ownsProjectForNote(resource.data) ||
-        (resource.data.courseId != null && isMemberOfCourse(resource.data.courseId)) ||
+        isMemberOfCourse(resource.data.courseId) ||
         isGlobalAdmin()
       );
 
-      // Allow listing for authenticated users (filtered by read rules)
+      // Allow listing for authenticated users
       allow list: if isAuthenticated();
 
-      // Allow creation if:
-      // - User is creating as themselves (authorId matches)
-      // - AND either:
-      //   - They have instructor role (for original notes)
-      //   - OR it's a reply (has parentId)
-      allow create: if isAuthenticated() &&
+      // Simple write rule - authenticated users can write as themselves
+      // We trust the application layer to handle the business logic
+      allow create, update: if isAuthenticated() &&
         request.resource.data.authorId == request.auth.uid;
 
-      // Allow updates by the author or instructor
-      allow update: if isAuthenticated() && (
-        resource.data.authorId == request.auth.uid ||
-        resource.data.instructorId == request.auth.uid ||
-        isGlobalAdmin()
-      );
-
-      // Allow deletion by the author or instructor
+      // Allow deletion by the author or admin
       allow delete: if isAuthenticated() && (
         resource.data.authorId == request.auth.uid ||
-        resource.data.instructorId == request.auth.uid ||
         isGlobalAdmin()
       );
     }
