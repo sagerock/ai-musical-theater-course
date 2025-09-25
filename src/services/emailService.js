@@ -2,6 +2,8 @@
 // Handles email notifications for instructor notes and project updates
 
 import { getVideoLinks } from '../components/common/ContentRenderer';
+import { functions } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 const SENDGRID_API_KEY = process.env.REACT_APP_SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.REACT_APP_SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com';
@@ -911,28 +913,22 @@ class EmailService {
       emailData.replyTo = replyTo;
     }
 
-    // Try to use backend server first (works in both dev and prod)
+    // Use Firebase Cloud Function to send email
     try {
-      const apiUrl = EMAIL_API_URL ? `${EMAIL_API_URL}/api/send-email` : '/api/send-email';
-      console.log('📧 Attempting to send email via:', apiUrl);
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(emailData)
-      });
+      console.log('📧 Attempting to send email via Firebase Functions to:', to);
 
-      if (response.ok) {
-        console.log('✅ Email sent successfully via backend to:', to);
-        return { success: true };
+      const sendEmailFunction = httpsCallable(functions, 'sendEmail');
+      const result = await sendEmailFunction(emailData);
+
+      if (result.data && result.data.success) {
+        console.log('✅ Email sent successfully via Firebase Functions to:', to);
+        return { success: true, message: result.data.message };
       } else {
-        const errorData = await response.json();
-        console.error('❌ Backend email API error:', errorData);
-        throw new Error(`Backend API error: ${JSON.stringify(errorData)}`);
+        console.error('❌ Firebase Functions email error:', result.data);
+        return { success: false, error: 'Email sending failed' };
       }
     } catch (error) {
-      console.error('❌ Backend email sending failed:', error);
+      console.error('❌ Firebase Functions email sending failed:', error);
       
       // Check if it's a blocked request (ad blocker, etc.)
       if (error.message?.includes('ERR_BLOCKED_BY_CLIENT') || error.message?.includes('blocked')) {

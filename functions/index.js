@@ -2,10 +2,19 @@ const {onCall, HttpsError} = require('firebase-functions/v2/https');
 const {onDocumentWritten} = require('firebase-functions/v2/firestore');
 const {logger} = require('firebase-functions');
 const admin = require('firebase-admin');
+const sgMail = require('@sendgrid/mail');
 
 admin.initializeApp();
 const db = admin.firestore();
 const auth = admin.auth();
+
+// Initialize SendGrid with API key
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com';
+
+if (SENDGRID_API_KEY) {
+  sgMail.setApiKey(SENDGRID_API_KEY);
+}
 
 /**
  * Cloud Function to completely delete a user and all associated data
@@ -1455,5 +1464,98 @@ AI Engagement Hub Team
     }
     
     throw new HttpsError('internal', 'Failed to send role change notification: ' + error.message);
+  }
+});
+
+/**
+ * General purpose email sending function
+ * Used by the frontend to send various notification emails
+ */
+exports.sendEmail = onCall({
+  enforceAppCheck: false,
+  cors: true,
+}, async (request) => {
+  const {to, subject, htmlContent, textContent, replyTo} = request.data;
+  const callerUid = request.auth?.uid;
+
+  logger.info('📧 sendEmail function called', {
+    to: to,
+    subject: subject,
+    callerUid: callerUid,
+    hasHtml: !!htmlContent,
+    hasText: !!textContent,
+    hasReplyTo: !!replyTo
+  });
+
+  // Validate that user is authenticated
+  if (!callerUid) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated to send emails');
+  }
+
+  // Validate required fields
+  if (!to || !subject || (!htmlContent && !textContent)) {
+    throw new HttpsError('invalid-argument', 'Missing required fields: to, subject, and content');
+  }
+
+  // Validate SendGrid is configured
+  if (!SENDGRID_API_KEY) {
+    logger.error('❌ SendGrid API key not configured');
+    throw new HttpsError('failed-precondition', 'Email service not configured. Please set SENDGRID_API_KEY.');
+  }
+
+  try {
+    // Get sender info from auth user
+    const userDoc = await db.collection('users').doc(callerUid).get();
+    const userData = userDoc.data() || {};
+    const senderName = userData.name || userData.email || 'AI Engagement Hub User';
+
+    // Construct email message
+    const emailMessage = {
+      to: to,
+      from: {
+        email: SENDGRID_FROM_EMAIL,
+        name: 'AI Engagement Hub'
+      },
+      subject: subject,
+      text: textContent || 'Please view this email in HTML format',
+      html: htmlContent || textContent.replace(/\n/g, '<br>')
+    };
+
+    // Add reply-to if provided
+    if (replyTo) {
+      emailMessage.replyTo = replyTo;
+    }
+
+    // Send email via SendGrid
+    await sgMail.send(emailMessage);
+
+    logger.info('✅ Email sent successfully', {
+      to: to,
+      subject: subject,
+      sender: senderName
+    });
+
+    return {
+      success: true,
+      message: 'Email sent successfully',
+      recipient: to
+    };
+
+  } catch (error) {
+    logger.error('❌ Error sending email:', error);
+
+    // Parse SendGrid errors for better feedback
+    if (error.response) {
+      const {statusCode, body} = error.response;
+      logger.error('SendGrid error details:', {statusCode, body});
+
+      if (statusCode === 401) {
+        throw new HttpsError('failed-precondition', 'Email service authentication failed. Please check SendGrid configuration.');
+      } else if (statusCode === 400) {
+        throw new HttpsError('invalid-argument', 'Invalid email data: ' + JSON.stringify(body.errors));
+      }
+    }
+
+    throw new HttpsError('internal', 'Failed to send email: ' + error.message);
   }
 });
