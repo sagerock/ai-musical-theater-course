@@ -3671,19 +3671,22 @@ export const instructorNotesApi = {
 
     const docRef = await addDoc(collection(db, 'instructorNotes'), reply);
 
-    // Mark parent as having replies
-    await updateDoc(doc(db, 'instructorNotes', noteId), {
-      hasReplies: true,
-      lastReplyAt: serverTimestamp()
-    });
+    // Note: We're not updating the parent note's hasReplies field anymore
+    // because students don't have permission to update notes created by instructors.
+    // The app can determine if a note has replies by checking if any notes have it as their parentId.
 
-    // If this is part of a thread, update thread root
-    if (threadId && threadId !== noteId) {
-      await updateDoc(doc(db, 'instructorNotes', threadId), {
-        hasReplies: true,
-        lastReplyAt: serverTimestamp()
-      });
-    }
+    // Commented out to fix permission issues:
+    // await updateDoc(doc(db, 'instructorNotes', noteId), {
+    //   hasReplies: true,
+    //   lastReplyAt: serverTimestamp()
+    // });
+
+    // if (threadId && threadId !== noteId) {
+    //   await updateDoc(doc(db, 'instructorNotes', threadId), {
+    //     hasReplies: true,
+    //     lastReplyAt: serverTimestamp()
+    //   });
+    // }
 
     const now = new Date();
     return {

@@ -261,9 +261,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
         request.resource.data.authorId == request.auth.uid;
 
-      // Allow updates by the author
+      // Allow updates only by the original author of the note
+      // Fixed to check resource.data (existing doc) not request.resource.data (incoming data)
       allow update: if isAuthenticated() &&
-        request.resource.data.authorId == request.auth.uid;
+        resource.data.authorId == request.auth.uid;
 
       // Allow deletion by the author or admin
       allow delete: if isAuthenticated() && (
