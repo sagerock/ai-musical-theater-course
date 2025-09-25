@@ -121,21 +121,21 @@ class RetryHelper {
   // Model-specific retry configurations
   getModelConfig(model) {
     const configs = {
-      // GPT-5 models - typically more stable, fewer retries needed
+      // GPT-5 models - Can experience high load, need robust retry
       'gpt-5': {
-        maxRetries: 2,
-        baseDelay: 1000,
-        maxDelay: 5000
+        maxRetries: 3,
+        baseDelay: 1500,
+        maxDelay: 10000
       },
       'gpt-5-mini': {
-        maxRetries: 2,
-        baseDelay: 1000,
-        maxDelay: 5000
+        maxRetries: 3,
+        baseDelay: 1500,
+        maxDelay: 10000
       },
       'gpt-5-nano': {
-        maxRetries: 2,
-        baseDelay: 800,
-        maxDelay: 3000
+        maxRetries: 3,
+        baseDelay: 1200,
+        maxDelay: 8000
       },
       // Claude models - might need more retries due to capacity
       'claude': {
@@ -143,11 +143,11 @@ class RetryHelper {
         baseDelay: 1500,
         maxDelay: 10000
       },
-      // Gemini models - Google infrastructure, usually reliable
+      // Gemini models - Can be slower, especially 2.5 Pro with large contexts
       'gemini': {
-        maxRetries: 2,
-        baseDelay: 1000,
-        maxDelay: 5000
+        maxRetries: 3,
+        baseDelay: 2000,
+        maxDelay: 15000
       },
       // Perplexity - external service, might need more retries
       'sonar': {

@@ -39,7 +39,7 @@ const getUserFriendlyError = (error, tool) => {
   }
 
   if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-    return `The ${tool} service is taking longer than expected. Please try again.`;
+    return `The ${tool} service is taking longer than expected. This can happen with complex prompts or during high usage. Please try again, or consider using a simpler prompt or different model.`;
   }
 
   if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
@@ -105,7 +105,17 @@ export const aiProxyService = {
       const response = await retryHelper.withRetry(async () => {
         // Create abort controller for timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        // Use model-specific timeouts - some models need more time
+        let timeoutMs = 30000; // Default 30 seconds
+        const modelLower = config.model.toLowerCase();
+        if (modelLower.includes('gemini')) {
+          timeoutMs = 60000; // 60 seconds for Gemini
+        } else if (modelLower.includes('gpt-5')) {
+          timeoutMs = 45000; // 45 seconds for GPT-5 models
+        } else if (modelLower.includes('opus')) {
+          timeoutMs = 45000; // 45 seconds for Claude Opus
+        }
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
           const fetchResponse = await fetch(endpoint, {
