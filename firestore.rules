@@ -251,33 +251,41 @@ service cloud.firestore {
 
     // INSTRUCTOR NOTES - Instructor annotations visible to project owners (now supports threaded conversations)
     match /instructorNotes/{noteId} {
-      // Instructor who created the note, project owner (student), instructors in course, and admins can read
+      // Allow reads for authenticated users who are either:
+      // - The instructor who created the note
+      // - The student who owns the project
+      // - Any instructor in the course
+      // - Admin
       allow read: if isAuthenticated() && (
-        isOwner(resource.data.instructorId) ||           // Note author
-        ownsProjectForNote(resource.data) ||             // Project owner (student)
-        isInstructorInCourse(resource.data.courseId) ||  // Any instructor in the course
-        isGlobalAdmin()                                  // Global admin
+        (resource.data.instructorId == request.auth.uid) ||
+        (resource.data.authorId == request.auth.uid) ||
+        ownsProjectForNote(resource.data) ||
+        (resource.data.courseId != null && isMemberOfCourse(resource.data.courseId)) ||
+        isGlobalAdmin()
       );
 
-      // Allow collection queries for instructors and project owners
-      allow list: if isAuthenticated() && (
-        hasInstructorRole() ||                           // Users with instructor role
-        isGlobalAdmin() ||                               // Global admin
-        request.auth.uid != null                         // Any authenticated user can query (filtered by read rules)
-        // Students can query notes through project-specific queries
+      // Allow listing for authenticated users (filtered by read rules)
+      allow list: if isAuthenticated();
+
+      // Allow creation if:
+      // - User is creating as themselves (authorId matches)
+      // - AND either:
+      //   - They have instructor role (for original notes)
+      //   - OR it's a reply (has parentId)
+      allow create: if isAuthenticated() &&
+        request.resource.data.authorId == request.auth.uid;
+
+      // Allow updates by the author or instructor
+      allow update: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid ||
+        resource.data.instructorId == request.auth.uid ||
+        isGlobalAdmin()
       );
 
-      // TEMPORARY: Very permissive write rule for debugging
-      // Allow any authenticated user to write if they are the authorId
-      allow write: if isAuthenticated() && (
-        // If creating a new note
-        (!exists(/databases/$(database)/documents/instructorNotes/$(noteId)) &&
-         request.resource.data.authorId == request.auth.uid) ||
-        // If updating existing note by owner
-        (exists(/databases/$(database)/documents/instructorNotes/$(noteId)) &&
-         (resource.data.authorId == request.auth.uid ||
-          resource.data.instructorId == request.auth.uid)) ||
-        // Global admin
+      // Allow deletion by the author or instructor
+      allow delete: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid ||
+        resource.data.instructorId == request.auth.uid ||
         isGlobalAdmin()
       );
     }
