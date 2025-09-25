@@ -271,17 +271,10 @@ service cloud.firestore {
         // Instructors creating original notes in courses they teach
         (request.resource.data.instructorId == request.auth.uid &&
          (hasInstructorRole() || isInstructorInCourse(request.resource.data.courseId))) ||
-        // Students AND instructors can create replies to notes on projects
+        // Allow ANY authenticated user who is a course member to create replies
         (request.resource.data.parentId != null &&       // Must be a reply (has parentId)
          request.resource.data.authorId == request.auth.uid &&  // Author matches current user
-         exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
-         (
-           // Either the student owns the project (check both field names)
-           get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.createdBy == request.auth.uid ||
-           get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.created_by == request.auth.uid ||
-           // Or it's an instructor in the course
-           isInstructorInCourse(request.resource.data.courseId)
-         )) ||
+         isMemberOfCourse(request.resource.data.courseId)) ||    // User is member of the course
         // Global admins can create any note
         isGlobalAdmin()
       );
