@@ -3242,30 +3242,43 @@ export const tagApi = {
 export const reflectionApi = {
   async createReflection(reflectionData) {
     console.log('🔥 createReflection:', reflectionData);
-    
-    const docRef = await addDoc(collection(db, 'reflections'), {
-      content: reflectionData.content,
-      chatId: reflectionData.chatId,
-      userId: reflectionData.userId,
-      courseId: reflectionData.courseId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    
-    // Update the chat to mark it as having a reflection
-    if (reflectionData.chatId) {
-      try {
-        await updateDoc(doc(db, 'chats', reflectionData.chatId), {
-          has_reflection: true,
-          updatedAt: serverTimestamp()
-        });
-        console.log('✅ Chat marked as having reflection');
-      } catch (error) {
-        console.warn('Failed to update chat reflection status:', error);
+
+    try {
+      // First, create the reflection document
+      const reflectionDoc = {
+        content: reflectionData.content,
+        chatId: reflectionData.chatId,
+        userId: reflectionData.userId,
+        courseId: reflectionData.courseId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      console.log('📝 Creating reflection document:', reflectionDoc);
+      const docRef = await addDoc(collection(db, 'reflections'), reflectionDoc);
+      console.log('✅ Reflection document created with ID:', docRef.id);
+
+      // Update the chat to mark it as having a reflection
+      if (reflectionData.chatId) {
+        try {
+          console.log(`📝 Updating chat ${reflectionData.chatId} to mark has_reflection=true`);
+          await updateDoc(doc(db, 'chats', reflectionData.chatId), {
+            has_reflection: true,
+            reflectionId: docRef.id, // Also store the reflection ID for easier lookup
+            updatedAt: serverTimestamp()
+          });
+          console.log('✅ Chat marked as having reflection');
+        } catch (error) {
+          console.error('❌ Failed to update chat reflection status:', error);
+          // Don't throw here - the reflection was created successfully
+        }
       }
+
+      return this.getReflectionById(docRef.id);
+    } catch (error) {
+      console.error('❌ Error creating reflection:', error);
+      throw error;
     }
-    
-    return this.getReflectionById(docRef.id);
   },
   
   async getReflectionById(reflectionId) {
@@ -3285,75 +3298,149 @@ export const reflectionApi = {
   
   async getReflectionByChat(chatId) {
     console.log('🔥 getReflectionByChat:', chatId);
-    
+
     try {
+      // First, try to get the chat document to see if it has a reflectionId
+      let reflectionId = null;
+      try {
+        const chatDoc = await getDoc(doc(db, 'chats', chatId));
+        if (chatDoc.exists() && chatDoc.data().reflectionId) {
+          reflectionId = chatDoc.data().reflectionId;
+          console.log(`🔍 Found reflectionId ${reflectionId} in chat document`);
+        }
+      } catch (error) {
+        console.warn('Could not check chat document for reflectionId:', error);
+      }
+
+      // If we have a reflectionId, get it directly
+      if (reflectionId) {
+        try {
+          const reflection = await this.getReflectionById(reflectionId);
+          console.log(`✅ Loaded reflection by ID for chat ${chatId}`);
+          return reflection;
+        } catch (error) {
+          console.warn(`Could not load reflection by ID ${reflectionId}, will query instead`);
+        }
+      }
+
+      // Otherwise, query for reflections with this chatId
       const reflectionsQuery = query(
         collection(db, 'reflections'),
-        where('chatId', '==', chatId)
+        where('chatId', '==', chatId),
+        limit(1) // Only get the first one
       );
-      
+
       const reflectionsSnapshot = await getDocs(reflectionsQuery);
       console.log(`🔍 Found ${reflectionsSnapshot.docs.length} reflections for chat ${chatId}`);
-      
+
       if (reflectionsSnapshot.empty) {
         console.log(`⚠️ No reflections found for chat ${chatId}`);
+        // Double-check: maybe the chat's has_reflection flag is incorrect
+        try {
+          const chatDoc = await getDoc(doc(db, 'chats', chatId));
+          if (chatDoc.exists() && chatDoc.data().has_reflection) {
+            console.warn(`⚠️ Chat ${chatId} marked as having reflection but none found - fixing flag`);
+            await updateDoc(doc(db, 'chats', chatId), {
+              has_reflection: false,
+              reflectionId: null
+            });
+          }
+        } catch (error) {
+          console.warn('Could not update chat reflection flag:', error);
+        }
         return null;
       }
-      
+
       // Return the first (and should be only) reflection for this chat
       const reflectionDoc = reflectionsSnapshot.docs[0];
       const data = reflectionDoc.data();
-      
+
       const reflection = {
         id: reflectionDoc.id,
         ...data,
         created_at: convertTimestamp(data.createdAt),
         updated_at: convertTimestamp(data.updatedAt)
       };
-      
+
+      // Update the chat with the reflectionId for faster future lookups
+      try {
+        await updateDoc(doc(db, 'chats', chatId), {
+          reflectionId: reflectionDoc.id
+        });
+      } catch (error) {
+        console.warn('Could not update chat with reflectionId:', error);
+      }
+
       console.log(`✅ Loaded reflection for chat ${chatId}:`, reflection);
       return reflection;
     } catch (error) {
       console.error(`❌ Error in getReflectionByChat for chat ${chatId}:`, error);
-      throw error;
+      // Don't throw - return null instead to avoid breaking the UI
+      return null;
     }
   },
   
   async updateReflection(reflectionId, updates) {
     console.log('🔥 updateReflection:', reflectionId, updates);
-    
-    await updateDoc(doc(db, 'reflections', reflectionId), {
-      ...updates,
-      updatedAt: serverTimestamp()
-    });
-    
-    return this.getReflectionById(reflectionId);
+
+    try {
+      // Update the reflection document
+      await updateDoc(doc(db, 'reflections', reflectionId), {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+
+      // Get the updated reflection to return
+      const updatedReflection = await this.getReflectionById(reflectionId);
+
+      // Also update the chat's updatedAt timestamp for consistency
+      if (updatedReflection.chatId) {
+        try {
+          await updateDoc(doc(db, 'chats', updatedReflection.chatId), {
+            updatedAt: serverTimestamp()
+          });
+        } catch (error) {
+          console.warn('Could not update chat timestamp:', error);
+        }
+      }
+
+      return updatedReflection;
+    } catch (error) {
+      console.error('❌ Error updating reflection:', error);
+      throw error;
+    }
   },
   
   async deleteReflection(reflectionId) {
     console.log('🔥 deleteReflection:', reflectionId);
-    
-    // Get reflection data to find associated chat
-    const reflection = await this.getReflectionById(reflectionId);
-    
-    // Delete the reflection
-    await deleteDoc(doc(db, 'reflections', reflectionId));
-    
-    // Update chat to mark as not having reflection
-    if (reflection.chatId) {
-      try {
-        await updateDoc(doc(db, 'chats', reflection.chatId), {
-          has_reflection: false,
-          updatedAt: serverTimestamp()
-        });
-        console.log('✅ Chat marked as not having reflection');
-      } catch (error) {
-        console.warn('Failed to update chat reflection status:', error);
+
+    try {
+      // Get reflection data to find associated chat
+      const reflection = await this.getReflectionById(reflectionId);
+
+      // Delete the reflection
+      await deleteDoc(doc(db, 'reflections', reflectionId));
+
+      // Update chat to mark as not having reflection
+      if (reflection.chatId) {
+        try {
+          await updateDoc(doc(db, 'chats', reflection.chatId), {
+            has_reflection: false,
+            reflectionId: null, // Clear the reflectionId field
+            updatedAt: serverTimestamp()
+          });
+          console.log('✅ Chat marked as not having reflection');
+        } catch (error) {
+          console.warn('Failed to update chat reflection status:', error);
+        }
       }
+
+      console.log('✅ Reflection deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error deleting reflection:', error);
+      throw error;
     }
-    
-    console.log('✅ Reflection deleted successfully');
-    return true;
   },
   
   async getCourseReflections(courseId) {
