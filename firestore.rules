@@ -267,31 +267,18 @@ service cloud.firestore {
         // Students can query notes through project-specific queries
       );
 
-      // Allow creation of notes and replies
-      allow create: if isAuthenticated() && (
-        // Instructors creating original notes in courses they teach
-        (request.resource.data.instructorId == request.auth.uid &&
-         (hasInstructorRole() || isInstructorInCourse(request.resource.data.courseId))) ||
-        // Allow ANY authenticated user to create replies if they match the authorId
-        // This is a temporary more permissive rule for debugging
-        (request.resource.data.parentId != null &&       // Must be a reply (has parentId)
-         request.resource.data.authorId == request.auth.uid) ||  // Author matches current user
-        // Global admins can create any note
+      // TEMPORARY: Very permissive write rule for debugging
+      // Allow any authenticated user to write if they are the authorId
+      allow write: if isAuthenticated() && (
+        // If creating a new note
+        (!exists(/databases/$(database)/documents/instructorNotes/$(noteId)) &&
+         request.resource.data.authorId == request.auth.uid) ||
+        // If updating existing note by owner
+        (exists(/databases/$(database)/documents/instructorNotes/$(noteId)) &&
+         (resource.data.authorId == request.auth.uid ||
+          resource.data.instructorId == request.auth.uid)) ||
+        // Global admin
         isGlobalAdmin()
-      );
-
-      // Allow updates to notes
-      allow update: if isAuthenticated() && (
-        isOwner(resource.data.instructorId) ||           // Note author (instructor)
-        isOwner(resource.data.authorId) ||               // Note/reply author
-        isGlobalAdmin()                                  // Global admin
-      );
-
-      // Allow deletion of notes
-      allow delete: if isAuthenticated() && (
-        isOwner(resource.data.instructorId) ||           // Note author (instructor)
-        isOwner(resource.data.authorId) ||               // Note/reply author
-        isGlobalAdmin()                                  // Global admin
       );
     }
 
