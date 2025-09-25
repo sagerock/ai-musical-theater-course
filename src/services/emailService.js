@@ -956,11 +956,13 @@ class EmailService {
     const htmlContent = template.getHtml(data);
     const textContent = template.getText(data);
 
+    // Include instructor's email as reply-to so student replies go to instructor
     return await this.sendEmail(
       data.studentEmail,
       subject,
       htmlContent,
-      textContent
+      textContent,
+      data.instructorEmail // Add instructor email as reply-to
     );
   }
 
@@ -1145,6 +1147,7 @@ export const emailNotifications = {
         studentName: noteData.studentName,
         studentEmail: noteData.studentEmail,
         instructorName: noteData.instructorName,
+        instructorEmail: noteData.instructorEmail, // Pass through instructor email for reply-to
         projectTitle: noteData.projectTitle,
         projectId: noteData.projectId,
         noteContent: noteData.noteContent,

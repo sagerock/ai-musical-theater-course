@@ -103,6 +103,7 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
               studentName: getDisplayNameForEmail(studentInfo, 'student'),
               studentEmail: studentInfo.email,
               instructorName: getDisplayNameForEmail(currentUser, 'instructor'),
+              instructorEmail: currentUser.email, // Add instructor email for reply-to
               projectTitle: project.title,
               projectId: project.id,
               noteContent: formData.content.trim(),
