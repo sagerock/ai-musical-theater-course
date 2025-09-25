@@ -244,7 +244,7 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.userId) || isGlobalAdmin();
     }
 
-    // INSTRUCTOR NOTES - Instructor annotations visible to project owners
+    // INSTRUCTOR NOTES - Instructor annotations visible to project owners (now supports threaded conversations)
     match /instructorNotes/{noteId} {
       // Instructor who created the note, project owner (student), instructors in course, and admins can read
       allow read: if isAuthenticated() && (
@@ -253,13 +253,7 @@ service cloud.firestore {
         isInstructorInCourse(resource.data.courseId) ||  // Any instructor in the course
         isGlobalAdmin()                                  // Global admin
       );
-      
-      // Only instructors and admins can write/update notes
-      allow write: if isAuthenticated() && (
-        isOwner(resource.data.instructorId) ||           // Note author
-        isGlobalAdmin()                                  // Global admin
-      );
-      
+
       // Allow collection queries for instructors and project owners
       allow list: if isAuthenticated() && (
         hasInstructorRole() ||                           // Users with instructor role
@@ -267,9 +261,33 @@ service cloud.firestore {
         request.auth.uid != null                         // Any authenticated user can query (filtered by read rules)
         // Students can query notes through project-specific queries
       );
-      
-      allow create: if isAuthenticated() && 
-                   request.resource.data.instructorId == request.auth.uid;
+
+      // Allow creation of notes and replies
+      allow create: if isAuthenticated() && (
+        // Instructors creating original notes
+        (request.resource.data.instructorId == request.auth.uid && hasInstructorRole()) ||
+        // Students can create replies to visible notes on their own projects
+        (request.resource.data.parentId != null &&       // Must be a reply (has parentId)
+         exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
+         get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.createdBy == request.auth.uid &&  // Project owner
+         request.resource.data.authorId == request.auth.uid) ||  // Author matches current user
+        // Global admins can create any note
+        isGlobalAdmin()
+      );
+
+      // Allow updates to notes
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.instructorId) ||           // Note author (instructor)
+        isOwner(resource.data.authorId) ||               // Note/reply author
+        isGlobalAdmin()                                  // Global admin
+      );
+
+      // Allow deletion of notes
+      allow delete: if isAuthenticated() && (
+        isOwner(resource.data.instructorId) ||           // Note author (instructor)
+        isOwner(resource.data.authorId) ||               // Note/reply author
+        isGlobalAdmin()                                  // Global admin
+      );
     }
 
     // REFLECTIONS - Student learning reflections
