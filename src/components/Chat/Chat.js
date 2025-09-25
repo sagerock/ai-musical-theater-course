@@ -517,6 +517,29 @@ export default function Chat() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
+            {/* Temporary diagnostic button - REMOVE IN PRODUCTION */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={async () => {
+                  console.log('Running reflection integrity check...');
+                  try {
+                    const result = await reflectionApi.checkReflectionIntegrity(projectId);
+                    console.log('Integrity check complete:', result);
+                    toast.success('Check console for reflection diagnostic results');
+                    // Reload chats to see fixed reflections
+                    loadProjectData();
+                  } catch (error) {
+                    console.error('Integrity check failed:', error);
+                    toast.error('Integrity check failed - see console');
+                  }
+                }}
+                className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200"
+                title="Check reflection integrity"
+              >
+                🔍 Check Reflections
+              </button>
+            )}
+
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <select

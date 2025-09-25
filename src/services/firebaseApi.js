@@ -1598,20 +1598,47 @@ export const chatApi = {
       where('projectId', '==', projectId),
       orderBy('createdAt', 'asc')
     );
-    
+
     const chatsSnapshot = await getDocs(chatsQuery);
-    return chatsSnapshot.docs.map(doc => {
+    const chats = [];
+
+    // Process each chat and load reflections
+    for (const doc of chatsSnapshot.docs) {
       const data = doc.data();
-      return {
+      const chatData = {
         id: doc.id,
         ...data,
         created_at: data.createdAt?.toDate?.() || data.createdAt,
         updated_at: data.updatedAt?.toDate?.() || data.updatedAt,
         user_id: data.userId,
         project_id: data.projectId,
-        course_id: data.courseId
+        course_id: data.courseId,
+        reflections: [] // Initialize with empty array
       };
-    });
+
+      // Load reflection for this chat if it has one
+      if (data.has_reflection) {
+        console.log(`🔍 Chat ${doc.id} has_reflection flag is true, loading reflection...`);
+        try {
+          const reflection = await reflectionApi.getReflectionByChat(doc.id);
+          if (reflection) {
+            chatData.reflections = [reflection];
+            console.log(`✅ Loaded reflection for chat ${doc.id}`);
+          } else {
+            console.warn(`⚠️ Chat ${doc.id} marked as having reflection but none found`);
+          }
+        } catch (error) {
+          console.error(`❌ Error loading reflection for chat ${doc.id}:`, error);
+        }
+      } else {
+        console.log(`ℹ️ Chat ${doc.id} has no reflection (has_reflection: ${data.has_reflection})`);
+      }
+
+      chats.push(chatData);
+    }
+
+    console.log(`✅ Loaded ${chats.length} chats for project ${projectId}, ${chats.filter(c => c.reflections.length > 0).length} have reflections`);
+    return chats;
   },
 
   async getUserChats(userId, courseId = null, limitCount = 100) {
@@ -3445,15 +3472,15 @@ export const reflectionApi = {
   
   async getCourseReflections(courseId) {
     console.log('🔥 getCourseReflections:', courseId);
-    
+
     const reflectionsQuery = query(
       collection(db, 'reflections'),
       where('courseId', '==', courseId),
       orderBy('createdAt', 'desc')
     );
-    
+
     const reflectionsSnapshot = await getDocs(reflectionsQuery);
-    
+
     return reflectionsSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
@@ -3463,6 +3490,93 @@ export const reflectionApi = {
         updated_at: convertTimestamp(data.updatedAt)
       };
     });
+  },
+
+  // Diagnostic function to check reflection data integrity
+  async checkReflectionIntegrity(projectId) {
+    console.log('🔍 Running reflection integrity check for project:', projectId);
+
+    try {
+      // Get all chats in the project
+      const chatsQuery = query(
+        collection(db, 'chats'),
+        where('projectId', '==', projectId)
+      );
+      const chatsSnapshot = await getDocs(chatsQuery);
+
+      console.log(`Found ${chatsSnapshot.docs.length} chats in project`);
+
+      // Get all reflections and create a map by chatId
+      const reflectionsQuery = query(collection(db, 'reflections'));
+      const reflectionsSnapshot = await getDocs(reflectionsQuery);
+      const reflectionsByChatId = {};
+
+      reflectionsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.chatId) {
+          reflectionsByChatId[data.chatId] = { id: doc.id, ...data };
+        }
+      });
+
+      console.log(`Found ${Object.keys(reflectionsByChatId).length} total reflections in database`);
+
+      // Check each chat
+      const issues = [];
+      let correctCount = 0;
+
+      for (const chatDoc of chatsSnapshot.docs) {
+        const chatData = chatDoc.data();
+        const chatId = chatDoc.id;
+        const hasReflectionFlag = chatData.has_reflection;
+        const actualHasReflection = !!reflectionsByChatId[chatId];
+
+        if (hasReflectionFlag !== actualHasReflection) {
+          issues.push({
+            chatId,
+            flagSays: hasReflectionFlag,
+            actuallyHas: actualHasReflection,
+            reflection: reflectionsByChatId[chatId]
+          });
+          console.warn(`⚠️ Chat ${chatId}: flag says ${hasReflectionFlag}, actually has ${actualHasReflection}`);
+        } else {
+          correctCount++;
+        }
+
+        if (actualHasReflection) {
+          console.log(`✅ Chat ${chatId} has reflection:`, reflectionsByChatId[chatId].content.substring(0, 50) + '...');
+        }
+      }
+
+      console.log(`
+📊 Integrity Check Results:`);
+      console.log(`- ${correctCount}/${chatsSnapshot.docs.length} chats have correct reflection flags`);
+      console.log(`- ${issues.length} chats have incorrect flags`);
+
+      if (issues.length > 0) {
+        console.log('\n🔧 Fixing incorrect flags...');
+        for (const issue of issues) {
+          try {
+            await updateDoc(doc(db, 'chats', issue.chatId), {
+              has_reflection: issue.actuallyHas,
+              reflectionId: issue.reflection?.id || null
+            });
+            console.log(`Fixed chat ${issue.chatId}`);
+          } catch (error) {
+            console.error(`Failed to fix chat ${issue.chatId}:`, error);
+          }
+        }
+      }
+
+      return {
+        totalChats: chatsSnapshot.docs.length,
+        totalReflections: Object.keys(reflectionsByChatId).length,
+        correctFlags: correctCount,
+        issues: issues
+      };
+    } catch (error) {
+      console.error('❌ Error checking reflection integrity:', error);
+      throw error;
+    }
   }
 };
 
