@@ -3698,7 +3698,22 @@ export const instructorNotesApi = {
       updated_at: now
     };
   },
-  
+
+  async deleteInstructorNote(noteId) {
+    console.log('🔥 deleteInstructorNote:', noteId);
+
+    try {
+      // Delete the note document
+      await deleteDoc(doc(db, 'instructorNotes', noteId));
+
+      console.log('✅ Deleted instructor note:', noteId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error deleting instructor note:', error);
+      throw error;
+    }
+  },
+
   async getNotesByChat(chatId) {
     console.log('🔥 getNotesByChat:', chatId);
     

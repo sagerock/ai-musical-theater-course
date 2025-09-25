@@ -186,6 +186,41 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
     }
   };
 
+  const handleDelete = async (noteId) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    try {
+      await instructorNotesApi.deleteInstructorNote(noteId);
+      console.log('✅ Deleted note:', noteId);
+
+      // Remove the note from the local state
+      setNotes(prevNotes => {
+        // Helper function to remove note from nested structure
+        const removeNote = (notes) => {
+          return notes.reduce((acc, note) => {
+            if (note.id === noteId) {
+              // Don't include this note
+              return acc;
+            }
+            // Check if this note has replies and filter them too
+            if (note.replies && note.replies.length > 0) {
+              const filteredReplies = removeNote(note.replies);
+              return [...acc, { ...note, replies: filteredReplies }];
+            }
+            return [...acc, note];
+          }, []);
+        };
+
+        return removeNote(prevNotes);
+      });
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Failed to delete comment. Please try again.');
+    }
+  };
+
   const handleReply = async (noteId, e) => {
     e?.preventDefault();
 
@@ -569,6 +604,19 @@ export default function InstructorNotes({ project, courseId, isInstructorView = 
                               <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                             </svg>
                             Reply
+                          </button>
+                        )}
+                        {/* Delete button - only for own comments */}
+                        {note.authorId === currentUser?.id && (
+                          <button
+                            onClick={() => handleDelete(note.id)}
+                            className="inline-flex items-center text-red-600 hover:text-red-800 text-xs"
+                            title="Delete comment"
+                          >
+                            <svg className="h-3 w-3 mr-1" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Delete
                           </button>
                         )}
                         {note.hasReplies && note.replies && note.replies.length > 0 && (
