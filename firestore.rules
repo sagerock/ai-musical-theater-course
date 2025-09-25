@@ -251,18 +251,18 @@ service cloud.firestore {
 
     // INSTRUCTOR NOTES - Instructor annotations visible to project owners (now supports threaded conversations)
     match /instructorNotes/{noteId} {
-      // Simple read rule - if you're in the course, you can read notes
-      allow read: if isAuthenticated() && (
-        isMemberOfCourse(resource.data.courseId) ||
-        isGlobalAdmin()
-      );
+      // Allow all authenticated users to read (we'll filter in the app)
+      allow read: if isAuthenticated();
 
       // Allow listing for authenticated users
       allow list: if isAuthenticated();
 
-      // Simple write rule - authenticated users can write as themselves
-      // We trust the application layer to handle the business logic
-      allow create, update: if isAuthenticated() &&
+      // Very simple create rule - just check authorId matches
+      allow create: if isAuthenticated() &&
+        request.resource.data.authorId == request.auth.uid;
+
+      // Allow updates by the author
+      allow update: if isAuthenticated() &&
         request.resource.data.authorId == request.auth.uid;
 
       // Allow deletion by the author or admin
