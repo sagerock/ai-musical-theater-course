@@ -14,16 +14,17 @@ const API_ENDPOINTS = {
 // Map tool names to their API endpoints and models
 const TOOL_CONFIG = {
   // OpenAI Models
-  'GPT-5 Nano': { endpoint: 'openai', model: 'gpt-5-nano-2025-08-07' },
-  'GPT-5 Mini': { endpoint: 'openai', model: 'gpt-5-mini-2025-08-07' },
-  'GPT-5': { endpoint: 'openai', model: 'gpt-5-2025-08-07' },
+  'GPT-4o Mini': { endpoint: 'openai', model: 'gpt-4o-mini' },
+  'GPT-4o': { endpoint: 'openai', model: 'gpt-4o' },
+  'GPT-4 Turbo': { endpoint: 'openai', model: 'gpt-4-turbo' },
 
   // Anthropic Models
-  'Claude Sonnet 4': { endpoint: 'anthropic', model: 'claude-sonnet-4-20250514' },
-  'Claude Opus 4': { endpoint: 'anthropic', model: 'claude-4-opus-20250514' },
+  'Claude 3 Haiku': { endpoint: 'anthropic', model: 'claude-3-haiku-20240307' },
+  'Claude 3.5 Sonnet': { endpoint: 'anthropic', model: 'claude-3-5-sonnet-20241022' },
+  'Claude 3 Opus': { endpoint: 'anthropic', model: 'claude-3-opus-20240229' },
 
   // Google Models
-  'Gemini Flash': { endpoint: 'google', model: 'gemini-1.5-flash' },
+  'Gemini Flash': { endpoint: 'google', model: 'gemini-2.5-flash' },
   'Gemini 2.5 Pro': { endpoint: 'google', model: 'gemini-2.5-pro' },
 
   // Perplexity Model
@@ -62,8 +63,8 @@ const getUserFriendlyError = (error, tool) => {
 };
 
 export const aiProxyService = {
-  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], systemPrompt = null, stream = false) {
-    const config = TOOL_CONFIG[tool] || TOOL_CONFIG['GPT-5 Mini'];
+  async sendChatCompletion(prompt, tool = 'GPT-4o Mini', conversationHistory = [], systemPrompt = null, stream = false) {
+    const config = TOOL_CONFIG[tool] || TOOL_CONFIG['GPT-4o Mini'];
     const endpoint = API_ENDPOINTS[config.endpoint];
 
     if (!endpoint) {
@@ -110,8 +111,8 @@ export const aiProxyService = {
         const modelLower = config.model.toLowerCase();
         if (modelLower.includes('gemini')) {
           timeoutMs = 60000; // 60 seconds for Gemini
-        } else if (modelLower.includes('gpt-5')) {
-          timeoutMs = 45000; // 45 seconds for GPT-5 models
+        } else if (modelLower.includes('gpt-4')) {
+          timeoutMs = 45000; // 45 seconds for GPT-4 models
         } else if (modelLower.includes('opus')) {
           timeoutMs = 45000; // 45 seconds for Claude Opus
         }

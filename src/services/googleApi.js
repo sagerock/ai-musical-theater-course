@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GOOGLE_API_KEY);
 
 // Available Google models - Streamlined selection
 export const GOOGLE_MODELS = {
-  'Gemini Flash': 'gemini-1.5-flash',
+  'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro'
 };
 
@@ -135,7 +135,7 @@ export const googleApi = {
   // Validate API key
   async validateApiKey() {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const result = await model.generateContent('test');
       return result.response.text() !== undefined;
     } catch (error) {

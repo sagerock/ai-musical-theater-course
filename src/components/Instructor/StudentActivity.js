@@ -62,19 +62,16 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
     if (!toolName) return 'Unknown Tool';
     
     const toolMap = {
-      // OpenAI Models (GPT-5 Series)
-      'gpt-5-nano': 'GPT-5 Nano',
-      'gpt-5-mini': 'GPT-5 Mini',
-      'gpt-5': 'GPT-5',
-      // Dated OpenAI IDs
-      'gpt-5-nano-2025-08-07': 'GPT-5 Nano',
-      'gpt-5-mini-2025-08-07': 'GPT-5 Mini',
-      'gpt-5-2025-08-07': 'GPT-5',
+      // OpenAI Models
+      'gpt-4o-mini': 'GPT-4o Mini',
+      'gpt-4o': 'GPT-4o',
+      'gpt-4-turbo': 'GPT-4 Turbo',
       // Anthropic Models
-      'claude-sonnet-4-20250514': 'Claude Sonnet 4',
-      'claude-sonnet-4': 'Claude Sonnet 4',
+      'claude-3-haiku-20240307': 'Claude 3 Haiku',
+      'claude-3-5-sonnet-20241022': 'Claude 3.5 Sonnet',
+      'claude-3-opus-20240229': 'Claude 3 Opus',
       // Google Models
-      'gemini-1.5-flash': 'Gemini Flash',
+      'gemini-2.5-flash': 'Gemini Flash',
       'gemini-flash': 'Gemini Flash',
       // Perplexity Models
       'sonar-pro': 'Sonar Pro',
@@ -100,11 +97,13 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       // Use actual database values that might exist in chats
       const allConfiguredTools = [
         // Current models
-        'gpt-5-nano-2025-08-07',
-        'gpt-5-mini-2025-08-07',
-        'gpt-5-2025-08-07',
-        'claude-sonnet-4-20250514', 
-        'gemini-1.5-flash',
+        'gpt-4o-mini',
+        'gpt-4o',
+        'gpt-4-turbo',
+        'claude-3-haiku-20240307',
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20240229', 
+        'gemini-2.5-flash',
         'sonar-pro',
         // Display name formats
         'GPT-5 Nano',      // Display format

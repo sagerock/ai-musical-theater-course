@@ -3,85 +3,54 @@
 
 // Pricing data (cost per 1 million tokens)
 export const MODEL_PRICING = {
-  // OpenAI Models - GPT-5 Series (2025)
-  'gpt-5-nano-2025-08-07': {
-    input: 0.05,
-    output: 0.40,
+  // OpenAI Models
+  'gpt-4o-mini': {
+    input: 0.15,
+    output: 0.60,
     provider: 'OpenAI',
-    displayName: 'GPT-5 Nano'
+    displayName: 'GPT-4o Mini'
   },
-  'gpt-5-mini-2025-08-07': {
-    input: 0.25,
-    output: 2.00,
-    provider: 'OpenAI',
-    displayName: 'GPT-5 Mini'
-  },
-  'gpt-5-2025-08-07': {
-    input: 1.25,
+  'gpt-4o': {
+    input: 2.50,
     output: 10.00,
     provider: 'OpenAI',
-    displayName: 'GPT-5'
+    displayName: 'GPT-4o'
   },
-  // Legacy aliases for backward compatibility (pre-dated IDs)
-  'gpt-5-nano': {
-    input: 0.05,
-    output: 0.40,
+  'gpt-4-turbo': {
+    input: 10.00,
+    output: 30.00,
     provider: 'OpenAI',
-    displayName: 'GPT-5 Nano'
-  },
-  'gpt-5-mini': {
-    input: 0.25,
-    output: 2.00,
-    provider: 'OpenAI',
-    displayName: 'GPT-5 Mini'
-  },
-  'gpt-5': {
-    input: 1.25,
-    output: 10.00,
-    provider: 'OpenAI',
-    displayName: 'GPT-5'
+    displayName: 'GPT-4 Turbo'
   },
   // Anthropic Models
-  'claude-sonnet-4-20250514': {
+  'claude-3-haiku-20240307': {
+    input: 0.25,
+    output: 1.25,
+    provider: 'Anthropic',
+    displayName: 'Claude 3 Haiku'
+  },
+  'claude-3-5-sonnet-20241022': {
     input: 3.00,
     output: 15.00,
     provider: 'Anthropic',
-    displayName: 'Claude Sonnet 4'
+    displayName: 'Claude 3.5 Sonnet'
   },
-  'claude-sonnet-4': {
-    input: 3.00,
-    output: 15.00,
-    provider: 'Anthropic',
-    displayName: 'Claude Sonnet 4'
-  },
-  'claude-4-opus-20250514': {
+  'claude-3-opus-20240229': {
     input: 15.00,
     output: 75.00,
     provider: 'Anthropic',
-    displayName: 'Claude Opus 4'
-  },
-  'claude-opus-4': {
-    input: 15.00,
-    output: 75.00,
-    provider: 'Anthropic',
-    displayName: 'Claude Opus 4'
+    displayName: 'Claude 3 Opus'
   },
   // Google Models
-  'gemini-1.5-flash': {
-    input: 0.15,
-    output: 0.60,
-    provider: 'Google',
-    displayName: 'Gemini Flash'
-  },
-  'gemini-flash': {
-    input: 0.15,
-    output: 0.60,
+  'gemini-2.5-flash': {
+    input: 0.075,
+    output: 0.30,
     provider: 'Google',
     displayName: 'Gemini Flash'
   },
   'gemini-2.5-pro': {
     input: 1.25,
-    output: 10.00,
+    output: 5.00,
     provider: 'Google',
     displayName: 'Gemini 2.5 Pro'
   },
@@ -97,12 +66,13 @@ export const MODEL_PRICING = {
 
 // Display name mappings for UI
 export const DISPLAY_NAME_MAPPING = {
-  'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
-  'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
-  'GPT-5': 'gpt-5-2025-08-07',
-  'Claude Sonnet 4': 'claude-sonnet-4-20250514',
-  'Claude Opus 4': 'claude-4-opus-20250514',
-  'Gemini Flash': 'gemini-1.5-flash',
+  'GPT-4o Mini': 'gpt-4o-mini',
+  'GPT-4o': 'gpt-4o',
+  'GPT-4 Turbo': 'gpt-4-turbo',
+  'Claude 3 Haiku': 'claude-3-haiku-20240307',
+  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
+  'Claude 3 Opus': 'claude-3-opus-20240229',
+  'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
   'Sonar Pro': 'sonar-pro'
 };

@@ -6,17 +6,18 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true // Note: In production, API calls should go through your backend
 });
 
-// Available AI tools/models - Streamlined selection  
+// Available AI tools/models - Streamlined selection
 export const AI_TOOLS = {
-  // OpenAI Models - GPT-5 Series (2025)
-  'GPT-5 Nano': 'gpt-5-nano-2025-08-07',  // Fastest, most cost-efficient
-  'GPT-5 Mini': 'gpt-5-mini-2025-08-07',  // Balanced performance and cost (default)
-  'GPT-5': 'gpt-5-2025-08-07',            // Premium model for coding and complex reasoning
+  // OpenAI Models
+  'GPT-4o Mini': 'gpt-4o-mini',       // Fastest, most cost-efficient
+  'GPT-4o': 'gpt-4o',                 // Balanced performance and cost (default)
+  'GPT-4 Turbo': 'gpt-4-turbo',       // Premium model for coding and complex reasoning
   // Anthropic Models
-  'Claude Sonnet 4': 'claude-sonnet-4-20250514',
-  'Claude Opus 4': 'claude-4-opus-20250514',
+  'Claude 3 Haiku': 'claude-3-haiku-20240307',
+  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
+  'Claude 3 Opus': 'claude-3-opus-20240229',
   // Google Models
-  'Gemini Flash': 'gemini-1.5-flash',
+  'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
   // Perplexity Model
   'Sonar Pro': 'sonar-pro'
@@ -24,78 +25,14 @@ export const AI_TOOLS = {
 
 export const openaiApi = {
   // Send chat completion request
-  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], systemPrompt = null) {
+  async sendChatCompletion(prompt, tool = 'GPT-4o Mini', conversationHistory = [], systemPrompt = null) {
     try {
-      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-5 Mini'];
+      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-4o Mini'];
       
       // Use provided system prompt or fallback to default
       const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';
       
-      // Check if it's a GPT-5 model
-      const isGPT5Model = model.startsWith('gpt-5');
-      
-      if (isGPT5Model) {
-        // GPT-5 models use the new Responses API
-        
-        // Build input messages for Responses API
-        const inputMessages = [
-          {
-            role: 'developer',
-            content: systemPrompt || defaultSystemPrompt
-          },
-          ...conversationHistory.map(chat => [
-            { role: 'user', content: chat.prompt },
-            { role: 'assistant', content: chat.response }
-          ]).flat(),
-          {
-            role: 'user',
-            content: prompt
-          }
-        ];
-        
-        // Use Responses API for GPT-5 models
-        const response = await openai.responses.create({
-          model: model,
-          input: inputMessages,
-          text: {
-            verbosity: 'medium'  // Can be 'low', 'medium', or 'high'
-          },
-          reasoning: {
-            effort: 'medium'  // Can be 'minimal', 'medium', or 'high'
-          }
-        });
-        
-        // Extract text from the new response format
-        let outputText = '';
-        if (response.output && Array.isArray(response.output)) {
-          for (const item of response.output) {
-            if (item && item.content) {
-              for (const content of item.content) {
-                if (content && content.text) {
-                  outputText += content.text;
-                }
-              }
-            }
-          }
-        }
-        
-        // Debug logging for GPT-5 responses
-        console.log('🔍 GPT-5 Responses API Result:', {
-          model: model,
-          outputText: outputText,
-          usage: response.usage,
-          fullResponse: response
-        });
-        
-        return {
-          success: true,
-          response: outputText,
-          usage: response.usage,
-          model: model
-        };
-        
-      } else {
-        // Non-GPT-5 models use the traditional Chat Completions API
+      // All models use the Chat Completions API
         
         // Prepare messages array for Chat Completions API
         const messages = [
@@ -125,13 +62,12 @@ export const openaiApi = {
         
         const completion = await openai.chat.completions.create(completionParams);
         
-        return {
-          success: true,
-          response: completion.choices[0].message.content,
-          usage: completion.usage,
-          model: model
-        };
-      }
+      return {
+        success: true,
+        response: completion.choices[0].message.content,
+        usage: completion.usage,
+        model: model
+      };
 
     } catch (error) {
       console.error('OpenAI API Error:', error);

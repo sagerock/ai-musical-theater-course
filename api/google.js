@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     // Initialize Google AI client
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    const { messages, model = 'gemini-1.5-flash', stream = false } = req.body;
+    const { messages, model = 'gemini-2.5-flash', stream = false } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });

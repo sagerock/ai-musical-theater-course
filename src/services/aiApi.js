@@ -2,15 +2,16 @@ import { aiProxyService } from './aiProxyService';
 
 // Export AI tools for use in components
 export const AI_TOOLS = {
-  // OpenAI Models - GPT-5 Series (2025)
-  'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
-  'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
-  'GPT-5': 'gpt-5-2025-08-07',
+  // OpenAI Models
+  'GPT-4o Mini': 'gpt-4o-mini',
+  'GPT-4o': 'gpt-4o',
+  'GPT-4 Turbo': 'gpt-4-turbo',
   // Anthropic Models
-  'Claude Sonnet 4': 'claude-sonnet-4-20250514',
-  'Claude Opus 4': 'claude-4-opus-20250514',
+  'Claude 3 Haiku': 'claude-3-haiku-20240307',
+  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
+  'Claude 3 Opus': 'claude-3-opus-20240229',
   // Google Models
-  'Gemini Flash': 'gemini-1.5-flash',
+  'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
   // Perplexity Model
   'Sonar Pro': 'sonar-pro'
@@ -18,11 +19,12 @@ export const AI_TOOLS = {
 
 // Legacy model mappings for compatibility
 const ANTHROPIC_MODELS = {
-  'Claude Sonnet 4': 'claude-sonnet-4-20250514',
-  'Claude Opus 4': 'claude-4-opus-20250514'
+  'Claude 3 Haiku': 'claude-3-haiku-20240307',
+  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
+  'Claude 3 Opus': 'claude-3-opus-20240229'
 };
 const GOOGLE_MODELS = {
-  'Gemini Flash': 'gemini-1.5-flash',
+  'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro'
 };
 const PERPLEXITY_MODELS = {
@@ -37,55 +39,45 @@ const MODEL_SPECIFIC_PROMPTS = {
 • Leverage your large context window for comprehensive source synthesis
 • Demonstrate academic writing standards with proper evidence-based arguments`,
   
-  'gemini-1.5-flash': `EFFICIENT EDUCATION MODE: As Gemini Flash, provide quick yet educational responses:
+  'gemini-2.5-flash': `EFFICIENT EDUCATION MODE: As Gemini Flash, provide quick yet educational responses:
 • Balance speed with educational value and proper sourcing
 • Focus on clear, concise explanations with key references
 • Use your multimodal capabilities for comprehensive analysis when applicable`,
   
-  'gpt-5-nano': `ULTRA-FAST LEARNING MODE: As GPT-5 Nano, provide quick, efficient educational support:
-• Deliver concise, clear explanations optimized for summarization and classification
-• Focus on essential concepts and quick comprehension
+  'gpt-4o-mini': `OPTIMIZED EDUCATIONAL MODE: As GPT-4o Mini, provide concise, clear educational responses:
+• Deliver concise explanations with excellent speed
+• Focus on essential concepts for quick comprehension
 • Ideal for rapid review and basic understanding tasks`,
-  
-  'gpt-5-mini': `BALANCED PERFORMANCE MODE: As GPT-5 Mini, provide excellent educational value with enhanced reasoning:
-• Deliver well-structured explanations with improved logical reasoning
-• Excel at well-defined tasks with precise educational outcomes
+
+  'gpt-4o': `BALANCED EDUCATIONAL MODE: As GPT-4o, your goal is to support learning with:
+• Deliver well-structured explanations with strong reasoning
+• Excel at a wide range of tasks with high accuracy
 • Balance speed and depth for optimal learning efficiency`,
+
+  'gpt-4-turbo': `ADVANCED EDUCATIONAL ASSISTANT: As GPT-4 Turbo, leverage your superior capabilities:
+• Provide comprehensive technical analysis with excellent reasoning
+• Excel at complex problem-solving and coding tasks
+• Leverage large context window for extensive document analysis
+• Ideal for advanced academic work and research projects`,
   
-  'gpt-5': `PREMIUM CODING & REASONING MODE: As GPT-5, excel at complex coding and agentic tasks:
-• Provide comprehensive technical analysis with superior reasoning capabilities
-• Excel at complex problem-solving across all domains
-• Leverage 400K context window for extensive code and document analysis
-• Ideal for advanced coding, mathematical reasoning, and multi-step problems`,
+  // Claude model prompts
+  'claude-3-haiku-20240307': `EFFICIENT EDUCATIONAL MODE: As Claude 3 Haiku, provide fast, clear responses:
+  • Deliver concise explanations with good accuracy
+  • Focus on essential concepts for quick comprehension
+  • Ideal for rapid review and basic tasks`,
+
+  'claude-3-5-sonnet-20241022': `EDUCATIONAL EXCELLENCE MODE: As Claude 3.5 Sonnet, provide thoughtful educational support:
+  • Balance analytical depth with clarity
+  • Excel at breaking down complex concepts
+  • Provide well-structured responses that model academic writing
+  • Emphasize critical thinking and evidence-based reasoning`,
+
+  'claude-3-opus-20240229': `WORLD-CLASS RESEARCH ASSISTANT: As Claude 3 Opus, leverage your exceptional capabilities:
+  • Deliver comprehensive, research-grade analysis
+  • Model advanced academic writing with sophisticated arguments
+  • Provide detailed explanations for advanced research projects
+  • Focus on developing deep understanding and critical evaluation`,
   
-  // Dated OpenAI IDs (2025-08-07) for GPT-5 series
-  'gpt-5-nano-2025-08-07': `ULTRA-FAST LEARNING MODE: As GPT-5 Nano, provide quick, efficient educational support:
-  • Deliver concise, clear explanations optimized for summarization and classification
-  • Focus on essential concepts and quick comprehension
-  • Ideal for rapid review and basic understanding tasks`,
-  
-  'gpt-5-mini-2025-08-07': `BALANCED PERFORMANCE MODE: As GPT-5 Mini, provide excellent educational value with enhanced reasoning:
-  • Deliver well-structured explanations with improved logical reasoning
-  • Excel at well-defined tasks with precise educational outcomes
-  • Balance speed and depth for optimal learning efficiency`,
-  
-  'gpt-5-2025-08-07': `PREMIUM CODING & REASONING MODE: As GPT-5, excel at complex coding and agentic tasks:
-  • Provide comprehensive technical analysis with superior reasoning capabilities
-  • Excel at complex problem-solving across all domains
-  • Leverage 400K context window for extensive code and document analysis
-  • Ideal for advanced coding, mathematical reasoning, and multi-step problems`,
-  
-  'claude-sonnet-4-20250514': `ANALYTICAL EXCELLENCE MODE: As Claude Sonnet 4, leverage your analytical strengths:
-• Focus on thoughtful, nuanced analysis with clear reasoning chains
-• Excel at breaking down complex concepts for educational understanding
-• Provide well-structured responses that model academic writing conventions
-• Emphasize critical thinking and evidence-based reasoning`,
-  
-  'claude-4-opus-20250514': `RESEARCH PREMIUM MODE: As Claude Opus 4, provide the highest quality educational support:
-• Deliver comprehensive, research-grade analysis and insights
-• Model advanced academic writing with sophisticated arguments
-• Provide detailed explanations suitable for advanced research projects
-• Focus on developing deep understanding and critical evaluation skills`,
   
   'sonar-pro': `CURRENT RESEARCH MODE: As Sonar Pro with real-time search capabilities:
 • ALWAYS provide current, dated sources and recent information
@@ -162,7 +154,7 @@ const getProviderFromModel = (tool) => {
 // Unified AI API service
 export const aiApi = {
   // Send chat completion request (routes through secure proxy)
-  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'GPT-4o Mini', conversationHistory = []) {
     const modelId = AI_TOOLS[tool];
     const enhancedSystemPrompt = getModelSpecificPrompt(modelId);
     

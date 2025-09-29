@@ -251,11 +251,28 @@ service cloud.firestore {
 
     // INSTRUCTOR NOTES - Instructor annotations visible to project owners (now supports threaded conversations)
     match /instructorNotes/{noteId} {
-      // Allow all authenticated users to read (we'll filter in the app)
-      allow read: if isAuthenticated();
+      // Only allow reading notes if:
+      // 1. User owns the project the note is about
+      // 2. User is an instructor in the course
+      // 3. User is an admin
+      allow read: if isAuthenticated() && (
+        // Check if user owns the project
+        (exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+         (get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.createdBy == request.auth.uid ||
+          get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.created_by == request.auth.uid)) ||
+        // Or user is instructor in the course
+        isInstructorInCourse(resource.data.courseId) ||
+        // Or user is admin
+        isGlobalAdmin()
+      );
 
-      // Allow listing for authenticated users
-      allow list: if isAuthenticated();
+      // Same restrictions for listing
+      allow list: if isAuthenticated() && (
+        // Note: list operations will be filtered by the read rule above
+        hasInstructorRole() ||  // Instructors can query
+        isGlobalAdmin() ||       // Admins can query
+        request.auth.uid != null // Regular users can query (but only see their notes due to read rule)
+      );
 
       // Very simple create rule - just check authorId matches
       allow create: if isAuthenticated() &&
@@ -384,12 +401,14 @@ service cloud.firestore {
 
     // CONTACT REQUESTS - Public contact form submissions
     match /contactRequests/{requestId} {
-      // Allow anonymous users to create contact requests (public contact form)
+      // Allow anyone to create contact requests (needed for public info request form)
+      // This is for potential customers who aren't logged in yet
+      // Consider adding reCAPTCHA on the frontend to prevent spam
       allow create: if true;
-      
+
       // Only admins can read/manage contact requests
       allow read, update, delete: if isGlobalAdmin();
-      
+
       // Allow admins to query/list contact requests
       allow list: if isGlobalAdmin();
     }
