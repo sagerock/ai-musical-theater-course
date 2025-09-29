@@ -4,42 +4,30 @@
 // Pricing data (cost per 1 million tokens)
 export const MODEL_PRICING = {
   // OpenAI Models
-  'gpt-4o-mini': {
-    input: 0.15,
-    output: 0.60,
+  'gpt-5-mini-2025-08-07': {
+    input: 0.25,
+    output: 2.00,
     provider: 'OpenAI',
-    displayName: 'GPT-4o Mini'
+    displayName: 'GPT-5 Mini'
   },
-  'gpt-4o': {
-    input: 2.50,
+  'gpt-5-2025-08-07': {
+    input: 1.25,
     output: 10.00,
     provider: 'OpenAI',
-    displayName: 'GPT-4o'
-  },
-  'gpt-4-turbo': {
-    input: 10.00,
-    output: 30.00,
-    provider: 'OpenAI',
-    displayName: 'GPT-4 Turbo'
+    displayName: 'GPT-5'
   },
   // Anthropic Models
-  'claude-3-haiku-20240307': {
-    input: 0.25,
-    output: 1.25,
-    provider: 'Anthropic',
-    displayName: 'Claude 3 Haiku'
-  },
-  'claude-3-5-sonnet-20241022': {
+  'claude-sonnet-4-5-20250929': {
     input: 3.00,
     output: 15.00,
     provider: 'Anthropic',
-    displayName: 'Claude 3.5 Sonnet'
+    displayName: 'Claude Sonnet 4.5'
   },
-  'claude-3-opus-20240229': {
+  'claude-opus-4-1-20250805': {
     input: 15.00,
     output: 75.00,
     provider: 'Anthropic',
-    displayName: 'Claude 3 Opus'
+    displayName: 'Claude Opus 4.1'
   },
   // Google Models
   'gemini-2.5-flash': {
@@ -66,12 +54,10 @@ export const MODEL_PRICING = {
 
 // Display name mappings for UI
 export const DISPLAY_NAME_MAPPING = {
-  'GPT-4o Mini': 'gpt-4o-mini',
-  'GPT-4o': 'gpt-4o',
-  'GPT-4 Turbo': 'gpt-4-turbo',
-  'Claude 3 Haiku': 'claude-3-haiku-20240307',
-  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
-  'Claude 3 Opus': 'claude-3-opus-20240229',
+  'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
+  'GPT-5': 'gpt-5-2025-08-07',
+  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
+  'Claude Opus 4.1': 'claude-opus-4-1-20250805',
   'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
   'Sonar Pro': 'sonar-pro'

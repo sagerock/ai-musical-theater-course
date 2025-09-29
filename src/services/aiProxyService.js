@@ -14,14 +14,12 @@ const API_ENDPOINTS = {
 // Map tool names to their API endpoints and models
 const TOOL_CONFIG = {
   // OpenAI Models
-  'GPT-4o Mini': { endpoint: 'openai', model: 'gpt-4o-mini' },
-  'GPT-4o': { endpoint: 'openai', model: 'gpt-4o' },
-  'GPT-4 Turbo': { endpoint: 'openai', model: 'gpt-4-turbo' },
+  'GPT-5 Mini': { endpoint: 'openai', model: 'gpt-5-mini-2025-08-07' },
+  'GPT-5': { endpoint: 'openai', model: 'gpt-5-2025-08-07' },
 
   // Anthropic Models
-  'Claude 3 Haiku': { endpoint: 'anthropic', model: 'claude-3-haiku-20240307' },
-  'Claude 3.5 Sonnet': { endpoint: 'anthropic', model: 'claude-3-5-sonnet-20241022' },
-  'Claude 3 Opus': { endpoint: 'anthropic', model: 'claude-3-opus-20240229' },
+  'Claude Sonnet 4.5': { endpoint: 'anthropic', model: 'claude-sonnet-4-5-20250929' },
+  'Claude Opus 4.1': { endpoint: 'anthropic', model: 'claude-opus-4-1-20250805' },
 
   // Google Models
   'Gemini Flash': { endpoint: 'google', model: 'gemini-2.5-flash' },
@@ -63,8 +61,8 @@ const getUserFriendlyError = (error, tool) => {
 };
 
 export const aiProxyService = {
-  async sendChatCompletion(prompt, tool = 'GPT-4o Mini', conversationHistory = [], systemPrompt = null, stream = false) {
-    const config = TOOL_CONFIG[tool] || TOOL_CONFIG['GPT-4o Mini'];
+  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], systemPrompt = null, stream = false) {
+    const config = TOOL_CONFIG[tool] || TOOL_CONFIG['GPT-5 Mini'];
     const endpoint = API_ENDPOINTS[config.endpoint];
 
     if (!endpoint) {

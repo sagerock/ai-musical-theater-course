@@ -9,13 +9,11 @@ const openai = new OpenAI({
 // Available AI tools/models - Streamlined selection
 export const AI_TOOLS = {
   // OpenAI Models
-  'GPT-4o Mini': 'gpt-4o-mini',       // Fastest, most cost-efficient
-  'GPT-4o': 'gpt-4o',                 // Balanced performance and cost (default)
-  'GPT-4 Turbo': 'gpt-4-turbo',       // Premium model for coding and complex reasoning
+  'GPT-5 Mini': 'gpt-5-mini-2025-08-07',  // Balanced performance and cost (default)
+  'GPT-5': 'gpt-5-2025-08-07',            // Premium model for coding and complex reasoning
   // Anthropic Models
-  'Claude 3 Haiku': 'claude-3-haiku-20240307',
-  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
-  'Claude 3 Opus': 'claude-3-opus-20240229',
+  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
+  'Claude Opus 4.1': 'claude-opus-4-1-20250805',
   // Google Models
   'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
@@ -25,9 +23,9 @@ export const AI_TOOLS = {
 
 export const openaiApi = {
   // Send chat completion request
-  async sendChatCompletion(prompt, tool = 'GPT-4o Mini', conversationHistory = [], systemPrompt = null) {
+  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], systemPrompt = null) {
     try {
-      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-4o Mini'];
+      const model = AI_TOOLS[tool] || AI_TOOLS['GPT-5 Mini'];
       
       // Use provided system prompt or fallback to default
       const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';

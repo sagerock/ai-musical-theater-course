@@ -8,16 +8,15 @@ const anthropic = new Anthropic({
 
 // Available Anthropic models - Streamlined selection
 export const ANTHROPIC_MODELS = {
-  'Claude 3 Haiku': 'claude-3-haiku-20240307',
-  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
-  'Claude 3 Opus': 'claude-3-opus-20240229'
+  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
+  'Claude Opus 4.1': 'claude-opus-4-1-20250805'
 };
 
 export const anthropicApi = {
   // Send chat completion request
-  async sendChatCompletion(prompt, tool = 'Claude 3.5 Sonnet', conversationHistory = [], systemPrompt = null) {
+  async sendChatCompletion(prompt, tool = 'Claude Sonnet 4.5', conversationHistory = [], systemPrompt = null) {
     try {
-      const model = ANTHROPIC_MODELS[tool] || ANTHROPIC_MODELS['Claude 3.5 Sonnet'];
+      const model = ANTHROPIC_MODELS[tool] || ANTHROPIC_MODELS['Claude Sonnet 4.5'];
       
       // Use provided system prompt or fallback to default
       const defaultSystemPrompt = 'You are a helpful AI assistant designed to support educational activities. Please provide thoughtful, accurate, and educational responses. Encourage critical thinking and ethical use of AI tools.';

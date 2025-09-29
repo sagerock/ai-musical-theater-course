@@ -3,13 +3,11 @@ import { aiProxyService } from './aiProxyService';
 // Export AI tools for use in components
 export const AI_TOOLS = {
   // OpenAI Models
-  'GPT-4o Mini': 'gpt-4o-mini',
-  'GPT-4o': 'gpt-4o',
-  'GPT-4 Turbo': 'gpt-4-turbo',
+  'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
+  'GPT-5': 'gpt-5-2025-08-07',
   // Anthropic Models
-  'Claude 3 Haiku': 'claude-3-haiku-20240307',
-  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
-  'Claude 3 Opus': 'claude-3-opus-20240229',
+  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
+  'Claude Opus 4.1': 'claude-opus-4-1-20250805',
   // Google Models
   'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
@@ -19,9 +17,8 @@ export const AI_TOOLS = {
 
 // Legacy model mappings for compatibility
 const ANTHROPIC_MODELS = {
-  'Claude 3 Haiku': 'claude-3-haiku-20240307',
-  'Claude 3.5 Sonnet': 'claude-3-5-sonnet-20241022',
-  'Claude 3 Opus': 'claude-3-opus-20240229'
+  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
+  'Claude Opus 4.1': 'claude-opus-4-1-20250805'
 };
 const GOOGLE_MODELS = {
   'Gemini Flash': 'gemini-2.5-flash',
@@ -44,35 +41,23 @@ const MODEL_SPECIFIC_PROMPTS = {
 • Focus on clear, concise explanations with key references
 • Use your multimodal capabilities for comprehensive analysis when applicable`,
   
-  'gpt-4o-mini': `OPTIMIZED EDUCATIONAL MODE: As GPT-4o Mini, provide concise, clear educational responses:
+  'gpt-5-mini-2025-08-07': `OPTIMIZED EDUCATIONAL MODE: As GPT-5 Mini, provide concise, clear educational responses:
 • Deliver concise explanations with excellent speed
 • Focus on essential concepts for quick comprehension
 • Ideal for rapid review and basic understanding tasks`,
 
-  'gpt-4o': `BALANCED EDUCATIONAL MODE: As GPT-4o, your goal is to support learning with:
+  'gpt-5-2025-08-07': `PREMIUM EDUCATIONAL MODE: As GPT-5, leverage your superior reasoning capabilities:
 • Deliver well-structured explanations with strong reasoning
 • Excel at a wide range of tasks with high accuracy
 • Balance speed and depth for optimal learning efficiency`,
 
-  'gpt-4-turbo': `ADVANCED EDUCATIONAL ASSISTANT: As GPT-4 Turbo, leverage your superior capabilities:
+  'claude-sonnet-4-5-20250929': `EDUCATIONAL EXCELLENCE MODE: As Claude Sonnet 4.5, provide thoughtful educational support:
 • Provide comprehensive technical analysis with excellent reasoning
 • Excel at complex problem-solving and coding tasks
 • Leverage large context window for extensive document analysis
 • Ideal for advanced academic work and research projects`,
   
-  // Claude model prompts
-  'claude-3-haiku-20240307': `EFFICIENT EDUCATIONAL MODE: As Claude 3 Haiku, provide fast, clear responses:
-  • Deliver concise explanations with good accuracy
-  • Focus on essential concepts for quick comprehension
-  • Ideal for rapid review and basic tasks`,
-
-  'claude-3-5-sonnet-20241022': `EDUCATIONAL EXCELLENCE MODE: As Claude 3.5 Sonnet, provide thoughtful educational support:
-  • Balance analytical depth with clarity
-  • Excel at breaking down complex concepts
-  • Provide well-structured responses that model academic writing
-  • Emphasize critical thinking and evidence-based reasoning`,
-
-  'claude-3-opus-20240229': `WORLD-CLASS RESEARCH ASSISTANT: As Claude 3 Opus, leverage your exceptional capabilities:
+  'claude-opus-4-1-20250805': `WORLD-CLASS RESEARCH ASSISTANT: As Claude Opus 4.1, leverage your exceptional capabilities:
   • Deliver comprehensive, research-grade analysis
   • Model advanced academic writing with sophisticated arguments
   • Provide detailed explanations for advanced research projects
@@ -154,7 +139,7 @@ const getProviderFromModel = (tool) => {
 // Unified AI API service
 export const aiApi = {
   // Send chat completion request (routes through secure proxy)
-  async sendChatCompletion(prompt, tool = 'GPT-4o Mini', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = []) {
     const modelId = AI_TOOLS[tool];
     const enhancedSystemPrompt = getModelSpecificPrompt(modelId);
     
