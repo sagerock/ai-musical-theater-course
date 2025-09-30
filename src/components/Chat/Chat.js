@@ -497,8 +497,8 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      {/* Header - Sticky so model selector is always visible */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button
@@ -580,16 +580,16 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Cost Warning Banner for Expensive Models */}
+      {/* Cost Warning Banner for Expensive Models - Sticky */}
       {isExpensiveModel() && (
-        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mx-6">
+        <div className="sticky top-[73px] z-10 bg-orange-50 border-l-4 border-orange-400 p-4 mx-6 shadow-sm">
           <div className="flex">
             <div className="flex-shrink-0">
               <ExclamationTriangleIcon className="h-5 w-5 text-orange-400" />
             </div>
             <div className="ml-3">
               <p className="text-sm text-orange-700">
-                <strong>Research Mode Active:</strong> You've selected {selectedTool}, which provides superior research and writing capabilities 
+                <strong>Research Mode Active:</strong> You've selected {selectedTool}, which provides superior research and writing capabilities
                 but costs 5x more than standard models. Use for complex research tasks and high-quality writing.
               </p>
               <div className="mt-1 text-xs text-orange-600">
@@ -600,9 +600,9 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Context Indicator - Shows how much conversation history will be included */}
+      {/* Context Indicator - Shows how much conversation history will be included - Sticky */}
       {chats.length > 0 && (
-        <div className="px-6 py-2 bg-gray-50 border-b border-gray-200">
+        <div className={`sticky ${isExpensiveModel() ? 'top-[185px]' : 'top-[73px]'} z-10 px-6 py-2 bg-gray-50 border-b border-gray-200 shadow-sm`}>
           <div className="flex items-center justify-between text-xs text-gray-600">
             <div className="flex items-center space-x-2">
               <ChatBubbleLeftRightIcon className="h-4 w-4" />
