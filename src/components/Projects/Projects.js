@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, courseApi } from '../../services/firebaseApi';
+import { projectApi, courseApi, tagApi } from '../../services/firebaseApi';
 import { hasStudentAssistantPermissions, hasTeachingPermissions } from '../../utils/roleUtils';
 import { emailNotifications, getDisplayNameForEmail } from '../../services/emailService';
 import { format } from 'date-fns';
@@ -15,7 +15,8 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
   PencilIcon,
-  CheckIcon
+  CheckIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 
 export default function Projects() {
@@ -36,8 +37,10 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: '',
-    description: ''
+    description: '',
+    tagIds: []
   });
+  const [availableTags, setAvailableTags] = useState([]);
   const { currentUser } = useAuth();
   const { courseId } = useParams();
 
@@ -45,8 +48,19 @@ export default function Projects() {
     loadProjects();
     if (courseId) {
       loadCourseInfo();
+      loadTags();
     }
   }, [currentUser, courseId]);
+
+  const loadTags = async () => {
+    try {
+      const tags = await tagApi.getAllTags(courseId);
+      setAvailableTags(tags);
+    } catch (error) {
+      console.error('Error loading tags:', error);
+      setAvailableTags([]);
+    }
+  };
 
   const loadProjects = useCallback(async () => {
     try {
@@ -261,7 +275,8 @@ export default function Projects() {
     setEditingProject(project);
     setEditFormData({
       title: project.title,
-      description: project.description || ''
+      description: project.description || '',
+      tagIds: project.tagIds || []
     });
   };
 
@@ -271,25 +286,26 @@ export default function Projects() {
       toast.error('Project title is required');
       return;
     }
-    
+
     if (!editingProject) return;
-    
+
     try {
       await projectApi.updateProject(editingProject.id, {
         title: editFormData.title.trim(),
-        description: editFormData.description.trim()
+        description: editFormData.description.trim(),
+        tagIds: editFormData.tagIds
       });
-      
+
       // Update local state
-      setProjects(projects.map(p => 
-        p.id === editingProject.id 
-          ? { ...p, title: editFormData.title.trim(), description: editFormData.description.trim() }
+      setProjects(projects.map(p =>
+        p.id === editingProject.id
+          ? { ...p, title: editFormData.title.trim(), description: editFormData.description.trim(), tagIds: editFormData.tagIds }
           : p
       ));
-      
+
       toast.success('Project updated successfully!');
       setEditingProject(null);
-      setEditFormData({ title: '', description: '' });
+      setEditFormData({ title: '', description: '', tagIds: [] });
     } catch (error) {
       console.error('Error updating project:', error);
       toast.error(error.message || 'Failed to update project');
@@ -298,7 +314,7 @@ export default function Projects() {
 
   const cancelEditProject = () => {
     setEditingProject(null);
-    setEditFormData({ title: '', description: '' });
+    setEditFormData({ title: '', description: '', tagIds: [] });
   };
 
   const isProjectOwner = (project) => {
@@ -384,6 +400,38 @@ export default function Projects() {
                           rows={2}
                         />
                       </div>
+                      {/* Tags */}
+                      {availableTags.length > 0 && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                          <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                            {availableTags.map((tag) => (
+                              <button
+                                key={tag.id}
+                                type="button"
+                                onClick={() => {
+                                  setEditFormData(prev => ({
+                                    ...prev,
+                                    tagIds: prev.tagIds.includes(tag.id)
+                                      ? prev.tagIds.filter(id => id !== tag.id)
+                                      : [...prev.tagIds, tag.id]
+                                  }));
+                                }}
+                                className={`flex items-center justify-between p-2 text-xs rounded-md border transition-colors ${
+                                  editFormData.tagIds.includes(tag.id)
+                                    ? 'bg-primary-50 border-primary-200 text-primary-800'
+                                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                                }`}
+                              >
+                                <span>{tag.name}</span>
+                                {editFormData.tagIds.includes(tag.id) && (
+                                  <CheckIcon className="h-3 w-3 text-primary-600" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           type="button"
@@ -447,6 +495,24 @@ export default function Projects() {
                       <p className="text-sm text-gray-600 mt-3 line-clamp-2">
                         {project.description}
                       </p>
+                    )}
+
+                    {/* Display Tags */}
+                    {project.tagIds && project.tagIds.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {project.tagIds.map((tagId) => {
+                          const tag = availableTags.find(t => t.id === tagId);
+                          return tag ? (
+                            <span
+                              key={tagId}
+                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary-100 text-primary-800"
+                            >
+                              <TagIcon className="h-3 w-3 mr-1" />
+                              {tag.name}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
                     )}
                   </>
                 )}

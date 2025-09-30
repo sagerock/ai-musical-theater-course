@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, chatApi, tagApi, reflectionApi, instructorNotesApi, attachmentApi, courseApi } from '../../services/firebaseApi';
+import { projectApi, chatApi, reflectionApi, instructorNotesApi, attachmentApi, courseApi } from '../../services/firebaseApi';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
 import { MODEL_PRICING, formatCurrency } from '../../utils/costCalculator';
 import { format } from 'date-fns';
@@ -9,7 +9,6 @@ import toast from 'react-hot-toast';
 import {
   PaperAirplaneIcon,
   ArrowLeftIcon,
-  TagIcon,
   ChatBubbleLeftRightIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
@@ -20,7 +19,6 @@ import {
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import ChatMessage from './ChatMessage';
-import TaggingModal from './TaggingModal';
 import ReflectionModal from './ReflectionModal';
 import InstructorNotes from '../Instructor/InstructorNotes';
 import AIModelsEducationModal from './AIModelsEducationModal';
@@ -39,12 +37,10 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [selectedTool, setSelectedTool] = useState('GPT-5 Mini');
-  const [availableTags, setAvailableTags] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  
+
   // Modal states
-  const [showTaggingModal, setShowTaggingModal] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [showAIModelsModal, setShowAIModelsModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
@@ -95,13 +91,6 @@ export default function Chat() {
     window.scrollTo(0, 0);
     loadProjectAndChats();
   }, [projectId, currentUser]);
-
-  // Load tags when project is loaded (to get course_id)
-  useEffect(() => {
-    if (project) {
-      loadTags();
-    }
-  }, [project]);
 
   useEffect(() => {
     // Only scroll to bottom if there are existing messages and we're not loading
@@ -163,59 +152,6 @@ export default function Chat() {
     }
   };
 
-  const loadTags = async () => {
-    try {
-      console.log('🏷️ Loading tags for Chat component...');
-      
-      // Get courseId from project if available
-      const courseId = project?.course_id || null;
-      
-      // Always try to load global tags first (they should be available to all users)
-      const globalTags = await tagApi.getGlobalTagsWithUsage(courseId).catch(error => {
-        console.log('❌ Error loading global tags:', error);
-        return [];
-      });
-      
-      let courseTags = [];
-      if (courseId) {
-        // If this is a course project, also load course-specific tags
-        courseTags = await tagApi.getCourseTagsWithUsage(courseId).catch(error => {
-          console.log('❌ Error loading course tags:', error);
-          return [];
-        });
-      }
-      
-      // Combine global and course tags, removing duplicates
-      const allTags = [...globalTags, ...courseTags];
-      const uniqueTags = allTags.filter((tag, index, self) => 
-        index === self.findIndex(t => t.id === tag.id)
-      );
-      
-      console.log(`✅ Loaded ${globalTags.length} global tags and ${courseTags.length} course tags (${uniqueTags.length} total)`);
-      
-      // If no tags found at all, try to ensure global tags exist
-      if (uniqueTags.length === 0) {
-        console.log('⚠️ No tags found, attempting to create global educational tags...');
-        try {
-          await tagApi.createGlobalEducationalTags();
-          console.log('✅ Global tags created, reloading...');
-          
-          // Retry loading global tags
-          const retryGlobalTags = await tagApi.getGlobalTagsWithUsage(courseId).catch(() => []);
-          setAvailableTags(retryGlobalTags);
-          console.log(`✅ Reloaded ${retryGlobalTags.length} global tags after creation`);
-        } catch (createError) {
-          console.log('❌ Could not create global tags:', createError);
-          setAvailableTags([]);
-        }
-      } else {
-        setAvailableTags(uniqueTags);
-      }
-    } catch (error) {
-      console.error('Error loading tags:', error);
-      setAvailableTags([]);
-    }
-  };
 
   const handleDocumentSelect = async (document, source) => {
     if (source === 'upload') {
@@ -439,24 +375,10 @@ export default function Chat() {
     }
   };
 
-  const handleTagChat = (chatId) => {
-    const chat = chats.find(c => c.id === chatId);
-    setCurrentChatForModal(chat);
-    setShowTaggingModal(true);
-  };
-
   const handleReflectOnChat = (chatId) => {
     const chat = chats.find(c => c.id === chatId);
     setCurrentChatForModal(chat);
     setShowReflectionModal(true);
-  };
-
-  const onTagsUpdated = (chatId, newTags) => {
-    setChats(prev => prev.map(chat => 
-      chat.id === chatId 
-        ? { ...chat, chat_tags: newTags.map(tag => ({ tags: tag })) }
-        : chat
-    ));
   };
 
   const onReflectionUpdated = (chatId, reflection) => {
@@ -639,7 +561,6 @@ export default function Chat() {
             <ChatMessage
               key={chat.id}
               chat={chat}
-              onTagChat={handleTagChat}
               onReflectOnChat={handleReflectOnChat}
               currentUserId={currentUser.id}
             />
@@ -813,17 +734,6 @@ export default function Chat() {
       )}
 
       {/* Modals */}
-      {showTaggingModal && currentChatForModal && (
-        <TaggingModal
-          chat={currentChatForModal}
-          availableTags={availableTags}
-          onClose={() => setShowTaggingModal(false)}
-          onTagsUpdated={onTagsUpdated}
-          courseId={project?.course_id}
-          userRole={userRole}
-        />
-      )}
-
       {showReflectionModal && currentChatForModal && (
         <ReflectionModal
           chat={currentChatForModal}

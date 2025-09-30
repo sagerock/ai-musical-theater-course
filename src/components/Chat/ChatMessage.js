@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import {
   UserIcon,
   ComputerDesktopIcon,
-  TagIcon,
   ChatBubbleBottomCenterTextIcon,
   PlusIcon,
   DocumentIcon,
@@ -16,11 +15,10 @@ import {
   CheckIcon
 } from '@heroicons/react/24/outline';
 
-export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentUserId }) {
+export default function ChatMessage({ chat, onReflectOnChat, currentUserId }) {
   const { currentUser } = useAuth();
   const isCurrentUser = chat.user_id === currentUserId;
   const hasReflection = chat.reflections && chat.reflections.length > 0;
-  const hasTags = chat.chat_tags && chat.chat_tags.length > 0;
   const [attachments, setAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -164,45 +162,9 @@ export default function ChatMessage({ chat, onTagChat, onReflectOnChat, currentU
         </div>
       </div>
 
-      {/* Tags and Reflection Section */}
+      {/* Reflection Section */}
       {isCurrentUser && (
         <div className="ml-11 space-y-3">
-          {/* Tags */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center">
-                <TagIcon className="h-4 w-4 text-gray-400 mr-1" />
-                <span className="text-sm font-medium text-gray-700">Tags</span>
-              </div>
-              <button
-                onClick={() => onTagChat(chat.id)}
-                className="text-xs text-primary-600 hover:text-primary-500 font-medium"
-              >
-                {hasTags ? 'Edit Tags' : 'Add Tags'}
-              </button>
-            </div>
-            {hasTags ? (
-              <div className="flex flex-wrap gap-1">
-                {chat.chat_tags.map((chatTag, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
-                  >
-                    {chatTag.tags.name}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <button
-                onClick={() => onTagChat(chat.id)}
-                className="inline-flex items-center px-3 py-1 border border-dashed border-gray-300 rounded-md text-xs text-gray-500 hover:border-gray-400 hover:text-gray-600"
-              >
-                <PlusIcon className="h-3 w-3 mr-1" />
-                Add tags to categorize this interaction
-              </button>
-            )}
-          </div>
-
           {/* Reflection */}
           <div>
             <div className="flex items-center justify-between mb-2">
