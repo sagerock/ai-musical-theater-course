@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { chatApi, projectApi, userApi, tagApi } from '../../services/firebaseApi';
+import { chatApi, tagApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
@@ -12,7 +12,8 @@ import {
   DocumentTextIcon,
   EyeIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 
 export default function StudentActivity({ selectedCourseId, selectedCourse, currentUser }) {
@@ -706,22 +707,25 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
                         )}
                       </div>
                       
-                      {/* Tags if available */}
-                      {chat.chat_tags && chat.chat_tags.length > 0 && (
+                      {/* Project Tags if available */}
+                      {chat.projects?.tagIds && chat.projects.tagIds.length > 0 && (
                         <div className="flex items-center space-x-1">
-                          <span className="text-gray-500">Tags:</span>
                           <div className="flex space-x-1">
-                            {chat.chat_tags.slice(0, 2).map((tag, index) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
-                              >
-                                {tag.tags?.name || 'Tag'}
-                              </span>
-                            ))}
-                            {chat.chat_tags.length > 2 && (
+                            {chat.projects.tagIds.slice(0, 2).map((tagId, index) => {
+                              const tag = tags.find(t => t.id === tagId);
+                              return tag ? (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800"
+                                >
+                                  <TagIcon className="h-3 w-3 mr-1" />
+                                  {tag.name}
+                                </span>
+                              ) : null;
+                            })}
+                            {chat.projects.tagIds.length > 2 && (
                               <span className="text-xs text-gray-500">
-                                +{chat.chat_tags.length - 2} more
+                                +{chat.projects.tagIds.length - 2} more
                               </span>
                             )}
                           </div>
