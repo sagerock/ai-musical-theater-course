@@ -138,24 +138,20 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
   const loadFilterMetadata = useCallback(async () => {
     try {
       console.log('👥📁🏷️ Loading recent chats to extract filter metadata');
-      
+
       const recentChats = await chatApi.getChatsWithFiltersOptimized({
         courseId: selectedCourseId,
         limit: 200 // Only load recent chats for metadata extraction
       });
-      
+
       // Extract unique users from all chats
       const uniqueUsers = [];
       const seenUserIds = new Set();
-      
+
       // Extract unique projects from all chats
       const uniqueProjects = [];
       const seenProjectIds = new Set();
-      
-      // Extract unique tags from all chats
-      const uniqueTags = [];
-      const seenTagIds = new Set();
-      
+
       recentChats.forEach(chat => {
         // Extract users
         if (chat.users && chat.userId && !seenUserIds.has(chat.userId)) {
@@ -166,7 +162,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
             email: chat.users.email || 'No email'
           });
         }
-        
+
         // Extract projects
         if (chat.projects && chat.projectId && !seenProjectIds.has(chat.projectId)) {
           seenProjectIds.add(chat.projectId);
@@ -176,29 +172,24 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
             description: chat.projects.description || ''
           });
         }
-        
-        // Extract tags from chat_tags
-        if (chat.chat_tags && Array.isArray(chat.chat_tags)) {
-          chat.chat_tags.forEach(chatTag => {
-            if (chatTag.tags && chatTag.tags.id && !seenTagIds.has(chatTag.tags.id)) {
-              seenTagIds.add(chatTag.tags.id);
-              uniqueTags.push({
-                id: chatTag.tags.id,
-                name: chatTag.tags.name || 'Unnamed Tag',
-                color: chatTag.tags.color || '#3B82F6'
-              });
-            }
-          });
-        }
       });
-      
+
+      // Load course tags separately (tags are now at project level, not per-chat)
+      let courseTags = [];
+      try {
+        const tagModule = await import('../../services/firebaseApi');
+        courseTags = await tagModule.tagApi.getAllTags(selectedCourseId);
+        console.log('🏷️ Loaded course tags:', courseTags.length);
+      } catch (error) {
+        console.error('Error loading course tags:', error);
+      }
+
       console.log('👥 Extracted unique users from recent chats:', uniqueUsers.length);
       console.log('📁 Extracted unique projects from recent chats:', uniqueProjects.length);
-      console.log('🏷️ Extracted unique tags from recent chats:', uniqueTags.length);
-      
+
       setUsers(uniqueUsers.sort((a, b) => a.name.localeCompare(b.name)));
       setProjects(uniqueProjects.sort((a, b) => a.title.localeCompare(b.title)));
-      setTags(uniqueTags.sort((a, b) => a.name.localeCompare(b.name)));
+      setTags(courseTags.sort((a, b) => a.name.localeCompare(b.name)));
       
     } catch (error) {
       console.error('Error loading all chats for filters:', error);
