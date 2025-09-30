@@ -230,18 +230,32 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       
       setHasNextPage(hasMore);
       setCurrentPage(page);
-      
+
+      // Sort chats by most recently updated project (so edited projects bubble to top)
+      const sortedPageData = pageData.sort((a, b) => {
+        const aProjectUpdated = a.projects?.updatedAt || a.projects?.updated_at || a.created_at;
+        const bProjectUpdated = b.projects?.updatedAt || b.projects?.updated_at || b.created_at;
+
+        // Convert to dates for comparison
+        const aDate = aProjectUpdated?.toDate ? aProjectUpdated.toDate() : new Date(aProjectUpdated);
+        const bDate = bProjectUpdated?.toDate ? bProjectUpdated.toDate() : new Date(bProjectUpdated);
+
+        return bDate - aDate; // Most recent first
+      });
+
       if (resetData) {
-        setChats(pageData);
-        setTotalChats(pageData.length + (hasMore ? 1 : 0)); // Approximate total
+        setChats(sortedPageData);
+        setTotalChats(sortedPageData.length + (hasMore ? 1 : 0)); // Approximate total
       } else {
         // Append for "load more" functionality
-        setChats(prev => [...prev, ...pageData]);
-        setTotalChats(prev => prev + pageData.length);
+        setChats(prev => [...prev, ...sortedPageData]);
+        setTotalChats(prev => prev + sortedPageData.length);
       }
-      
-      console.log(`📊 Loaded page ${page}: ${pageData.length} chats, hasNextPage: ${hasMore}`);
-      
+
+      console.log(`📊 Loaded page ${page}: ${sortedPageData.length} chats, hasNextPage: ${hasMore}`);
+      console.log('📊 Sample chat with project data:', sortedPageData[0]?.projects);
+      console.log('📊 Available tags:', tags.length);
+
     } catch (error) {
       console.error('Error loading paginated chats:', error);
       toast.error('Failed to load chat data');
