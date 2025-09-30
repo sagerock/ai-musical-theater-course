@@ -3820,15 +3820,18 @@ export const instructorNotesApi = {
         const parent = noteMap.get(note.parentId);
         if (parent) {
           parent.replies.push(noteMap.get(note.id));
+          // Set hasReplies flag on parent
+          parent.hasReplies = true;
         }
       } else {
         rootNotes.push(noteMap.get(note.id));
       }
     });
 
-    // Sort replies by date
+    // Sort replies by date and ensure hasReplies is set
     const sortReplies = (note) => {
       if (note.replies && note.replies.length > 0) {
+        note.hasReplies = true; // Ensure hasReplies is set
         note.replies.sort((a, b) => {
           const dateA = a.createdAt || a.created_at;
           const dateB = b.createdAt || b.created_at;
