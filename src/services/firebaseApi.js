@@ -1928,29 +1928,57 @@ export const chatApi = {
     }
     
     console.log(`📊 Cache performance: ${projectIdArray.length - uncachedProjectIds.length}/${projectIdArray.length} projects from cache`);
-    
-    // Skip individual reflection and tag fetching for now (can be loaded on-demand)
+
+    // Batch fetch reflections for chats that have them
+    const reflectionMap = new Map();
+    if (chatIdsWithReflections.length > 0) {
+      for (let i = 0; i < chatIdsWithReflections.length; i += 10) {
+        const batch = chatIdsWithReflections.slice(i, i + 10);
+        const reflectionQuery = query(
+          collection(db, 'reflections'),
+          where('chatId', 'in', batch)
+        );
+        const reflectionSnapshot = await getDocs(reflectionQuery);
+
+        reflectionSnapshot.forEach(doc => {
+          const reflectionData = { id: doc.id, ...doc.data() };
+          reflectionData.created_at = convertTimestamp(reflectionData.createdAt);
+          reflectionData.updated_at = convertTimestamp(reflectionData.updatedAt);
+
+          // Store by chatId (a chat can have multiple reflections)
+          if (!reflectionMap.has(reflectionData.chatId)) {
+            reflectionMap.set(reflectionData.chatId, []);
+          }
+          reflectionMap.get(reflectionData.chatId).push(reflectionData);
+        });
+      }
+      console.log(`📊 Loaded reflections for ${reflectionMap.size} chats`);
+    }
+
+    // Skip individual tag fetching for now (can be loaded on-demand)
     // This saves hundreds of additional queries
-    
+
     // Enrich chats with batch-fetched data
     for (const chatData of chats) {
       // Add user data from cache
       if (chatData.userId) {
-        chatData.users = userMap.get(chatData.userId) || { 
-          name: 'Unknown User', 
-          email: 'No email' 
+        chatData.users = userMap.get(chatData.userId) || {
+          name: 'Unknown User',
+          email: 'No email'
         };
       }
-      
+
       // Add project data from cache
       if (chatData.projectId) {
-        chatData.projects = projectMap.get(chatData.projectId) || { 
-          title: 'Untitled Project' 
+        chatData.projects = projectMap.get(chatData.projectId) || {
+          title: 'Untitled Project'
         };
       }
-      
-      // Initialize empty arrays for reflections and tags (load on-demand if needed)
-      chatData.reflections = [];
+
+      // Add reflections from batch fetch
+      chatData.reflections = reflectionMap.get(chatData.id) || [];
+
+      // Initialize empty array for tags (load on-demand if needed)
       chatData.chat_tags = [];
     }
     
