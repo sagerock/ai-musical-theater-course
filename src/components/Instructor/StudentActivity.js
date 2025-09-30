@@ -92,39 +92,22 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       
       // Users, projects, and tags will all be extracted from chats
 
-      // Set available AI tools from system configuration
-      // Use actual database values that might exist in chats
+      // Set available AI tools - use display names only (these are stored in tool_used field)
       const allConfiguredTools = [
-        // Current models
-        'gpt-5-mini-2025-08-07',
-        'gpt-5-2025-08-07',
-        'claude-sonnet-4-5-20250929',
-        'claude-opus-4-1-20250805', 
-        'gemini-2.5-flash',
-        'sonar-pro',
-        // Display name formats
-        'GPT-5 Nano',      // Display format
-        'GPT-5 Mini',      // Display format
-        'GPT-5',           // Display format
-        'Claude Sonnet 4', // Display format
-        'Gemini Flash',    // Display format
-        'Sonar Pro'        // Display format
+        'GPT-5 Nano',
+        'GPT-5 Mini',
+        'GPT-5',
+        'Claude Sonnet 4',
+        'Claude Sonnet 4.5',
+        'Claude Opus 4',
+        'Claude Opus 4.1',
+        'Gemini Flash',
+        'Gemini 2.5 Pro',
+        'Sonar Pro'
       ];
-      
-      // Remove duplicates based on display name but keep one representative value
-      const uniqueTools = [];
-      const seenDisplayNames = new Set();
-      
-      for (const tool of allConfiguredTools) {
-        const displayName = getToolDisplayName(tool);
-        if (!seenDisplayNames.has(displayName)) {
-          seenDisplayNames.add(displayName);
-          uniqueTools.push(tool);
-        }
-      }
-      
-      setAvailableTools(uniqueTools);
-      console.log('📊 Available AI tools configured:', uniqueTools);
+
+      setAvailableTools(allConfiguredTools);
+      console.log('📊 Available AI tools configured:', allConfiguredTools);
 
     } catch (error) {
       console.error('Error loading initial data:', error);
