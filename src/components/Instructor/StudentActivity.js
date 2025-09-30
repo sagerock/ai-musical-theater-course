@@ -268,8 +268,9 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
 
     // Apply tag filter
     if (filters.tagId) {
-      filtered = filtered.filter(chat => 
-        chat.chat_tags?.some(tag => tag.tags?.id === filters.tagId)
+      // Filter by project tags (tags are now at project level)
+      filtered = filtered.filter(chat =>
+        chat.projects?.tagIds?.includes(filters.tagId)
       );
     }
 
