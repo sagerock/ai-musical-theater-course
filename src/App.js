@@ -8,6 +8,7 @@ import PublicHomePage from './components/Home/PublicHomePage';
 import Login from './components/Auth/Login';
 import ResetPassword from './components/Auth/ResetPassword';
 import ConfirmEmail from './components/Auth/ConfirmEmail';
+import AuthActionHandler from './components/Auth/AuthActionHandler';
 import Dashboard from './components/Dashboard/Dashboard';
 import Chat from './components/Chat/Chat';
 import Projects from './components/Projects/Projects';
@@ -39,6 +40,7 @@ function App() {
           <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/__/auth/action" element={<AuthActionHandler />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/confirm" element={<ConfirmEmail />} />
           <Route path="/auth/confirm" element={<ConfirmEmail />} />

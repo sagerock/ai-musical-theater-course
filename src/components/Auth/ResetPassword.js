@@ -24,11 +24,20 @@ export default function ResetPassword() {
       // Get the action code from URL parameters (Firebase uses 'oobCode')
       const actionCode = searchParams.get('oobCode');
       const mode = searchParams.get('mode');
-      
+
       console.log('Firebase reset params:', { actionCode: !!actionCode, mode });
-      
-      if (!actionCode || mode !== 'resetPassword') {
-        console.log('Missing or invalid Firebase reset parameters');
+
+      // If no action code, this is an invalid request
+      if (!actionCode) {
+        console.log('Missing action code');
+        toast.error('Invalid password reset link');
+        navigate('/login');
+        return;
+      }
+
+      // Mode should be resetPassword if provided, but we're lenient since we're on /reset-password route
+      if (mode && mode !== 'resetPassword') {
+        console.log('Invalid mode:', mode);
         toast.error('Invalid password reset link');
         navigate('/login');
         return;
