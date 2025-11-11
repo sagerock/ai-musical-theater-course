@@ -68,7 +68,7 @@ const EMAIL_TEMPLATES = {
           .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
           .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; }
           .note-content { background: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #667eea; }
-          .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .button { display: inline-block; background: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }
           .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
         </style>
       </head>
@@ -91,7 +91,7 @@ const EMAIL_TEMPLATES = {
             
             <p>This note is designed to help guide your learning and provide feedback on your AI interactions.</p>
             
-            <a href="${APP_URL}/chat/${data.projectId}" class="button">View Project & Note</a>
+            <a href="${APP_URL}/chat/${data.projectId}" class="button" style="color: #ffffff !important; background-color: #4f46e5;">View Project & Note</a>
             
             <p>Keep up the great work exploring AI-enhanced learning!</p>
             
@@ -189,7 +189,7 @@ This email was sent because you're enrolled in ${data.courseName}
             
             <p>You can monitor the student's AI interactions and provide guidance as they work on this project.</p>
             
-            <a href="${APP_URL}/instructor" class="button">View Instructor Dashboard</a>
+            <a href="${APP_URL}/instructor" class="button" style="color: #ffffff !important; background-color: #4f46e5;">View Instructor Dashboard</a>
             
             <p>This is a great opportunity to observe how students are engaging with AI tools and provide targeted support.</p>
             
@@ -278,7 +278,7 @@ This email was sent because you're an instructor in ${data.courseName}
               <strong>Priority:</strong> ${data.priority || 'Normal'}
             </div>
             
-            <a href="${APP_URL}/dashboard" class="button">Access Platform</a>
+            <a href="${APP_URL}/dashboard" class="button" style="color: #ffffff !important; background-color: #4f46e5;">Access Platform</a>
             
             <p>If you have any questions or concerns, please contact the administration team.</p>
             
@@ -398,7 +398,7 @@ This message was sent to ${data.recipientType.toLowerCase()} by platform adminis
             `}
             
             <div class="actions">
-              <a href="${APP_URL}/admin" class="button">Review in Admin Panel</a>
+              <a href="${APP_URL}/admin" class="button" style="color: #ffffff !important; background-color: #4f46e5;">Review in Admin Panel</a>
               <a href="${APP_URL}/instructor" class="button secondary">View All Courses</a>
             </div>
             
@@ -522,7 +522,7 @@ This is an automated ${data.requestedRole === 'instructor' ? 'security alert' : 
             </ul>
             
             <div class="actions">
-              <a href="${APP_URL}/admin" class="button">Review in Admin Panel</a>
+              <a href="${APP_URL}/admin" class="button" style="color: #ffffff !important; background-color: #4f46e5;">Review in Admin Panel</a>
               <a href="${APP_URL}/instructor" class="button secondary">View All Courses</a>
             </div>
             
@@ -624,7 +624,7 @@ This is an automated security alert for instructor-level access requests
             <p>You can review and approve this request from your instructor dashboard. Once approved, the student will gain access to the course and can begin creating projects and engaging with AI tools.</p>
             
             <div class="actions">
-              <a href="${APP_URL}/instructor" class="button">Review Request</a>
+              <a href="${APP_URL}/instructor" class="button" style="color: #ffffff !important; background-color: #4f46e5;">Review Request</a>
             </div>
             
             <p>Students are waiting for your approval to start their AI-enhanced learning journey in your course.</p>
@@ -744,7 +744,7 @@ This email was sent because you're an instructor in ${data.courseName}
             <p>Join the discussion and comment on this announcement directly in the platform:</p>
 
             <div style="text-align: center;">
-              <a href="${APP_URL}/course/${data.courseId}/announcements#announcement-${data.announcementId}" class="button">💬 View Discussion & Comment</a>
+              <a href="${APP_URL}/course/${data.courseId}/announcements#announcement-${data.announcementId}" class="button" style="color: #ffffff !important; background-color: #4f46e5;">💬 View Discussion & Comment</a>
             </div>
 
             <p>Stay engaged with your course community and don't miss important updates!</p>
@@ -845,7 +845,7 @@ To manage your email preferences, visit your profile settings in the platform.
               <strong>From:</strong> ${data.instructorName} (Instructor)
             </div>
             
-            <a href="${APP_URL}/course/${data.courseId}" class="button">View Course</a>
+            <a href="${APP_URL}/course/${data.courseId}" class="button" style="color: #ffffff !important; background-color: #4f46e5;">View Course</a>
             
             <p>Continue your excellent work in the course, and don't hesitate to reach out if you have any questions.</p>
             
