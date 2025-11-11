@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Processing...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    h2 {
+      color: #333;
+      margin: 0 0 0.5rem 0;
+    }
+    p {
+      color: #666;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <h2>Processing your request...</h2>
+    <p>You will be redirected shortly.</p>
+  </div>
+
+  <script>
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const oobCode = urlParams.get('oobCode');
+    const apiKey = urlParams.get('apiKey');
+    const continueUrl = urlParams.get('continueUrl');
+    const lang = urlParams.get('lang') || 'en';
+
+    console.log('Firebase Auth Action Handler');
+    console.log('Mode:', mode);
+    console.log('OobCode:', oobCode ? 'present' : 'missing');
+    console.log('API Key:', apiKey ? apiKey.substring(0, 20) + '...' : 'missing');
+    console.log('Continue URL:', continueUrl);
+
+    // Redirect to the React app with all the parameters
+    if (mode && oobCode) {
+      // Build the redirect URL to your React app's reset-password route
+      const redirectUrl = new URL('/reset-password', window.location.origin);
+      redirectUrl.searchParams.set('mode', mode);
+      redirectUrl.searchParams.set('oobCode', oobCode);
+      if (apiKey) redirectUrl.searchParams.set('apiKey', apiKey);
+      if (lang) redirectUrl.searchParams.set('lang', lang);
+
+      console.log('Redirecting to:', redirectUrl.toString());
+
+      // Redirect immediately
+      window.location.href = redirectUrl.toString();
+    } else {
+      // If parameters are missing, show error
+      document.querySelector('.container').innerHTML = `
+        <h2 style="color: #dc2626;">Invalid Request</h2>
+        <p>Missing required parameters. Please request a new password reset link.</p>
+        <a href="/login" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #667eea; color: white; text-decoration: none; border-radius: 6px;">Go to Login</a>
+      `;
+    }
+  </script>
+</body>
+</html>
