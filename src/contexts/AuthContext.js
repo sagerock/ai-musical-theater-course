@@ -98,10 +98,14 @@ export function AuthProvider({ children }) {
   const resetPassword = async (email) => {
     console.log('🔥 Password reset requested for:', email);
 
-    // Note: Not using actionCodeSettings to avoid "unauthorized-continue-uri" error
-    // The password reset will work through Firebase's default flow
-    // User will be redirected to the standard Firebase password reset page
-    return sendPasswordResetEmail(auth, email);
+    // Configure action code settings with authorized domain
+    const actionCodeSettings = {
+      // URL to redirect back to after password reset
+      url: `${window.location.origin}/login`,
+      handleCodeInApp: false,
+    };
+
+    return sendPasswordResetEmail(auth, email, actionCodeSettings);
   };
 
   const updateProfile = async (updates) => {
