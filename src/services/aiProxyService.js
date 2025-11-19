@@ -13,9 +13,17 @@ const API_ENDPOINTS = {
 
 // Map tool names to their API endpoints and models
 const TOOL_CONFIG = {
-  // OpenAI Models
+  // OpenAI Models - GPT-5 Series
+  'GPT-5 Nano': { endpoint: 'openai', model: 'gpt-5-nano-2025-08-07' },
   'GPT-5 Mini': { endpoint: 'openai', model: 'gpt-5-mini-2025-08-07' },
   'GPT-5': { endpoint: 'openai', model: 'gpt-5-2025-08-07' },
+  'GPT-5 Pro': { endpoint: 'openai', model: 'gpt-5-pro-2025-10-06' },
+  'GPT-5.1': { endpoint: 'openai', model: 'gpt-5.1-2025-11-13' },
+
+  // OpenAI Models - GPT-4.1 Series
+  'GPT-4.1 Nano': { endpoint: 'openai', model: 'gpt-4.1-nano-2025-04-14' },
+  'GPT-4.1 Mini': { endpoint: 'openai', model: 'gpt-4.1-mini-2025-04-14' },
+  'GPT-4.1': { endpoint: 'openai', model: 'gpt-4.1-2025-04-14' },
 
   // Anthropic Models
   'Claude Sonnet 4.5': { endpoint: 'anthropic', model: 'claude-sonnet-4-5-20250929' },
@@ -109,8 +117,8 @@ export const aiProxyService = {
         const modelLower = config.model.toLowerCase();
         if (modelLower.includes('gemini')) {
           timeoutMs = 60000; // 60 seconds for Gemini
-        } else if (modelLower.includes('gpt-4')) {
-          timeoutMs = 45000; // 45 seconds for GPT-4 models
+        } else if (modelLower.includes('gpt-4') || modelLower.includes('gpt-5')) {
+          timeoutMs = 45000; // 45 seconds for GPT-4/GPT-5 models
         } else if (modelLower.includes('opus')) {
           timeoutMs = 45000; // 45 seconds for Claude Opus
         }
