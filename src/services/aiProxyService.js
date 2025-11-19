@@ -113,14 +113,17 @@ export const aiProxyService = {
         // Create abort controller for timeout
         const controller = new AbortController();
         // Use model-specific timeouts - some models need more time
-        let timeoutMs = 30000; // Default 30 seconds
+        // Note: These must be longer than Vercel's maxDuration
+        let timeoutMs = 35000; // Default 35 seconds
         const modelLower = config.model.toLowerCase();
         if (modelLower.includes('gemini')) {
-          timeoutMs = 60000; // 60 seconds for Gemini
-        } else if (modelLower.includes('gpt-4') || modelLower.includes('gpt-5')) {
-          timeoutMs = 45000; // 45 seconds for GPT-4/GPT-5 models
+          timeoutMs = 70000; // 70 seconds for Gemini
+        } else if (modelLower.includes('gpt-5')) {
+          timeoutMs = 70000; // 70 seconds for GPT-5 models (can be slow)
+        } else if (modelLower.includes('gpt-4')) {
+          timeoutMs = 55000; // 55 seconds for GPT-4 models
         } else if (modelLower.includes('opus')) {
-          timeoutMs = 45000; // 45 seconds for Claude Opus
+          timeoutMs = 70000; // 70 seconds for Claude Opus (research model)
         }
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 

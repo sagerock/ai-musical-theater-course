@@ -3,27 +3,32 @@
 class RetryHelper {
   constructor() {
     this.defaultConfig = {
-      maxRetries: 3,
-      baseDelay: 1000, // 1 second
+      maxRetries: 2, // Reduced from 3 to 2 - timeout errors unlikely to succeed on retry
+      baseDelay: 2000, // Increased from 1s to 2s - give more time between retries
       maxDelay: 10000, // 10 seconds
       backoffFactor: 2,
       retryableErrors: [
         'ECONNRESET',
-        'ETIMEDOUT',
         'ENOTFOUND',
         'ECONNREFUSED',
-        'NetworkError',
-        'TimeoutError'
+        'NetworkError'
+      ],
+      nonRetryableErrors: [
+        'ETIMEDOUT',     // Don't retry timeouts - they'll just timeout again
+        'TimeoutError',   // Same for timeout errors
+        'AbortError'      // Don't retry user-initiated aborts
       ],
       retryableStatusCodes: [
-        408, // Request Timeout
-        429, // Too Many Requests
-        500, // Internal Server Error
-        502, // Bad Gateway
-        503, // Service Unavailable
-        504, // Gateway Timeout
-        522, // Connection timed out
-        524  // A timeout occurred
+        429, // Too Many Requests - definitely retry
+        500, // Internal Server Error - might be transient
+        502, // Bad Gateway - might be transient
+        503  // Service Unavailable - might recover
+      ],
+      nonRetryableStatusCodes: [
+        408, // Request Timeout - don't retry, will timeout again
+        504, // Gateway Timeout - don't retry, will timeout again
+        522, // Connection timed out - don't retry
+        524  // A timeout occurred - don't retry
       ]
     };
   }
@@ -80,7 +85,25 @@ class RetryHelper {
   }
 
   isRetryable(error, config) {
-    // Check for network errors
+    // First check if error is explicitly non-retryable
+    if (error.code && config.nonRetryableErrors?.includes(error.code)) {
+      console.log(`⛔ Error code ${error.code} is not retryable`);
+      return false;
+    }
+
+    // Check for non-retryable status codes (timeouts)
+    if (error.status && config.nonRetryableStatusCodes?.includes(error.status)) {
+      console.log(`⛔ Status ${error.status} is not retryable (likely timeout)`);
+      return false;
+    }
+
+    // Check for timeout in error name
+    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+      console.log(`⛔ ${error.name} is not retryable`);
+      return false;
+    }
+
+    // Check for network errors that ARE retryable
     if (error.code && config.retryableErrors.includes(error.code)) {
       return true;
     }
@@ -90,19 +113,26 @@ class RetryHelper {
       return true;
     }
 
-    // Check for specific error messages
+    // Check for specific error messages - but exclude timeout messages
     const errorMessage = error.message?.toLowerCase() || '';
+
+    // Non-retryable message patterns
+    if (errorMessage.includes('timeout') || errorMessage.includes('timed out') ||
+        errorMessage.includes('abort')) {
+      console.log(`⛔ Timeout/abort message detected - not retrying`);
+      return false;
+    }
+
+    // Retryable message patterns
     const retryableMessages = [
       'network',
-      'timeout',
       'fetch failed',
-      'connection',
+      'connection reset',
       'econnreset',
       'socket hang up',
       'rate limit',
       'too many requests',
-      'service unavailable',
-      'gateway'
+      'service unavailable'
     ];
 
     return retryableMessages.some(msg => errorMessage.includes(msg));
