@@ -7,16 +7,16 @@
       "maxDuration": 30
     },
     "api/openai.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/anthropic.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/google.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/perplexity.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
   "rewrites": [

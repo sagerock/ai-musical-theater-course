@@ -27,9 +27,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // Initialize OpenAI client with server-side key
+    // Initialize OpenAI client with server-side key and timeout configuration
     const openai = new OpenAI({
       apiKey: apiKey,
+      timeout: 55000, // 55 seconds - gives OpenAI time to respond before Vercel timeout
+      maxRetries: 1    // Retry once on network errors
     });
 
     const { messages, model = 'gpt-4o-mini', stream = false } = req.body;
@@ -71,13 +73,17 @@ export default async function handler(req, res) {
       }
     } else {
       // Non-streaming response
+      const startTime = Date.now();
+      console.log(`[OpenAI] Starting request - Model: ${model}, Messages: ${messages.length}`);
+
       const completion = await openai.chat.completions.create({
         model,
         messages,
         temperature,
       });
 
-      console.log('OpenAI completion response:', JSON.stringify(completion, null, 2));
+      const duration = Date.now() - startTime;
+      console.log(`[OpenAI] Request completed - Duration: ${duration}ms, Model: ${model}, Tokens: ${completion.usage?.total_tokens || 'unknown'}`);
 
       // Validate response has expected structure
       if (!completion || !completion.choices || !completion.choices[0]) {
@@ -91,9 +97,30 @@ export default async function handler(req, res) {
       res.status(200).json(completion);
     }
   } catch (error) {
-    console.error('OpenAI API error:', error);
-    res.status(500).json({
-      error: error.message || 'Failed to process OpenAI request',
+    console.error('[OpenAI] API error:', {
+      message: error.message,
+      code: error.code,
+      type: error.type,
+      status: error.status,
+      model: req.body?.model
+    });
+
+    // Provide user-friendly error messages
+    let userMessage = error.message || 'Failed to process OpenAI request';
+
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      userMessage = 'Request timed out. The AI model is taking longer than expected. Try using a faster model like GPT-5 Mini or GPT-5 Nano.';
+    } else if (error.status === 429) {
+      userMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+    } else if (error.status === 401) {
+      userMessage = 'Authentication failed. Please check API key configuration.';
+    } else if (error.status === 503) {
+      userMessage = 'OpenAI service is temporarily unavailable. Please try again in a moment.';
+    }
+
+    res.status(error.status || 500).json({
+      error: userMessage,
+      code: error.code,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
