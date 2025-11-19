@@ -2,9 +2,16 @@ import { aiProxyService } from './aiProxyService';
 
 // Export AI tools for use in components
 export const AI_TOOLS = {
-  // OpenAI Models
+  // OpenAI Models - GPT-5 Series
+  'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
   'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
   'GPT-5': 'gpt-5-2025-08-07',
+  'GPT-5 Pro': 'gpt-5-pro-2025-10-06',
+  'GPT-5.1': 'gpt-5.1-2025-11-13',
+  // OpenAI Models - GPT-4.1 Series
+  'GPT-4.1 Nano': 'gpt-4.1-nano-2025-04-14',
+  'GPT-4.1 Mini': 'gpt-4.1-mini-2025-04-14',
+  'GPT-4.1': 'gpt-4.1-2025-04-14',
   // Anthropic Models
   'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
   'Claude Opus 4.1': 'claude-opus-4-1-20250805',
@@ -35,12 +42,17 @@ const MODEL_SPECIFIC_PROMPTS = {
 • Use your educational training to model proper scholarly methodology
 • Leverage your large context window for comprehensive source synthesis
 • Demonstrate academic writing standards with proper evidence-based arguments`,
-  
+
   'gemini-2.5-flash': `EFFICIENT EDUCATION MODE: As Gemini Flash, provide quick yet educational responses:
 • Balance speed with educational value and proper sourcing
 • Focus on clear, concise explanations with key references
 • Use your multimodal capabilities for comprehensive analysis when applicable`,
-  
+
+  'gpt-5-nano-2025-08-07': `EFFICIENT EDUCATIONAL MODE: As GPT-5 Nano, provide fast, cost-effective educational support:
+• Deliver quick, clear explanations optimized for speed
+• Focus on essential concepts and key learning points
+• Best for rapid Q&A and straightforward educational tasks`,
+
   'gpt-5-mini-2025-08-07': `OPTIMIZED EDUCATIONAL MODE: As GPT-5 Mini, provide concise, clear educational responses:
 • Deliver concise explanations with excellent speed
 • Focus on essential concepts for quick comprehension
@@ -50,6 +62,33 @@ const MODEL_SPECIFIC_PROMPTS = {
 • Deliver well-structured explanations with strong reasoning
 • Excel at a wide range of tasks with high accuracy
 • Balance speed and depth for optimal learning efficiency`,
+
+  'gpt-5-pro-2025-10-06': `ADVANCED EDUCATIONAL MODE: As GPT-5 Pro, provide expert-level educational support:
+• Deliver sophisticated analysis with deep reasoning capabilities
+• Excel at complex problem-solving and advanced topics
+• Ideal for challenging academic work and technical subjects
+• Provide comprehensive explanations with nuanced understanding`,
+
+  'gpt-5.1-2025-11-13': `NEXT-GENERATION EDUCATIONAL MODE: As GPT-5.1, leverage cutting-edge capabilities:
+• Provide state-of-the-art reasoning and analysis
+• Excel at complex multi-step problem solving
+• Deliver comprehensive explanations with superior accuracy
+• Best for advanced research and complex educational challenges`,
+
+  'gpt-4.1-nano-2025-04-14': `EFFICIENT GPT-4 MODE: As GPT-4.1 Nano, provide cost-effective educational support:
+• Focus on clear, concise explanations
+• Deliver accurate responses with good reasoning
+• Ideal for straightforward educational tasks`,
+
+  'gpt-4.1-mini-2025-04-14': `BALANCED GPT-4 MODE: As GPT-4.1 Mini, provide quality educational support:
+• Balance performance with cost-effectiveness
+• Deliver thoughtful explanations with solid reasoning
+• Good for most educational tasks and assignments`,
+
+  'gpt-4.1-2025-04-14': `ADVANCED GPT-4 MODE: As GPT-4.1, provide comprehensive educational support:
+• Deliver detailed explanations with strong reasoning
+• Excel at complex problem-solving and analysis
+• Suitable for advanced academic work and detailed research`,
 
   'claude-sonnet-4-5-20250929': `EDUCATIONAL EXCELLENCE MODE: As Claude Sonnet 4.5, provide thoughtful educational support:
 • Provide comprehensive technical analysis with excellent reasoning
@@ -214,11 +253,20 @@ export const aiApi = {
     const models = [];
 
     // Return static list since we can't query APIs from client
-    // Add OpenAI models
+    // Add OpenAI models - GPT-5 Series
     models.push(
       { id: 'gpt-5-nano-2025-08-07', name: 'GPT-5 Nano', provider: 'openai' },
       { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini', provider: 'openai' },
-      { id: 'gpt-5-2025-08-07', name: 'GPT-5', provider: 'openai' }
+      { id: 'gpt-5-2025-08-07', name: 'GPT-5', provider: 'openai' },
+      { id: 'gpt-5-pro-2025-10-06', name: 'GPT-5 Pro', provider: 'openai' },
+      { id: 'gpt-5.1-2025-11-13', name: 'GPT-5.1', provider: 'openai' }
+    );
+
+    // Add OpenAI models - GPT-4.1 Series
+    models.push(
+      { id: 'gpt-4.1-nano-2025-04-14', name: 'GPT-4.1 Nano', provider: 'openai' },
+      { id: 'gpt-4.1-mini-2025-04-14', name: 'GPT-4.1 Mini', provider: 'openai' },
+      { id: 'gpt-4.1-2025-04-14', name: 'GPT-4.1', provider: 'openai' }
     );
 
     // Add Anthropic models (they don't have a list endpoint)

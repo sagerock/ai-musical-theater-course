@@ -74,7 +74,8 @@ export default function Chat() {
         input: pricing.input,
         output: pricing.output,
         displayName: pricing.displayName,
-        isExpensive: pricing.input >= 10 || pricing.output >= 50 // Flag expensive models
+        // Flag expensive models: Premium tier (input >= $5/M or output >= $25/M)
+        isExpensive: pricing.input >= 5 || pricing.output >= 25
       };
     }
     return null;
@@ -511,8 +512,8 @@ export default function Chat() {
             </div>
             <div className="ml-3">
               <p className="text-sm text-orange-700">
-                <strong>Research Mode Active:</strong> You've selected {selectedTool}, which provides superior research and writing capabilities
-                but costs 5x more than standard models. Use for complex research tasks and high-quality writing.
+                <strong>Premium Mode Active:</strong> You've selected {selectedTool}, which provides superior capabilities
+                but costs significantly more than standard models. Use for complex tasks requiring advanced reasoning and analysis.
               </p>
               <div className="mt-1 text-xs text-orange-600">
                 Cost: {formatCurrency(getModelPricing(selectedTool)?.input / 1000)}/{formatCurrency(getModelPricing(selectedTool)?.output / 1000)} per 1K tokens

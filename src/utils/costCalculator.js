@@ -3,7 +3,13 @@
 
 // Pricing data (cost per 1 million tokens)
 export const MODEL_PRICING = {
-  // OpenAI Models
+  // OpenAI Models - GPT-5 Series
+  'gpt-5-nano-2025-08-07': {
+    input: 0.10,
+    output: 0.80,
+    provider: 'OpenAI',
+    displayName: 'GPT-5 Nano'
+  },
   'gpt-5-mini-2025-08-07': {
     input: 0.25,
     output: 2.00,
@@ -15,6 +21,37 @@ export const MODEL_PRICING = {
     output: 10.00,
     provider: 'OpenAI',
     displayName: 'GPT-5'
+  },
+  'gpt-5-pro-2025-10-06': {
+    input: 5.00,
+    output: 25.00,
+    provider: 'OpenAI',
+    displayName: 'GPT-5 Pro'
+  },
+  'gpt-5.1-2025-11-13': {
+    input: 6.00,
+    output: 30.00,
+    provider: 'OpenAI',
+    displayName: 'GPT-5.1'
+  },
+  // OpenAI Models - GPT-4.1 Series
+  'gpt-4.1-nano-2025-04-14': {
+    input: 0.15,
+    output: 1.00,
+    provider: 'OpenAI',
+    displayName: 'GPT-4.1 Nano'
+  },
+  'gpt-4.1-mini-2025-04-14': {
+    input: 0.35,
+    output: 2.50,
+    provider: 'OpenAI',
+    displayName: 'GPT-4.1 Mini'
+  },
+  'gpt-4.1-2025-04-14': {
+    input: 2.00,
+    output: 15.00,
+    provider: 'OpenAI',
+    displayName: 'GPT-4.1'
   },
   // Anthropic Models
   'claude-sonnet-4-5-20250929': {
@@ -54,8 +91,14 @@ export const MODEL_PRICING = {
 
 // Display name mappings for UI
 export const DISPLAY_NAME_MAPPING = {
+  'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
   'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
   'GPT-5': 'gpt-5-2025-08-07',
+  'GPT-5 Pro': 'gpt-5-pro-2025-10-06',
+  'GPT-5.1': 'gpt-5.1-2025-11-13',
+  'GPT-4.1 Nano': 'gpt-4.1-nano-2025-04-14',
+  'GPT-4.1 Mini': 'gpt-4.1-mini-2025-04-14',
+  'GPT-4.1': 'gpt-4.1-2025-04-14',
   'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
   'Claude Opus 4.1': 'claude-opus-4-1-20250805',
   'Gemini Flash': 'gemini-2.5-flash',
