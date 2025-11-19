@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import approvalEmailService from '../../services/approvalEmailService';
 import AdminMessaging from '../Messaging/AdminMessaging';
 import UsageAnalytics from './UsageAnalytics';
+import ApiHealthCheck from './ApiHealthCheck';
 import { 
   ROLES, 
   ROLE_LABELS, 
@@ -29,7 +30,8 @@ import {
   EnvelopeIcon,
   ChartBarIcon,
   ChevronDownIcon,
-  BuildingOffice2Icon
+  BuildingOffice2Icon,
+  ServerIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminPanel() {
@@ -1005,6 +1007,17 @@ export default function AdminPanel() {
           >
             <BuildingOffice2Icon className="h-5 w-5 inline-block mr-2" />
             Schools
+          </button>
+          <button
+            onClick={() => setActiveTab('api-health')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'api-health'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <ServerIcon className="h-5 w-5 inline-block mr-2" />
+            API Health
           </button>
         </nav>
       </div>
@@ -2530,6 +2543,11 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* API Health Check Tab */}
+      {activeTab === 'api-health' && (
+        <ApiHealthCheck />
       )}
     </div>
   );
