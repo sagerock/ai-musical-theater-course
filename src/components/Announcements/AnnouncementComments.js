@@ -150,7 +150,7 @@ Please provide a brief, constructive response (2-4 sentences) that either:
 
 Keep your response conversational and appropriate for an educational setting.`;
 
-      const aiResponse = await aiApi.sendChatCompletion(prompt, 'GPT-5 Mini');
+      const aiResponse = await aiApi.sendChatCompletion(prompt, 'Claude Sonnet 4.5');
 
       // Post the AI response as a comment
       // Use current user's ID to pass Firestore rules, but mark as AI-generated
