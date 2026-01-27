@@ -323,6 +323,7 @@ export default function AnnouncementCard({
         <div className="border-t border-gray-200">
           <AnnouncementComments
             announcementId={announcement.id}
+            announcement={announcement}
             currentUser={currentUser}
             courseMembership={courseMembership}
             onCommentCountChange={(count) => onUpdate(announcement.id, { commentCount: count })}

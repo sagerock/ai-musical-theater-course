@@ -4602,7 +4602,9 @@ export const announcementApi = {
         content: commentData.content,
         createdAt: serverTimestamp(),
         isEdited: false,
-        editedAt: null
+        editedAt: null,
+        isAIGenerated: commentData.isAIGenerated || false,
+        triggeredBy: commentData.triggeredBy || null
       };
 
       const docRef = await addDoc(collection(db, 'announcementComments'), commentDoc);
