@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { announcementApi } from '../../services/firebaseApi';
-import { aiApi } from '../../services/aiApi';
+import { aiApi, AI_TOOLS } from '../../services/aiApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import UserAvatar from '../common/UserAvatar';
 import { format } from 'date-fns';
@@ -10,8 +10,19 @@ import {
   PencilIcon,
   TrashIcon,
   ClockIcon,
-  SparklesIcon
+  SparklesIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
+
+// AI models available for discussion responses
+const DISCUSSION_AI_MODELS = [
+  'Claude Sonnet 4.5',
+  'Claude Opus 4.1',
+  'GPT-5 Mini',
+  'GPT-5',
+  'Gemini 2.5 Pro',
+  'Gemini Flash'
+];
 
 export default function AnnouncementComments({
   announcementId,
@@ -27,6 +38,7 @@ export default function AnnouncementComments({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [selectedAIModel, setSelectedAIModel] = useState('Claude Sonnet 4.5');
 
   useEffect(() => {
     loadComments();
@@ -150,16 +162,17 @@ Please provide a brief, constructive response (2-4 sentences) that either:
 
 Keep your response conversational and appropriate for an educational setting.`;
 
-      const aiResponse = await aiApi.sendChatCompletion(prompt, 'Claude Sonnet 4.5');
+      const aiResponse = await aiApi.sendChatCompletion(prompt, selectedAIModel);
 
       // Post the AI response as a comment
       // Use current user's ID to pass Firestore rules, but mark as AI-generated
       const commentData = {
         authorId: currentUser.id,
-        authorName: 'AI Assistant',
+        authorName: `AI Assistant (${selectedAIModel})`,
         authorRole: 'ai',
         content: aiResponse,
         isAIGenerated: true,
+        aiModel: selectedAIModel,
         triggeredBy: currentUser.name || currentUser.email
       };
 
@@ -203,7 +216,8 @@ Keep your response conversational and appropriate for an educational setting.`;
     return colors[role] || 'bg-gray-100 text-gray-800';
   };
 
-  const getRoleDisplayName = (role, isAIGenerated) => {
+  const getRoleDisplayName = (role, isAIGenerated, aiModel) => {
+    if (isAIGenerated && aiModel) return aiModel;
     if (isAIGenerated) return 'AI Generated';
     const names = {
       instructor: 'Instructor',
@@ -257,7 +271,7 @@ Keep your response conversational and appropriate for an educational setting.`;
                       </span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(comment.authorRole, comment.isAIGenerated)}`}>
                         {comment.isAIGenerated && <SparklesIcon className="h-3 w-3 mr-1" />}
-                        {getRoleDisplayName(comment.authorRole, comment.isAIGenerated)}
+                        {getRoleDisplayName(comment.authorRole, comment.isAIGenerated, comment.aiModel)}
                       </span>
                       <span className="text-xs text-gray-500">
                         <ClockIcon className="inline h-3 w-3 mr-1" />
@@ -350,24 +364,39 @@ Keep your response conversational and appropriate for an educational setting.`;
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
             <div className="mt-2 flex justify-between items-center">
-              <button
-                type="button"
-                onClick={handleAskAI}
-                disabled={generatingAI}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {generatingAI ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-700 mr-1"></div>
-                    AI is thinking...
-                  </>
-                ) : (
-                  <>
-                    <SparklesIcon className="h-4 w-4 mr-1" />
-                    Ask AI
-                  </>
-                )}
-              </button>
+              <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <select
+                    value={selectedAIModel}
+                    onChange={(e) => setSelectedAIModel(e.target.value)}
+                    disabled={generatingAI}
+                    className="appearance-none pl-3 pr-8 py-1.5 text-xs font-medium rounded-md border border-purple-200 bg-purple-50 text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                  >
+                    {DISCUSSION_AI_MODELS.map(model => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                  <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-purple-500 pointer-events-none" />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAskAI}
+                  disabled={generatingAI}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generatingAI ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                      {selectedAIModel} is thinking...
+                    </>
+                  ) : (
+                    <>
+                      <SparklesIcon className="h-4 w-4 mr-1" />
+                      Ask AI
+                    </>
+                  )}
+                </button>
+              </div>
               <button
                 type="submit"
                 disabled={!newComment.trim() || submitting}

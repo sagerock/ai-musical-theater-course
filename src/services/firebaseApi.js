@@ -4604,6 +4604,7 @@ export const announcementApi = {
         isEdited: false,
         editedAt: null,
         isAIGenerated: commentData.isAIGenerated || false,
+        aiModel: commentData.aiModel || null,
         triggeredBy: commentData.triggeredBy || null
       };
 
