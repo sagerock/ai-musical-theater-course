@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { announcementApi } from '../../services/firebaseApi';
+import { hasTeachingPermissions } from '../../utils/roleUtils';
 import toast from 'react-hot-toast';
 import {
   XMarkIcon,
@@ -9,7 +10,9 @@ import {
   DocumentIcon,
   BookmarkIcon,
   EnvelopeIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  MegaphoneIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 export default function CreateAnnouncement({
@@ -19,6 +22,8 @@ export default function CreateAnnouncement({
   onCancel,
   onSuccess
 }) {
+  const canTeach = hasTeachingPermissions(courseMembership?.role);
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
@@ -26,6 +31,8 @@ export default function CreateAnnouncement({
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Students can only create discussions; instructors can choose
+  const [postType, setPostType] = useState(canTeach ? 'announcement' : 'discussion');
   const fileInputRef = useRef();
 
   const handleFileSelect = async (e) => {
@@ -84,21 +91,31 @@ export default function CreateAnnouncement({
 
     setSubmitting(true);
     try {
-      const announcementData = {
+      const postData = {
         courseId,
         authorId: currentUser.id,
         authorName: currentUser.name || currentUser.email,
-        authorEmail: currentUser.email, // Include instructor's email for reply-to
-        authorRole: courseMembership?.role || 'instructor',
+        authorEmail: currentUser.email,
+        authorRole: courseMembership?.role || 'student',
         title: title.trim(),
         content: content.trim(),
-        isPinned,
-        attachments,
-        sendEmail // Pass the email flag
+        attachments
       };
 
-      const newAnnouncement = await announcementApi.createAnnouncement(announcementData);
-      onSuccess(newAnnouncement);
+      let newPost;
+      if (postType === 'announcement' && canTeach) {
+        // Create announcement with instructor-only options
+        newPost = await announcementApi.createAnnouncement({
+          ...postData,
+          isPinned,
+          sendEmail
+        });
+      } else {
+        // Create discussion (students always use this, instructors when they choose discussion)
+        newPost = await announcementApi.createDiscussion(postData);
+      }
+
+      onSuccess(newPost);
 
       // Reset form
       setTitle('');
@@ -106,9 +123,10 @@ export default function CreateAnnouncement({
       setIsPinned(false);
       setSendEmail(false);
       setAttachments([]);
+      setPostType(canTeach ? 'announcement' : 'discussion');
     } catch (error) {
-      console.error('Error creating announcement:', error);
-      toast.error('Failed to create announcement');
+      console.error('Error creating post:', error);
+      toast.error(postType === 'discussion' ? 'Failed to create discussion' : 'Failed to create announcement');
       setSubmitting(false);
     }
   };
@@ -121,11 +139,22 @@ export default function CreateAnnouncement({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const isDiscussion = postType === 'discussion';
+  const headerTitle = isDiscussion ? 'Start a Discussion' : 'Create Announcement';
+  const titlePlaceholder = isDiscussion ? 'What would you like to discuss?' : 'Enter announcement title...';
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white">
+      <div className={`px-6 py-4 text-white ${isDiscussion ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gradient-to-r from-primary-500 to-primary-600'}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Create New Announcement</h3>
+          <h3 className="text-lg font-semibold flex items-center">
+            {isDiscussion ? (
+              <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
+            ) : (
+              <MegaphoneIcon className="h-5 w-5 mr-2" />
+            )}
+            {headerTitle}
+          </h3>
           <button
             onClick={onCancel}
             className="p-1 rounded hover:bg-white/20 transition-colors"
@@ -136,6 +165,50 @@ export default function CreateAnnouncement({
       </div>
 
       <form onSubmit={handleSubmit} className="p-6">
+        {/* Post Type Selector - Only for instructors */}
+        {canTeach && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Post Type
+            </label>
+            <div className="flex space-x-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="postType"
+                  value="announcement"
+                  checked={postType === 'announcement'}
+                  onChange={(e) => setPostType(e.target.value)}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                />
+                <span className="ml-2 text-sm text-gray-700 flex items-center">
+                  <MegaphoneIcon className="h-4 w-4 mr-1 text-primary-600" />
+                  Announcement
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="postType"
+                  value="discussion"
+                  checked={postType === 'discussion'}
+                  onChange={(e) => setPostType(e.target.value)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <span className="ml-2 text-sm text-gray-700 flex items-center">
+                  <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1 text-blue-600" />
+                  Discussion
+                </span>
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              {postType === 'announcement'
+                ? 'Announcements are highlighted and can be pinned to the top.'
+                : 'Discussions are for open conversation with students.'}
+            </p>
+          </div>
+        )}
+
         {/* Title Input */}
         <div className="mb-4">
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -147,7 +220,7 @@ export default function CreateAnnouncement({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Enter announcement title..."
+            placeholder={titlePlaceholder}
             required
           />
         </div>
@@ -168,45 +241,47 @@ export default function CreateAnnouncement({
           />
         </div>
 
-        {/* Options Row */}
-        <div className="mb-4 space-y-2">
-          {/* Pin Option */}
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPinned}
-              onChange={(e) => setIsPinned(e.target.checked)}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-            />
-            <span className="text-sm text-gray-700 flex items-center">
-              <BookmarkIcon className="h-4 w-4 mr-1" />
-              Pin this announcement to the top
-            </span>
-          </label>
-
-          {/* Email Option */}
-          <div className="flex items-start space-x-2">
+        {/* Options Row - Only show for announcements (instructors only) */}
+        {canTeach && postType === 'announcement' && (
+          <div className="mb-4 space-y-2">
+            {/* Pin Option */}
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={sendEmail}
-                onChange={(e) => setSendEmail(e.target.checked)}
+                checked={isPinned}
+                onChange={(e) => setIsPinned(e.target.checked)}
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <span className="text-sm text-gray-700 flex items-center">
-                <EnvelopeIcon className="h-4 w-4 mr-1" />
-                Email this announcement to all course members
+                <BookmarkIcon className="h-4 w-4 mr-1" />
+                Pin this announcement to the top
               </span>
             </label>
-            <div className="group relative">
-              <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
-              <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded-md p-2 bottom-full mb-1 left-1/2 transform -translate-x-1/2 w-64">
-                All approved course members will receive an email with the announcement content and a link to the discussion.
-                <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-900"></div>
+
+            {/* Email Option */}
+            <div className="flex items-start space-x-2">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700 flex items-center">
+                  <EnvelopeIcon className="h-4 w-4 mr-1" />
+                  Email this announcement to all course members
+                </span>
+              </label>
+              <div className="group relative">
+                <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
+                <div className="absolute z-10 invisible group-hover:visible bg-gray-900 text-white text-xs rounded-md p-2 bottom-full mb-1 left-1/2 transform -translate-x-1/2 w-64">
+                  All approved course members will receive an email with the announcement content and a link to the discussion.
+                  <div className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-900"></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* File Upload */}
         <div className="mb-4">
@@ -280,9 +355,13 @@ export default function CreateAnnouncement({
           <button
             type="submit"
             disabled={submitting || uploading}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed ${
+              isDiscussion
+                ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                : 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-500'
+            } focus:outline-none focus:ring-2 focus:ring-offset-2`}
           >
-            {submitting ? 'Posting...' : 'Post Announcement'}
+            {submitting ? 'Posting...' : (isDiscussion ? 'Start Discussion' : 'Post Announcement')}
           </button>
         </div>
       </form>

@@ -7,9 +7,10 @@ import CreateAnnouncement from './CreateAnnouncement';
 import AnnouncementCard from './AnnouncementCard';
 import toast from 'react-hot-toast';
 import {
-  MegaphoneIcon,
+  ChatBubbleLeftRightIcon,
   PlusIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  FunnelIcon
 } from '@heroicons/react/24/outline';
 
 export default function CourseAnnouncements() {
@@ -20,6 +21,7 @@ export default function CourseAnnouncements() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [courseMembership, setCourseMembership] = useState(null);
   const [course, setCourse] = useState(null);
+  const [filter, setFilter] = useState('all'); // 'all', 'announcements', 'discussions'
 
   useEffect(() => {
     if (courseId && currentUser) {
@@ -59,12 +61,14 @@ export default function CourseAnnouncements() {
   const handleAnnouncementCreated = (newAnnouncement) => {
     setAnnouncements([newAnnouncement, ...announcements]);
     setShowCreateForm(false);
-    toast.success('Announcement posted successfully!');
+    const isDiscussion = newAnnouncement.type === 'discussion';
+    toast.success(isDiscussion ? 'Discussion started!' : 'Announcement posted!');
   };
 
   const handleAnnouncementDeleted = (announcementId) => {
+    const deleted = announcements.find(a => a.id === announcementId);
     setAnnouncements(announcements.filter(a => a.id !== announcementId));
-    toast.success('Announcement deleted');
+    toast.success(deleted?.type === 'discussion' ? 'Discussion deleted' : 'Announcement deleted');
   };
 
   const handleAnnouncementUpdated = (announcementId, updates) => {
@@ -74,6 +78,19 @@ export default function CourseAnnouncements() {
   };
 
   const canCreateAnnouncements = courseMembership && hasTeachingPermissions(courseMembership.role);
+  const canCreateDiscussions = !!courseMembership; // All course members can create discussions
+
+  // Filter announcements based on selected filter
+  const filteredAnnouncements = announcements.filter(item => {
+    if (filter === 'all') return true;
+    if (filter === 'announcements') return item.type === 'announcement' || !item.type;
+    if (filter === 'discussions') return item.type === 'discussion';
+    return true;
+  });
+
+  // Count items for filter tabs
+  const announcementCount = announcements.filter(a => a.type === 'announcement' || !a.type).length;
+  const discussionCount = announcements.filter(a => a.type === 'discussion').length;
 
   if (loading) {
     return (
@@ -93,27 +110,61 @@ export default function CourseAnnouncements() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <MegaphoneIcon className="h-8 w-8 mr-3 text-primary-600" />
-              Course Announcements
+              <ChatBubbleLeftRightIcon className="h-8 w-8 mr-3 text-primary-600" />
+              Discussions
             </h1>
             <p className="mt-2 text-sm text-gray-600">
-              {course?.title || 'Loading...'} • {announcements.length} announcement{announcements.length !== 1 ? 's' : ''}
+              {course?.title || 'Loading...'} • {announcements.length} post{announcements.length !== 1 ? 's' : ''}
             </p>
           </div>
-          {canCreateAnnouncements && (
+          {canCreateDiscussions && (
             <button
               onClick={() => setShowCreateForm(true)}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
-              New Announcement
+              {canCreateAnnouncements ? 'New Post' : 'Start Discussion'}
             </button>
           )}
         </div>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="mb-6 flex items-center space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+            filter === 'all'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          All ({announcements.length})
+        </button>
+        <button
+          onClick={() => setFilter('announcements')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+            filter === 'announcements'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Announcements ({announcementCount})
+        </button>
+        <button
+          onClick={() => setFilter('discussions')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+            filter === 'discussions'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Discussions ({discussionCount})
+        </button>
       </div>
 
       {/* Create Announcement Form */}
@@ -129,22 +180,39 @@ export default function CourseAnnouncements() {
         </div>
       )}
 
-      {/* Announcements List */}
-      {announcements.length === 0 ? (
+      {/* Discussions List */}
+      {filteredAnnouncements.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="text-center">
             <ExclamationCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-lg font-medium text-gray-900">No announcements yet</h3>
+            <h3 className="mt-2 text-lg font-medium text-gray-900">
+              {filter === 'all' && 'No discussions yet'}
+              {filter === 'announcements' && 'No announcements yet'}
+              {filter === 'discussions' && 'No student discussions yet'}
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {canCreateAnnouncements
-                ? "Get started by creating your first announcement."
-                : "Check back later for course announcements from your instructor."}
+              {filter === 'all' && (canCreateDiscussions
+                ? "Start a discussion or check back later for announcements."
+                : "Check back later for course discussions.")}
+              {filter === 'announcements' && "Check back later for announcements from your instructor."}
+              {filter === 'discussions' && (canCreateDiscussions
+                ? "Be the first to start a discussion!"
+                : "No student discussions have been started yet.")}
             </p>
+            {canCreateDiscussions && filter !== 'announcements' && (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Start Discussion
+              </button>
+            )}
           </div>
         </div>
       ) : (
         <div className="space-y-4">
-          {announcements.map(announcement => (
+          {filteredAnnouncements.map(announcement => (
             <AnnouncementCard
               key={announcement.id}
               announcement={announcement}

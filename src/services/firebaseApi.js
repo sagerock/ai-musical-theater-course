@@ -4354,7 +4354,7 @@ export const schoolsApi = {
 
 // Announcements API
 export const announcementApi = {
-  // Create a new announcement
+  // Create a new announcement (instructor-only, type: "announcement")
   async createAnnouncement(announcementData) {
     console.log('📢 Creating announcement for course:', announcementData.courseId);
 
@@ -4368,6 +4368,7 @@ export const announcementApi = {
         content: announcementData.content,
         attachments: announcementData.attachments || [],
         isPinned: announcementData.isPinned || false,
+        type: 'announcement', // Explicitly mark as instructor announcement
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         commentCount: 0
@@ -4422,12 +4423,49 @@ export const announcementApi = {
     }
   },
 
-  // Get all announcements for a course
-  async getAnnouncements(courseId) {
-    console.log('📢 Getting announcements for course:', courseId);
+  // Create a new discussion (available to all course members, type: "discussion")
+  async createDiscussion(discussionData) {
+    console.log('💬 Creating discussion for course:', discussionData.courseId);
 
     try {
-      // First get pinned announcements
+      const discussionDoc = {
+        courseId: discussionData.courseId,
+        authorId: discussionData.authorId,
+        authorName: discussionData.authorName,
+        authorRole: discussionData.authorRole,
+        title: discussionData.title,
+        content: discussionData.content,
+        attachments: discussionData.attachments || [],
+        isPinned: false, // Students cannot pin discussions
+        type: 'discussion', // Mark as student discussion
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        commentCount: 0
+      };
+
+      const docRef = await addDoc(collection(db, 'announcements'), discussionDoc);
+      console.log('✅ Discussion created with ID:', docRef.id);
+
+      const newDiscussion = {
+        id: docRef.id,
+        ...discussionDoc,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      return newDiscussion;
+    } catch (error) {
+      console.error('❌ Error creating discussion:', error);
+      throw error;
+    }
+  },
+
+  // Get all announcements and discussions for a course (alias: getDiscussions)
+  async getAnnouncements(courseId) {
+    console.log('📢 Getting discussions for course:', courseId);
+
+    try {
+      // First get pinned items (announcements/discussions)
       const pinnedQuery = query(
         collection(db, 'announcements'),
         where('courseId', '==', courseId),
@@ -4435,7 +4473,7 @@ export const announcementApi = {
         orderBy('createdAt', 'desc')
       );
 
-      // Then get regular announcements
+      // Then get regular items
       const regularQuery = query(
         collection(db, 'announcements'),
         where('courseId', '==', courseId),
@@ -4448,29 +4486,40 @@ export const announcementApi = {
         getDocs(regularQuery)
       ]);
 
-      const pinnedAnnouncements = pinnedSnapshot.docs.map(doc => ({
+      const pinnedItems = pinnedSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        // Default type to 'announcement' for existing records without type field
+        type: doc.data().type || 'announcement',
         createdAt: convertTimestamp(doc.data().createdAt),
         updatedAt: convertTimestamp(doc.data().updatedAt)
       }));
 
-      const regularAnnouncements = regularSnapshot.docs.map(doc => ({
+      const regularItems = regularSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        // Default type to 'announcement' for existing records without type field
+        type: doc.data().type || 'announcement',
         createdAt: convertTimestamp(doc.data().createdAt),
         updatedAt: convertTimestamp(doc.data().updatedAt)
       }));
 
       // Combine pinned first, then regular
-      const allAnnouncements = [...pinnedAnnouncements, ...regularAnnouncements];
+      const allItems = [...pinnedItems, ...regularItems];
 
-      console.log(`✅ Found ${allAnnouncements.length} announcements (${pinnedAnnouncements.length} pinned)`);
-      return allAnnouncements;
+      const announcementCount = allItems.filter(i => i.type === 'announcement').length;
+      const discussionCount = allItems.filter(i => i.type === 'discussion').length;
+      console.log(`✅ Found ${allItems.length} items (${pinnedItems.length} pinned, ${announcementCount} announcements, ${discussionCount} discussions)`);
+      return allItems;
     } catch (error) {
-      console.error('❌ Error getting announcements:', error);
+      console.error('❌ Error getting discussions:', error);
       return [];
     }
+  },
+
+  // Alias for getAnnouncements - returns all discussions and announcements
+  async getDiscussions(courseId) {
+    return this.getAnnouncements(courseId);
   },
 
   // Update an announcement

@@ -473,9 +473,9 @@ service cloud.firestore {
       );
     }
 
-    // ANNOUNCEMENTS - Course announcements with instructor control
+    // ANNOUNCEMENTS & DISCUSSIONS - Course announcements (instructor-only) and discussions (all members)
     match /announcements/{announcementId} {
-      // All course members can read announcements
+      // All course members can read announcements and discussions
       allow read: if isAuthenticated() && (
         isMemberOfCourse(resource.data.courseId) ||
         isGlobalAdmin()
@@ -484,14 +484,22 @@ service cloud.firestore {
       // Allow collection queries for course members
       allow list: if isAuthenticated();
 
-      // Only instructors and TAs can create announcements
+      // Create rules:
+      // - Instructors/TAs can create both announcements and discussions
+      // - Students can only create discussions (type must be "discussion")
       allow create: if isAuthenticated() && (
+        // Instructors and TAs can create anything
         hasTeachingPermissionsInCourse(request.resource.data.courseId) ||
-        isGlobalAdmin()
+        isGlobalAdmin() ||
+        // Students can create discussions only (must be course member and type must be "discussion")
+        (isMemberOfCourse(request.resource.data.courseId) &&
+         request.resource.data.type == 'discussion' &&
+         request.resource.data.authorId == request.auth.uid)
       );
 
-      // Authors can update their own announcements, instructors can update any
+      // Authors can update their own announcements/discussions, instructors can update any
       // OR any authenticated user can update only the commentCount field
+      // Students cannot change type field or pin discussions
       allow update: if isAuthenticated() && (
         isOwner(resource.data.authorId) ||
         hasTeachingPermissionsInCourse(resource.data.courseId) ||
@@ -500,11 +508,16 @@ service cloud.firestore {
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']))
       );
 
-      // Authors can delete their own, instructors can delete any
+      // Delete rules:
+      // - Authors can delete their own posts
+      // - Instructors can delete any post in their course
+      // - Students can only delete their own discussions (not announcements)
       allow delete: if isAuthenticated() && (
-        isOwner(resource.data.authorId) ||
+        // Instructors can delete anything
         hasTeachingPermissionsInCourse(resource.data.courseId) ||
-        isGlobalAdmin()
+        isGlobalAdmin() ||
+        // Authors can delete their own posts
+        isOwner(resource.data.authorId)
       );
     }
 

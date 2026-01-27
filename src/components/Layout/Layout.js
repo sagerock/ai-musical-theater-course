@@ -17,7 +17,7 @@ import {
   DocumentTextIcon,
   QuestionMarkCircleIcon,
   BookOpenIcon,
-  MegaphoneIcon
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
@@ -180,7 +180,7 @@ export default function Layout() {
                           Projects
                         </Link>
 
-                        {/* Announcements - accessible to all course members */}
+                        {/* Discussions - accessible to all course members */}
                         <Link
                           to={`/course/${courseMembership.courses.id}/announcements`}
                           onClick={() => setSidebarOpen(false)}
@@ -190,8 +190,8 @@ export default function Layout() {
                               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                           }`}
                         >
-                          <MegaphoneIcon className="mr-2 h-4 w-4" />
-                          Announcements
+                          <ChatBubbleLeftRightIcon className="mr-2 h-4 w-4" />
+                          Discussions
                         </Link>
 
                         {/* Show Library for students and assistants */}
@@ -367,7 +367,7 @@ export default function Layout() {
                             Projects
                           </Link>
 
-                          {/* Announcements - accessible to all course members */}
+                          {/* Discussions - accessible to all course members */}
                           <Link
                             to={`/course/${courseMembership.courses.id}/announcements`}
                             className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -376,8 +376,8 @@ export default function Layout() {
                                 : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                             }`}
                           >
-                            <MegaphoneIcon className="mr-2 h-4 w-4" />
-                            Announcements
+                            <ChatBubbleLeftRightIcon className="mr-2 h-4 w-4" />
+                            Discussions
                           </Link>
 
                           {/* Show Library for students and assistants */}

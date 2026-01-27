@@ -14,7 +14,8 @@ import {
   PaperClipIcon,
   ArrowDownTrayIcon,
   ClockIcon,
-  VideoCameraIcon
+  VideoCameraIcon,
+  MegaphoneIcon
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 
@@ -47,9 +48,17 @@ export default function AnnouncementCard({
     }
   }, [announcement.id]);
 
-  const canEdit = currentUser?.id === announcement.authorId ||
-                  hasTeachingPermissions(courseMembership?.role);
-  const canPin = hasTeachingPermissions(courseMembership?.role);
+  const isOwnPost = currentUser?.id === announcement.authorId;
+  const isTeacher = hasTeachingPermissions(courseMembership?.role);
+  const isDiscussion = announcement.type === 'discussion';
+  const isAnnouncement = announcement.type === 'announcement' || !announcement.type;
+
+  // Edit permissions: own posts or instructors can edit any
+  const canEdit = isOwnPost || isTeacher;
+  // Delete permissions: own posts or instructors can delete any
+  const canDelete = isOwnPost || isTeacher;
+  // Pin permissions: instructors only
+  const canPin = isTeacher;
 
   const handleSaveEdit = async () => {
     if (!editTitle.trim() || !editContent.trim()) {
@@ -130,10 +139,17 @@ export default function AnnouncementCard({
     return names[role] || role;
   };
 
+  // Border color: pinned (yellow) > announcement (purple) > discussion (blue) > default (gray)
+  const getBorderColor = () => {
+    if (announcement.isPinned) return 'border-yellow-400';
+    if (isAnnouncement) return 'border-l-4 border-l-primary-500 border-t border-r border-b border-gray-200';
+    return 'border-gray-200';
+  };
+
   return (
     <div
       id={`announcement-${announcement.id}`}
-      className={`bg-white rounded-lg shadow-sm border ${announcement.isPinned ? 'border-yellow-400' : 'border-gray-200'} overflow-hidden`}
+      className={`bg-white rounded-lg shadow-sm overflow-hidden ${getBorderColor()}`}
     >
       {/* Announcement Header */}
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
@@ -154,6 +170,12 @@ export default function AnnouncementCard({
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(announcement.authorRole)}`}>
                   {getRoleDisplayName(announcement.authorRole)}
                 </span>
+                {isAnnouncement && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                    <MegaphoneIcon className="h-3 w-3 mr-1" />
+                    Announcement
+                  </span>
+                )}
                 {announcement.isPinned && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                     <BookmarkSolidIcon className="h-3 w-3 mr-1" />
@@ -184,23 +206,23 @@ export default function AnnouncementCard({
               </button>
             )}
             {canEdit && (
-              <>
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-gray-100"
-                  title="Edit announcement"
-                >
-                  <PencilIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-gray-100"
-                  title="Delete announcement"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              </>
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-gray-100"
+                title={isDiscussion ? 'Edit discussion' : 'Edit announcement'}
+              >
+                <PencilIcon className="h-5 w-5" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-gray-100"
+                title={isDiscussion ? 'Delete discussion' : 'Delete announcement'}
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
             )}
           </div>
         </div>
