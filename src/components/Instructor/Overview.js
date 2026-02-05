@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { chatApi, courseApi } from '../../services/firebaseApi';
+import { chatApi, courseApi, analyticsApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   FolderIcon,
@@ -63,13 +63,13 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
       console.log('🔄 Loading overview data for course:', selectedCourseId);
 
       // Fire all three queries in parallel:
-      // 1. Lightweight stats (no enrichment — just counts)
+      // 1. Cached server-side analytics (1 Firestore doc read, no heavy computation)
       // 2. Recent 10 chats with enrichment (for display)
       // 3. Pending approval requests
-      const [courseStats, recentChats, pendingRequests] = await Promise.all([
-        chatApi.getCourseChatsCount(selectedCourseId).catch(error => {
-          console.log('❌ Error loading chat stats:', error);
-          return { totalChats: 0, uniqueUsers: 0, uniqueProjects: 0, reflectionCount: 0 };
+      const [analytics, recentChats, pendingRequests] = await Promise.all([
+        analyticsApi.getCourseAnalytics(selectedCourseId).catch(error => {
+          console.log('❌ Error loading analytics (will fall back to counts):', error);
+          return null;
         }),
         chatApi.getChatsWithFiltersOptimized({
           courseId: selectedCourseId,
@@ -84,16 +84,28 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
         })
       ]);
 
-      // Calculate statistics from lightweight query
-      const reflectionCompletionRate = courseStats.totalChats > 0 ?
-        Math.round((courseStats.reflectionCount / courseStats.totalChats) * 100) : 0;
-
-      const calculatedStats = {
-        totalChats: courseStats.totalChats,
-        totalUsers: courseStats.uniqueUsers,
-        totalProjects: courseStats.uniqueProjects,
-        reflectionCompletionRate
-      };
+      // Use cached analytics for stats; fall back to lightweight count if unavailable
+      let calculatedStats;
+      if (analytics?.courseInfo) {
+        calculatedStats = {
+          totalChats: analytics.courseInfo.totalInteractions || 0,
+          totalUsers: analytics.courseInfo.totalStudents || 0,
+          totalProjects: analytics.courseInfo.totalProjects || 0,
+          reflectionCompletionRate: 0 // Not tracked in analytics cache
+        };
+      } else {
+        // Fallback: server-side counts (no document downloads)
+        const courseStats = await chatApi.getCourseChatsCountLightweight(selectedCourseId).catch(() => ({
+          totalChats: 0, reflectionCount: 0
+        }));
+        calculatedStats = {
+          totalChats: courseStats.totalChats,
+          totalUsers: 0,
+          totalProjects: 0,
+          reflectionCompletionRate: courseStats.totalChats > 0
+            ? Math.round((courseStats.reflectionCount / courseStats.totalChats) * 100) : 0
+        };
+      }
 
       console.log('📊 Calculated overview stats:', calculatedStats);
       setStats(calculatedStats);

@@ -14,7 +14,8 @@ import {
   serverTimestamp,
   writeBatch,
   setDoc,
-  increment
+  increment,
+  getCountFromServer
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -1841,6 +1842,34 @@ export const chatApi = {
     };
 
     console.log('✅ getCourseChatsCount result:', stats);
+    return stats;
+  },
+
+  // Ultra-lightweight: server-side counts only, zero document downloads
+  async getCourseChatsCountLightweight(courseId) {
+    console.log('🚀 getCourseChatsCountLightweight:', courseId);
+
+    const baseQuery = query(
+      collection(db, 'chats'),
+      where('courseId', '==', courseId)
+    );
+    const reflectionQuery = query(
+      collection(db, 'chats'),
+      where('courseId', '==', courseId),
+      where('has_reflection', '==', true)
+    );
+
+    const [totalSnap, reflectionSnap] = await Promise.all([
+      getCountFromServer(baseQuery),
+      getCountFromServer(reflectionQuery)
+    ]);
+
+    const stats = {
+      totalChats: totalSnap.data().count,
+      reflectionCount: reflectionSnap.data().count
+    };
+
+    console.log('✅ getCourseChatsCountLightweight result:', stats);
     return stats;
   },
 
