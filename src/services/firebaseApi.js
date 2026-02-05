@@ -1088,36 +1088,31 @@ export const courseApi = {
       );
       
       const membershipsSnapshot = await getDocs(membershipsQuery);
-      const members = [];
-      
-      // Fetch user details for each membership
-      for (const membershipDoc of membershipsSnapshot.docs) {
-        const membership = { id: membershipDoc.id, ...membershipDoc.data() };
-        
-        // Get user details
-        try {
-          const userDoc = await getDoc(doc(db, 'users', membership.userId));
-          if (userDoc.exists()) {
-            members.push({
-              ...membership,
-              users: { id: userDoc.id, ...userDoc.data() }
-            });
-          }
-        } catch (error) {
-          console.warn('User not found for membership:', membership.userId);
-          // Include membership even without user details
-          members.push({
-            ...membership,
-            users: {
-              id: membership.userId,
-              name: 'Unknown User',
-              email: 'No email'
-            }
-          });
-        }
+      const members = membershipsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Batch-fetch user details (groups of 10)
+      const userIds = [...new Set(members.map(m => m.userId).filter(Boolean))];
+      const userMap = new Map();
+
+      for (let i = 0; i < userIds.length; i += 10) {
+        const batch = userIds.slice(i, i + 10);
+        const userQuery = query(collection(db, 'users'), where('__name__', 'in', batch));
+        const userSnapshot = await getDocs(userQuery);
+        userSnapshot.forEach(doc => {
+          userMap.set(doc.id, { id: doc.id, ...doc.data() });
+        });
       }
-      
-      console.log('✅ getCourseMembers result:', members.length, 'members');
+
+      // Enrich memberships with user data
+      for (const membership of members) {
+        membership.users = userMap.get(membership.userId) || {
+          id: membership.userId,
+          name: 'Unknown User',
+          email: 'No email'
+        };
+      }
+
+      console.log(`✅ getCourseMembers result: ${members.length} members (${Math.ceil(userIds.length / 10)} batch queries instead of ${userIds.length})`);
       return members;
       
     } catch (error) {

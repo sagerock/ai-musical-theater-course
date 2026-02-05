@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, projectApi, chatApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/firebaseApi';
+import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 import { format } from 'date-fns';
 import { diagnoseCourseProjects } from '../../utils/diagnostics';
 import { repairProjectCourseIds } from '../../utils/dataRepair';
@@ -35,92 +37,61 @@ export default function CourseDashboard() {
   const loadCourseData = async () => {
     try {
       setLoading(true);
-      
-      // Get course info by ID  
+
+      // Get course info first
       const courseData = await courseApi.getCourseById(courseId);
-      console.log('✅ Course data loaded:', courseData);
       setCourse(courseData);
-      
-      // Store course data in a variable so loadCourseStats can access it
-      // Load course statistics (available to both students and instructors)
-      await loadCourseStatsWithCourse(courseData);
-      
-      // Only get detailed course members if user is instructor
-      if (userRole === 'instructor' || isInstructorAnywhere) {
-        try {
-          const members = await courseApi.getCourseMembers(courseId);
-          setCourseMembers(members);
-        } catch (error) {
-          console.warn('Could not load course members (instructor access required):', error);
-          setCourseMembers([]);
-        }
+
+      // Fire all queries in parallel
+      const isInstructor = userRole === 'instructor' || isInstructorAnywhere;
+
+      // Server-side counts for projects and chats (zero document downloads)
+      const projectCountPromise = getCountFromServer(
+        query(collection(db, 'projects'), where('courseId', '==', courseId))
+      ).then(snap => snap.data().count).catch(() => 0);
+
+      const chatCountPromise = getCountFromServer(
+        query(collection(db, 'chats'), where('courseId', '==', courseId))
+      ).then(snap => snap.data().count).catch(() => 0);
+
+      // Members: only fetch for instructors (students use cached counts from course doc)
+      const membersPromise = isInstructor
+        ? courseApi.getCourseMembers(courseId).catch(() => [])
+        : Promise.resolve([]);
+
+      const [projectCount, chatCount, members] = await Promise.all([
+        projectCountPromise,
+        chatCountPromise,
+        membersPromise
+      ]);
+
+      // Compute member stats
+      let instructorCount = 0;
+      let studentCount = 0;
+
+      if (isInstructor && members.length > 0) {
+        setCourseMembers(members);
+        instructorCount = members.filter(m => m.role === 'instructor' && m.status === 'approved').length;
+        studentCount = members.filter(m => m.role === 'student' && m.status === 'approved').length;
       } else {
         setCourseMembers([]);
+        instructorCount = courseData?.instructorCount || 0;
+        studentCount = courseData?.studentCount || 0;
       }
-      
+
+      setCourseStats({
+        instructorCount,
+        studentCount,
+        projectCount,
+        conversationCount: chatCount
+      });
+
+      console.log('📊 Course stats loaded:', { instructorCount, studentCount, projectCount, chatCount });
+
     } catch (error) {
       console.error('Error loading course data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadCourseStatsWithCourse = async (courseData) => {
-    try {
-      console.log('🔄 Loading course statistics for:', courseId);
-      
-      // Load projects and chats (these should be accessible to course members)
-      const [projects, chats] = await Promise.all([
-        projectApi.getAllProjects(courseId).catch((error) => {
-          console.log('❌ Error getting projects:', error);
-          return [];
-        }),
-        chatApi.getChatsWithFilters({ courseId, limit: 1000 }).catch((error) => {
-          console.log('❌ Error getting chats:', error);
-          return [];
-        })
-      ]);
-
-      // Try to get member counts - this may fail for students due to permissions
-      let instructorCount = 0;
-      let studentCount = 0;
-      
-      if (userRole === 'instructor' || isInstructorAnywhere) {
-        try {
-          const members = await courseApi.getCourseMembers(courseId);
-          console.log('✅ Got course members:', members.length);
-          instructorCount = members.filter(m => m.role === 'instructor' && m.status === 'approved').length;
-          studentCount = members.filter(m => m.role === 'student' && m.status === 'approved').length;
-        } catch (error) {
-          console.log('❌ Error getting course members (instructor access required):', error);
-          // For instructors, if we can't get members, try to get basic counts from course document
-          if (courseData) {
-            instructorCount = courseData.instructorCount || 0;
-            studentCount = courseData.studentCount || 0;
-          }
-        }
-      } else {
-        // For students, use cached counts from course document if available
-        if (courseData) {
-          instructorCount = courseData.instructorCount || 0;
-          studentCount = courseData.studentCount || 0;
-        }
-        console.log('📊 Using cached member counts from course document:', { instructorCount, studentCount });
-      }
-
-      const newStats = {
-        instructorCount,
-        studentCount,
-        projectCount: projects.length,
-        conversationCount: chats.length
-      };
-
-      console.log('📊 Final course statistics:', newStats);
-      setCourseStats(newStats);
-
-    } catch (error) {
-      console.error('❌ Error loading course stats:', error);
-      // Keep default stats of 0
     }
   };
 
@@ -180,8 +151,8 @@ Check browser console for detailed information.
           const repairResult = await repairProjectCourseIds();
           alert(`Repair completed! Fixed ${repairResult.repairedCount} out of ${repairResult.totalProjects} projects.`);
           
-          // Reload course stats to reflect the fix
-          await loadCourseStatsWithCourse(course);
+          // Reload course data to reflect the fix
+          await loadCourseData();
         } catch (error) {
           console.error('Repair error:', error);
           alert('Error running repair. Check console for details.');
