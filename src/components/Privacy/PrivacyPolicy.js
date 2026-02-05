@@ -41,6 +41,12 @@ export default function PrivacyPolicy() {
                 // Anonymous user navigation
                 <>
                   <Link
+                    to="/philosophy"
+                    className="text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    Philosophy
+                  </Link>
+                  <Link
                     to="/faq"
                     className="text-gray-600 hover:text-gray-900 font-medium"
                   >

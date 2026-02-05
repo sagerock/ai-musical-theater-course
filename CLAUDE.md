@@ -1,264 +1,118 @@
-# Claude Memory File - AI Engagement Hub
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-AI Engagement Hub - An educational analytics platform that helps educators understand how students interact with AI in real time. Designed for classrooms at any level—from high school to higher ed—it provides a smarter lens on AI usage, offering teachers clear visibility into prompt activity, model selection, and engagement patterns across leading AI tools.
 
-**Vision & Mission:** See [docs/WHY.md](docs/WHY.md) for the project's core purpose, guiding principles, and human-centered approach. This document serves as the north star for all development decisions.
+AI Engagement Hub — an educational analytics platform that gives educators real-time visibility into how students interact with AI (prompt activity, model selection, engagement patterns). React 18 frontend backed by Firebase (Auth, Firestore, Storage, Cloud Functions), deployed on Vercel.
 
-## Current Architecture (Firebase-Only)
-**Migration Completed:** January 24, 2025 - Successfully migrated to 100% Firebase architecture
-
-### Technology Stack
-- **Frontend:** React 18 with React Router
-- **Authentication:** Firebase Auth
-- **Database:** Firestore
-- **Storage:** Firebase Storage
-- **Hosting:** Vercel (recommended)
-- **Styling:** Tailwind CSS
-
-## AI Models Configuration
-
-### Supported Models (8 streamlined models across 4 providers)
-
-#### OpenAI Models (GPT-5 Series - 2025)
-- GPT-5 Nano: `gpt-5-nano-2025-08-07` (fastest, most cost-efficient - $0.05/$0.40 per million tokens)
-- GPT-5 Mini: `gpt-5-mini-2025-08-07` (default model - balanced performance - $0.25/$2 per million tokens)
-- GPT-5: `gpt-5-2025-08-07` (premium model - best for coding and complex reasoning - $1.25/$10 per million tokens)
-
-#### Anthropic Models
-- Claude Sonnet 4: `claude-sonnet-4-20250514` (standard model - balanced performance and cost)
-- Claude Opus 4: `claude-4-opus-20250514` (research model - superior research and writing capabilities)
-
-#### Google Models
-- Gemini Flash: `gemini-1.5-flash` (legacy model - fast responses)
-- Gemini 2.5 Pro: `gemini-2.5-pro` (educational model - built for learning with LearnLM)
-
-#### Perplexity Models
-- Sonar Pro: `sonar-pro`
-
-## Technical Implementation
-
-### Key Files
-- `src/services/aiApi.js` - Unified AI service that routes to correct provider
-- `src/services/firebaseApi.js` - **Single Firebase API layer** (replaces dual API system)
-- `src/services/openaiApi.js` - OpenAI integration
-- `src/services/anthropicApi.js` - Anthropic integration  
-- `src/services/googleApi.js` - Google Gemini integration
-- `src/services/perplexityApi.js` - Perplexity integration
-- `src/contexts/AuthContext.js` - **Firebase-only authentication**
-- `src/config/firebase.js` - Firebase configuration
-- `src/components/Chat/ChatMessage.js` - Chat display with markdown rendering
-- `src/components/Chat/MarkdownRenderer.js` - Custom markdown parser
-
-### Environment Variables Required
-```bash
-# AI Provider API Keys
-REACT_APP_OPENAI_API_KEY=your_openai_api_key
-REACT_APP_ANTHROPIC_API_KEY=your_anthropic_api_key
-REACT_APP_GOOGLE_API_KEY=your_google_api_key
-REACT_APP_PERPLEXITY_API_KEY=your_perplexity_api_key
-
-# Firebase Configuration
-REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-REACT_APP_FIREBASE_APP_ID=your_app_id
-```
+See [docs/WHY.md](docs/WHY.md) for the project's guiding principles and mission.
 
 ## Development Commands
+
 ```bash
-npm install          # Install dependencies
-npm start           # Start development server
-npm run build       # Build for production
-npm run test        # Run tests (if configured)
+npm install              # Install dependencies
+npm start                # React dev server on :3000
+node server.js           # Express backend on :3001 (email/SendGrid proxy)
+npm run dev              # Run both concurrently (recommended)
+npm run build            # Production build (CI=false to ignore ESLint warnings)
+npm run test             # Jest tests via react-scripts
+npm run test:rules       # Firebase security rules tests only
+npm run features:status  # Check feature flag status
 ```
 
-## Core Features
+Deploy Firestore rules: `./deploy_firebase_rules.sh` or `./deploy-rules.sh`
 
-### Authentication System
-- **Firebase Auth** with email/password authentication
-- Password reset functionality via email
-- Role-based access control (student, instructor, admin)
-- Automatic admin promotion for designated email (`sage+admin@sagerock.com`)
-- Session persistence across page reloads
+## Architecture
 
-### Educational Features
-- **AI Chat Interface** with 8 different AI models including the new GPT-5 series, research-grade Claude Opus 4, and educational-optimized Gemini 2.5 Pro
-- **Smart Model Selection** with cost warnings and performance indicators
-- **Educational AI Integration** - Gemini 2.5 Pro with LearnLM for enhanced learning
-- **Project Management** for organizing student work
-- **Course System** with enrollment and approval workflows
-- **Instructor Dashboard** for monitoring student AI interactions
-- **PDF Upload** capability for document analysis
-- **Tag System** for categorizing AI interactions (instructor-controlled)
-- **Help & Support** system with comprehensive FAQ
+### Request Flow for AI Chat
 
-### Advanced AI Capabilities
-- **GPT-5 Premium Mode** for superior coding, reasoning, and agentic tasks across domains
-- **Claude Opus 4 Research Mode** for advanced research and writing tasks
-- **Gemini 2.5 Pro Education Mode** with LearnLM integration and privacy protections
-- **Multimodal Learning** - analyze images, documents, and text with Gemini models
-- **Large Context Processing** - up to 400K tokens (GPT-5) and 1M tokens (Gemini) for comprehensive analysis
-- **Privacy-First Design** - educational data protection and student safety features
-- **Automatic cost warnings** when using premium research models
-- **Hybrid model selection** allowing students to choose appropriate tools for their tasks
-- **Usage analytics** tracking model costs and effectiveness
-
-### Data Security
-- **Firebase Security Rules** for data protection
-- Course-based access isolation
-- Student data privacy controls
-- Instructor oversight capabilities
-- FERPA-compliant data handling
-
-## Recent Major Changes
-
-### Firebase-Only Migration (January 24, 2025) ✅ COMPLETED
-**Status:** Successfully completed - app builds and runs perfectly
-
-**What Changed:**
-- ✅ **Removed all Supabase dependencies** - Uninstalled @supabase/supabase-js
-- ✅ **Unified authentication** - Single Firebase Auth system
-- ✅ **Simplified API layer** - Single firebaseApi.js instead of dual routing
-- ✅ **Cleaned up imports** - All components now use Firebase APIs only
-- ✅ **Resolved build errors** - App compiles successfully with only minor ESLint warnings
-- ✅ **Added API stubs** - Created reflectionApi and instructorNotesApi stubs for future implementation
-
-**Files Modified:**
-- `src/contexts/AuthContext.js` - Consolidated Firebase implementation with backward compatibility
-- `src/services/firebaseApi.js` - Added missing API stubs (reflectionApi, instructorNotesApi)
-- `src/services/emailService.js` - Updated to use Firebase APIs
-- **Removed:** `src/config/supabase.js`, `src/services/supabaseApi.js`
-- **Updated:** 20+ component files to use Firebase APIs exclusively
-
-**Result:** 
-- 🎉 **App fully functional** - All features working with Firebase
-- ⚡ **Simplified codebase** - No more dual API complexity
-- 🔒 **Ready for security rules** - Can implement Firebase security rules as needed
-- 📦 **Reduced bundle size** - No Supabase dependencies
-
-## Known Issues & Status
-
-### Current Status: ✅ FULLY FUNCTIONAL
-- **Authentication:** ✅ Working (Firebase Auth)
-- **Database Operations:** ✅ Working (Firestore)
-- **AI Integration:** ✅ Working (4 providers)
-- **File Upload:** ✅ Working (Firebase Storage)
-- **Build Process:** ✅ Compiling successfully
-- **Runtime:** ✅ No critical errors
-- **Course Enrollment:** ✅ Auto-generates accessCode for student joining
-- **Student Reflections:** ✅ Full Firebase implementation with create/read/update/delete
-
-### Minor Items (Non-blocking)
-- **ESLint Warnings:** Some unused imports and missing dependencies (cosmetic only)
-- **Instructor Notes API:** Stub implementation - needs full Firestore integration
-- **Dual API Logic Cleanup:** Some components still have commented-out dual API code
-
-## Deployment Notes
-- **Frontend:** Ready for Vercel deployment
-- **Environment Variables:** All Firebase-based now
-- **Build Command:** `npm run build`
-- **Security:** Implement Firebase security rules for production
-
-## Repository
-https://github.com/sagerock/ai-musical-theater-course
-
-## Architecture Benefits (Post-Migration)
-
-### Before (Dual System - Complex)
-- Firebase Auth + Supabase Database
-- Dual API routing with user type detection
-- Complex service key management
-- RLS permission challenges
-- Mixed authentication flows
-
-### After (Firebase-Only - Simple) ✅
-- **Single Firebase ecosystem**
-- **Unified API layer**
-- **Simplified authentication**
-- **Better scalability**
-- **Easier maintenance**
-- **Reduced complexity**
-
-## Server-Side Analytics Architecture ✅ IMPLEMENTED
-
-### Performance Optimization (January 25, 2025)
-**Status:** Successfully implemented server-side analytics with 90%+ performance improvement
-
-**New Analytics System:**
-- **Cloud Functions:** `generateCourseAnalytics` - Computes comprehensive course metrics server-side
-- **Cached Analytics:** `courseAnalytics` collection stores pre-computed metrics with intelligent caching
-- **Incremental Updates:** Firestore triggers mark analytics as stale when data changes
-- **Optimized AI Assistant:** Uses lightweight analytics instead of heavy client-side processing
-
-**Performance Gains:**
-- **90%+ reduction** in database queries (from N+1 patterns to single aggregations)
-- **80%+ reduction** in data transfer (analytics vs. raw data)
-- **Instant loading** for cached analytics (vs. 10+ seconds client-side processing)
-- **Scalable architecture** handles courses with 100+ students efficiently
-
-**API Structure:**
-```javascript
-// Analytics API
-analyticsApi.getCourseAnalytics(courseId)     // Get cached or generate fresh
-analyticsApi.generateCourseAnalytics(courseId) // Force server-side computation
-analyticsApi.getCourseAnalyticsSummary(courseId) // Lightweight metrics
-analyticsApi.refreshCourseAnalytics(courseId)  // Force refresh
+```
+React Chat UI → aiProxyService (src/services/aiProxyService.js)
+  → Vercel serverless function (api/openai.js | api/anthropic.js | api/google.js | api/perplexity.js)
+  → Provider API → Response normalized to OpenAI format → Client
 ```
 
-**Analytics Data Structure:**
-```
-courseAnalytics/{courseId}
-├── courseInfo: { totalStudents, totalInteractions, totalProjects }
-├── studentMetrics: [ { name, interactions, projects, toolUsage, lastActivity } ]
-├── toolUsage: { "GPT-4o": 245, "Claude": 123, ... }
-├── engagementPatterns: { averages, trends, peakHours }
-├── recentActivity: [ last 20 interactions ]
-└── lastUpdated: timestamp, stale: boolean
-```
+AI API keys are **server-side only** (Vercel env vars without `REACT_APP_` prefix). The client never touches provider credentials. All provider responses are normalized to OpenAI's `choices[0].message.content` shape.
 
-## Recent Updates
+### Key Service Files
 
-### Claude Opus 4 Research Mode Integration (August 2025) ✅ COMPLETED
-**Status:** Successfully implemented premium research capabilities
+- **`src/services/aiApi.js`** — AI model registry (`AI_TOOLS` map), educational system prompts, provider routing via `getProviderFromModel()`, model-specific timeouts (35-70s)
+- **`src/services/aiProxyService.js`** — Client-side proxy that routes chat requests to Vercel API functions
+- **`src/services/firebaseApi.js`** — Single data layer for all Firestore operations. Exports: `userApi`, `courseApi`, `projectApi`, `chatApi`, `attachmentApi`, `tagApi`, `reflectionApi`, `instructorNotesApi`, `announcementApi`, `schoolsApi`, `analyticsApi`, `realtimeApi`, `courseMembershipApi`
+- **`src/contexts/AuthContext.js`** — Firebase Auth provider. Merges Firebase Auth user with Firestore user document. Exposes `currentUser`, `userRole`, `isInstructorAnywhere`, `isSchoolAdministrator`
 
-**New Features:**
-- ✅ **Claude Opus 4 Support** - Added world-class research model for advanced tasks
-- ✅ **Smart Model Selection** - Enhanced UI with pricing indicators and cost warnings  
-- ✅ **Research Mode Indicators** - Visual warnings when using premium models
-- ✅ **Cost Transparency** - Display token costs directly in model selection
-- ✅ **Usage Analytics Integration** - Track Opus 4 usage and costs separately
+### Role System (Dual-Layer)
 
-**Benefits:**
-- 🔬 **Superior Research Quality** - Students get access to best-in-class research and writing capabilities
-- 💰 **Cost Awareness** - Clear pricing information helps students make informed choices
-- ⚖️ **Balanced Usage** - Hybrid approach with both standard and premium options
-- 📊 **Analytics Ready** - Full cost tracking and usage monitoring
+**Global roles** (stored on user document): `admin`, `school_administrator`, `student`
 
-**Files Modified:**
-- `src/utils/costCalculator.js` - Added Opus 4 pricing ($15/$75 per million tokens)
-- `src/services/openaiApi.js` - Added to central AI_TOOLS configuration
-- `src/services/anthropicApi.js` - Added Opus 4 model support
-- `src/components/Chat/Chat.js` - Enhanced UI with cost warnings and model selection
-- `CLAUDE.md` - Updated documentation with new capabilities
+**Course roles** (stored in `courseMemberships` collection): `instructor`, `teaching_assistant`, `student_assistant`, `student`
 
-## Next Development Priorities
+Permission checking combines both layers. The membership document ID format is `{userId}_{courseId}` for efficient Firestore lookups. Role utilities live in `src/utils/roleUtils.js`.
 
-1. **Implement Firebase Security Rules** - Replace temporary open access with proper rules
-2. **Complete Reflection API** - Full Firestore implementation for student reflections
-3. **Complete Instructor Notes API** - Full Firestore implementation for instructor annotations
-4. **Analytics Dashboard** - Visual charts and insights based on server-side analytics
-5. **Production Deployment** - Set up CI/CD pipeline with Vercel
+Auto-admin: the email `sage+admin@sagerock.com` is automatically promoted to admin on login.
 
----
+### Route Guards (App.js)
 
-## Development Notes
+- `ProtectedRoute` — authenticated users
+- `InstructorRoute` — checks `isInstructorAnywhere`
+- `AdminRoute` — checks `userRole === 'admin'`
+- `SchoolAdminRoute` — checks `isSchoolAdministrator`
+- `StudentAssistantRoute` — queries course membership for student assistant permissions
 
-**Last Updated:** January 24, 2025
-**Status:** Firebase-only migration complete ✅
-**Build Status:** Compiling successfully ✅
-**Runtime Status:** Fully functional ✅
+### Firebase Cloud Functions (functions/index.js)
 
-*For historical development notes and archived Supabase documentation, see: `CLAUDE-ARCHIVE.md`*
+Node.js 20, Firebase Functions v2. Key callable functions:
+
+- `deleteUserCompletely` — Admin-only cascading delete (memberships, chats, projects, notes, reflections, auth account)
+- `generateCourseAnalytics` — Server-side analytics computation, cached in `courseAnalytics` collection, marked stale by `updateAnalyticsOnChatChange` trigger
+- `sendCourseJoinNotifications` — Emails instructors/admins when students request enrollment
+- `sendApprovalConfirmationEmail` — Welcome email when enrollment is approved
+- `sendRoleChangeNotificationEmail` — Notifies students of role changes
+- `sendEmail` — General-purpose authenticated email sender via SendGrid
+
+### Vercel Serverless API (api/)
+
+Each AI provider has its own proxy route with provider-specific handling:
+- `api/openai.js` — GPT-5 forced to temperature=1, 60s max duration
+- `api/anthropic.js` — Converts OpenAI message format to Anthropic Messages API and back
+- `api/google.js` — Uses Gemini `startChat()` with history, maps roles (`assistant`→`model`)
+- `api/perplexity.js` — OpenAI-compatible endpoint, maps `sonar-pro`→`sonar`
+- `api/send-email.js` — SendGrid proxy, 30s max duration
+- `api/health.js` — Health check
+
+### Firestore Security Rules (firestore.rules)
+
+Helper functions: `isAuthenticated()`, `isOwner()`, `isGlobalAdmin()`, `hasTeachingPermissionsInCourse()`, `hasStudentAssistantPermissionsInCourse()`, `isMemberOfCourse()`, `isSchoolAdministratorForCourse()`
+
+Key patterns:
+- Teaching permissions = `teaching_assistant` OR `instructor` OR `school_administrator`
+- Students create pending memberships; instructors approve
+- Student assistants can view peer projects (enables peer mentoring)
+- Chats are most restrictive: owner + course instructors only
+- Contact requests are publicly writable (lead gen), admin-only readable
+
+### Analytics Architecture
+
+Heavy analytics run server-side via the `generateCourseAnalytics` Cloud Function to avoid N+1 client queries. Results are cached in `courseAnalytics/{courseId}` and automatically marked stale when chat data changes via Firestore trigger.
+
+## Environment Variables
+
+**Client-side** (`.env.local`, prefixed with `REACT_APP_`):
+- Firebase config: `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`
+- Email: `SENDGRID_FROM_EMAIL`, `URL`
+- Local dev: `EMAIL_API_URL=http://localhost:3001`
+
+**Server-side** (Vercel env vars, NO `REACT_APP_` prefix):
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `PERPLEXITY_API_KEY`, `SENDGRID_API_KEY`
+
+See `.env.local.example` for the current template.
+
+## Tech Stack
+
+- React 18, React Router, Tailwind CSS
+- Firebase (Auth, Firestore, Storage, Cloud Functions v2)
+- Vercel (hosting + serverless API proxy)
+- AI: OpenAI (GPT-5/4.1 series), Anthropic (Claude Sonnet 4.5, Opus 4.1), Google (Gemini 2.5 Flash/Pro), Perplexity (Sonar Pro)
+- SendGrid for transactional email
+- PDF.js + Tesseract.js for document extraction with OCR fallback

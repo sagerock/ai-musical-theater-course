@@ -113,6 +113,12 @@ export default function PublicHomePage() {
             </div>
             <div className="flex items-center space-x-4">
               <Link
+                to="/philosophy"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Philosophy
+              </Link>
+              <Link
                 to="/faq"
                 className="text-gray-600 hover:text-gray-900 font-medium"
               >
@@ -277,6 +283,9 @@ export default function PublicHomePage() {
               <span className="ml-3 text-lg font-bold text-gray-900">AI Engagement Hub</span>
             </div>
             <div className="flex space-x-6">
+              <Link to="/philosophy" className="text-gray-600 hover:text-gray-900">
+                Philosophy
+              </Link>
               <Link to="/login" className="text-gray-600 hover:text-gray-900">
                 Sign In
               </Link>

@@ -26,6 +26,7 @@ import Layout from './components/Layout/Layout';
 import PrivacyPolicy from './components/Privacy/PrivacyPolicy';
 import Pricing from './components/Pricing/Pricing';
 import FAQ from './components/FAQ/FAQ';
+import Philosophy from './components/Philosophy/Philosophy';
 import SettingsPage from './components/Settings/SettingsPage';
 import Help from './components/Help/Help';
 import TestDirectQuery from './components/TestDirectQuery';
@@ -93,6 +94,7 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/philosophy" element={<Philosophy />} />
           <Route path="/test-direct" element={<TestDirectQuery />} />
           <Route path="/test-email" element={<EmailServerTest />} />
           </Routes>
