@@ -21,6 +21,7 @@ import {
 export default function Dashboard() {
   const [recentProjects, setRecentProjects] = useState([]);
   const [recentChats, setRecentChats] = useState([]);
+  const [userCourses, setUserCourses] = useState([]);
   const [stats, setStats] = useState({
     totalProjects: 0,
     totalChats: 0,
@@ -28,6 +29,9 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const { currentUser, userRole, loading: authLoading } = useAuth();
+
+  // First approved course for linking "View all" / "New Project"
+  const firstCourseId = userCourses[0]?.courses?.id;
   
   // Removed excessive debug logging
 
@@ -43,8 +47,9 @@ export default function Dashboard() {
       console.log('📊 Dashboard: Starting data load for', currentUser.id);
 
       // Get user's courses (already batch-optimized)
-      const userCourses = await courseApi.getUserCourses(currentUser.id);
-      const approvedCourses = userCourses.filter(m => m.status === 'approved');
+      const fetchedCourses = await courseApi.getUserCourses(currentUser.id);
+      const approvedCourses = fetchedCourses.filter(m => m.status === 'approved');
+      setUserCourses(approvedCourses);
 
       if (approvedCourses.length === 0) {
         // No courses — try legacy data
@@ -214,13 +219,13 @@ export default function Dashboard() {
               A powerful analytics platform that helps educators understand how students interact with AI in real time.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => toast.error('Please join a course first to create projects')}
+              <Link
+                to={firstCourseId ? `/course/${firstCourseId}/projects` : '/join'}
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
               >
-                Create Your First Project
+                {firstCourseId ? 'Create Your First Project' : 'Join a Course to Start'}
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
-              </button>
+              </Link>
               <Link
                 to="/join"
                 className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
@@ -311,12 +316,21 @@ export default function Dashboard() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Recent Projects</h2>
-              <button
-                onClick={() => toast.error('Please select a course to view projects')}
-                className="text-sm text-primary-600 hover:text-primary-500 font-medium"
-              >
-                View all
-              </button>
+              {firstCourseId ? (
+                <Link
+                  to={`/course/${firstCourseId}/projects`}
+                  className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+                >
+                  View all
+                </Link>
+              ) : (
+                <Link
+                  to="/join"
+                  className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+                >
+                  Join a course
+                </Link>
+              )}
             </div>
           </div>
           <div className="p-6">
@@ -348,13 +362,23 @@ export default function Dashboard() {
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
                 <p className="mt-1 text-sm text-gray-500">Get started by creating a new project.</p>
                 <div className="mt-6">
-                  <button
-                    onClick={() => toast.error('Please join a course first to create projects')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-                  >
-                    <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                    New Project
-                  </button>
+                  {firstCourseId ? (
+                    <Link
+                      to={`/course/${firstCourseId}/projects`}
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                    >
+                      <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                      New Project
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/join"
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                    >
+                      <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                      Join a Course
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
