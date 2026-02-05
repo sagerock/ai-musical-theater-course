@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { projectApi, chatApi, courseApi } from '../../services/firebaseApi';
+import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -32,124 +34,131 @@ export default function Dashboard() {
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      console.log('📊 Dashboard: Starting data load...');
-      console.log('  - currentUser:', currentUser?.id, currentUser?.email);
-      
+
       if (!currentUser) {
-        console.warn('⚠️ Dashboard: No currentUser available, cannot load data');
         setLoading(false);
         return;
       }
-      
-      console.log('📊 Dashboard: Firebase user, loading data...');
-      
-      // Get user's courses first
-      console.log('📊 Dashboard: Getting user courses...');
+
+      console.log('📊 Dashboard: Starting data load for', currentUser.id);
+
+      // Get user's courses (already batch-optimized)
       const userCourses = await courseApi.getUserCourses(currentUser.id);
-      console.log('📊 Dashboard: Raw user courses:', userCourses);
-      
-      const approvedCourses = userCourses.filter(membership => 
-        membership.status === 'approved'
-      );
-      
-      console.log('📊 Dashboard: Approved courses:', approvedCourses.length);
-      
-      // Aggregate projects and chats across all user's courses
-      let allProjects = [];
-      let allChats = [];
-      
-      if (approvedCourses.length > 0) {
-        // Load projects from all courses
-        const projectPromises = approvedCourses.map(membership =>
-          projectApi.getUserProjects(currentUser.id, membership.courses.id)
-        );
-        const projectResults = await Promise.all(projectPromises);
-        allProjects = projectResults.flat();
-        
-        // Load chats - RLS policies handle course-based filtering automatically
-        console.log('📊 Dashboard: Loading chats for userRole:', userRole);
-        
-        if (userRole === 'instructor' || userRole === 'admin') {
-          console.log('📊 Dashboard: Loading instructor chats from their courses');
-          // Instructors see chats from courses they teach
-          const instructorCourses = approvedCourses.filter(membership => 
-            membership.role === 'instructor'
-          );
-          
-          if (instructorCourses.length > 0) {
-            const chatPromises = instructorCourses.map(membership =>
-              chatApi.getChatsWithFilters({ courseId: membership.courses.id })
-            );
-            const chatResults = await Promise.all(chatPromises);
-            allChats = chatResults.flat();
-          }
-        } else {
-          console.log('📊 Dashboard: Loading student chats from all courses');
-          // Students see only their own chats across all courses
-          const chatPromises = approvedCourses.map(membership => 
-            chatApi.getUserChats(currentUser.id, membership.courses.id, 1000)
-          );
-          const chatResults = await Promise.all(chatPromises);
-          allChats = chatResults.flat();
-        }
-      } else {
-        // Fallback: Load projects and chats without course filter (legacy data)
-        console.log('📊 Dashboard: No courses found, loading legacy data');
-        allProjects = await projectApi.getUserProjects(currentUser.id);
-        
-        if (userRole === 'instructor' || userRole === 'admin') {
-          // For legacy data: instructors without courses can't see other chats
-          console.log('📊 Dashboard: No courses - instructors see no legacy chats for privacy');
-          allChats = [];
-        } else {
-          // Students see only their own chats
-          allChats = await chatApi.getUserChats(currentUser.id, null, 1000);
-        }
+      const approvedCourses = userCourses.filter(m => m.status === 'approved');
+
+      if (approvedCourses.length === 0) {
+        // No courses — try legacy data
+        const [legacyProjects, legacyChats] = await Promise.all([
+          projectApi.getUserProjects(currentUser.id).catch(() => []),
+          (userRole !== 'instructor' && userRole !== 'admin')
+            ? chatApi.getUserChats(currentUser.id, null, 5).catch(() => [])
+            : Promise.resolve([])
+        ]);
+
+        // Get project count server-side
+        const projectCountSnap = await getCountFromServer(
+          query(collection(db, 'projects'), where('createdBy', '==', currentUser.id))
+        ).catch(() => ({ data: () => ({ count: legacyProjects.length }) }));
+
+        setRecentProjects(legacyProjects.slice(0, 3));
+        setRecentChats(legacyChats.slice(0, 5));
+        setStats({
+          totalProjects: projectCountSnap.data().count,
+          totalChats: legacyChats.length,
+          recentChats: 0
+        });
+        setLoading(false);
+        return;
       }
-      
-      console.log('📊 Dashboard data loaded:');
-      console.log('  - Projects:', allProjects.length);
-      console.log('  - Chats:', allChats.length);
-      
-      // Sort by date and get recent items
-      allProjects.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      allChats.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      
-      setRecentProjects(allProjects.slice(0, 3));
-      setRecentChats(allChats.slice(0, 5));
 
-      // Calculate stats
-      const today = new Date();
-      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      
-      const recentChatsCount = allChats.filter(chat => 
-        new Date(chat.created_at) >= sevenDaysAgo
-      ).length;
+      const courseIds = approvedCourses.map(m => m.courses.id);
+      const isInstructor = userRole === 'instructor' || userRole === 'admin';
+      const instructorCourseIds = isInstructor
+        ? approvedCourses.filter(m => m.role === 'instructor').map(m => m.courses.id)
+        : [];
 
+      // Fire all queries in parallel:
+      // 1. Server-side project count (no document downloads)
+      // 2. Server-side chat count (no document downloads)
+      // 3. Recent 3 projects (small payload)
+      // 4. Recent 5 chats (small payload, optimized fetch)
+      const projectCountPromise = getCountFromServer(
+        query(collection(db, 'projects'), where('createdBy', '==', currentUser.id))
+      ).catch(() => ({ data: () => ({ count: 0 }) }));
+
+      // Chat count: students = own chats, instructors = course chats
+      let chatCountPromise;
+      if (isInstructor && instructorCourseIds.length > 0) {
+        // Sum counts across instructor courses (batched in groups of 10)
+        chatCountPromise = (async () => {
+          let total = 0;
+          for (let i = 0; i < instructorCourseIds.length; i += 10) {
+            const batch = instructorCourseIds.slice(i, i + 10);
+            const counts = await Promise.all(
+              batch.map(cId =>
+                getCountFromServer(
+                  query(collection(db, 'chats'), where('courseId', '==', cId))
+                ).then(snap => snap.data().count).catch(() => 0)
+              )
+            );
+            total += counts.reduce((a, b) => a + b, 0);
+          }
+          return total;
+        })();
+      } else {
+        chatCountPromise = getCountFromServer(
+          query(collection(db, 'chats'), where('userId', '==', currentUser.id))
+        ).then(snap => snap.data().count).catch(() => 0);
+      }
+
+      // Recent projects: just need 3, fetched from first course (already sorted by createdAt desc)
+      const recentProjectsPromise = projectApi.getUserProjects(currentUser.id, courseIds[0])
+        .catch(() => []);
+
+      // Recent chats: just need 5
+      let recentChatsPromise;
+      if (isInstructor && instructorCourseIds.length > 0) {
+        // Use optimized batch-fetch for first instructor course, limit 5
+        recentChatsPromise = chatApi.getChatsWithFiltersOptimized({
+          courseId: instructorCourseIds[0],
+          limit: 5
+        }).catch(() => []);
+      } else {
+        recentChatsPromise = chatApi.getUserChats(currentUser.id, courseIds[0], 5)
+          .catch(() => []);
+      }
+
+      const [projectCountSnap, chatCount, projects, chats] = await Promise.all([
+        projectCountPromise,
+        chatCountPromise,
+        recentProjectsPromise,
+        recentChatsPromise
+      ]);
+
+      setRecentProjects(projects.slice(0, 3));
+      setRecentChats(chats.slice(0, 5));
       setStats({
-        totalProjects: allProjects.length,
-        totalChats: allChats.length,
-        recentChats: recentChatsCount
+        totalProjects: projectCountSnap.data().count,
+        totalChats: chatCount,
+        recentChats: 0
+      });
+
+      console.log('📊 Dashboard loaded:', {
+        projects: projectCountSnap.data().count,
+        chats: chatCount,
+        recentProjects: projects.length,
+        recentChats: chats.length
       });
 
     } catch (error) {
-      console.error('❌ Dashboard: Error loading dashboard data:', error);
-      console.error('❌ Dashboard: Error details:', error.message, error.code);
-      
-      // Set default empty data so UI doesn't crash
+      console.error('❌ Dashboard: Error loading data:', error);
       setRecentProjects([]);
       setRecentChats([]);
-      setStats({
-        totalProjects: 0,
-        totalChats: 0,
-        recentChats: 0
-      });
+      setStats({ totalProjects: 0, totalChats: 0, recentChats: 0 });
     } finally {
-      console.log('📊 Dashboard: Data loading complete, setting loading to false');
       setLoading(false);
     }
-  }, [currentUser?.id, userRole]);
+  }, [currentUser, userRole]);
 
   useEffect(() => {
     if (currentUser && userRole !== null) {
