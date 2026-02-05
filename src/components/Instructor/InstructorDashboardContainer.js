@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, chatApi, tagApi, instructorNotesApi } from '../../services/firebaseApi';
+import { courseApi, chatApi } from '../../services/firebaseApi';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -85,39 +87,81 @@ export default function InstructorDashboardContainer() {
     try {
       setExporting(true);
       
-      // Load all course data for export
-      const [chats] = await Promise.all([
-        chatApi.getChatsWithFilters({
-          courseId: selectedCourseId,
-          limit: 1000
-        }).catch(() => [])
-      ]);
+      // Load all course data for export using optimized batch fetching
+      const chats = await chatApi.getChatsWithFiltersOptimized({
+        courseId: selectedCourseId,
+        limit: 1000
+      }).catch(() => []);
 
-      // Enrich chats with tags and instructor notes
-      const enrichedChats = await Promise.all(
-        chats.map(async (chat) => {
-          try {
-            // Load tags for this chat
-            const chatTags = await tagApi.getChatTags(chat.id).catch(() => []);
-            
-            // Load instructor notes for this chat
-            const instructorNotes = await instructorNotesApi.getNotesByChat(chat.id).catch(() => []);
-            
-            return {
-              ...chat,
-              chat_tags: chatTags,
-              instructor_notes: instructorNotes
-            };
-          } catch (error) {
-            console.warn(`Error enriching chat ${chat.id}:`, error);
-            return {
-              ...chat,
-              chat_tags: [],
-              instructor_notes: []
-            };
+      // Batch-fetch tags and instructor notes for all chats
+      const chatIds = chats.map(c => c.id);
+      const projectIds = [...new Set(chats.map(c => c.projectId).filter(Boolean))];
+
+      // Batch-fetch chatTags by chatId (groups of 10)
+      const chatTagsMap = new Map();
+      for (let i = 0; i < chatIds.length; i += 10) {
+        const batch = chatIds.slice(i, i + 10);
+        try {
+          const tagsQuery = query(collection(db, 'chatTags'), where('chatId', 'in', batch));
+          const tagsSnapshot = await getDocs(tagsQuery);
+
+          // Collect unique tag IDs for batch-fetching tag details
+          const tagIdsToFetch = new Set();
+          const rawChatTags = [];
+          tagsSnapshot.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            rawChatTags.push(data);
+            if (data.tagId) tagIdsToFetch.add(data.tagId);
+          });
+
+          // Batch-fetch tag details
+          const tagDetailsMap = new Map();
+          const tagIdArray = Array.from(tagIdsToFetch);
+          for (let j = 0; j < tagIdArray.length; j += 10) {
+            const tagBatch = tagIdArray.slice(j, j + 10);
+            const tagQuery = query(collection(db, 'tags'), where('__name__', 'in', tagBatch));
+            const tagSnapshot = await getDocs(tagQuery);
+            tagSnapshot.forEach(doc => {
+              tagDetailsMap.set(doc.id, { id: doc.id, ...doc.data() });
+            });
           }
-        })
-      );
+
+          // Assemble enriched chat tags
+          for (const ct of rawChatTags) {
+            if (!chatTagsMap.has(ct.chatId)) chatTagsMap.set(ct.chatId, []);
+            chatTagsMap.get(ct.chatId).push({
+              ...ct,
+              tags: tagDetailsMap.get(ct.tagId) || { name: 'Unknown Tag' }
+            });
+          }
+        } catch (error) {
+          console.warn('Error batch-fetching chat tags:', error);
+        }
+      }
+
+      // Batch-fetch instructor notes by projectId (groups of 10)
+      const notesMap = new Map(); // keyed by projectId
+      for (let i = 0; i < projectIds.length; i += 10) {
+        const batch = projectIds.slice(i, i + 10);
+        try {
+          const notesQuery = query(collection(db, 'instructorNotes'), where('projectId', 'in', batch));
+          const notesSnapshot = await getDocs(notesQuery);
+          notesSnapshot.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            if (!notesMap.has(data.projectId)) notesMap.set(data.projectId, []);
+            notesMap.get(data.projectId).push(data);
+          });
+        } catch (error) {
+          console.warn('Error batch-fetching instructor notes:', error);
+        }
+      }
+
+      // Enrich chats with batch-fetched tags and notes
+      const enrichedChats = chats.map(chat => ({
+        ...chat,
+        chat_tags: chatTagsMap.get(chat.id) || [],
+        instructor_notes: chat.projectId ? (notesMap.get(chat.projectId) || []) : []
+      }));
 
       // Prepare data for export
       const dataToExport = enrichedChats.map(chat => ({

@@ -885,23 +885,33 @@ export const courseApi = {
     );
     
     const membershipsSnapshot = await getDocs(membershipsQuery);
+    const memberships = membershipsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Collect all course IDs and batch-fetch
+    const courseIds = [...new Set(memberships.map(m => m.courseId).filter(Boolean))];
+    const courseMap = new Map();
+
+    for (let i = 0; i < courseIds.length; i += 10) {
+      const batch = courseIds.slice(i, i + 10);
+      const courseQuery = query(collection(db, 'courses'), where('__name__', 'in', batch));
+      const courseSnapshot = await getDocs(courseQuery);
+      courseSnapshot.forEach(doc => {
+        courseMap.set(doc.id, { id: doc.id, ...doc.data() });
+      });
+    }
+
+    // Map courses back to memberships
     const courses = [];
-    
-    // Fetch course details for each membership
-    for (const membershipDoc of membershipsSnapshot.docs) {
-      const membership = membershipDoc.data();
-      try {
-        const course = await this.getCourseById(membership.courseId);
-        courses.push({
-          ...membership,
-          courses: course
-        });
-      } catch (error) {
+    for (const membership of memberships) {
+      const course = courseMap.get(membership.courseId);
+      if (course) {
+        courses.push({ ...membership, courses: course });
+      } else {
         console.warn('Course not found:', membership.courseId);
       }
     }
-    
-    console.log('✅ getUserCourses result:', courses.length, 'courses');
+
+    console.log(`✅ getUserCourses result: ${courses.length} courses (${Math.ceil(courseIds.length / 10)} batch queries instead of ${courseIds.length})`);
     return courses;
   },
 
@@ -1005,32 +1015,31 @@ export const courseApi = {
     );
     
     const pendingSnapshot = await getDocs(pendingQuery);
-    const pendingRequests = [];
-    
-    // Fetch user details for each pending request
-    for (const membershipDoc of pendingSnapshot.docs) {
-      const membership = { id: membershipDoc.id, ...membershipDoc.data() };
-      
-      // Fetch user details
-      try {
-        const userDoc = await getDoc(doc(db, 'users', membership.userId));
-        if (userDoc.exists()) {
-          membership.users = { id: userDoc.id, ...userDoc.data() };
-        }
-      } catch (error) {
-        console.warn('User not found:', membership.userId);
-        // Set fallback user data
-        membership.users = {
-          id: membership.userId,
-          name: 'Unknown User',
-          email: 'No email'
-        };
-      }
-      
-      pendingRequests.push(membership);
+    const pendingRequests = pendingSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Batch-fetch user details
+    const userIds = [...new Set(pendingRequests.map(m => m.userId).filter(Boolean))];
+    const userMap = new Map();
+
+    for (let i = 0; i < userIds.length; i += 10) {
+      const batch = userIds.slice(i, i + 10);
+      const userQuery = query(collection(db, 'users'), where('__name__', 'in', batch));
+      const userSnapshot = await getDocs(userQuery);
+      userSnapshot.forEach(doc => {
+        userMap.set(doc.id, { id: doc.id, ...doc.data() });
+      });
     }
-    
-    console.log('✅ getPendingApprovals result:', pendingRequests.length, 'pending requests');
+
+    // Enrich memberships with user data
+    for (const membership of pendingRequests) {
+      membership.users = userMap.get(membership.userId) || {
+        id: membership.userId,
+        name: 'Unknown User',
+        email: 'No email'
+      };
+    }
+
+    console.log(`✅ getPendingApprovals result: ${pendingRequests.length} pending requests (${Math.ceil(userIds.length / 10)} batch queries instead of ${userIds.length})`);
     return pendingRequests;
   },
 
@@ -1799,6 +1808,40 @@ export const chatApi = {
     
     console.log(`✅ getChatsWithFilters loaded ${chats.length} chats with enriched data`);
     return chats;
+  },
+
+  // Lightweight stats query — fetches chat docs without enrichment for fast counting
+  async getCourseChatsCount(courseId) {
+    console.log('🚀 getCourseChatsCount:', courseId);
+
+    const chatsQuery = query(
+      collection(db, 'chats'),
+      where('courseId', '==', courseId),
+      orderBy('createdAt', 'desc')
+    );
+
+    const snapshot = await getDocs(chatsQuery);
+
+    const userIds = new Set();
+    const projectIds = new Set();
+    let reflectionCount = 0;
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.userId) userIds.add(data.userId);
+      if (data.projectId) projectIds.add(data.projectId);
+      if (data.has_reflection) reflectionCount++;
+    });
+
+    const stats = {
+      totalChats: snapshot.size,
+      uniqueUsers: userIds.size,
+      uniqueProjects: projectIds.size,
+      reflectionCount
+    };
+
+    console.log('✅ getCourseChatsCount result:', stats);
+    return stats;
   },
 
   // Optimized version with batch fetching for better performance

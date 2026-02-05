@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { chatApi, courseApi, projectApi, userApi } from '../../services/firebaseApi';
+import { chatApi, courseApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   FolderIcon,
@@ -61,14 +61,21 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
     try {
       setLoading(true);
       console.log('🔄 Loading overview data for course:', selectedCourseId);
-      
-      // Load chat data (which includes user/project info) and pending requests
-      const [chats, pendingRequests] = await Promise.all([
-        chatApi.getChatsWithFilters({
+
+      // Fire all three queries in parallel:
+      // 1. Lightweight stats (no enrichment — just counts)
+      // 2. Recent 10 chats with enrichment (for display)
+      // 3. Pending approval requests
+      const [courseStats, recentChats, pendingRequests] = await Promise.all([
+        chatApi.getCourseChatsCount(selectedCourseId).catch(error => {
+          console.log('❌ Error loading chat stats:', error);
+          return { totalChats: 0, uniqueUsers: 0, uniqueProjects: 0, reflectionCount: 0 };
+        }),
+        chatApi.getChatsWithFiltersOptimized({
           courseId: selectedCourseId,
-          limit: 1000  // Get all chats for accurate count
+          limit: 10
         }).catch(error => {
-          console.log('❌ Error loading chats:', error);
+          console.log('❌ Error loading recent chats:', error);
           return [];
         }),
         courseApi.getPendingApprovals(selectedCourseId, currentUser.id).catch(error => {
@@ -77,94 +84,25 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
         })
       ]);
 
-      // Extract unique projects and users from chat data
-      const projectsFromChats = [];
-      const usersFromChats = [];
-      const seenProjects = new Set();
-      const seenUsers = new Set();
+      // Calculate statistics from lightweight query
+      const reflectionCompletionRate = courseStats.totalChats > 0 ?
+        Math.round((courseStats.reflectionCount / courseStats.totalChats) * 100) : 0;
 
-      chats.forEach(chat => {
-        // Extract project info
-        if (chat.projects && chat.projects.id && !seenProjects.has(chat.projects.id)) {
-          projectsFromChats.push(chat.projects);
-          seenProjects.add(chat.projects.id);
-        }
-        
-        // Extract user info  
-        if (chat.users && chat.userId && !seenUsers.has(chat.userId)) {
-          usersFromChats.push({
-            id: chat.userId,
-            name: chat.users.name,
-            email: chat.users.email,
-            course_role: 'student', // Assume student role for counting
-            status: 'approved' // Assume approved if they have chats
-          });
-          seenUsers.add(chat.userId);
-        }
-      });
-
-      const projects = projectsFromChats;
-      const users = usersFromChats;
-      
-      // Debug logging
-      console.log('🔍 Debug data loaded:', {
-        selectedCourseId,
-        chatsCount: chats.length,
-        projectsCount: projects.length,
-        usersCount: users.length,
-        pendingRequestsCount: pendingRequests.length,
-        sampleChat: chats[0] ? {
-          id: chats[0].id,
-          userId: chats[0].userId || chats[0].user_id,
-          projectId: chats[0].projectId || chats[0].project_id,
-          fields: Object.keys(chats[0])
-        } : 'No chats',
-        sampleUser: users[0] ? {
-          id: users[0].id || users[0].user_id,
-          name: users[0].name,
-          fields: Object.keys(users[0])
-        } : 'No users',
-        sampleProject: projects[0] ? {
-          id: projects[0].id,
-          title: projects[0].title,
-          fields: Object.keys(projects[0])
-        } : 'No projects'
-      });
-      
-      // Calculate statistics
-      const totalChats = chats.length;
-      const totalProjects = projects.length;
-      // Count only approved students (not instructors)
-      const totalUsers = users.filter(user => 
-        user.course_role === 'student' && user.status === 'approved'
-      ).length;
-      
-      // Calculate reflection completion rate
-      const chatsWithReflections = chats.filter(chat => chat.has_reflection).length;
-      const reflectionCompletionRate = totalChats > 0 ? 
-        Math.round((chatsWithReflections / totalChats) * 100) : 0;
-      
       const calculatedStats = {
-        totalChats,
-        totalUsers,
-        totalProjects,
+        totalChats: courseStats.totalChats,
+        totalUsers: courseStats.uniqueUsers,
+        totalProjects: courseStats.uniqueProjects,
         reflectionCompletionRate
       };
-      
+
       console.log('📊 Calculated overview stats:', calculatedStats);
       setStats(calculatedStats);
-      
-      // Recent activity uses chat data directly (already enriched by getChatsWithFilters)
-      const recentChats = chats.slice(0, 10);
-      
-      console.log('🔍 Sample chat data:', recentChats[0]);
       setRecentActivity(recentChats);
       setPendingApprovals(pendingRequests);
-      
+
     } catch (error) {
       console.error('Error loading overview data:', error);
       toast.error('Failed to load overview data');
-      // Set fallback stats
       setStats({
         totalChats: 0,
         totalUsers: 0,
@@ -186,9 +124,8 @@ export default function Overview({ selectedCourseId, selectedCourse, currentUser
     try {
       await courseApi.updateMembershipStatus(membershipId, status, currentUser.id);
       toast.success(`Request ${status === 'approved' ? 'approved' : 'rejected'} successfully!`);
-      // Reload pending approvals
-      const updatedRequests = await courseApi.getPendingApprovals(selectedCourseId, currentUser.id);
-      setPendingApprovals(updatedRequests);
+      // Optimistic update — remove from local state without re-querying
+      setPendingApprovals(prev => prev.filter(r => r.id !== membershipId));
     } catch (error) {
       console.error('Error updating membership status:', error);
       toast.error(`Failed to ${status === 'approved' ? 'approve' : 'reject'} request`);
