@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       apiKey: apiKey,
     });
 
-    const { messages, model = 'claude-3-5-sonnet-20241022', max_tokens = 4096, stream = false } = req.body;
+    const { messages, model = 'claude-sonnet-4-6', max_tokens = 4096, stream = false } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });

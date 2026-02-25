@@ -16,8 +16,8 @@ import {
 
 // AI models available for discussion responses
 const DISCUSSION_AI_MODELS = [
-  'Claude Sonnet 4.5',
-  'Claude Opus 4.1',
+  'Claude Sonnet 4.6',
+  'Claude Opus 4.6',
   'GPT-5 Mini',
   'GPT-5',
   'Gemini 2.5 Pro',
@@ -38,7 +38,7 @@ export default function AnnouncementComments({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [generatingAI, setGeneratingAI] = useState(false);
-  const [selectedAIModel, setSelectedAIModel] = useState('Claude Sonnet 4.5');
+  const [selectedAIModel, setSelectedAIModel] = useState('Claude Sonnet 4.6');
 
   useEffect(() => {
     loadComments();

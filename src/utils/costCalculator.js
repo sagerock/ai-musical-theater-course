@@ -22,17 +22,11 @@ export const MODEL_PRICING = {
     provider: 'OpenAI',
     displayName: 'GPT-5'
   },
-  'gpt-5-pro-2025-10-06': {
-    input: 5.00,
-    output: 25.00,
+  'gpt-5.2': {
+    input: 1.75,
+    output: 14.00,
     provider: 'OpenAI',
-    displayName: 'GPT-5 Pro'
-  },
-  'gpt-5.1-2025-11-13': {
-    input: 6.00,
-    output: 30.00,
-    provider: 'OpenAI',
-    displayName: 'GPT-5.1'
+    displayName: 'GPT-5.2'
   },
   // OpenAI Models - GPT-4.1 Series
   'gpt-4.1-nano-2025-04-14': {
@@ -54,22 +48,28 @@ export const MODEL_PRICING = {
     displayName: 'GPT-4.1'
   },
   // Anthropic Models
-  'claude-sonnet-4-5-20250929': {
+  'claude-opus-4-6': {
+    input: 5.00,
+    output: 25.00,
+    provider: 'Anthropic',
+    displayName: 'Claude Opus 4.6'
+  },
+  'claude-sonnet-4-6': {
     input: 3.00,
     output: 15.00,
     provider: 'Anthropic',
-    displayName: 'Claude Sonnet 4.5'
+    displayName: 'Claude Sonnet 4.6'
   },
-  'claude-opus-4-1-20250805': {
-    input: 15.00,
-    output: 75.00,
+  'claude-haiku-4-5-20251001': {
+    input: 1.00,
+    output: 5.00,
     provider: 'Anthropic',
-    displayName: 'Claude Opus 4.1'
+    displayName: 'Claude Haiku 4.5'
   },
   // Google Models
   'gemini-2.5-flash': {
-    input: 0.075,
-    output: 0.30,
+    input: 0.30,
+    output: 2.50,
     provider: 'Google',
     displayName: 'Gemini Flash'
   },
@@ -94,13 +94,13 @@ export const DISPLAY_NAME_MAPPING = {
   'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
   'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
   'GPT-5': 'gpt-5-2025-08-07',
-  'GPT-5 Pro': 'gpt-5-pro-2025-10-06',
-  'GPT-5.1': 'gpt-5.1-2025-11-13',
+  'GPT-5.2': 'gpt-5.2',
   'GPT-4.1 Nano': 'gpt-4.1-nano-2025-04-14',
   'GPT-4.1 Mini': 'gpt-4.1-mini-2025-04-14',
   'GPT-4.1': 'gpt-4.1-2025-04-14',
-  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
-  'Claude Opus 4.1': 'claude-opus-4-1-20250805',
+  'Claude Opus 4.6': 'claude-opus-4-6',
+  'Claude Sonnet 4.6': 'claude-sonnet-4-6',
+  'Claude Haiku 4.5': 'claude-haiku-4-5-20251001',
   'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
   'Sonar Pro': 'sonar-pro'

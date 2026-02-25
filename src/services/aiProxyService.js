@@ -17,8 +17,7 @@ const TOOL_CONFIG = {
   'GPT-5 Nano': { endpoint: 'openai', model: 'gpt-5-nano-2025-08-07' },
   'GPT-5 Mini': { endpoint: 'openai', model: 'gpt-5-mini-2025-08-07' },
   'GPT-5': { endpoint: 'openai', model: 'gpt-5-2025-08-07' },
-  'GPT-5 Pro': { endpoint: 'openai', model: 'gpt-5-pro-2025-10-06' },
-  'GPT-5.1': { endpoint: 'openai', model: 'gpt-5.1-2025-11-13' },
+  'GPT-5.2': { endpoint: 'openai', model: 'gpt-5.2' },
 
   // OpenAI Models - GPT-4.1 Series
   'GPT-4.1 Nano': { endpoint: 'openai', model: 'gpt-4.1-nano-2025-04-14' },
@@ -26,8 +25,9 @@ const TOOL_CONFIG = {
   'GPT-4.1': { endpoint: 'openai', model: 'gpt-4.1-2025-04-14' },
 
   // Anthropic Models
-  'Claude Sonnet 4.5': { endpoint: 'anthropic', model: 'claude-sonnet-4-5-20250929' },
-  'Claude Opus 4.1': { endpoint: 'anthropic', model: 'claude-opus-4-1-20250805' },
+  'Claude Opus 4.6': { endpoint: 'anthropic', model: 'claude-opus-4-6' },
+  'Claude Sonnet 4.6': { endpoint: 'anthropic', model: 'claude-sonnet-4-6' },
+  'Claude Haiku 4.5': { endpoint: 'anthropic', model: 'claude-haiku-4-5-20251001' },
 
   // Google Models
   'Gemini Flash': { endpoint: 'google', model: 'gemini-2.5-flash' },

@@ -6,15 +6,15 @@ export const AI_TOOLS = {
   'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
   'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
   'GPT-5': 'gpt-5-2025-08-07',
-  'GPT-5 Pro': 'gpt-5-pro-2025-10-06',
-  'GPT-5.1': 'gpt-5.1-2025-11-13',
+  'GPT-5.2': 'gpt-5.2',
   // OpenAI Models - GPT-4.1 Series
   'GPT-4.1 Nano': 'gpt-4.1-nano-2025-04-14',
   'GPT-4.1 Mini': 'gpt-4.1-mini-2025-04-14',
   'GPT-4.1': 'gpt-4.1-2025-04-14',
   // Anthropic Models
-  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
-  'Claude Opus 4.1': 'claude-opus-4-1-20250805',
+  'Claude Opus 4.6': 'claude-opus-4-6',
+  'Claude Sonnet 4.6': 'claude-sonnet-4-6',
+  'Claude Haiku 4.5': 'claude-haiku-4-5-20251001',
   // Google Models
   'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
@@ -24,8 +24,9 @@ export const AI_TOOLS = {
 
 // Legacy model mappings for compatibility
 const ANTHROPIC_MODELS = {
-  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
-  'Claude Opus 4.1': 'claude-opus-4-1-20250805'
+  'Claude Opus 4.6': 'claude-opus-4-6',
+  'Claude Sonnet 4.6': 'claude-sonnet-4-6',
+  'Claude Haiku 4.5': 'claude-haiku-4-5-20251001'
 };
 const GOOGLE_MODELS = {
   'Gemini Flash': 'gemini-2.5-flash',
@@ -63,13 +64,7 @@ const MODEL_SPECIFIC_PROMPTS = {
 • Excel at a wide range of tasks with high accuracy
 • Balance speed and depth for optimal learning efficiency`,
 
-  'gpt-5-pro-2025-10-06': `ADVANCED EDUCATIONAL MODE: As GPT-5 Pro, provide expert-level educational support:
-• Deliver sophisticated analysis with deep reasoning capabilities
-• Excel at complex problem-solving and advanced topics
-• Ideal for challenging academic work and technical subjects
-• Provide comprehensive explanations with nuanced understanding`,
-
-  'gpt-5.1-2025-11-13': `NEXT-GENERATION EDUCATIONAL MODE: As GPT-5.1, leverage cutting-edge capabilities:
+  'gpt-5.2': `NEXT-GENERATION EDUCATIONAL MODE: As GPT-5.2, leverage cutting-edge capabilities:
 • Provide state-of-the-art reasoning and analysis
 • Excel at complex multi-step problem solving
 • Deliver comprehensive explanations with superior accuracy
@@ -90,19 +85,24 @@ const MODEL_SPECIFIC_PROMPTS = {
 • Excel at complex problem-solving and analysis
 • Suitable for advanced academic work and detailed research`,
 
-  'claude-sonnet-4-5-20250929': `EDUCATIONAL EXCELLENCE MODE: As Claude Sonnet 4.5, provide thoughtful educational support:
+  'claude-opus-4-6': `WORLD-CLASS RESEARCH ASSISTANT: As Claude Opus 4.6, leverage your exceptional capabilities:
+• Deliver comprehensive, research-grade analysis
+• Model advanced academic writing with sophisticated arguments
+• Provide detailed explanations for advanced research projects
+• Focus on developing deep understanding and critical evaluation`,
+
+  'claude-sonnet-4-6': `EDUCATIONAL EXCELLENCE MODE: As Claude Sonnet 4.6, provide thoughtful educational support:
 • Provide comprehensive technical analysis with excellent reasoning
 • Excel at complex problem-solving and coding tasks
 • Leverage large context window for extensive document analysis
 • Ideal for advanced academic work and research projects`,
-  
-  'claude-opus-4-1-20250805': `WORLD-CLASS RESEARCH ASSISTANT: As Claude Opus 4.1, leverage your exceptional capabilities:
-  • Deliver comprehensive, research-grade analysis
-  • Model advanced academic writing with sophisticated arguments
-  • Provide detailed explanations for advanced research projects
-  • Focus on developing deep understanding and critical evaluation`,
-  
-  
+
+  'claude-haiku-4-5-20251001': `EFFICIENT EDUCATIONAL MODE: As Claude Haiku 4.5, provide fast yet thoughtful educational support:
+• Deliver concise, clear explanations with excellent speed
+• Focus on essential concepts for quick comprehension
+• Balance speed with educational value and proper sourcing
+• Ideal for rapid review and straightforward academic tasks`,
+
   'sonar-pro': `CURRENT RESEARCH MODE: As Sonar Pro with real-time search capabilities:
 • ALWAYS provide current, dated sources and recent information
 • Emphasize recent developments and current scholarly debates
@@ -258,8 +258,7 @@ export const aiApi = {
       { id: 'gpt-5-nano-2025-08-07', name: 'GPT-5 Nano', provider: 'openai' },
       { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini', provider: 'openai' },
       { id: 'gpt-5-2025-08-07', name: 'GPT-5', provider: 'openai' },
-      { id: 'gpt-5-pro-2025-10-06', name: 'GPT-5 Pro', provider: 'openai' },
-      { id: 'gpt-5.1-2025-11-13', name: 'GPT-5.1', provider: 'openai' }
+      { id: 'gpt-5.2', name: 'GPT-5.2', provider: 'openai' }
     );
 
     // Add OpenAI models - GPT-4.1 Series

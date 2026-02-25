@@ -69,7 +69,7 @@ export const apiHealthCheck = {
           messages: [
             { role: 'user', content: 'Say "OK" if you can read this.' }
           ],
-          model: 'claude-sonnet-4-5-20250929'
+          model: 'claude-sonnet-4-6'
         })
       });
 
@@ -80,7 +80,7 @@ export const apiHealthCheck = {
         return {
           success: false,
           provider: 'Anthropic',
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'claude-sonnet-4-6',
           error: error.error || `HTTP ${response.status}`,
           duration,
           timestamp: new Date().toISOString()
@@ -92,7 +92,7 @@ export const apiHealthCheck = {
       return {
         success: true,
         provider: 'Anthropic',
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
         response: data.choices?.[0]?.message?.content || data.content?.[0]?.text || 'No response',
         duration,
         timestamp: new Date().toISOString()
@@ -101,7 +101,7 @@ export const apiHealthCheck = {
       return {
         success: false,
         provider: 'Anthropic',
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-6',
         error: error.message,
         duration: Date.now() - startTime,
         timestamp: new Date().toISOString()

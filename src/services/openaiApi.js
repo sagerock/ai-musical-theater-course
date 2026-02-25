@@ -12,15 +12,15 @@ export const AI_TOOLS = {
   'GPT-5 Nano': 'gpt-5-nano-2025-08-07',      // Ultra-efficient and cost-effective
   'GPT-5 Mini': 'gpt-5-mini-2025-08-07',      // Balanced performance and cost (default)
   'GPT-5': 'gpt-5-2025-08-07',                // Premium model for coding and complex reasoning
-  'GPT-5 Pro': 'gpt-5-pro-2025-10-06',        // Advanced model for expert-level tasks
-  'GPT-5.1': 'gpt-5.1-2025-11-13',            // Next-generation capabilities
+  'GPT-5.2': 'gpt-5.2',                       // Next-generation capabilities
   // OpenAI Models - GPT-4.1 Series
   'GPT-4.1 Nano': 'gpt-4.1-nano-2025-04-14',  // Efficient GPT-4 variant
   'GPT-4.1 Mini': 'gpt-4.1-mini-2025-04-14',  // Balanced GPT-4 variant
   'GPT-4.1': 'gpt-4.1-2025-04-14',            // Advanced GPT-4 capabilities
   // Anthropic Models
-  'Claude Sonnet 4.5': 'claude-sonnet-4-5-20250929',
-  'Claude Opus 4.1': 'claude-opus-4-1-20250805',
+  'Claude Opus 4.6': 'claude-opus-4-6',
+  'Claude Sonnet 4.6': 'claude-sonnet-4-6',
+  'Claude Haiku 4.5': 'claude-haiku-4-5-20251001',
   // Google Models
   'Gemini Flash': 'gemini-2.5-flash',
   'Gemini 2.5 Pro': 'gemini-2.5-pro',
