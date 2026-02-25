@@ -158,9 +158,9 @@ export function canManageRole(userRole, targetRole) {
     return true;
   }
   
-  // Instructors can manage students, assistants, other instructors, and school administrators in their courses
+  // Instructors can manage students and assistants (not other instructors or school admins)
   if (normalizedUserRole === ROLES.INSTRUCTOR) {
-    return [ROLES.STUDENT, ROLES.STUDENT_ASSISTANT, ROLES.TEACHING_ASSISTANT, ROLES.INSTRUCTOR, ROLES.SCHOOL_ADMINISTRATOR].includes(normalizedTargetRole);
+    return [ROLES.STUDENT, ROLES.STUDENT_ASSISTANT, ROLES.TEACHING_ASSISTANT].includes(normalizedTargetRole);
   }
   
   // Teaching assistants can manage students and student assistants

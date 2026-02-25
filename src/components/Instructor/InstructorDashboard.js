@@ -107,8 +107,6 @@ export default function InstructorDashboard() {
   const [showAIChat, setShowAIChat] = useState(false);
   const [showTagManagement, setShowTagManagement] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState(null);
-  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
-  const [allUsers, setAllUsers] = useState([]);
 
   const { currentUser, userRole, isInstructorAnywhere } = useAuth();
   const [fixingChats, setFixingChats] = useState(false);
@@ -574,46 +572,6 @@ export default function InstructorDashboard() {
     }
   };
 
-  // Load all users for adding to course
-  const loadAllUsers = async () => {
-    try {
-      const allUsersData = await apis.userApi.getAllUsers();
-      setAllUsers(allUsersData);
-    } catch (error) {
-      console.error('Error loading all users:', error);
-    }
-  };
-
-  // Handle add student
-  const handleAddStudent = () => {
-    loadAllUsers();
-    setShowAddStudentModal(true);
-  };
-
-  const confirmAddStudent = async (userId) => {
-    if (!selectedCourseId) return;
-    
-    try {
-      await apis.courseApi.addStudentToCourse(userId, selectedCourseId, currentUser.id);
-      const addedUser = allUsers.find(u => u.id === userId);
-      toast.success(`${addedUser.name} added to course`);
-      setShowAddStudentModal(false);
-      // Reload dashboard data to reflect the change
-      await loadDashboardData();
-    } catch (error) {
-      console.error('Error adding student to course:', error);
-      if (error.message.includes('already enrolled')) {
-        toast.error('Student is already enrolled in this course');
-      } else {
-        toast.error('Failed to add student to course');
-      }
-    }
-  };
-
-  const getAvailableUsers = () => {
-    const currentUserIds = users.map(u => u.id);
-    return allUsers.filter(user => !currentUserIds.includes(user.id));
-  };
 
   // Handle PDF download
   const handleDownloadPDF = async (attachment) => {
@@ -790,11 +748,10 @@ export default function InstructorDashboard() {
     if (userRole === 'admin') {
       // Global admins can assign any role
       return Object.values(ROLES);
-    } else if (canManageRole(userRole, ROLES.INSTRUCTOR)) {
-      // Instructors can manage most roles
+    } else if (canManageRole(userRole, ROLES.TEACHING_ASSISTANT)) {
+      // Instructors can assign up to TA (not instructor or school_administrator)
       roles.push(ROLES.STUDENT_ASSISTANT);
       roles.push(ROLES.TEACHING_ASSISTANT);
-      roles.push(ROLES.INSTRUCTOR);
     }
     
     return roles;
@@ -1303,13 +1260,6 @@ export default function InstructorDashboard() {
               className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               {expandedSections.students ? 'Show Less' : 'Show All'}
-            </button>
-            <button
-              onClick={handleAddStudent}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Add Student
             </button>
           </div>
         </div>
@@ -1867,73 +1817,6 @@ export default function InstructorDashboard() {
               >
                 Cancel
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Student Modal */}
-      {showAddStudentModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowAddStudentModal(false)}></div>
-            
-            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-              <div className="flex items-center mb-4">
-                <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mr-3">
-                  <PlusIcon className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900">Add Student to Course</h3>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-4">
-                  Select a student to add to this course:
-                </p>
-                
-                {getAvailableUsers().length > 0 ? (
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {getAvailableUsers().map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                      >
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.name || 'No Name'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {user.email}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => confirmAddStudent(user.id)}
-                          className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No available students</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      All existing users are already enrolled in this course.
-                    </p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowAddStudentModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         </div>
