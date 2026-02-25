@@ -81,37 +81,62 @@ export default function Help() {
             <UserGroupIcon className="h-5 w-5 text-yellow-600 mr-3" />
             <h3 className="text-lg font-semibold text-gray-900">User Roles & Permissions</h3>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <h4 className="font-medium text-gray-900 mb-2">What are the different user roles?</h4>
-              <p className="text-gray-600 mb-2">
-                AI Engagement Hub supports 5 different roles, each with specific permissions:
+              <p className="text-gray-600 mb-3">
+                AI Engagement Hub has two types of roles: <strong>course roles</strong> (assigned per course) and <strong>global roles</strong> (system-wide).
               </p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1 ml-4">
-                <li><strong>Student:</strong> Access course materials and AI tools, create projects and reflections</li>
-                <li><strong>Student Assistant:</strong> Help manage course activities and assist other students</li>
-                <li><strong>Teaching Assistant:</strong> Assist with grading and course management, view student work</li>
-                <li><strong>Instructor:</strong> Full course management, student oversight, and administrative access</li>
-                <li><strong>School Administrator:</strong> System-wide oversight and administrative access across all courses</li>
+
+              <p className="text-sm font-medium text-gray-700 mb-2">Course Roles</p>
+              <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4 mb-4">
+                <li><strong>Student:</strong> Access AI tools, create projects, chat with AI models, write reflections, and apply tags to conversations.</li>
+                <li><strong>Student Assistant:</strong> Everything a student can do, plus view peer projects within the course to support mentoring.</li>
+                <li><strong>Teaching Assistant:</strong> Everything above, plus view student AI conversations, manage tags, approve or reject join requests, and access course analytics.</li>
+                <li><strong>Instructor:</strong> Full course management including creating courses, viewing all student work and AI conversations, managing course members, and accessing detailed analytics. Instructors can promote members up to the Teaching Assistant level.</li>
+              </ul>
+
+              <p className="text-sm font-medium text-gray-700 mb-2">Global Roles</p>
+              <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
+                <li><strong>School Administrator:</strong> Oversight across all courses within their school. Can view multi-course analytics, approve join requests, and manage members for any course in their school. Cannot access courses at other schools or the global admin panel.</li>
+                <li><strong>Admin:</strong> Full system-wide access. Can manage all users, courses, and schools. Can promote members to any role including Instructor and School Administrator. Can add users directly to any course.</li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-medium text-gray-900 mb-2">How do I get assigned a role?</h4>
               <p className="text-gray-600">
-                When you join a course, you select your intended role during enrollment. Your request must be 
-                approved by an instructor. Instructors and administrators can also change your role at any time 
-                to match your responsibilities in the course.
+                Everyone joins a course as a <strong>Student</strong> by default. After your join request is approved,
+                an instructor can promote you to Student Assistant or Teaching Assistant. Only a global Admin can
+                promote members to Instructor or School Administrator.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-medium text-gray-900 mb-2">Can I have different roles in different courses?</h4>
               <p className="text-gray-600">
-                Yes! Your role is specific to each course. You might be a student in one course, a teaching 
-                assistant in another, and an instructor in a third. Each role gives you appropriate permissions 
-                for that specific course context.
+                Yes! Your role is specific to each course. You might be a student in one course, a teaching
+                assistant in another, and an instructor in a third. Each role gives you appropriate permissions
+                for that specific course.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Do instructors and school administrators need to pay?</h4>
+              <p className="text-gray-600">
+                No. If you are an instructor or teaching assistant in any course, or if you have the School Administrator
+                or Admin global role, you can join additional courses without paying. Only students are required to
+                pay the semester access fee (or use a promo code).
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Can instructors see my AI conversations?</h4>
+              <p className="text-gray-600">
+                Yes. Instructors and teaching assistants in your course can view your AI conversations for educational
+                oversight. However, student assistants and school administrators cannot read your chat sessions.
+                Your conversations in other courses remain private to those courses.
               </p>
             </div>
           </div>
@@ -169,14 +194,6 @@ export default function Help() {
               </p>
             </div>
             
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Can instructors see my AI conversations?</h4>
-              <p className="text-gray-600">
-                Yes, instructors can view AI interactions from students in their courses for educational oversight. 
-                This helps them understand how you're using AI tools and provide better guidance. Your conversations 
-                in other courses or personal projects remain private to those contexts.
-              </p>
-            </div>
           </div>
         </div>
 
