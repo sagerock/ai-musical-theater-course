@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/firebaseApi';
+import { courseApi, paymentApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   AcademicCapIcon,
   ArrowRightIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 
 const ROLE_OPTIONS = [
@@ -16,19 +17,57 @@ const ROLE_OPTIONS = [
   { value: 'school_administrator', label: 'School Administrator', description: 'Oversight and administrative access across courses' }
 ];
 
+// Roles that bypass payment entirely
+const EDUCATOR_ROLES = ['instructor', 'teaching_assistant', 'school_administrator'];
+
 export default function CourseJoin() {
   const [courseCode, setCourseCode] = useState('');
   const [selectedRole, setSelectedRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [courseInfo, setCourseInfo] = useState(null);
 
-  const { currentUser, login } = useAuth();
+  const { currentUser, userRole, hasSemesterAccess, refreshUser } = useAuth();
+
+  // Handle payment return URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    const returnedCode = params.get('code');
+
+    if (paymentStatus === 'success') {
+      toast.success('Payment successful! You can now join the course.');
+      if (returnedCode) {
+        setCourseCode(returnedCode);
+      }
+      // Refresh user doc to pick up semesterAccess written by webhook
+      if (refreshUser) {
+        refreshUser();
+      }
+      // Clean up URL params
+      window.history.replaceState({}, '', '/join');
+    } else if (paymentStatus === 'cancelled') {
+      toast('Payment was cancelled. You can try again when ready.', { icon: '\u2139\ufe0f' });
+      if (returnedCode) {
+        setCourseCode(returnedCode);
+      }
+      window.history.replaceState({}, '', '/join');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Check if the selected role requires payment
+  const needsPayment = () => {
+    // Admins never pay
+    if (userRole === 'admin') return false;
+    // Educator roles bypass payment
+    if (EDUCATOR_ROLES.includes(selectedRole)) return false;
+    // Students/student assistants need semester access
+    return !hasSemesterAccess;
+  };
 
   const handleCourseCodeSubmit = async (e) => {
     e.preventDefault();
-    console.log('🎯 CourseJoin: Form submitted');
-    console.log('📝 Course join details:', { courseCode, currentUser: currentUser?.id });
-    
+    console.log('CourseJoin: Form submitted');
+
     if (!courseCode.trim()) {
       toast.error('Please enter a course code');
       return;
@@ -36,9 +75,8 @@ export default function CourseJoin() {
 
     // Check if user is logged in first
     if (!currentUser) {
-      console.log('❌ CourseJoin: User not logged in');
+      console.log('CourseJoin: User not logged in');
       toast.error('Please log in first to join a course');
-      // Store course info for after login
       localStorage.setItem('pendingCourseJoin', JSON.stringify({
         courseCode: courseCode.trim().toUpperCase()
       }));
@@ -46,36 +84,36 @@ export default function CourseJoin() {
       return;
     }
 
-    console.log('✅ CourseJoin: User is logged in, proceeding with enrollment');
     setLoading(true);
-    
-    // Check if this is a Firebase user (Firebase UIDs don't follow UUID format)
-    // Using Firebase API
-    
+
     try {
-      console.log('🔍 CourseJoin: Looking up course by code');
-      
-      // Find the course
+      // Find the course first
       const course = await courseApi.getCourseByCode(courseCode.trim().toUpperCase());
-      console.log('✅ CourseJoin: Course found:', course.title);
+      console.log('CourseJoin: Course found:', course.title);
       setCourseInfo(course);
-      
-      console.log('🚀 CourseJoin: Calling joinCourse API with role:', selectedRole);
+
+      // Payment gate: student roles without semester access must pay first
+      if (needsPayment()) {
+        console.log('CourseJoin: Redirecting to Stripe checkout');
+        toast('Redirecting to payment...', { icon: '\ud83d\udcb3' });
+        const { url } = await paymentApi.createCheckoutSession(
+          currentUser.id,
+          currentUser.email,
+          courseCode.trim().toUpperCase()
+        );
+        window.location.href = url;
+        return;
+      }
+
       // Join the course with selected role
       await courseApi.joinCourse(currentUser.id, course.id, courseCode.trim().toUpperCase(), selectedRole);
-      console.log('✅ CourseJoin: joinCourse completed successfully');
-      
+
       toast.success(`Successfully requested to join ${course.title}! Your request is pending instructor approval.`);
-      
-      console.log('🎉 CourseJoin: Course enrollment completed successfully!');
-      console.log('⏳ CourseJoin: Delaying redirect to show logs...');
-      
-      // Delay redirect to allow logs to be visible
+
       setTimeout(() => {
-        console.log('🚀 CourseJoin: Redirecting to dashboard now...');
         window.location.href = '/dashboard';
-      }, 5000); // 5 second delay to see logs
-      
+      }, 2000);
+
     } catch (error) {
       console.error('Error joining course:', error);
       if (error.message.includes('Course not found')) {
@@ -152,6 +190,30 @@ export default function CourseJoin() {
             </div>
           </div>
 
+          {/* Payment info for students without semester access */}
+          {currentUser && needsPayment() && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="flex items-start">
+                <CreditCardIcon className="h-5 w-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
+                <div className="text-sm text-amber-800">
+                  <strong>Semester access required — $49</strong>
+                  <p className="mt-1">
+                    Student access requires a one-time $49 semester fee. You'll be redirected to a secure checkout page. Promo codes can be applied at checkout.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Semester access confirmed */}
+          {currentUser && !needsPayment() && (selectedRole === 'student' || selectedRole === 'student_assistant') && hasSemesterAccess && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="text-sm text-green-800">
+                Semester access active — you're all set to join.
+              </div>
+            </div>
+          )}
+
           <div className="bg-blue-50 rounded-lg p-3">
             <div className="text-sm text-blue-800">
               <strong>Note:</strong>
@@ -168,6 +230,11 @@ export default function CourseJoin() {
           >
             {loading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : needsPayment() ? (
+              <>
+                Continue to Payment
+                <CreditCardIcon className="ml-2 h-4 w-4" />
+              </>
             ) : (
               <>
                 Join Course

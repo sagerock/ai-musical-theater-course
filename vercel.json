@@ -17,6 +17,12 @@
     },
     "api/perplexity.js": {
       "maxDuration": 60
+    },
+    "api/create-checkout-session.js": {
+      "maxDuration": 10
+    },
+    "api/stripe-webhook.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [

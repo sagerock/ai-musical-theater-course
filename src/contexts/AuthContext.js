@@ -30,6 +30,7 @@ export function AuthProvider({ children }) {
   const [userRole, setUserRole] = useState(null);
   const [isInstructorAnywhere, setIsInstructorAnywhere] = useState(false);
   const [isSchoolAdministrator, setIsSchoolAdministrator] = useState(false);
+  const [hasSemesterAccess, setHasSemesterAccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   console.log('🔥 AuthProvider render:', {
@@ -274,6 +275,30 @@ export function AuthProvider({ children }) {
     return false;
   };
 
+  // Check if user has active semester access
+  const checkSemesterAccess = (userData) => {
+    if (!userData?.semesterAccess?.semesterEndDate) return false;
+    const endDate = userData.semesterAccess.semesterEndDate?.toDate
+      ? userData.semesterAccess.semesterEndDate.toDate()
+      : new Date(userData.semesterAccess.semesterEndDate);
+    return endDate > new Date();
+  };
+
+  // Re-fetch user doc from Firestore (call after payment return)
+  const refreshUser = async () => {
+    if (!auth.currentUser) return;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setCurrentUser(prev => ({ ...prev, ...userData }));
+        setHasSemesterAccess(checkSemesterAccess(userData));
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   // Auth state change handler
   useEffect(() => {
     console.log('🔥 Setting up auth state listener');
@@ -314,6 +339,7 @@ export function AuthProvider({ children }) {
           });
 
           setCurrentUser(mappedUser);
+          setHasSemesterAccess(checkSemesterAccess(userData));
         } catch (error) {
           console.error('Error loading user data from Firestore:', error);
           // Fallback to basic user object if Firestore fails
@@ -324,6 +350,7 @@ export function AuthProvider({ children }) {
             name: user.displayName || user.email?.split('@')[0]
           };
           setCurrentUser(mappedUser);
+          setHasSemesterAccess(false);
         }
         
         // Check if this is the designated admin email and auto-promote if needed
@@ -377,6 +404,7 @@ export function AuthProvider({ children }) {
         setUserRole(null);
         setIsInstructorAnywhere(false);
         setIsSchoolAdministrator(false);
+        setHasSemesterAccess(false);
       }
       
       setLoading(false);
@@ -390,6 +418,7 @@ export function AuthProvider({ children }) {
     userRole,
     isInstructorAnywhere,
     isSchoolAdministrator,
+    hasSemesterAccess,
     loading,
     signUp,
     signIn,
@@ -398,7 +427,8 @@ export function AuthProvider({ children }) {
     logout,
     resetPassword,
     updateProfile,
-    promoteToAdmin
+    promoteToAdmin,
+    refreshUser
   };
 
   return (

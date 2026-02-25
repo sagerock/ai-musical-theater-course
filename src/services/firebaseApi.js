@@ -586,6 +586,27 @@ export const courseApi = {
     return this.addUserToCourse(userId, courseId, 'student', addedBy);
   },
 
+  // Remove student from course (convenience wrapper used by UI components)
+  async removeStudentFromCourse(studentId, courseId, instructorId) {
+    const membershipId = `${studentId}_${courseId}`;
+    console.log('🔥 removeStudentFromCourse:', { studentId, courseId, membershipId });
+    return this.removeMemberFromCourse(membershipId);
+  },
+
+  // Approve student enrollment (convenience wrapper used by UI components)
+  async approveStudentEnrollment(studentId, courseId, instructorId) {
+    const membershipId = `${studentId}_${courseId}`;
+    console.log('🔥 approveStudentEnrollment:', { studentId, courseId, membershipId });
+    return this.updateMembershipStatus(membershipId, 'approved', instructorId);
+  },
+
+  // Reject student enrollment (convenience wrapper used by UI components)
+  async rejectStudentEnrollment(studentId, courseId, instructorId) {
+    const membershipId = `${studentId}_${courseId}`;
+    console.log('🔥 rejectStudentEnrollment:', { studentId, courseId, membershipId });
+    return this.updateMembershipStatus(membershipId, 'rejected', instructorId);
+  },
+
   // Remove member from course
   async removeMemberFromCourse(membershipId) {
     console.log('🔥 removeMemberFromCourse:', membershipId);
@@ -4810,6 +4831,25 @@ export const announcementApi = {
       throw error;
     }
   }
+};
+
+// ==================== PAYMENT API ====================
+export const paymentApi = {
+  // Create a Stripe Checkout Session and return the redirect URL
+  async createCheckoutSession(userId, userEmail, courseCode) {
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, userEmail, courseCode }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to create checkout session');
+    }
+
+    return response.json();
+  },
 };
 
 console.log('🔥 Firebase API initialized');

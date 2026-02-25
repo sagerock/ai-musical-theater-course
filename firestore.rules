@@ -426,6 +426,21 @@ service cloud.firestore {
       allow list: if isAuthenticated();
     }
     
+    // PAYMENTS - Stripe payment records (written by webhook via firebase-admin, no client writes)
+    match /payments/{paymentId} {
+      // Users can read their own payments, admins can read all
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||
+        isGlobalAdmin()
+      );
+
+      // Allow collection queries for users to find their own payments and for admins
+      allow list: if isAuthenticated();
+
+      // No client writes — payments are created exclusively by the webhook via firebase-admin
+      allow create, update, delete: if false;
+    }
+
     // HELP REQUESTS - Internal user support requests
     match /helpRequests/{requestId} {
       // Authenticated users can create help requests
