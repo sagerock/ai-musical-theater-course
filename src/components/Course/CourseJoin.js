@@ -13,7 +13,7 @@ export default function CourseJoin() {
   const [loading, setLoading] = useState(false);
   const [courseInfo, setCourseInfo] = useState(null);
 
-  const { currentUser, userRole, isInstructorAnywhere, hasSemesterAccess, refreshUser } = useAuth();
+  const { currentUser, userRole, isInstructorAnywhere, isSchoolAdministrator, hasSemesterAccess, refreshUser } = useAuth();
 
   // Handle payment return URL params
   useEffect(() => {
@@ -43,6 +43,7 @@ export default function CourseJoin() {
 
   const needsPayment = () => {
     if (userRole === 'admin') return false;
+    if (isSchoolAdministrator) return false;
     if (isInstructorAnywhere) return false;
     return !hasSemesterAccess;
   };
