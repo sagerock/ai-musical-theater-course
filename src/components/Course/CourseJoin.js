@@ -5,28 +5,15 @@ import toast from 'react-hot-toast';
 import {
   AcademicCapIcon,
   ArrowRightIcon,
-  UserGroupIcon,
   CreditCardIcon
 } from '@heroicons/react/24/outline';
 
-const ROLE_OPTIONS = [
-  { value: 'student', label: 'Student', description: 'Access course materials and AI tools' },
-  { value: 'student_assistant', label: 'Student Assistant', description: 'Help manage course activities and assist other students' },
-  { value: 'teaching_assistant', label: 'Teaching Assistant', description: 'Assist with grading and course management' },
-  { value: 'instructor', label: 'Instructor', description: 'Full course management and administrative access' },
-  { value: 'school_administrator', label: 'School Administrator', description: 'Oversight and administrative access across courses' }
-];
-
-// Roles that bypass payment entirely
-const EDUCATOR_ROLES = ['instructor', 'teaching_assistant', 'school_administrator'];
-
 export default function CourseJoin() {
   const [courseCode, setCourseCode] = useState('');
-  const [selectedRole, setSelectedRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [courseInfo, setCourseInfo] = useState(null);
 
-  const { currentUser, userRole, hasSemesterAccess, refreshUser } = useAuth();
+  const { currentUser, userRole, isInstructorAnywhere, hasSemesterAccess, refreshUser } = useAuth();
 
   // Handle payment return URL params
   useEffect(() => {
@@ -54,13 +41,9 @@ export default function CourseJoin() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Check if the selected role requires payment
   const needsPayment = () => {
-    // Admins never pay
     if (userRole === 'admin') return false;
-    // Educator roles bypass payment
-    if (EDUCATOR_ROLES.includes(selectedRole)) return false;
-    // Students/student assistants need semester access
+    if (isInstructorAnywhere) return false;
     return !hasSemesterAccess;
   };
 
@@ -105,8 +88,7 @@ export default function CourseJoin() {
         return;
       }
 
-      // Join the course with selected role
-      await courseApi.joinCourse(currentUser.id, course.id, courseCode.trim().toUpperCase(), selectedRole);
+      await courseApi.joinCourse(currentUser.id, course.id, courseCode.trim().toUpperCase(), 'student');
 
       toast.success(`Successfully requested to join ${course.title}! Your request is pending instructor approval.`);
 
@@ -165,32 +147,7 @@ export default function CourseJoin() {
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              <UserGroupIcon className="inline h-4 w-4 mr-1" />
-              Your Role
-            </label>
-            <div className="space-y-3">
-              {ROLE_OPTIONS.map((role) => (
-                <label key={role.value} className="flex items-start">
-                  <input
-                    type="radio"
-                    name="role"
-                    value={role.value}
-                    checked={selectedRole === role.value}
-                    onChange={(e) => setSelectedRole(e.target.value)}
-                    className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <div className="ml-3">
-                    <div className="text-sm font-medium text-gray-900">{role.label}</div>
-                    <div className="text-xs text-gray-500">{role.description}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Payment info for students without semester access */}
+          {/* Payment info for users without semester access */}
           {currentUser && needsPayment() && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
               <div className="flex items-start">
@@ -206,7 +163,7 @@ export default function CourseJoin() {
           )}
 
           {/* Semester access confirmed */}
-          {currentUser && !needsPayment() && (selectedRole === 'student' || selectedRole === 'student_assistant') && hasSemesterAccess && (
+          {currentUser && hasSemesterAccess && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="text-sm text-green-800">
                 Semester access active — you're all set to join.
