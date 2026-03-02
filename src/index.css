@@ -11,6 +11,85 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Hero gradient mesh ── */
+.hero-mesh {
+  position: relative;
+  overflow: hidden;
+  background: #070b18;
+}
+
+.hero-mesh::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(ellipse 50% 40% at 22% 35%, rgba(56, 189, 248, 0.13), transparent),
+    radial-gradient(ellipse 40% 55% at 72% 18%, rgba(99, 102, 241, 0.18), transparent),
+    radial-gradient(ellipse 50% 35% at 52% 78%, rgba(20, 184, 166, 0.07), transparent),
+    radial-gradient(ellipse 35% 40% at 82% 62%, rgba(139, 92, 246, 0.09), transparent);
+  animation: meshDrift 25s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.hero-mesh::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+@keyframes meshDrift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(-3%, 2%) scale(1.04); }
+  66%  { transform: translate(2%, -2%) scale(1.07); }
+  100% { transform: translate(-1%, 1%) scale(1.02); }
+}
+
+/* ── Entrance animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.75s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-delay-1 { animation-delay: 0.12s; }
+.animate-delay-2 { animation-delay: 0.24s; }
+.animate-delay-3 { animation-delay: 0.38s; }
+.animate-delay-4 { animation-delay: 0.52s; }
+
+/* ── CTA mesh (bottom section) ── */
+.cta-mesh {
+  position: relative;
+  overflow: hidden;
+  background: #0a0f1e;
+}
+
+.cta-mesh::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(ellipse 55% 45% at 30% 50%, rgba(99, 102, 241, 0.12), transparent),
+    radial-gradient(ellipse 40% 50% at 75% 40%, rgba(56, 189, 248, 0.08), transparent);
+  animation: meshDrift 30s ease-in-out infinite alternate-reverse;
+  pointer-events: none;
+}
+
+.cta-mesh::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

@@ -154,29 +154,33 @@ export default function PublicHomePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="hero-mesh text-white">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <div className="animate-fade-up inline-flex items-center px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
+              <StarIcon className="h-4 w-4 text-amber-400 mr-2" />
+              <span className="text-sm font-medium text-gray-300 tracking-wide">AI Literacy Platform for Education</span>
+            </div>
+            <h1 className="animate-fade-up animate-delay-1 text-5xl md:text-6xl lg:text-7xl font-bold mb-6 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
               AI Engagement Hub
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-4xl mx-auto">
+            <p className="animate-fade-up animate-delay-2 text-lg md:text-xl mb-6 max-w-3xl mx-auto text-blue-100/80 leading-relaxed">
               The comprehensive platform for AI literacy education and intelligent student engagement analytics
             </p>
-            <p className="text-lg mb-10 max-w-2xl mx-auto opacity-90">
+            <p className="animate-fade-up animate-delay-3 text-base mb-12 max-w-2xl mx-auto text-gray-400 leading-relaxed">
               Beyond monitoring AI use, we provide complete AI literacy education with 7 curated models, specialized educational optimization, comprehensive learning resources, and advanced citation capabilities—preparing students for an AI-enhanced future.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="animate-fade-up animate-delay-4 flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => setShowInfoModal(true)}
-                className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-8 py-4 text-base font-semibold rounded-lg text-slate-900 bg-white hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-white/10"
               >
                 Get More Information
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
               </button>
               <Link
                 to="/join"
-                className="inline-flex items-center px-8 py-4 border border-white text-lg font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
+                className="inline-flex items-center px-8 py-4 text-base font-semibold rounded-lg text-white border border-white/20 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
               >
                 Join a Course
               </Link>
@@ -200,7 +204,7 @@ export default function PublicHomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+              <div key={index} className="bg-white rounded-xl border border-gray-200/80 p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div className="flex items-center mb-4">
                   <div className={`p-3 rounded-lg ${feature.color}`}>
                     <feature.icon className="h-6 w-6" />
@@ -245,26 +249,26 @@ export default function PublicHomePage() {
       </div>
 
       {/* Quote Section */}
-      <div className="bg-gray-900 text-white py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-light mb-8">
+      <div className="cta-mesh text-white py-24">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-light mb-8 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Preparing students for an AI-enhanced future—intelligently.
           </h2>
-          <p className="text-lg text-gray-300 mb-12">
-            Transform your classroom with comprehensive AI literacy education, enhanced learning resources, 
+          <p className="text-lg text-gray-400 mb-12 leading-relaxed">
+            Transform your classroom with comprehensive AI literacy education, enhanced learning resources,
             and intelligent oversight that develops essential 21st-century skills.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => setShowInfoModal(true)}
-              className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-8 py-4 text-base font-semibold rounded-lg text-slate-900 bg-white hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-white/10"
             >
               Get More Information
               <ArrowRightIcon className="ml-2 h-5 w-5" />
             </button>
             <Link
               to="/join"
-              className="inline-flex items-center px-8 py-4 border border-white text-lg font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
+              className="inline-flex items-center px-8 py-4 text-base font-semibold rounded-lg text-white border border-white/20 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
             >
               Join Existing Course
             </Link>
