@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { ShieldCheckIcon, LockClosedIcon, DocumentTextIcon, ExclamationTriangleIcon, HomeIcon, Bars3Icon, XMarkIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, LockClosedIcon, DocumentTextIcon, ExclamationTriangleIcon, HomeIcon, Bars3Icon, XMarkIcon, ChartBarIcon, StarIcon } from '@heroicons/react/24/outline';
 
 export default function PrivacyPolicy() {
   const { currentUser } = useAuth();
@@ -77,15 +77,20 @@ export default function PrivacyPolicy() {
         </div>
       </nav>
 
-      {/* Privacy Page Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center space-x-3">
-            <ShieldCheckIcon className="h-8 w-8 text-primary-500" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Privacy & Data Protection Policy</h1>
-              <p className="text-gray-600 mt-1">How we protect your data and educational content</p>
+      {/* Hero Section */}
+      <div className="hero-mesh text-white">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24">
+          <div className="text-center">
+            <div className="animate-fade-up inline-flex items-center px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
+              <StarIcon className="h-4 w-4 text-amber-400 mr-2" />
+              <span className="text-sm font-medium text-gray-300 tracking-wide">Data Protection</span>
             </div>
+            <h1 className="animate-fade-up animate-delay-1 text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Privacy & Data Protection
+            </h1>
+            <p className="animate-fade-up animate-delay-2 text-lg md:text-xl text-blue-100/80 leading-relaxed">
+              How we protect your data and educational content
+            </p>
           </div>
         </div>
       </div>

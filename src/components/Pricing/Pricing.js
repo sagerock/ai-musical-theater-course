@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { CheckIcon, ChartBarIcon, HomeIcon, AcademicCapIcon, BookOpenIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ChartBarIcon, HomeIcon, AcademicCapIcon, BookOpenIcon, SparklesIcon, StarIcon } from '@heroicons/react/24/outline';
 import InfoRequestModal from '../Home/InfoRequestModal';
 
 export default function Pricing() {
@@ -102,18 +102,24 @@ export default function Pricing() {
       </nav>
 
       {/* Hero */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl">
-            Learn to use AI well — not to outsource your thinking
-          </h1>
-          <p className="mt-5 text-xl text-gray-600 max-w-2xl mx-auto">
-            AI Engagement Hub gives students hands-on access to leading AI models with built-in analytics
-            so educators can see how students actually learn with AI.
-          </p>
-          <p className="mt-3 text-lg text-primary-600 font-medium">
-            Priced like a textbook. Buy once, use all semester in any class.
-          </p>
+      <div className="hero-mesh text-white">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24">
+          <div className="text-center">
+            <div className="animate-fade-up inline-flex items-center px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
+              <StarIcon className="h-4 w-4 text-amber-400 mr-2" />
+              <span className="text-sm font-medium text-gray-300 tracking-wide">Simple Pricing</span>
+            </div>
+            <h1 className="animate-fade-up animate-delay-1 text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Learn to use AI well — not to outsource your thinking
+            </h1>
+            <p className="animate-fade-up animate-delay-2 text-lg md:text-xl mb-4 max-w-2xl mx-auto text-blue-100/80 leading-relaxed">
+              AI Engagement Hub gives students hands-on access to leading AI models with built-in analytics
+              so educators can see how students actually learn with AI.
+            </p>
+            <p className="animate-fade-up animate-delay-3 text-lg text-amber-300/90 font-medium">
+              Priced like a textbook. Buy once, use all semester in any class.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -290,30 +296,33 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-16 text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+      </div>
+
+      {/* CTA */}
+      <div className="cta-mesh text-white py-20">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h3 className="text-2xl md:text-3xl font-bold mb-4 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Ready to enhance your classroom with AI?
           </h3>
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-lg text-gray-400 mb-8 leading-relaxed">
             Students get started for $49/semester. Educators sign up free.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/join"
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-slate-900 bg-white hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-white/10"
             >
               Join a Course
             </Link>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center px-6 py-3 border border-primary-300 text-base font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-white border border-white/20 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
             >
               Educator Sign Up
             </Link>
             <button
               onClick={() => setShowInfoModal(true)}
-              className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-white border border-white/20 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
             >
               Institutional Inquiries
             </button>

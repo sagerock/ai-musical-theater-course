@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { ChevronDownIcon, ChevronUpIcon, ChartBarIcon, HomeIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, ChartBarIcon, HomeIcon, StarIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import InfoRequestModal from '../Home/InfoRequestModal';
 
 export default function FAQ() {
@@ -222,12 +222,18 @@ export default function FAQ() {
         </div>
       </nav>
 
-      {/* Page Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Hero Section */}
+      <div className="hero-mesh text-white">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900">Frequently Asked Questions</h1>
-            <p className="mt-4 text-xl text-gray-600">
+            <div className="animate-fade-up inline-flex items-center px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
+              <StarIcon className="h-4 w-4 text-amber-400 mr-2" />
+              <span className="text-sm font-medium text-gray-300 tracking-wide">Common Questions</span>
+            </div>
+            <h1 className="animate-fade-up animate-delay-1 text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Frequently Asked Questions
+            </h1>
+            <p className="animate-fade-up animate-delay-2 text-lg md:text-xl text-blue-100/80 leading-relaxed">
               Everything you need to know about AI Engagement Hub
             </p>
           </div>
@@ -265,39 +271,42 @@ export default function FAQ() {
           ))}
         </div>
 
-        {/* Still Have Questions */}
-        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-          <h2 className="text-2xl font-semibold text-blue-900 mb-4">
+      </div>
+
+      {/* Still Have Questions */}
+      <div className="cta-mesh text-white py-20">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Still have questions?
           </h2>
-          <p className="text-blue-800 mb-6">
+          <p className="text-gray-400 mb-8 leading-relaxed">
             We're here to help! Reach out to our support team for personalized assistance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => setShowInfoModal(true)}
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-slate-900 bg-white hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-white/10"
             >
               Contact Support
             </button>
             <Link
               to="/pricing"
-              className="inline-flex items-center justify-center px-6 py-3 border border-blue-600 text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-white border border-white/20 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
             >
               View Pricing
             </Link>
           </div>
         </div>
+      </div>
 
-        {/* Back to Home */}
-        <div className="mt-8 text-center">
-          <Link
-            to="/"
-            className="text-gray-600 hover:text-gray-900"
-          >
-            ← Back to Home
-          </Link>
-        </div>
+      {/* Back to Home */}
+      <div className="bg-gray-50 py-8 text-center">
+        <Link
+          to="/"
+          className="text-gray-600 hover:text-gray-900"
+        >
+          &larr; Back to Home
+        </Link>
       </div>
       
       {/* Info Request Modal */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { ChartBarIcon, HomeIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, HomeIcon, ArrowRightIcon, StarIcon } from '@heroicons/react/24/outline';
 import InfoRequestModal from '../Home/InfoRequestModal';
 
 export default function Philosophy() {
@@ -132,13 +132,17 @@ export default function Philosophy() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="hero-mesh text-white">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-28">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <div className="animate-fade-up inline-flex items-center px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm mb-8">
+              <StarIcon className="h-4 w-4 text-amber-400 mr-2" />
+              <span className="text-sm font-medium text-gray-300 tracking-wide">Educational Philosophy</span>
+            </div>
+            <h1 className="animate-fade-up animate-delay-1 text-5xl md:text-6xl lg:text-7xl font-bold mb-6 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
               Our Philosophy
             </h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto opacity-95">
+            <p className="animate-fade-up animate-delay-2 text-lg md:text-xl max-w-3xl mx-auto text-blue-100/80 leading-relaxed">
               AI has become the smartest in the room. Education must become something greater.
             </p>
           </div>
@@ -176,7 +180,7 @@ export default function Philosophy() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {humanCapacities.map((capacity) => (
-              <div key={capacity.name} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div key={capacity.name} className="bg-white rounded-lg border border-gray-200/80 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{capacity.name}</h3>
                 <p className="text-gray-600 leading-relaxed">{capacity.description}</p>
               </div>
@@ -347,27 +351,27 @@ export default function Philosophy() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gray-900 text-white py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-6">Join the Movement</h2>
-          <p className="text-lg text-gray-300 mb-4 max-w-2xl mx-auto">
+      <div className="cta-mesh text-white py-24">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold mb-6 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>Join the Movement</h2>
+          <p className="text-lg text-gray-400 mb-4 max-w-2xl mx-auto leading-relaxed">
             Education is transforming. The question isn't whether AI will change how we teach and
             learn — it's whether we'll shape that change with intention, or let it happen to us.
           </p>
-          <p className="text-xl font-medium mb-10">
+          <p className="text-xl font-medium text-blue-100/90 mb-10">
             We choose intention.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => setShowInfoModal(true)}
-              className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-gray-900 bg-white hover:bg-gray-50"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-slate-900 bg-white hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-white/10"
             >
               Get More Information
               <ArrowRightIcon className="ml-2 h-5 w-5" />
             </button>
             <Link
               to="/join"
-              className="inline-flex items-center justify-center px-8 py-4 border border-white text-lg font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-lg text-white border border-white/20 hover:bg-white/10 backdrop-blur-sm transition-all duration-200"
             >
               Join a Course
             </Link>
