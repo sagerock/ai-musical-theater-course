@@ -12,6 +12,7 @@ import {
   PlayCircleIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
+import MarkdownRenderer from '../Chat/MarkdownRenderer';
 
 const audienceLabels = {
   student: 'Students',
@@ -203,10 +204,8 @@ export default function TutorialDetail() {
                   <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-2" />
                   <h2 className="text-xl font-semibold text-gray-900">Transcript</h2>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    {tutorial.transcript}
-                  </p>
+                <div className="bg-white rounded-lg border border-gray-200 p-6 prose-headings:mt-4 prose-headings:mb-2">
+                  <MarkdownRenderer>{tutorial.transcript}</MarkdownRenderer>
                 </div>
               </div>
             )}
