@@ -29,6 +29,8 @@ import FAQ from './components/FAQ/FAQ';
 import Philosophy from './components/Philosophy/Philosophy';
 import SettingsPage from './components/Settings/SettingsPage';
 import Help from './components/Help/Help';
+import Tutorials from './components/Tutorials/Tutorials';
+import TutorialDetail from './components/Tutorials/TutorialDetail';
 import TestDirectQuery from './components/TestDirectQuery';
 import EmailServerTest from './components/Testing/EmailServerTest';
 import AIDiagnostics from './components/Diagnostics/AIDiagnostics';
@@ -91,6 +93,8 @@ function App() {
           <Route path="/help" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Help />} />
           </Route>
+          <Route path="/tutorials" element={<Tutorials />} />
+          <Route path="/tutorials/:slug" element={<TutorialDetail />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/faq" element={<FAQ />} />

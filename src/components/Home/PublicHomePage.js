@@ -125,6 +125,12 @@ export default function PublicHomePage() {
                 FAQ
               </Link>
               <Link
+                to="/tutorials"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Tutorials
+              </Link>
+              <Link
                 to="/privacy"
                 className="text-gray-600 hover:text-gray-900 font-medium"
               >
@@ -292,6 +298,9 @@ export default function PublicHomePage() {
               </Link>
               <Link to="/login" className="text-gray-600 hover:text-gray-900">
                 Sign In
+              </Link>
+              <Link to="/tutorials" className="text-gray-600 hover:text-gray-900">
+                Tutorials
               </Link>
               <Link to="/pricing" className="text-gray-600 hover:text-gray-900">
                 Pricing

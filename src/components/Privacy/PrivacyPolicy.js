@@ -53,6 +53,12 @@ export default function PrivacyPolicy() {
                     FAQ
                   </Link>
                   <Link
+                    to="/tutorials"
+                    className="text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    Tutorials
+                  </Link>
+                  <Link
                     to="/pricing"
                     className="text-gray-600 hover:text-gray-900 font-medium"
                   >

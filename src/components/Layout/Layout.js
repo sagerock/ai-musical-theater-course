@@ -17,7 +17,8 @@ import {
   DocumentTextIcon,
   QuestionMarkCircleIcon,
   BookOpenIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  PlayCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
@@ -77,6 +78,7 @@ export default function Layout() {
       ? [{ name: 'Admin Panel', href: '/admin', icon: CogIcon }] 
       : []),
     { name: 'Settings', href: '/settings', icon: CogIcon },
+    { name: 'Tutorials', href: '/tutorials', icon: PlayCircleIcon },
     { name: 'Help', href: '/help', icon: QuestionMarkCircleIcon }
   ];
 
