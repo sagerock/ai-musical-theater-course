@@ -19,6 +19,14 @@ const audienceLabels = {
   admin: 'Admins',
 };
 
+function getYouTubeThumbnail(videoUrl) {
+  if (!videoUrl) return null;
+  // Match youtube.com/embed/ID, youtube.com/watch?v=ID, youtu.be/ID
+  const match = videoUrl.match(/(?:embed\/|watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (!match) return null;
+  return `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`;
+}
+
 export default function Tutorials() {
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -228,11 +236,18 @@ export default function Tutorials() {
                           to={`/tutorials/${tutorial.slug}`}
                           className="group bg-white rounded-xl border border-gray-200/80 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                         >
-                          {/* Video thumbnail placeholder */}
-                          <div className="relative aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                            <PlayCircleIcon className="h-16 w-16 text-white/40 group-hover:text-white/70 group-hover:scale-110 transition-all duration-300" />
+                          {/* Video thumbnail */}
+                          <div className="relative aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center overflow-hidden">
+                            {getYouTubeThumbnail(tutorial.videoUrl) ? (
+                              <img
+                                src={getYouTubeThumbnail(tutorial.videoUrl)}
+                                alt={tutorial.title}
+                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : null}
+                            <PlayCircleIcon className="relative z-10 h-16 w-16 text-white/70 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />
                             {tutorial.duration && (
-                              <div className="absolute bottom-2 right-2 flex items-center bg-black/60 text-white text-xs px-2 py-1 rounded">
+                              <div className="absolute bottom-2 right-2 z-10 flex items-center bg-black/70 text-white text-xs px-2 py-1 rounded">
                                 <ClockIcon className="h-3 w-3 mr-1" />
                                 {tutorial.duration}
                               </div>
