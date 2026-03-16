@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import tutorials, { audienceLabels } from '../../data/tutorials';
+import { tutorialApi } from '../../services/firebaseApi';
 import Footer from '../Layout/Footer';
 import {
   ChartBarIcon,
@@ -13,28 +13,73 @@ import {
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
+const audienceLabels = {
+  student: 'Students',
+  instructor: 'Instructors',
+  admin: 'Admins',
+};
+
 export default function TutorialDetail() {
   const { slug } = useParams();
   const { currentUser } = useAuth();
+  const [tutorial, setTutorial] = useState(null);
+  const [allTutorials, setAllTutorials] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    setLoading(true);
+
+    Promise.all([
+      tutorialApi.getTutorialBySlug(slug),
+      tutorialApi.getPublishedTutorials(),
+    ])
+      .then(([t, all]) => {
+        setTutorial(t);
+        setAllTutorials(all);
+      })
+      .catch(err => console.error('Error loading tutorial:', err))
+      .finally(() => setLoading(false));
   }, [slug]);
 
-  const index = tutorials.findIndex(t => t.slug === slug);
-  const tutorial = tutorials[index];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <nav className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center h-16">
+              <Link to={currentUser ? "/dashboard" : "/"} className="flex items-center">
+                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <ChartBarIcon className="h-5 w-5 text-white" />
+                </div>
+                <span className="ml-3 text-lg font-bold text-gray-900">AI Engagement Hub</span>
+              </Link>
+            </div>
+          </div>
+        </nav>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/2" />
+            <div className="aspect-video bg-gray-200 rounded-xl" />
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-full" />
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!tutorial) {
     return <Navigate to="/tutorials" replace />;
   }
 
-  // Prev/next within the full ordered list
-  const prev = index > 0 ? tutorials[index - 1] : null;
-  const next = index < tutorials.length - 1 ? tutorials[index + 1] : null;
-
-  // Related tutorials in the same category (excluding current)
-  const related = tutorials
-    .filter(t => t.category === tutorial.category && t.slug !== tutorial.slug)
+  const index = allTutorials.findIndex(t => t.slug === slug);
+  const prev = index > 0 ? allTutorials[index - 1] : null;
+  const next = index < allTutorials.length - 1 ? allTutorials[index + 1] : null;
+  const related = allTutorials
+    .filter(t => t.category === tutorial.category && t.slug !== slug)
     .slice(0, 3);
 
   return (
@@ -103,7 +148,7 @@ export default function TutorialDetail() {
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                   {tutorial.category}
                 </span>
-                {tutorial.audience.map(a => (
+                {(tutorial.audience || []).map(a => (
                   <span
                     key={a}
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -115,10 +160,12 @@ export default function TutorialDetail() {
                     {audienceLabels[a]}
                   </span>
                 ))}
-                <span className="inline-flex items-center text-xs text-gray-500">
-                  <ClockIcon className="h-3.5 w-3.5 mr-1" />
-                  {tutorial.duration}
-                </span>
+                {tutorial.duration && (
+                  <span className="inline-flex items-center text-xs text-gray-500">
+                    <ClockIcon className="h-3.5 w-3.5 mr-1" />
+                    {tutorial.duration}
+                  </span>
+                )}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
                 {tutorial.title}

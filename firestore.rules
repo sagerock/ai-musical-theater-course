@@ -561,5 +561,12 @@ service cloud.firestore {
         isGlobalAdmin()
       );
     }
+
+    // ==================== TUTORIALS ====================
+    // Public-facing tutorials - anyone can read published, only admins can manage
+    match /tutorials/{tutorialId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated() && isGlobalAdmin();
+    }
   }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import tutorials, { categories, audienceLabels } from '../../data/tutorials';
+import { tutorialApi } from '../../services/firebaseApi';
 import Footer from '../Layout/Footer';
 import {
   ChartBarIcon,
@@ -13,18 +13,32 @@ import {
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
 
+const audienceLabels = {
+  student: 'Students',
+  instructor: 'Instructors',
+  admin: 'Admins',
+};
+
 export default function Tutorials() {
+  const [tutorials, setTutorials] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeAudience, setActiveAudience] = useState('All');
   const { currentUser } = useAuth();
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    tutorialApi.getPublishedTutorials()
+      .then(data => setTutorials(data))
+      .catch(err => console.error('Error loading tutorials:', err))
+      .finally(() => setLoading(false));
   }, []);
+
+  const categories = [...new Set(tutorials.map(t => t.category).filter(Boolean))];
 
   const filtered = tutorials
     .filter(t => activeCategory === 'All' || t.category === activeCategory)
-    .filter(t => activeAudience === 'All' || t.audience.includes(activeAudience))
+    .filter(t => activeAudience === 'All' || (t.audience || []).includes(activeAudience))
     .sort((a, b) => a.order - b.order);
 
   // Group filtered tutorials by category
@@ -97,136 +111,166 @@ export default function Tutorials() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {/* Category filter */}
-          <div className="flex items-center gap-2">
-            <FunnelIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setActiveCategory('All')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                  activeCategory === 'All'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                All Topics
-              </button>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                    activeCategory === cat
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Audience filter */}
-          <div className="flex items-center gap-2 sm:ml-auto">
-            <UserGroupIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveAudience('All')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                  activeAudience === 'All'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                Everyone
-              </button>
-              {Object.entries(audienceLabels).map(([key, label]) => (
-                key !== 'admin' && (
-                  <button
-                    key={key}
-                    onClick={() => setActiveAudience(key)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                      activeAudience === key
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                )
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tutorial Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        {Object.keys(grouped).length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-gray-500 text-lg">No tutorials match your filters.</p>
-            <button
-              onClick={() => { setActiveCategory('All'); setActiveAudience('All'); }}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-12">
-            {Object.entries(grouped).map(([category, items]) => (
-              <div key={category}>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">{category}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {items.map(tutorial => (
-                    <Link
-                      key={tutorial.slug}
-                      to={`/tutorials/${tutorial.slug}`}
-                      className="group bg-white rounded-xl border border-gray-200/80 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                    >
-                      {/* Video thumbnail placeholder */}
-                      <div className="relative aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                        <PlayCircleIcon className="h-16 w-16 text-white/40 group-hover:text-white/70 group-hover:scale-110 transition-all duration-300" />
-                        <div className="absolute bottom-2 right-2 flex items-center bg-black/60 text-white text-xs px-2 py-1 rounded">
-                          <ClockIcon className="h-3 w-3 mr-1" />
-                          {tutorial.duration}
-                        </div>
-                      </div>
-                      {/* Card body */}
-                      <div className="p-5">
-                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
-                          {tutorial.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm leading-relaxed mb-3">
-                          {tutorial.description}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {tutorial.audience.map(a => (
-                            <span
-                              key={a}
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                a === 'instructor'
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-blue-100 text-blue-700'
-                              }`}
-                            >
-                              {audienceLabels[a]}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+      {/* Loading state */}
+      {loading ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-200/80 overflow-hidden animate-pulse">
+                <div className="aspect-video bg-gray-200" />
+                <div className="p-5 space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-3/4" />
+                  <div className="h-4 bg-gray-200 rounded w-full" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          {/* Filters */}
+          {tutorials.length > 0 && (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                {/* Category filter */}
+                <div className="flex items-center gap-2">
+                  <FunnelIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setActiveCategory('All')}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                        activeCategory === 'All'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      All Topics
+                    </button>
+                    {categories.map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                          activeCategory === cat
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Audience filter */}
+                <div className="flex items-center gap-2 sm:ml-auto">
+                  <UserGroupIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setActiveAudience('All')}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                        activeAudience === 'All'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      Everyone
+                    </button>
+                    {Object.entries(audienceLabels).map(([key, label]) => (
+                      key !== 'admin' && (
+                        <button
+                          key={key}
+                          onClick={() => setActiveAudience(key)}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                            activeAudience === key
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      )
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tutorial Grid */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            {tutorials.length === 0 ? (
+              <div className="text-center py-16">
+                <PlayCircleIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">Tutorials coming soon!</p>
+                <p className="text-gray-400 text-sm mt-2">Check back for video guides on using AI Engagement Hub.</p>
+              </div>
+            ) : Object.keys(grouped).length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-gray-500 text-lg">No tutorials match your filters.</p>
+                <button
+                  onClick={() => { setActiveCategory('All'); setActiveAudience('All'); }}
+                  className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-12">
+                {Object.entries(grouped).map(([category, items]) => (
+                  <div key={category}>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">{category}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {items.map(tutorial => (
+                        <Link
+                          key={tutorial.slug}
+                          to={`/tutorials/${tutorial.slug}`}
+                          className="group bg-white rounded-xl border border-gray-200/80 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                        >
+                          {/* Video thumbnail placeholder */}
+                          <div className="relative aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                            <PlayCircleIcon className="h-16 w-16 text-white/40 group-hover:text-white/70 group-hover:scale-110 transition-all duration-300" />
+                            {tutorial.duration && (
+                              <div className="absolute bottom-2 right-2 flex items-center bg-black/60 text-white text-xs px-2 py-1 rounded">
+                                <ClockIcon className="h-3 w-3 mr-1" />
+                                {tutorial.duration}
+                              </div>
+                            )}
+                          </div>
+                          {/* Card body */}
+                          <div className="p-5">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
+                              {tutorial.title}
+                            </h3>
+                            <p className="text-gray-600 text-sm leading-relaxed mb-3">
+                              {tutorial.description}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(tutorial.audience || []).map(a => (
+                                <span
+                                  key={a}
+                                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                    a === 'instructor'
+                                      ? 'bg-purple-100 text-purple-700'
+                                      : 'bg-blue-100 text-blue-700'
+                                  }`}
+                                >
+                                  {audienceLabels[a]}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* CTA Section */}
       <div className="cta-mesh text-white py-20">

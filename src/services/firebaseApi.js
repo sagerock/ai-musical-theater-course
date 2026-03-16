@@ -4852,4 +4852,177 @@ export const paymentApi = {
   },
 };
 
+// ==================== TUTORIAL API ====================
+
+// Tutorials cache (separate from dataCache to avoid coupling)
+const tutorialsCache = {
+  published: null,
+  publishedAt: 0,
+  bySlug: new Map(),
+  TTL: 5 * 60 * 1000, // 5 minutes
+
+  isValid(key) {
+    if (key === 'published') {
+      return this.published && (Date.now() - this.publishedAt < this.TTL);
+    }
+    const entry = this.bySlug.get(key);
+    return entry && (Date.now() - entry.at < this.TTL);
+  },
+
+  clear() {
+    this.published = null;
+    this.publishedAt = 0;
+    this.bySlug.clear();
+  }
+};
+
+export const tutorialApi = {
+  // Public: get all published tutorials, ordered by `order`
+  async getPublishedTutorials() {
+    if (tutorialsCache.isValid('published')) {
+      return tutorialsCache.published;
+    }
+
+    const q = query(
+      collection(db, 'tutorials'),
+      where('published', '==', true),
+      orderBy('order', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    tutorialsCache.published = results;
+    tutorialsCache.publishedAt = Date.now();
+    return results;
+  },
+
+  // Public: get a single published tutorial by slug
+  async getTutorialBySlug(slug) {
+    if (tutorialsCache.isValid(slug)) {
+      return tutorialsCache.bySlug.get(slug).data;
+    }
+
+    const q = query(
+      collection(db, 'tutorials'),
+      where('slug', '==', slug),
+      where('published', '==', true),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+
+    const result = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+    tutorialsCache.bySlug.set(slug, { data: result, at: Date.now() });
+    return result;
+  },
+
+  // Admin: get ALL tutorials (including drafts)
+  async getAllTutorials() {
+    const q = query(
+      collection(db, 'tutorials'),
+      orderBy('order', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+
+  // Admin: get a tutorial by Firestore document ID
+  async getTutorialById(id) {
+    const docRef = doc(db, 'tutorials', id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+    return { id: docSnap.id, ...docSnap.data() };
+  },
+
+  // Admin: create a new tutorial
+  async createTutorial(data) {
+    // Check slug uniqueness
+    const existing = query(
+      collection(db, 'tutorials'),
+      where('slug', '==', data.slug),
+      limit(1)
+    );
+    const check = await getDocs(existing);
+    if (!check.empty) {
+      throw new Error(`A tutorial with slug "${data.slug}" already exists.`);
+    }
+
+    const docRef = await addDoc(collection(db, 'tutorials'), {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    tutorialsCache.clear();
+    return docRef.id;
+  },
+
+  // Admin: update an existing tutorial
+  async updateTutorial(id, data) {
+    // If slug changed, check uniqueness
+    if (data.slug) {
+      const existing = query(
+        collection(db, 'tutorials'),
+        where('slug', '==', data.slug),
+        limit(1)
+      );
+      const check = await getDocs(existing);
+      if (!check.empty && check.docs[0].id !== id) {
+        throw new Error(`A tutorial with slug "${data.slug}" already exists.`);
+      }
+    }
+
+    const docRef = doc(db, 'tutorials', id);
+    await updateDoc(docRef, {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+    tutorialsCache.clear();
+  },
+
+  // Admin: delete a tutorial
+  async deleteTutorial(id) {
+    await deleteDoc(doc(db, 'tutorials', id));
+    tutorialsCache.clear();
+  },
+
+  // Admin: reorder tutorials — accepts [{ id, order }]
+  async reorderTutorials(orderedItems) {
+    const batch = writeBatch(db);
+    orderedItems.forEach(({ id: tutId, order: newOrder }) => {
+      batch.update(doc(db, 'tutorials', tutId), { order: newOrder, updatedAt: serverTimestamp() });
+    });
+    await batch.commit();
+    tutorialsCache.clear();
+  },
+
+  // Admin: seed tutorials from static data (one-time migration)
+  async seedFromStaticData(tutorialsData) {
+    const existing = await getDocs(collection(db, 'tutorials'));
+    if (!existing.empty) {
+      throw new Error('Tutorials collection is not empty. Seed aborted.');
+    }
+
+    const batch = writeBatch(db);
+    tutorialsData.forEach(t => {
+      const docRef = doc(collection(db, 'tutorials'));
+      batch.set(docRef, {
+        slug: t.slug,
+        title: t.title,
+        description: t.description,
+        category: t.category,
+        audience: t.audience,
+        videoUrl: t.videoUrl || '',
+        transcript: t.transcript || '',
+        duration: t.duration || '',
+        order: t.order,
+        published: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    });
+    await batch.commit();
+    tutorialsCache.clear();
+  },
+};
+
 console.log('🔥 Firebase API initialized');
