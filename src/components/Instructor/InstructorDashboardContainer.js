@@ -325,11 +325,98 @@ export default function InstructorDashboardContainer() {
       <div className="p-6">
         <div className="text-center py-12">
           <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No Courses Found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            You do not have teaching permissions in any courses.
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No Courses Yet</h3>
+          <p className="mt-1 text-sm text-gray-500 mb-6">
+            Create your first course to get started.
           </p>
+          <button
+            onClick={() => setShowCreateCourseModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Course
+          </button>
         </div>
+
+        {/* Create Course Modal */}
+        {showCreateCourseModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4">
+              <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowCreateCourseModal(false)}></div>
+              <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Course</h3>
+
+                <form onSubmit={handleCreateCourse} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Course Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={newCourse.name}
+                      onChange={(e) => setNewCourse(prev => ({ ...prev, name: e.target.value }))}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      placeholder="e.g., Introduction to AI"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                    <textarea
+                      value={newCourse.description}
+                      onChange={(e) => setNewCourse(prev => ({ ...prev, description: e.target.value }))}
+                      rows={3}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      placeholder="Brief course description..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Semester</label>
+                      <select
+                        value={newCourse.semester}
+                        onChange={(e) => setNewCourse(prev => ({ ...prev, semester: e.target.value }))}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      >
+                        <option value="Spring">Spring</option>
+                        <option value="Summer">Summer</option>
+                        <option value="Fall">Fall</option>
+                        <option value="Winter">Winter</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Year</label>
+                      <input
+                        type="number"
+                        value={newCourse.year}
+                        onChange={(e) => setNewCourse(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                        min={new Date().getFullYear() - 5}
+                        max={new Date().getFullYear() + 5}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateCourseModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    >
+                      Create Course
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
