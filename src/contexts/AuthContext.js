@@ -389,7 +389,7 @@ export function AuthProvider({ children }) {
           ]);
           
           setUserRole(role);
-          setIsInstructorAnywhere(isInstructor);
+          setIsInstructorAnywhere(isInstructor || role === 'instructor' || role === 'admin');
           setIsSchoolAdministrator(role === 'school_administrator');
           
           console.log('✅ User data loaded:', { role, isInstructor, isSchoolAdmin: role === 'school_administrator' });
