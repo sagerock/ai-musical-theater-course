@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   EnvelopeIcon,
   QuestionMarkCircleIcon,
@@ -6,7 +7,10 @@ import {
   ChatBubbleLeftRightIcon,
   UserGroupIcon,
   ExclamationCircleIcon,
-  LightBulbIcon
+  LightBulbIcon,
+  PlayCircleIcon,
+  RocketLaunchIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 import HelpRequestModal from './HelpRequestModal';
 import FlowiseChatbot from './FlowiseChatbot';
@@ -26,6 +30,152 @@ export default function Help() {
 
       {/* AI Help Assistant */}
       <FlowiseChatbot />
+
+      {/* Video Tutorials Banner */}
+      <Link
+        to="/tutorials"
+        className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6 mb-8 hover:shadow-md transition-shadow group"
+      >
+        <div className="flex items-center">
+          <PlayCircleIcon className="h-8 w-8 text-indigo-600 mr-4 flex-shrink-0" />
+          <div>
+            <h2 className="text-lg font-semibold text-indigo-900">Video Tutorials</h2>
+            <p className="text-indigo-700 text-sm">Watch short, focused videos covering everything from account setup to advanced features.</p>
+          </div>
+        </div>
+        <span className="text-indigo-600 font-medium text-sm group-hover:translate-x-1 transition-transform whitespace-nowrap ml-4">
+          Browse Tutorials &rarr;
+        </span>
+      </Link>
+
+      {/* How-To Guides */}
+      <div className="space-y-6 mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">How-To Guides</h2>
+
+        {/* Instructor: Getting Started */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center mb-4">
+            <RocketLaunchIcon className="h-5 w-5 text-purple-600 mr-3" />
+            <h3 className="text-lg font-semibold text-gray-900">Instructor: Register & Get Started</h3>
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">1. Create your account</h4>
+              <p className="text-gray-600">
+                Go to the login page and click <strong>"Don't have an account? Sign up"</strong>.
+                Enter your full name, email, and a password (6+ characters). After signing up you'll land on your Dashboard.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">2. Get promoted to Instructor</h4>
+              <p className="text-gray-600">
+                All new accounts start with the <strong>Student</strong> role. To become an instructor, a platform
+                <strong> Admin</strong> must promote your account to the Instructor role. Contact your institution's
+                admin or reach out to our support team to request instructor access.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">3. Create your first course</h4>
+              <p className="text-gray-600">
+                From the Instructor Dashboard, click <strong>"Create Course"</strong>. Fill in the course name,
+                an optional description, semester, and year. A unique course code (e.g. <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">INTSP25042</code>) is
+                generated automatically, and you're added as the instructor.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">4. Share your course code with students</h4>
+              <p className="text-gray-600">
+                Your course code is displayed on the Instructor Dashboard header. Share it with students — they'll
+                enter it on the <strong>Join Course</strong> page. You can also add students directly from the
+                <strong> Students</strong> tab by searching their email address.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">5. Approve student enrollments</h4>
+              <p className="text-gray-600">
+                When students join via the course code, their enrollment starts as <strong>pending</strong>.
+                You'll receive an email notification for each request. Go to the <strong>Overview</strong> tab
+                to see pending approvals and click <strong>Approve</strong> or <strong>Reject</strong> for
+                each request. Students receive an email confirmation either way.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">6. Explore your Instructor Dashboard</h4>
+              <p className="text-gray-600 mb-2">
+                Once students are approved and start using AI, their activity appears in real time. Key tabs:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1 ml-4">
+                <li><strong>Overview</strong> — course stats (total chats, projects, reflection rate) and pending approvals</li>
+                <li><strong>Student Activity</strong> — filter and view AI interactions by student, date, or model</li>
+                <li><strong>Students</strong> — manage enrollments, view per-student stats, change roles</li>
+                <li><strong>Messaging</strong> — communicate with your students</li>
+                <li><strong>Files</strong> — manage PDF attachments for the course</li>
+                <li><strong>Course Settings</strong> — manage tags and configuration</li>
+                <li><strong>Export Data</strong> — download course data as CSV</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Student: Getting Started */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center mb-4">
+            <BookOpenIcon className="h-5 w-5 text-blue-600 mr-3" />
+            <h3 className="text-lg font-semibold text-gray-900">Student: Register & Get Started</h3>
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">1. Create your account</h4>
+              <p className="text-gray-600">
+                Go to the login page and click <strong>"Don't have an account? Sign up"</strong>.
+                Enter your name, email, and a password. You'll be taken to your Dashboard.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">2. Join your course</h4>
+              <p className="text-gray-600">
+                Click <strong>"Join Course"</strong> from the sidebar or dashboard and enter the course code
+                your instructor gave you. Your enrollment request will be sent to your instructor for approval.
+                You'll receive an email once you've been approved.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">3. Create a project</h4>
+              <p className="text-gray-600">
+                Once approved, go to your course and click <strong>"Projects"</strong>, then <strong>"New Project"</strong>.
+                Give it a title and description. Projects are where all of your AI conversations live.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">4. Start chatting with AI</h4>
+              <p className="text-gray-600">
+                Open your project and type a message to start a conversation. Use the <strong>model selector</strong> dropdown
+                to switch between AI models (GPT, Claude, Gemini, Perplexity). You can attach PDFs using the paperclip icon,
+                and switch models mid-conversation.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">5. Tag and reflect</h4>
+              <p className="text-gray-600">
+                After a conversation, use <strong>tags</strong> to organize your chats by topic or assignment.
+                Add <strong>reflections</strong> to document what you learned and how you plan to apply it.
+                Both help you stay organized and show your instructor you're engaging thoughtfully with AI.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Contact Support */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">

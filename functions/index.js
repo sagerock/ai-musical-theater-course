@@ -1,5 +1,5 @@
 const {onCall, HttpsError} = require('firebase-functions/v2/https');
-const {onDocumentWritten} = require('firebase-functions/v2/firestore');
+const {onDocumentWritten, onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {logger} = require('firebase-functions');
 const admin = require('firebase-admin');
 const sgMail = require('@sendgrid/mail');
@@ -1558,4 +1558,320 @@ exports.sendEmail = onCall({
 
     throw new HttpsError('internal', 'Failed to send email: ' + error.message);
   }
+});
+
+/**
+ * Cloud Function to send notification when a user's global role is changed.
+ * Primarily used when an admin promotes a user to Instructor.
+ */
+exports.sendGlobalRoleChangeEmail = onCall({
+  enforceAppCheck: false,
+}, async (request) => {
+  const {userId, oldRole, newRole, changedBy} = request.data;
+  const callerUid = request.auth?.uid;
+
+  logger.info('📧 sendGlobalRoleChangeEmail called', {userId, oldRole, newRole, changedBy, callerUid});
+
+  if (!userId || !oldRole || !newRole) {
+    throw new HttpsError('invalid-argument', 'userId, oldRole, and newRole are required');
+  }
+
+  if (!callerUid) {
+    throw new HttpsError('unauthenticated', 'Must be authenticated to send notifications');
+  }
+
+  // Only admins can change global roles
+  const callerDoc = await db.collection('users').doc(callerUid).get();
+  if (!callerDoc.exists || callerDoc.data().role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Only admins can change global roles');
+  }
+
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      throw new HttpsError('not-found', 'User not found');
+    }
+
+    const user = userDoc.data();
+    const userName = user.name || user.email?.split('@')[0] || 'there';
+    const userEmail = user.email;
+
+    if (!userEmail) {
+      throw new HttpsError('failed-precondition', 'User has no email address');
+    }
+
+    if (!SENDGRID_API_KEY) {
+      throw new HttpsError('failed-precondition', 'Email service not configured');
+    }
+
+    const getRoleDisplayName = (role) => {
+      const labels = {
+        'student': 'Student',
+        'student_assistant': 'Student Assistant',
+        'teaching_assistant': 'Teaching Assistant',
+        'instructor': 'Instructor',
+        'school_administrator': 'School Administrator',
+        'admin': 'Admin',
+      };
+      return labels[role] || role;
+    };
+
+    const newRoleDisplay = getRoleDisplayName(newRole);
+    const oldRoleDisplay = getRoleDisplayName(oldRole);
+    const isPromotion = ['instructor', 'school_administrator', 'admin'].includes(newRole);
+
+    let instructorBlock = '';
+    let instructorBlockText = '';
+    if (newRole === 'instructor') {
+      instructorBlock = `
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+          <h3 style="margin-top: 0; color: #166534;">What You Can Do Now</h3>
+          <ul style="padding-left: 20px; color: #15803d;">
+            <li>Create courses from the <strong>Instructor Dashboard</strong></li>
+            <li>Generate course codes and invite students</li>
+            <li>Monitor student AI interactions in real time</li>
+            <li>Approve student enrollments</li>
+            <li>View analytics and export data</li>
+          </ul>
+        </div>
+      `;
+      instructorBlockText = `
+What You Can Do Now:
+- Create courses from the Instructor Dashboard
+- Generate course codes and invite students
+- Monitor student AI interactions in real time
+- Approve student enrollments
+- View analytics and export data
+      `;
+    }
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Your Role Has Been Updated</h2>
+        <p>Hello ${userName},</p>
+        <p>Your account role on AI Engagement Hub has been updated${changedBy ? ` by ${changedBy}` : ''}.</p>
+
+        <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Previous Role:</strong> ${oldRoleDisplay}</p>
+          <p><strong>New Role:</strong> ${newRoleDisplay}</p>
+        </div>
+
+        ${instructorBlock}
+
+        <p><a href="https://ai-engagement-hub.com/dashboard" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Go to Your Dashboard</a></p>
+
+        <p>If you have any questions about your new role, visit our <a href="https://ai-engagement-hub.com/help" style="color: #2563eb;">Help & Support</a> page or check out our <a href="https://ai-engagement-hub.com/tutorials" style="color: #2563eb;">Video Tutorials</a>.</p>
+
+        <p>Best regards,<br>AI Engagement Hub</p>
+      </div>
+    `;
+
+    const textContent = `
+Your Role Has Been Updated
+
+Hello ${userName},
+
+Your account role on AI Engagement Hub has been updated${changedBy ? ` by ${changedBy}` : ''}.
+
+Previous Role: ${oldRoleDisplay}
+New Role: ${newRoleDisplay}
+${instructorBlockText}
+Go to your dashboard: https://ai-engagement-hub.com/dashboard
+
+If you have any questions, visit our Help page at https://ai-engagement-hub.com/help
+or check out our Video Tutorials at https://ai-engagement-hub.com/tutorials
+
+Best regards,
+AI Engagement Hub
+    `;
+
+    await sgMail.send({
+      to: userEmail,
+      from: {email: SENDGRID_FROM_EMAIL, name: 'AI Engagement Hub'},
+      subject: isPromotion
+        ? `You've been promoted to ${newRoleDisplay} on AI Engagement Hub!`
+        : `Your role has been updated on AI Engagement Hub`,
+      text: textContent,
+      html: htmlContent,
+    });
+
+    logger.info('✅ Global role change email sent to:', userEmail);
+
+    return {
+      success: true,
+      message: 'Global role change notification sent',
+      recipient: userEmail,
+    };
+  } catch (error) {
+    logger.error('❌ Error sending global role change email:', error);
+    if (error instanceof HttpsError) throw error;
+    throw new HttpsError('internal', 'Failed to send notification: ' + error.message);
+  }
+});
+
+/**
+ * Firestore trigger: fires when a new user document is created.
+ * Sends two emails:
+ *   1. Welcome email to the new user
+ *   2. Notification email to all admins about the new registration
+ */
+exports.onUserRegistration = onDocumentCreated('users/{userId}', async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) {
+    logger.warn('No data in user document creation event');
+    return;
+  }
+
+  const userData = snapshot.data();
+  const userId = event.params.userId;
+
+  logger.info('👤 New user registered', {userId, email: userData.email, name: userData.name});
+
+  if (!SENDGRID_API_KEY) {
+    logger.warn('⚠️ SendGrid not configured — skipping registration emails');
+    return;
+  }
+
+  const userName = userData.name || userData.email?.split('@')[0] || 'there';
+  const userEmail = userData.email;
+  const registrationDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  let emailsSent = 0;
+  let emailsFailed = 0;
+
+  // 1. Send welcome email to the new user
+  if (userEmail) {
+    try {
+      const welcomeHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Welcome to AI Engagement Hub!</h2>
+          <p>Hello ${userName},</p>
+          <p>Your account has been created successfully. We're excited to have you on board!</p>
+
+          <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Getting Started</h3>
+            <ul style="padding-left: 20px;">
+              <li><strong>Students:</strong> Ask your instructor for a course code, then click "Join Course" from your dashboard.</li>
+              <li><strong>Instructors:</strong> Contact your admin to get promoted to the Instructor role, then create your first course from the Instructor Dashboard.</li>
+            </ul>
+          </div>
+
+          <p>Need help? Visit our <a href="https://ai-engagement-hub.com/help" style="color: #2563eb;">Help & Support</a> page or check out our <a href="https://ai-engagement-hub.com/tutorials" style="color: #2563eb;">Video Tutorials</a>.</p>
+
+          <p><a href="https://ai-engagement-hub.com/dashboard" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Go to Your Dashboard</a></p>
+
+          <p>Best regards,<br>AI Engagement Hub</p>
+        </div>
+      `;
+      const welcomeText = `
+Welcome to AI Engagement Hub!
+
+Hello ${userName},
+
+Your account has been created successfully. We're excited to have you on board!
+
+Getting Started:
+- Students: Ask your instructor for a course code, then click "Join Course" from your dashboard.
+- Instructors: Contact your admin to get promoted to the Instructor role, then create your first course from the Instructor Dashboard.
+
+Need help? Visit our Help & Support page at https://ai-engagement-hub.com/help
+or check out our Video Tutorials at https://ai-engagement-hub.com/tutorials
+
+Go to your dashboard: https://ai-engagement-hub.com/dashboard
+
+Best regards,
+AI Engagement Hub
+      `;
+
+      await sgMail.send({
+        to: userEmail,
+        from: {email: SENDGRID_FROM_EMAIL, name: 'AI Engagement Hub'},
+        subject: 'Welcome to AI Engagement Hub!',
+        text: welcomeText,
+        html: welcomeHtml,
+      });
+
+      emailsSent++;
+      logger.info('✅ Welcome email sent to:', userEmail);
+    } catch (error) {
+      emailsFailed++;
+      logger.error('❌ Failed to send welcome email to:', userEmail, error.message);
+    }
+  }
+
+  // 2. Notify all admins about the new registration
+  try {
+    const adminsSnapshot = await db.collection('users').where('role', '==', 'admin').get();
+
+    for (const adminDoc of adminsSnapshot.docs) {
+      const adminData = adminDoc.data();
+      if (!adminData.email || adminData.email === userEmail) continue;
+
+      try {
+        const adminHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">New User Registration</h2>
+            <p>Hello ${adminData.name || 'Admin'},</p>
+            <p>A new user has registered on AI Engagement Hub.</p>
+
+            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0;">New User Details</h3>
+              <p><strong>Name:</strong> ${userName}</p>
+              <p><strong>Email:</strong> ${userEmail}</p>
+              <p><strong>Registered:</strong> ${registrationDate}</p>
+              <p><strong>Role:</strong> ${userData.role || 'student'}</p>
+            </div>
+
+            <p>If this user needs to be promoted to Instructor or another role, you can do so from the Admin panel.</p>
+            <p><a href="https://ai-engagement-hub.com/admin" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Open Admin Panel</a></p>
+
+            <p>Best regards,<br>AI Engagement Hub</p>
+          </div>
+        `;
+        const adminText = `
+New User Registration
+
+Hello ${adminData.name || 'Admin'},
+
+A new user has registered on AI Engagement Hub.
+
+New User Details:
+- Name: ${userName}
+- Email: ${userEmail}
+- Registered: ${registrationDate}
+- Role: ${userData.role || 'student'}
+
+If this user needs to be promoted to Instructor or another role, you can do so from the Admin panel:
+https://ai-engagement-hub.com/admin
+
+Best regards,
+AI Engagement Hub
+        `;
+
+        await sgMail.send({
+          to: adminData.email,
+          from: {email: SENDGRID_FROM_EMAIL, name: 'AI Engagement Hub'},
+          subject: `New User Registration: ${userName}`,
+          text: adminText,
+          html: adminHtml,
+        });
+
+        emailsSent++;
+        logger.info('✅ Admin notification sent to:', adminData.email);
+      } catch (error) {
+        emailsFailed++;
+        logger.error('❌ Failed to send admin notification to:', adminData.email, error.message);
+      }
+    }
+  } catch (error) {
+    logger.error('❌ Error fetching admins for registration notification:', error.message);
+  }
+
+  logger.info(`📧 Registration emails complete: ${emailsSent} sent, ${emailsFailed} failed`);
 });

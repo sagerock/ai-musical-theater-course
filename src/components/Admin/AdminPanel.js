@@ -403,6 +403,7 @@ export default function AdminPanel() {
       ...user,
       originalName: user.name,
       originalEmail: user.email,
+      originalRole: user.role || 'student',
       schoolId: user.schoolId || ''
     });
     setShowEditUserModal(true);
@@ -426,7 +427,24 @@ export default function AdminPanel() {
         updateData.schoolId = null;
       }
       
+      const originalRole = editingUser.originalRole || 'student';
       await userApi.updateUser(editingUser.id, updateData);
+
+      // Send email notification if global role changed
+      if (editingUser.role !== originalRole) {
+        try {
+          await approvalEmailService.sendGlobalRoleChangeNotification({
+            userId: editingUser.id,
+            oldRole: originalRole,
+            newRole: editingUser.role,
+            changedBy: currentUser?.name || currentUser?.email || 'Admin',
+          });
+        } catch (emailError) {
+          console.error('Failed to send role change email:', emailError);
+          // Don't block the update if email fails
+        }
+      }
+
       toast.success('User updated successfully!');
       setShowEditUserModal(false);
       setEditingUser(null);

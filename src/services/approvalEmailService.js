@@ -8,6 +8,7 @@ class ApprovalEmailService {
   constructor() {
     this.sendApprovalConfirmationEmail = httpsCallable(functions, 'sendApprovalConfirmationEmail');
     this.sendRoleChangeNotificationEmail = httpsCallable(functions, 'sendRoleChangeNotificationEmail');
+    this.sendGlobalRoleChangeEmail = httpsCallable(functions, 'sendGlobalRoleChangeEmail');
   }
 
   /**
@@ -73,6 +74,24 @@ class ApprovalEmailService {
       return result.data;
     } catch (error) {
       console.error('❌ Error sending role change notification email:', error);
+      throw error;
+    }
+  }
+  /**
+   * Send notification when a user's global role is changed
+   * @param {string} userId - ID of the user whose role was changed
+   * @param {string} oldRole - The previous global role
+   * @param {string} newRole - The new global role
+   * @param {string} changedBy - Name of the admin who changed the role
+   */
+  async sendGlobalRoleChangeNotification({ userId, oldRole, newRole, changedBy }) {
+    try {
+      console.log('📧 Sending global role change notification...', { userId, oldRole, newRole, changedBy });
+      const result = await this.sendGlobalRoleChangeEmail({ userId, oldRole, newRole, changedBy });
+      console.log('✅ Global role change email sent:', result.data);
+      return result.data;
+    } catch (error) {
+      console.error('❌ Error sending global role change email:', error);
       throw error;
     }
   }
