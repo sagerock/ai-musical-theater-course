@@ -38,6 +38,9 @@ export default function CourseJoin() {
         setCourseCode(returnedCode);
       }
       window.history.replaceState({}, '', '/join');
+    } else if (returnedCode) {
+      setCourseCode(returnedCode);
+      window.history.replaceState({}, '', '/join');
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

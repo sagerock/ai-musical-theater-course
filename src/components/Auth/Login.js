@@ -19,6 +19,18 @@ export default function Login() {
 
   // Redirect if already logged in
   if (currentUser) {
+    const pending = localStorage.getItem('pendingCourseJoin');
+    if (pending) {
+      try {
+        const { courseCode } = JSON.parse(pending);
+        localStorage.removeItem('pendingCourseJoin');
+        if (courseCode) {
+          return <Navigate to={`/join?code=${encodeURIComponent(courseCode)}`} replace />;
+        }
+      } catch (e) {
+        localStorage.removeItem('pendingCourseJoin');
+      }
+    }
     return <Navigate to="/dashboard" replace />;
   }
 
