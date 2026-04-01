@@ -8,7 +8,8 @@ import {
   DocumentTextIcon,
   CogIcon,
   ChatBubbleLeftRightIcon,
-  WrenchScrewdriverIcon
+  WrenchScrewdriverIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 
 const navigationItems = [
@@ -41,6 +42,12 @@ const navigationItems = [
     href: '/instructor/files',
     icon: DocumentTextIcon,
     description: 'Manage PDF attachments and downloads'
+  },
+  {
+    name: 'Modules',
+    href: '/instructor/modules',
+    icon: BookOpenIcon,
+    description: 'Create and manage AI-guided learning modules'
   },
   {
     name: 'Course Settings',

@@ -16,6 +16,7 @@ import InstructorMessaging from '../Messaging/InstructorMessaging';
 import FileManagement from './FileManagement';
 import CourseManagement from './CourseManagement';
 import AIAssistant from './AIAssistant';
+import InstructorModules from './InstructorModules';
 import { AcademicCapIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboardContainer() {
@@ -491,6 +492,13 @@ export default function InstructorDashboardContainer() {
             } />
             <Route path="files" element={
               <FileManagement 
+                selectedCourseId={selectedCourseId}
+                selectedCourse={selectedCourse}
+                currentUser={currentUser}
+              />
+            } />
+            <Route path="modules" element={
+              <InstructorModules
                 selectedCourseId={selectedCourseId}
                 selectedCourse={selectedCourse}
                 currentUser={currentUser}
