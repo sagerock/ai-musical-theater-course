@@ -1591,7 +1591,8 @@ export const chatApi = {
       response: chatData.response,
       tool_used: chatData.tool_used,
       userId: chatData.user_id,
-      projectId: chatData.project_id,
+      projectId: chatData.project_id || null,
+      moduleId: chatData.moduleId || null,
       courseId: courseId || chatData.courseId || null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -5023,6 +5024,267 @@ export const tutorialApi = {
     await batch.commit();
     tutorialsCache.clear();
   },
+};
+
+// MODULES API
+export const modulesApi = {
+  async createModule(moduleData) {
+    console.log('🔥 createModule:', moduleData);
+    try {
+      const docRef = await addDoc(collection(db, 'modules'), {
+        courseId: moduleData.courseId,
+        title: moduleData.title,
+        description: moduleData.description || '',
+        order: moduleData.order || 1,
+        systemPrompt: moduleData.systemPrompt || '',
+        minimumExchanges: moduleData.minimumExchanges || 4,
+        aiModel: moduleData.aiModel || 'GPT-5 Mini',
+        createdBy: moduleData.createdBy,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Module created with ID:', docRef.id);
+      return this.getModuleById(docRef.id);
+    } catch (error) {
+      console.error('❌ Error creating module:', error);
+      throw error;
+    }
+  },
+
+  async getModuleById(moduleId) {
+    console.log('🔥 getModuleById:', moduleId);
+    const moduleDoc = await getDoc(doc(db, 'modules', moduleId));
+    if (moduleDoc.exists()) {
+      const data = moduleDoc.data();
+      return {
+        id: moduleDoc.id,
+        ...data,
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt)
+      };
+    }
+    throw new Error('Module not found');
+  },
+
+  async getModulesByCourse(courseId) {
+    console.log('🔥 getModulesByCourse:', courseId);
+    try {
+      const q = query(
+        collection(db, 'modules'),
+        where('courseId', '==', courseId),
+        orderBy('order', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      const modules = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        createdAt: convertTimestamp(d.data().createdAt),
+        updatedAt: convertTimestamp(d.data().updatedAt)
+      }));
+      console.log('✅ getModulesByCourse result:', modules.length, 'modules');
+      return modules;
+    } catch (error) {
+      console.error('❌ Error getting modules:', error);
+      throw error;
+    }
+  },
+
+  async updateModule(moduleId, updates) {
+    console.log('🔥 updateModule:', moduleId, updates);
+    try {
+      await updateDoc(doc(db, 'modules', moduleId), {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Module updated');
+      return this.getModuleById(moduleId);
+    } catch (error) {
+      console.error('❌ Error updating module:', error);
+      throw error;
+    }
+  },
+
+  async deleteModule(moduleId) {
+    console.log('🔥 deleteModule:', moduleId);
+    try {
+      // Delete associated progress documents
+      const progressQuery = query(
+        collection(db, 'moduleProgress'),
+        where('moduleId', '==', moduleId)
+      );
+      const progressSnap = await getDocs(progressQuery);
+      const batch = writeBatch(db);
+      progressSnap.docs.forEach(d => batch.delete(d.ref));
+      batch.delete(doc(db, 'modules', moduleId));
+      await batch.commit();
+      console.log('✅ Module and associated progress deleted');
+    } catch (error) {
+      console.error('❌ Error deleting module:', error);
+      throw error;
+    }
+  }
+};
+
+// MODULE PROGRESS API
+export const moduleProgressApi = {
+  async createOrGetProgress(userId, moduleId, courseId) {
+    console.log('🔥 createOrGetProgress:', userId, moduleId);
+    const progressId = `${userId}_${moduleId}`;
+    try {
+      await setDoc(doc(db, 'moduleProgress', progressId), {
+        userId,
+        moduleId,
+        courseId,
+        exchangeCount: 0,
+        completed: false,
+        completedAt: null,
+        startedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      return this.getModuleProgress(userId, moduleId);
+    } catch (error) {
+      console.error('❌ Error creating module progress:', error);
+      throw error;
+    }
+  },
+
+  async getModuleProgress(userId, moduleId) {
+    console.log('🔥 getModuleProgress:', userId, moduleId);
+    const progressId = `${userId}_${moduleId}`;
+    const progressDoc = await getDoc(doc(db, 'moduleProgress', progressId));
+    if (progressDoc.exists()) {
+      const data = progressDoc.data();
+      return {
+        id: progressDoc.id,
+        ...data,
+        startedAt: convertTimestamp(data.startedAt),
+        completedAt: convertTimestamp(data.completedAt),
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt)
+      };
+    }
+    return null;
+  },
+
+  async getStudentModuleProgress(userId, courseId) {
+    console.log('🔥 getStudentModuleProgress:', userId, courseId);
+    try {
+      const q = query(
+        collection(db, 'moduleProgress'),
+        where('userId', '==', userId),
+        where('courseId', '==', courseId)
+      );
+      const snapshot = await getDocs(q);
+      const progress = {};
+      snapshot.docs.forEach(d => {
+        const data = d.data();
+        progress[data.moduleId] = {
+          id: d.id,
+          ...data,
+          startedAt: convertTimestamp(data.startedAt),
+          completedAt: convertTimestamp(data.completedAt),
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt)
+        };
+      });
+      console.log('✅ getStudentModuleProgress:', Object.keys(progress).length, 'entries');
+      return progress;
+    } catch (error) {
+      console.error('❌ Error getting student module progress:', error);
+      throw error;
+    }
+  },
+
+  async getCourseModuleProgress(courseId) {
+    console.log('🔥 getCourseModuleProgress:', courseId);
+    try {
+      const q = query(
+        collection(db, 'moduleProgress'),
+        where('courseId', '==', courseId)
+      );
+      const snapshot = await getDocs(q);
+      const progress = snapshot.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          startedAt: convertTimestamp(data.startedAt),
+          completedAt: convertTimestamp(data.completedAt),
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt)
+        };
+      });
+      console.log('✅ getCourseModuleProgress:', progress.length, 'entries');
+      return progress;
+    } catch (error) {
+      console.error('❌ Error getting course module progress:', error);
+      throw error;
+    }
+  },
+
+  async incrementExchangeCount(userId, moduleId) {
+    console.log('🔥 incrementExchangeCount:', userId, moduleId);
+    const progressId = `${userId}_${moduleId}`;
+    try {
+      await updateDoc(doc(db, 'moduleProgress', progressId), {
+        exchangeCount: increment(1),
+        updatedAt: serverTimestamp()
+      });
+      return this.getModuleProgress(userId, moduleId);
+    } catch (error) {
+      console.error('❌ Error incrementing exchange count:', error);
+      throw error;
+    }
+  },
+
+  async markComplete(userId, moduleId, chatId) {
+    console.log('🔥 markComplete:', userId, moduleId);
+    const progressId = `${userId}_${moduleId}`;
+    try {
+      await updateDoc(doc(db, 'moduleProgress', progressId), {
+        completed: true,
+        completedAt: serverTimestamp(),
+        chatId: chatId || null,
+        updatedAt: serverTimestamp()
+      });
+      console.log('✅ Module marked complete');
+      return this.getModuleProgress(userId, moduleId);
+    } catch (error) {
+      console.error('❌ Error marking module complete:', error);
+      throw error;
+    }
+  }
+};
+
+// MODULE CHATS - query helper for module conversations
+export const moduleChatApi = {
+  async getModuleChats(moduleId, userId) {
+    console.log('🔥 getModuleChats:', moduleId, userId);
+    try {
+      const q = query(
+        collection(db, 'chats'),
+        where('moduleId', '==', moduleId),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      const chats = snapshot.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt)
+        };
+      });
+      console.log('✅ getModuleChats:', chats.length, 'chats');
+      return chats;
+    } catch (error) {
+      console.error('❌ Error getting module chats:', error);
+      throw error;
+    }
+  }
 };
 
 console.log('🔥 Firebase API initialized');

@@ -182,6 +182,20 @@ export default function Layout() {
                           Projects
                         </Link>
 
+                        {/* Modules - accessible to all course members */}
+                        <Link
+                          to={`/course/${courseMembership.courses.id}/modules`}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                            location.pathname.startsWith(`/course/${courseMembership.courses.id}/modules`)
+                              ? 'bg-primary-50 text-primary-600'
+                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                          }`}
+                        >
+                          <BookOpenIcon className="mr-2 h-4 w-4" />
+                          Modules
+                        </Link>
+
                         {/* Discussions - accessible to all course members */}
                         <Link
                           to={`/course/${courseMembership.courses.id}/announcements`}
@@ -367,6 +381,19 @@ export default function Layout() {
                           >
                             <FolderIcon className="mr-2 h-4 w-4" />
                             Projects
+                          </Link>
+
+                          {/* Modules - accessible to all course members */}
+                          <Link
+                            to={`/course/${courseMembership.courses.id}/modules`}
+                            className={`group flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                              location.pathname.startsWith(`/course/${courseMembership.courses.id}/modules`)
+                                ? 'bg-primary-50 text-primary-600'
+                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                            }`}
+                          >
+                            <BookOpenIcon className="mr-2 h-4 w-4" />
+                            Modules
                           </Link>
 
                           {/* Discussions - accessible to all course members */}

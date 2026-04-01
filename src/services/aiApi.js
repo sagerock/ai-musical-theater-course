@@ -178,9 +178,9 @@ const getProviderFromModel = (tool) => {
 // Unified AI API service
 export const aiApi = {
   // Send chat completion request (routes through secure proxy)
-  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = []) {
+  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], customSystemPrompt = null) {
     const modelId = AI_TOOLS[tool];
-    const enhancedSystemPrompt = getModelSpecificPrompt(modelId);
+    const enhancedSystemPrompt = customSystemPrompt || getModelSpecificPrompt(modelId);
     
     try {
       // Use the proxy service instead of direct API calls

@@ -18,6 +18,8 @@ import Students from './components/Instructor/Students';
 import StudentLibraryWrapper from './components/Student/StudentLibraryWrapper';
 import InstructorLibraryWrapper from './components/Instructor/InstructorLibraryWrapper';
 import CourseAnnouncements from './components/Announcements/CourseAnnouncements';
+import CourseModules from './components/Modules/CourseModules';
+import ModuleChat from './components/Modules/ModuleChat';
 import AdminPanel from './components/Admin/AdminPanel';
 import SchoolAdminDashboard from './components/SchoolAdmin/SchoolAdminDashboard';
 import CourseJoin from './components/Course/CourseJoin';
@@ -65,6 +67,12 @@ function App() {
           </Route>
           <Route path="/course/:courseId/instructor-library" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<InstructorRoute><InstructorLibraryWrapper /></InstructorRoute>} />
+          </Route>
+          <Route path="/course/:courseId/modules" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<CourseModules />} />
+          </Route>
+          <Route path="/course/:courseId/modules/:moduleId/chat" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route index element={<ModuleChat />} />
           </Route>
           <Route path="/course/:courseId/announcements" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<CourseAnnouncements />} />
