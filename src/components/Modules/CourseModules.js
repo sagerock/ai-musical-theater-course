@@ -31,7 +31,7 @@ const CourseModules = () => {
     try {
       const [courseData, membershipData, modulesData] = await Promise.all([
         courseApi.getCourseById(courseId),
-        courseApi.getCourseMembership(currentUser.uid, courseId),
+        courseApi.getUserCourseMembership(currentUser.id, courseId),
         modulesApi.getModulesByCourse(courseId)
       ]);
       setCourse(courseData);
@@ -39,7 +39,7 @@ const CourseModules = () => {
       setModules(modulesData);
 
       if (membershipData && !hasTeachingPermissions(membershipData.role)) {
-        const progressData = await moduleProgressApi.getStudentModuleProgress(currentUser.uid, courseId);
+        const progressData = await moduleProgressApi.getStudentModuleProgress(currentUser.id, courseId);
         setProgress(progressData);
       }
     } catch (error) {
@@ -58,7 +58,7 @@ const CourseModules = () => {
     const moduleData = {
       ...formData,
       courseId,
-      createdBy: currentUser.uid
+      createdBy: currentUser.id
     };
     await modulesApi.createModule(moduleData);
     toast.success('Module created');

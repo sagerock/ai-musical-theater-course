@@ -35,14 +35,14 @@ const ModuleChat = () => {
     try {
       const [moduleData, chatHistory] = await Promise.all([
         modulesApi.getModuleById(moduleId),
-        moduleChatApi.getModuleChats(moduleId, currentUser.uid)
+        moduleChatApi.getModuleChats(moduleId, currentUser.id)
       ]);
       setModule(moduleData);
       setChats(chatHistory);
 
       // Create or get progress
       const progressData = await moduleProgressApi.createOrGetProgress(
-        currentUser.uid, moduleId, courseId
+        currentUser.id, moduleId, courseId
       );
       setProgress(progressData);
     } catch (error) {
@@ -84,8 +84,8 @@ const ModuleChat = () => {
 
       // Save the chat
       const chatData = {
-        user_id: currentUser.uid,
-        created_by: currentUser.uid,
+        user_id: currentUser.id,
+        created_by: currentUser.id,
         project_id: null,
         moduleId: moduleId,
         tool_used: module.aiModel,
@@ -99,12 +99,12 @@ const ModuleChat = () => {
       setChats(prev => [...prev, savedChat]);
 
       // Increment exchange count and check completion
-      const updatedProgress = await moduleProgressApi.incrementExchangeCount(currentUser.uid, moduleId);
+      const updatedProgress = await moduleProgressApi.incrementExchangeCount(currentUser.id, moduleId);
       setProgress(updatedProgress);
 
       if (updatedProgress && !updatedProgress.completed &&
           updatedProgress.exchangeCount >= module.minimumExchanges) {
-        const completedProgress = await moduleProgressApi.markComplete(currentUser.uid, moduleId, savedChat.id);
+        const completedProgress = await moduleProgressApi.markComplete(currentUser.id, moduleId, savedChat.id);
         setProgress(completedProgress);
         toast.success('Module completed! Great conversation.', { duration: 5000 });
       }
