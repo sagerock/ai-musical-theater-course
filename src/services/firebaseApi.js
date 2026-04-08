@@ -5109,16 +5109,17 @@ export const modulesApi = {
     try {
       const q = query(
         collection(db, 'modules'),
-        where('courseId', '==', courseId),
-        orderBy('order', 'asc')
+        where('courseId', '==', courseId)
       );
       const snapshot = await getDocs(q);
-      const modules = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: convertTimestamp(d.data().createdAt),
-        updatedAt: convertTimestamp(d.data().updatedAt)
-      }));
+      const modules = snapshot.docs
+        .map(d => ({
+          id: d.id,
+          ...d.data(),
+          createdAt: convertTimestamp(d.data().createdAt),
+          updatedAt: convertTimestamp(d.data().updatedAt)
+        }))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       console.log('✅ getModulesByCourse result:', modules.length, 'modules');
       return modules;
     } catch (error) {
