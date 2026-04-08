@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Deploy updated Firestore security rules to Firebase
 # This script updates the security rules to allow instructor chat queries

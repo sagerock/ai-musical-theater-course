@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Firebase Security Rules Deployment Script
 # This deploys ONLY the security rules (not the app) for testing
