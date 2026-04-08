@@ -2,15 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
-import {
-  UserCircleIcon,
-  PencilIcon,
-  CheckIcon,
-  XMarkIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  EnvelopeIcon
-} from '@heroicons/react/24/outline';
+import { PencilIcon } from '@heroicons/react/24/outline';
 
 export default function ProfileSettings() {
   const { currentUser, userRole, updateProfile } = useAuth();
@@ -129,169 +121,165 @@ export default function ProfileSettings() {
            formData.bio !== originalData.bio;
   };
 
+  const formatDate = (value, withTime = false) => {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (isNaN(d)) return '—';
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {})
+    });
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <UserCircleIcon className="h-5 w-5 mr-2 text-blue-500" />
-            Profile Settings
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Update your personal information and account details
+    <section className="animate-fade-up animate-delay-1">
+      {/* Section masthead */}
+      <div className="flex items-baseline gap-6 md:gap-8">
+        <p className="dashboard-display text-5xl md:text-6xl text-[#2a2359] leading-none flex-shrink-0">
+          01
+        </p>
+        <div className="flex-1 min-w-0">
+          <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500">
+            Profile
           </p>
+          <h2 className="dashboard-display text-3xl md:text-4xl text-stone-900 mt-1">
+            Who you are here.
+          </h2>
         </div>
-        
-        {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <PencilIcon className="h-4 w-4 mr-2" />
-            Edit Profile
-          </button>
-        ) : (
-          <div className="flex space-x-3">
+        <div className="flex-shrink-0 self-end pb-2">
+          {!isEditing ? (
             <button
-              onClick={handleCancel}
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setIsEditing(true)}
+              className="group inline-flex items-center dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-900 border-b border-stone-900 pb-1 hover:text-[#2a2359] hover:border-[#2a2359] transition-colors"
             >
-              <XMarkIcon className="h-4 w-4 mr-2" />
-              Cancel
+              <PencilIcon className="h-3 w-3 mr-2" />
+              Edit
             </button>
-            <button
-              onClick={handleSave}
-              disabled={loading || !hasChanges()}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <CheckIcon className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center gap-6">
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-500 hover:text-stone-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={loading || !hasChanges()}
+                className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-[#2a2359] border-b border-[#2a2359] pb-1 hover:text-[#3e3680] hover:border-[#3e3680] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Saving…' : 'Save changes →'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="mt-6 border-t border-[#e7e2d5]" />
+
+      {/* Fields */}
+      <dl className="mt-2">
         {/* Display Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Display Name
-          </label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="displayName"
-              value={formData.displayName}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter your display name"
-            />
-          ) : (
-            <p className="text-sm text-gray-900 py-2">
-              {formData.displayName || 'Not provided'}
-            </p>
-          )}
+        <div className="py-6 border-b border-[#e7e2d5] grid grid-cols-1 md:grid-cols-[220px_1fr] md:gap-12 md:items-baseline">
+          <dt className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-500 mb-2 md:mb-0">
+            Display name
+          </dt>
+          <dd>
+            {isEditing ? (
+              <input
+                type="text"
+                name="displayName"
+                value={formData.displayName}
+                onChange={handleInputChange}
+                placeholder="Enter your display name"
+                className="w-full max-w-xl bg-transparent border-0 border-b border-stone-300 py-2 dashboard-display text-2xl md:text-[1.75rem] text-stone-900 focus:outline-none focus:border-[#2a2359] placeholder:text-stone-300 transition-colors"
+              />
+            ) : (
+              <p className="dashboard-display text-2xl md:text-[1.75rem] text-stone-900 leading-tight">
+                {formData.displayName || <span className="text-stone-300">Unnamed reader</span>}
+              </p>
+            )}
+          </dd>
         </div>
 
         {/* Email */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
-          </label>
-          {isEditing ? (
-            <div>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your email address"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Changing your email will require verification
+        <div className="py-6 border-b border-[#e7e2d5] grid grid-cols-1 md:grid-cols-[220px_1fr] md:gap-12 md:items-baseline">
+          <dt className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-500 mb-2 md:mb-0">
+            Email address
+          </dt>
+          <dd>
+            {isEditing ? (
+              <div>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="name@example.com"
+                  className="w-full max-w-xl bg-transparent border-0 border-b border-stone-300 py-2 dashboard-display text-xl md:text-2xl text-stone-900 focus:outline-none focus:border-[#2a2359] placeholder:text-stone-300 transition-colors"
+                />
+                <p className="mt-3 dashboard-serif-italic text-stone-500 text-sm">
+                  Changing your email will require verification from your inbox.
+                </p>
+              </div>
+            ) : (
+              <p className="dashboard-display text-xl md:text-2xl text-stone-900 break-all">
+                {formData.email}
               </p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-900 py-2">
-              {formData.email}
-            </p>
-          )}
+            )}
+          </dd>
         </div>
 
         {/* Role (Read-only) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="py-6 border-b border-[#e7e2d5] grid grid-cols-1 md:grid-cols-[220px_1fr] md:gap-12 md:items-baseline">
+          <dt className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-500 mb-2 md:mb-0">
             Role
-          </label>
-          <p className="text-sm text-gray-900 py-2 capitalize">
-            {userRole}
-          </p>
+          </dt>
+          <dd className="flex items-baseline gap-4">
+            <p className="dashboard-display text-xl md:text-2xl text-stone-900 capitalize">
+              {userRole || 'student'}
+            </p>
+            <span className="dashboard-mono text-[9px] tracking-[0.2em] uppercase text-stone-400">
+              Assigned by your instructor
+            </span>
+          </dd>
         </div>
 
         {/* Account Created */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Account Created
-          </label>
-          <p className="text-sm text-gray-900 py-2">
-            {currentUser?.metadata?.creationTime 
-              ? new Date(currentUser.metadata.creationTime).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })
-              : 'Unknown'
-            }
-          </p>
+        <div className="py-6 border-b border-[#e7e2d5] grid grid-cols-1 md:grid-cols-[220px_1fr] md:gap-12 md:items-baseline">
+          <dt className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-500 mb-2 md:mb-0">
+            Joined
+          </dt>
+          <dd className="dashboard-mono text-sm text-stone-700 tabular-nums">
+            {formatDate(currentUser?.metadata?.creationTime)}
+          </dd>
         </div>
 
         {/* Last Sign In */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Last Sign In
-          </label>
-          <p className="text-sm text-gray-900 py-2">
-            {currentUser?.metadata?.lastSignInTime 
-              ? new Date(currentUser.metadata.lastSignInTime).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })
-              : 'Unknown'
-            }
-          </p>
+        <div className="py-6 border-b border-[#e7e2d5] grid grid-cols-1 md:grid-cols-[220px_1fr] md:gap-12 md:items-baseline">
+          <dt className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-500 mb-2 md:mb-0">
+            Last sign in
+          </dt>
+          <dd className="dashboard-mono text-sm text-stone-700 tabular-nums">
+            {formatDate(currentUser?.metadata?.lastSignInTime, true)}
+          </dd>
         </div>
-      </div>
+      </dl>
 
-
-      {/* Help Text */}
-      <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <div className="flex items-start">
-          <InformationCircleIcon className="h-5 w-5 text-gray-600 mt-0.5 mr-3" />
-          <div className="text-sm text-gray-700">
-            <p className="font-medium mb-1">Profile Update Notes</p>
-            <ul className="space-y-1 text-xs">
-              <li>• Your display name will be shown to instructors and in course interactions</li>
-              <li>• Email verification is handled automatically during account creation</li>
-              <li>• You may need to sign out and back in to change your email address</li>
-              <li>• Your role is set by course instructors and cannot be changed here</li>
-            </ul>
-          </div>
-        </div>
+      {/* Notes */}
+      <div className="mt-8 max-w-2xl">
+        <p className="dashboard-mono text-[9px] tracking-[0.24em] uppercase text-stone-500 mb-3">
+          Notes
+        </p>
+        <ul className="space-y-2 dashboard-serif-italic text-stone-600 text-[0.95rem] leading-relaxed">
+          <li className="flex gap-3"><span className="text-stone-400">—</span> Your display name is how instructors and classmates see you.</li>
+          <li className="flex gap-3"><span className="text-stone-400">—</span> You may need to sign out and back in to change your email address.</li>
+          <li className="flex gap-3"><span className="text-stone-400">—</span> Your role is set by a course instructor; it cannot be edited from here.</li>
+        </ul>
       </div>
-    </div>
+    </section>
   );
 }

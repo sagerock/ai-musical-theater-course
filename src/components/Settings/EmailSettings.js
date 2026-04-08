@@ -2,13 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
-import {
-  EnvelopeIcon,
-  BellIcon,
-  CheckIcon,
-  XMarkIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline';
 
 export default function EmailSettings() {
   const { currentUser, userRole } = useAuth();
@@ -90,46 +83,36 @@ export default function EmailSettings() {
   const settingsConfig = [
     {
       key: 'email_notifications_enabled',
-      title: 'Email Notifications',
-      description: 'Enable all email notifications from AI Engagement Hub',
-      icon: EnvelopeIcon,
-      color: 'text-blue-500',
-      isMainToggle: true
+      title: 'Email notifications',
+      description: 'The master switch. If this is off, everything below stays silent.',
+      isMainToggle: true,
     },
     {
       key: 'instructor_note_emails',
-      title: 'Instructor Note Notifications',
-      description: 'Get notified when instructors add notes to your projects',
-      icon: BellIcon,
-      color: 'text-green-500',
+      title: 'Instructor notes',
+      description: 'Be notified when an instructor adds a note to one of your projects.',
       showFor: ['student'],
-      dependsOn: 'email_notifications_enabled'
+      dependsOn: 'email_notifications_enabled',
     },
     {
       key: 'new_project_emails',
-      title: 'New Project Notifications',
-      description: 'Get notified when students create new projects in your courses',
-      icon: BellIcon,
-      color: 'text-purple-500',
+      title: 'New projects',
+      description: 'Be notified when students in your courses create new projects.',
       showFor: ['instructor', 'admin'],
-      dependsOn: 'email_notifications_enabled'
+      dependsOn: 'email_notifications_enabled',
     },
     {
       key: 'weekly_summary_emails',
-      title: 'Weekly Summary',
-      description: 'Receive weekly summaries of AI usage and activity',
-      icon: BellIcon,
-      color: 'text-yellow-500',
-      dependsOn: 'email_notifications_enabled'
+      title: 'Weekly summary',
+      description: 'A weekly digest of AI usage and activity, delivered on Mondays.',
+      dependsOn: 'email_notifications_enabled',
     },
     {
       key: 'system_update_emails',
-      title: 'System Updates',
-      description: 'Important platform updates and maintenance notifications',
-      icon: InformationCircleIcon,
-      color: 'text-red-500',
-      dependsOn: 'email_notifications_enabled'
-    }
+      title: 'System updates',
+      description: 'Important platform updates and maintenance notices.',
+      dependsOn: 'email_notifications_enabled',
+    },
   ];
 
   const filteredSettings = settingsConfig.filter(setting => {
@@ -141,126 +124,126 @@ export default function EmailSettings() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-                <div className="w-12 h-6 bg-gray-200 rounded-full"></div>
-              </div>
-            ))}
+      <section className="animate-pulse">
+        <div className="flex items-baseline gap-6 md:gap-8">
+          <div className="h-16 w-14 bg-stone-200" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-24 bg-stone-200" />
+            <div className="h-8 w-1/2 bg-stone-200" />
           </div>
         </div>
-      </div>
+        <div className="mt-6 border-t border-[#e7e2d5]" />
+        <div className="mt-2 space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="py-6 border-b border-[#e7e2d5] flex items-center justify-between">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-32 bg-stone-200" />
+                <div className="h-3 w-3/4 bg-stone-200" />
+              </div>
+              <div className="w-11 h-6 bg-stone-200 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <EnvelopeIcon className="h-5 w-5 mr-2 text-blue-500" />
-            Email Preferences
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage your email notification preferences
+    <section className="animate-fade-up animate-delay-2">
+      {/* Section masthead */}
+      <div className="flex items-baseline gap-6 md:gap-8">
+        <p className="dashboard-display text-5xl md:text-6xl text-[#2a2359] leading-none flex-shrink-0">
+          02
+        </p>
+        <div className="flex-1 min-w-0">
+          <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500">
+            Correspondence
           </p>
+          <h2 className="dashboard-display text-3xl md:text-4xl text-stone-900 mt-1">
+            What lands in your inbox.
+          </h2>
         </div>
-        <button
-          onClick={handleSaveSettings}
-          disabled={saving}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Saving...
-            </>
-          ) : (
-            <>
-              <CheckIcon className="h-4 w-4 mr-2" />
-              Save Settings
-            </>
-          )}
-        </button>
+        <div className="flex-shrink-0 self-end pb-2">
+          <button
+            onClick={handleSaveSettings}
+            disabled={saving}
+            className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-[#2a2359] border-b border-[#2a2359] pb-1 hover:text-[#3e3680] hover:border-[#3e3680] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Saving…' : 'Save preferences →'}
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="mt-6 border-t border-[#e7e2d5]" />
+
+      {/* Preference rows */}
+      <ul className="mt-2">
         {filteredSettings.map((setting) => {
-          const Icon = setting.icon;
           const isDisabled = setting.dependsOn && !settings[setting.dependsOn];
           const isEnabled = settings[setting.key];
+          const isActive = isEnabled && !isDisabled;
 
           return (
-            <div key={setting.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <Icon className={`h-6 w-6 ${setting.color} mt-0.5`} />
-                <div>
-                  <div className="flex items-center">
-                    <h4 className="text-sm font-medium text-gray-900">
-                      {setting.title}
-                    </h4>
-                    {setting.isMainToggle && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Master Control
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {setting.description}
+            <li
+              key={setting.key}
+              className={`py-6 border-b border-[#e7e2d5] flex items-start justify-between gap-8 ${
+                isDisabled ? 'opacity-50' : ''
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <p className="dashboard-mono text-[11px] tracking-[0.2em] uppercase text-stone-900">
+                    {setting.title}
                   </p>
+                  {setting.isMainToggle && (
+                    <span className="dashboard-mono text-[9px] tracking-[0.18em] uppercase text-[#2a2359] border-b border-[#2a2359] pb-0.5">
+                      Master
+                    </span>
+                  )}
+                  {isDisabled && (
+                    <span className="dashboard-mono text-[9px] tracking-[0.18em] uppercase text-stone-400">
+                      — requires master
+                    </span>
+                  )}
                 </div>
+                <p className="mt-2 dashboard-serif-italic text-stone-600 text-[0.95rem] leading-relaxed max-w-xl">
+                  {setting.description}
+                </p>
               </div>
-              
-              <div className="flex items-center">
+
+              <div className="flex-shrink-0 pt-1">
                 <button
                   onClick={() => handleSettingChange(setting.key, !isEnabled)}
                   disabled={isDisabled}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    isEnabled && !isDisabled
-                      ? 'bg-blue-600'
-                      : 'bg-gray-200'
-                  } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  aria-pressed={isActive}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2a2359] focus-visible:ring-offset-[#faf7f2] ${
+                    isActive ? 'bg-[#2a2359]' : 'bg-stone-300'
+                  } ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      isEnabled && !isDisabled ? 'translate-x-6' : 'translate-x-1'
+                    className={`inline-block h-4 w-4 transform rounded-full bg-[#faf7f2] shadow-sm transition-transform ${
+                      isActive ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
                 </button>
-                
-                {isDisabled && (
-                  <div className="ml-2 text-xs text-gray-500">
-                    Requires main toggle
-                  </div>
-                )}
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-start">
-          <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">About Email Notifications</p>
-            <ul className="space-y-1 text-xs">
-              <li>• Emails are sent from AI Engagement Hub to your registered email address</li>
-              <li>• You can update your email address in the Profile Settings section above</li>
-              <li>• Critical system notifications may still be sent even with notifications disabled</li>
-              <li>• Changes take effect immediately after saving</li>
-            </ul>
-          </div>
-        </div>
+      {/* Notes */}
+      <div className="mt-8 max-w-2xl">
+        <p className="dashboard-mono text-[9px] tracking-[0.24em] uppercase text-stone-500 mb-3">
+          Notes
+        </p>
+        <ul className="space-y-2 dashboard-serif-italic text-stone-600 text-[0.95rem] leading-relaxed">
+          <li className="flex gap-3"><span className="text-stone-400">—</span> Emails are sent from AI Engagement Hub to your registered address.</li>
+          <li className="flex gap-3"><span className="text-stone-400">—</span> Update your email in the Profile section above.</li>
+          <li className="flex gap-3"><span className="text-stone-400">—</span> Critical system notices may still arrive even with notifications off.</li>
+          <li className="flex gap-3"><span className="text-stone-400">—</span> Changes take effect the moment you save.</li>
+        </ul>
       </div>
-    </div>
+    </section>
   );
 }
