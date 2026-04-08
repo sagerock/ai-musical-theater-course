@@ -937,6 +937,44 @@ export const courseApi = {
     return courses;
   },
 
+  async getUserPendingCourses(userId) {
+    console.log('🔥 getUserPendingCourses:', userId);
+
+    const membershipsQuery = query(
+      collection(db, 'courseMemberships'),
+      where('userId', '==', userId),
+      where('status', '==', 'pending')
+    );
+
+    const membershipsSnapshot = await getDocs(membershipsQuery);
+    const memberships = membershipsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (memberships.length === 0) return [];
+
+    const courseIds = [...new Set(memberships.map(m => m.courseId).filter(Boolean))];
+    const courseMap = new Map();
+
+    for (let i = 0; i < courseIds.length; i += 10) {
+      const batch = courseIds.slice(i, i + 10);
+      const courseQuery = query(collection(db, 'courses'), where('__name__', 'in', batch));
+      const courseSnapshot = await getDocs(courseQuery);
+      courseSnapshot.forEach(doc => {
+        courseMap.set(doc.id, { id: doc.id, ...doc.data() });
+      });
+    }
+
+    const courses = [];
+    for (const membership of memberships) {
+      const course = courseMap.get(membership.courseId);
+      if (course) {
+        courses.push({ ...membership, courses: course });
+      }
+    }
+
+    console.log(`✅ getUserPendingCourses result: ${courses.length} pending`);
+    return courses;
+  },
+
   async joinCourse(userId, courseId, accessCode, role = 'student') {
     console.log('🔥 joinCourse:', userId, courseId, 'role:', role);
     

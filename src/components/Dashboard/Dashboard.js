@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [recentProjects, setRecentProjects] = useState([]);
   const [recentChats, setRecentChats] = useState([]);
   const [userCourses, setUserCourses] = useState([]);
+  const [pendingCourses, setPendingCourses] = useState([]);
   const [stats, setStats] = useState({
     totalProjects: 0,
     totalChats: 0,
@@ -46,10 +47,14 @@ export default function Dashboard() {
 
       console.log('📊 Dashboard: Starting data load for', currentUser.id);
 
-      // Get user's courses (already batch-optimized)
-      const fetchedCourses = await courseApi.getUserCourses(currentUser.id);
+      // Get user's approved and pending courses in parallel
+      const [fetchedCourses, pendingFetched] = await Promise.all([
+        courseApi.getUserCourses(currentUser.id),
+        courseApi.getUserPendingCourses(currentUser.id).catch(() => []),
+      ]);
       const approvedCourses = fetchedCourses.filter(m => m.status === 'approved');
       setUserCourses(approvedCourses);
+      setPendingCourses(pendingFetched);
 
       if (approvedCourses.length === 0) {
         // No courses — try legacy data
@@ -207,10 +212,39 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-      
+
+      {pendingCourses.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {pendingCourses.map(pending => (
+            <div
+              key={pending.id}
+              className="bg-amber-50 border border-amber-200 rounded-lg p-5 flex items-start"
+            >
+              <ClockIcon className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="ml-4 flex-1">
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                  <h3 className="text-base font-semibold text-amber-900">
+                    {pending.courses?.title || 'Course'}
+                  </h3>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-200 text-amber-900">
+                    Pending approval
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-amber-800">
+                  Your request to join <strong>{pending.courses?.title || 'this course'}</strong>
+                  {pending.courses?.course_code ? ` (${pending.courses.course_code})` : ''} has been sent to your instructor.
+                  You'll get an email as soon as they approve it, and the course will show up here automatically.
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {isNewUser ? (
         // New user welcome section
         <div className="mb-8">
+          {pendingCourses.length === 0 && (
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-8 mb-8">
             <h1 className="text-3xl font-bold mb-4">
               Welcome to AI Engagement Hub!
@@ -236,6 +270,7 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+          )}
 
           {/* Key Features for New Users */}
           <div className="mb-8">
