@@ -209,7 +209,7 @@ export default function Dashboard() {
     );
   }
 
-  const isNewUser = stats.totalProjects === 0 && stats.totalChats === 0;
+  const isNewUser = stats.totalProjects === 0 && stats.totalChats === 0 && userCourses.length === 0;
   const firstName = (currentUser?.displayName || currentUser?.email?.split('@')[0] || 'friend').split(' ')[0];
   const greeting = (() => {
     const h = new Date().getHours();
@@ -297,6 +297,78 @@ export default function Dashboard() {
           </section>
         )}
 
+        {/* ──────────── YOUR COURSES ──────────── */}
+        {userCourses.length > 0 && (
+          <section className="mt-14 animate-fade-up animate-delay-1">
+            <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500 mb-8">
+              Your courses
+            </p>
+            <div className="border-t border-[#e7e2d5]">
+              {userCourses.map((membership, idx) => {
+                const course = membership.courses;
+                const role = membership.role || 'student';
+                const isStudentRole = ['student', 'student_assistant', 'teaching_assistant'].includes(role);
+                const roleLabel = role.replace(/_/g, ' ');
+                const quickLinks = [
+                  { label: 'Projects', to: `/course/${course.id}/projects` },
+                  { label: 'Modules', to: `/course/${course.id}/modules` },
+                  { label: 'Discussions', to: `/course/${course.id}/announcements` },
+                  ...(isStudentRole ? [{ label: 'Library', to: `/course/${course.id}/library` }] : []),
+                ];
+                return (
+                  <article key={membership.id} className="border-b border-[#e7e2d5] py-8">
+                    <div className="flex items-start justify-between gap-6 flex-wrap">
+                      <div className="flex items-baseline gap-5 flex-1 min-w-0">
+                        <span className="dashboard-mono text-[11px] text-stone-400 tabular-nums w-7 flex-shrink-0">
+                          {String(idx + 1).padStart(2, '0')}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <Link
+                            to={`/course/${course.id}`}
+                            className="group inline-block"
+                          >
+                            <h3 className="dashboard-display text-2xl md:text-[1.75rem] text-stone-900 group-hover:text-[#2a2359] transition-colors leading-tight">
+                              {course.title}
+                            </h3>
+                          </Link>
+                          <p className="mt-2 dashboard-mono text-[10px] tracking-[0.18em] uppercase text-stone-500">
+                            {course.course_code}
+                            {course.semester && course.year && (
+                              <> <span className="text-stone-400 mx-1">·</span> {course.semester} {course.year}</>
+                            )}
+                            <> <span className="text-stone-400 mx-1">·</span> </>
+                            <span className="text-[#2a2359]">{roleLabel}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <Link
+                        to={`/course/${course.id}`}
+                        className="dashboard-mono text-[10px] tracking-[0.18em] uppercase text-stone-900 ink-underline hover:text-[#2a2359] transition-colors flex-shrink-0 self-baseline"
+                      >
+                        Overview →
+                      </Link>
+                    </div>
+
+                    {/* Quick nav */}
+                    <nav className="mt-5 md:ml-12 flex flex-wrap gap-x-8 gap-y-3">
+                      {quickLinks.map(link => (
+                        <Link
+                          key={link.label}
+                          to={link.to}
+                          className="group inline-flex items-baseline dashboard-mono text-[10px] tracking-[0.18em] uppercase text-stone-600 hover:text-[#2a2359] transition-colors"
+                        >
+                          {link.label}
+                          <span className="ml-2 text-stone-300 group-hover:text-[#2a2359] group-hover:translate-x-0.5 transition-all">→</span>
+                        </Link>
+                      ))}
+                    </nav>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {isNewUser ? (
           /* ──────────── NEW USER EXPERIENCE ──────────── */
           <>
@@ -366,7 +438,7 @@ export default function Dashboard() {
           /* ──────────── RETURNING USER EXPERIENCE ──────────── */
           <>
             {/* Figures: oversized serif numerals */}
-            <section className="mt-12 animate-fade-up animate-delay-1">
+            <section className="mt-12 animate-fade-up animate-delay-2">
               <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500 mb-8">
                 By the numbers
               </p>
@@ -392,7 +464,7 @@ export default function Dashboard() {
             </section>
 
             {/* Two-column editorial: Recent Projects · Recent Exchanges */}
-            <section className="mt-20 md:mt-24 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 animate-fade-up animate-delay-2">
+            <section className="mt-20 md:mt-24 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 animate-fade-up animate-delay-3">
               {/* Recent Projects */}
               <div>
                 <div className="flex items-baseline justify-between mb-6">
