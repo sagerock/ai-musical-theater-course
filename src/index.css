@@ -11,6 +11,90 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Dashboard: editorial ink-on-paper ── */
+:root {
+  --ink-paper: #faf7f2;
+  --ink-paper-warm: #f4ede0;
+  --ink-paper-shade: #ede5d4;
+  --ink-rule: #e7e2d5;
+  --ink-rule-soft: #efe9dc;
+  --ink-text: #1a1a1f;
+  --ink-mute: #57534e;
+  --ink-faint: #a8a29e;
+  --ink-accent: #2a2359;
+  --ink-accent-hover: #3e3680;
+  --ink-warn: #b8440d;
+}
+
+.dashboard-paper {
+  background-color: var(--ink-paper);
+  color: var(--ink-text);
+  font-family: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: "ss01", "ss02";
+  min-height: 100%;
+  position: relative;
+}
+
+/* Very faint paper texture — horizontal baseline rules, barely visible */
+.dashboard-paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(26, 26, 31, 0.035) 1px, transparent 0);
+  background-size: 26px 26px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.dashboard-paper > * {
+  position: relative;
+}
+
+.dashboard-display {
+  font-family: "DM Serif Display", "Playfair Display", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  font-feature-settings: "liga", "kern";
+}
+
+.dashboard-mono {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 500;
+}
+
+.dashboard-serif-italic {
+  font-family: Georgia, "Iowan Old Style", Cambria, "Times New Roman", serif;
+  font-style: italic;
+}
+
+.dashboard-paper a:focus-visible {
+  outline: 2px solid var(--ink-accent);
+  outline-offset: 3px;
+}
+
+/* A subtle underline animation for text links */
+.ink-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  transition: background-size 280ms cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.ink-underline:hover {
+  background-size: 100% 2px;
+}
+
+/* Entrance: used alongside existing animate-fade-up */
+@keyframes inkRiseIn {
+  from { opacity: 0; transform: translateY(14px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.ink-rise {
+  animation: inkRiseIn 0.9s cubic-bezier(0.2, 0.65, 0.25, 1) forwards;
+  opacity: 0;
+}
+
 /* ── Hero gradient mesh ── */
 .hero-mesh {
   position: relative;

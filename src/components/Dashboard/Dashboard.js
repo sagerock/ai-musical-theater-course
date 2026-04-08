@@ -7,14 +7,7 @@ import { db } from '../../config/firebase';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
-  FolderIcon,
-  ChatBubbleLeftRightIcon,
   PlusIcon,
-  ClockIcon,
-  TagIcon,
-  ChartBarIcon,
-  EyeIcon,
-  AcademicCapIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
 
@@ -186,298 +179,367 @@ export default function Dashboard() {
   // Removed excessive debug logging
 
   if (loading || authLoading) {
-    console.log('📊 Dashboard: Showing loading spinner', { loading, authLoading });
     return (
-      <div className="p-6">
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard data...</p>
+      <div className="dashboard-paper">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-14">
+          <div className="animate-pulse">
+            <div className="h-3 w-48 bg-stone-200 mb-8" />
+            <div className="h-16 md:h-24 w-2/3 bg-stone-200 mb-4" />
+            <div className="h-16 md:h-24 w-1/3 bg-stone-200 mb-10" />
+            <div className="h-px bg-stone-200 mb-10" />
+            <div className="grid grid-cols-3 gap-10">
+              <div className="h-20 bg-stone-200" />
+              <div className="h-20 bg-stone-200" />
+              <div className="h-20 bg-stone-200" />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   if (!currentUser) {
-    console.log('⚠️ Dashboard: No currentUser, this should not happen in protected route');
     return (
-      <div className="p-6">
-        <div className="text-center py-8">
-          <p className="text-red-600">Authentication error. Please refresh the page.</p>
+      <div className="dashboard-paper">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-14">
+          <p className="dashboard-mono text-[11px] tracking-[0.22em] uppercase text-[#b8440d]">Error</p>
+          <p className="dashboard-display text-3xl mt-4">Authentication lost. Refresh to continue.</p>
         </div>
       </div>
     );
   }
 
   const isNewUser = stats.totalProjects === 0 && stats.totalChats === 0;
+  const firstName = (currentUser?.displayName || currentUser?.email?.split('@')[0] || 'friend').split(' ')[0];
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 5) return 'Still up';
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    if (h < 21) return 'Good evening';
+    return 'Working late';
+  })();
+  const todayLabel = format(new Date(), "EEEE · MMMM d · yyyy").toUpperCase();
 
   return (
-    <div className="p-6">
+    <div className="dashboard-paper">
+      <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-10 md:py-14">
 
-      {pendingCourses.length > 0 && (
-        <div className="mb-6 space-y-3">
-          {pendingCourses.map(pending => (
-            <div
-              key={pending.id}
-              className="bg-amber-50 border border-amber-200 rounded-lg p-5 flex items-start"
-            >
-              <ClockIcon className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div className="ml-4 flex-1">
-                <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
-                  <h3 className="text-base font-semibold text-amber-900">
-                    {pending.courses?.title || 'Course'}
-                  </h3>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-200 text-amber-900">
-                    Pending approval
+        {/* ──────────── MASTHEAD ──────────── */}
+        <header className="animate-fade-up">
+          <div className="flex items-baseline justify-between flex-wrap gap-4 mb-6">
+            <p className="dashboard-mono text-[11px] tracking-[0.22em] uppercase text-stone-500">
+              {todayLabel}
+            </p>
+            <p className="dashboard-mono text-[11px] tracking-[0.18em] uppercase text-stone-500">
+              {isNewUser
+                ? 'New arrival'
+                : <>
+                    <span className="text-stone-900">{stats.totalProjects}</span>
+                    <span className="mx-2">·</span>
+                    <span className="text-stone-900">{stats.totalChats}</span>
+                    <span className="ml-2 text-stone-400">projects · exchanges</span>
+                  </>
+              }
+            </p>
+          </div>
+
+          <h1 className="dashboard-display text-[2.75rem] sm:text-6xl md:text-7xl leading-[0.95] text-stone-900">
+            {isNewUser && pendingCourses.length === 0 ? (
+              <>Welcome<span className="text-[#2a2359]">.</span></>
+            ) : (
+              <>
+                {greeting},
+                <br />
+                <span className="text-[#2a2359]">{firstName}</span>
+                <span className="text-stone-400">.</span>
+              </>
+            )}
+          </h1>
+
+          <div className="mt-10 border-t border-[#e7e2d5]" />
+        </header>
+
+        {/* ──────────── PENDING STRIP ──────────── */}
+        {pendingCourses.length > 0 && (
+          <section className="animate-fade-up animate-delay-1 mt-2">
+            {pendingCourses.map(pending => (
+              <article
+                key={pending.id}
+                className="flex items-start gap-5 py-6 border-b border-[#e7e2d5]"
+              >
+                <div className="flex-shrink-0 mt-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[#b8440d] opacity-60 animate-ping" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#b8440d]" />
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-amber-800">
-                  Your request to join <strong>{pending.courses?.title || 'this course'}</strong>
-                  {pending.courses?.course_code ? ` (${pending.courses.course_code})` : ''} has been sent to your instructor.
-                  You'll get an email as soon as they approve it, and the course will show up here automatically.
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-4 flex-wrap">
+                    <p className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-[#b8440d]">
+                      Awaiting approval
+                    </p>
+                    {pending.courses?.course_code && (
+                      <p className="dashboard-mono text-[10px] tracking-[0.15em] uppercase text-stone-500">
+                        {pending.courses.course_code}
+                      </p>
+                    )}
+                  </div>
+                  <h2 className="dashboard-display text-2xl md:text-3xl mt-2 text-stone-900">
+                    {pending.courses?.title || 'Course'}
+                  </h2>
+                  <p className="mt-3 dashboard-serif-italic text-stone-600 leading-relaxed max-w-2xl">
+                    Your request has been sent to the instructor. You'll receive an email and this will move into your active courses the moment they approve it.
+                  </p>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+
+        {isNewUser ? (
+          /* ──────────── NEW USER EXPERIENCE ──────────── */
+          <>
+            {pendingCourses.length === 0 && (
+              <section className="mt-12 animate-fade-up animate-delay-1">
+                <p className="dashboard-serif-italic text-lg md:text-xl text-stone-600 leading-relaxed max-w-2xl">
+                  An editorial notebook for thinking with AI — not just asking it. Enroll in a course, start a project, and keep a thoughtful record of how your conversations evolve.
                 </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {isNewUser ? (
-        // New user welcome section
-        <div className="mb-8">
-          {pendingCourses.length === 0 && (
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-8 mb-8">
-            <h1 className="text-3xl font-bold mb-4">
-              Welcome to AI Engagement Hub!
-            </h1>
-            <p className="text-lg mb-6">
-              A powerful analytics platform that helps educators understand how students interact with AI in real time.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                to={firstCourseId ? `/course/${firstCourseId}/projects` : '/join'}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
-              >
-                {firstCourseId ? 'Create Your First Project' : 'Join a Course to Start'}
-                <ArrowRightIcon className="ml-2 h-5 w-5" />
-              </Link>
-              {firstCourseId && (
-                <Link
-                  to="/join"
-                  className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
-                >
-                  Join a Course
-                </Link>
-              )}
-            </div>
-          </div>
-          )}
-
-          {/* Key Features for New Users */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Why AI Engagement Hub?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-blue-100 rounded-md">
-                    <EyeIcon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <h3 className="ml-3 text-lg font-medium text-gray-900">Real-time Monitoring</h3>
+                <div className="mt-10 flex items-center gap-8 flex-wrap">
+                  <Link
+                    to="/join"
+                    className="group inline-flex items-center dashboard-mono text-[11px] tracking-[0.22em] uppercase text-stone-900 border-b border-stone-900 pb-1 hover:text-[#2a2359] hover:border-[#2a2359] transition-colors"
+                  >
+                    Join a course
+                    <ArrowRightIcon className="ml-3 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Link
+                    to="/tutorials"
+                    className="dashboard-mono text-[11px] tracking-[0.22em] uppercase text-stone-500 hover:text-stone-900 transition-colors"
+                  >
+                    Watch the tutorials →
+                  </Link>
                 </div>
-                <p className="text-gray-600">Track student interactions with AI models as they happen, providing immediate insights into usage patterns.</p>
-              </div>
-              
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-green-100 rounded-md">
-                    <ChartBarIcon className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h3 className="ml-3 text-lg font-medium text-gray-900">Rich Analytics</h3>
-                </div>
-                <p className="text-gray-600">Visualize engagement patterns, model preferences, and usage trends through intuitive dashboards.</p>
-              </div>
-              
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-purple-100 rounded-md">
-                    <AcademicCapIcon className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <h3 className="ml-3 text-lg font-medium text-gray-900">Learning Support</h3>
-                </div>
-                <p className="text-gray-600">Enable structured reflection on AI interactions to deepen understanding and improve outcomes.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        // Existing user dashboard
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0]}!
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Here's what's happening with your AI interactions.
-          </p>
-        </div>
-      )}
+              </section>
+            )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-md">
-              <FolderIcon className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Projects</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-md">
-              <ChatBubbleLeftRightIcon className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Chats</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalChats}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Projects */}
-        <div className="bg-white rounded-lg shadow border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Projects</h2>
-              {firstCourseId ? (
-                <Link
-                  to={`/course/${firstCourseId}/projects`}
-                  className="text-sm text-primary-600 hover:text-primary-500 font-medium"
-                >
-                  View all
-                </Link>
-              ) : (
-                <Link
-                  to="/join"
-                  className="text-sm text-primary-600 hover:text-primary-500 font-medium"
-                >
-                  Join a course
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="p-6">
-            {recentProjects.length > 0 ? (
-              <div className="space-y-4">
-                {recentProjects.map((project) => (
-                  <div key={project.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                    <div className="flex items-center">
-                      <FolderIcon className="h-5 w-5 text-gray-400 mr-3" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{project.title}</p>
-                        <p className="text-xs text-gray-500">
-                          Created {format(new Date(project.created_at), 'MMM dd, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-                    <Link
-                      to={`/chat/${project.id}`}
-                      className="text-sm text-primary-600 hover:text-primary-500"
-                    >
-                      Open
-                    </Link>
+            {/* Three editorial features, numbered */}
+            <section className="mt-20 md:mt-24 animate-fade-up animate-delay-2">
+              <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500 mb-10">
+                A different kind of AI classroom
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
+                {[
+                  {
+                    n: '01',
+                    title: 'Observe',
+                    body: 'Real-time visibility into how you work with AI models — which prompts, which tools, which turns you take.',
+                  },
+                  {
+                    n: '02',
+                    title: 'Reflect',
+                    body: 'Conversations become material for thought, with structured prompts that turn raw interaction into learning.',
+                  },
+                  {
+                    n: '03',
+                    title: 'Learn',
+                    body: 'Instructors see the shape of engagement across a class; students build a record of how their thinking evolves.',
+                  },
+                ].map(f => (
+                  <article key={f.n}>
+                    <p className="dashboard-display text-5xl md:text-6xl text-[#2a2359] leading-none">
+                      {f.n}
+                    </p>
+                    <div className="mt-5 border-t border-[#e7e2d5]" />
+                    <h3 className="mt-5 dashboard-display text-2xl md:text-[1.7rem] text-stone-900">
+                      {f.title}
+                    </h3>
+                    <p className="mt-3 text-sm md:text-[0.95rem] leading-relaxed text-stone-600">
+                      {f.body}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </>
+        ) : (
+          /* ──────────── RETURNING USER EXPERIENCE ──────────── */
+          <>
+            {/* Figures: oversized serif numerals */}
+            <section className="mt-12 animate-fade-up animate-delay-1">
+              <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500 mb-8">
+                By the numbers
+              </p>
+              <div className="grid grid-cols-3 gap-4 md:gap-8">
+                {[
+                  { fig: stats.totalProjects, label: stats.totalProjects === 1 ? 'Project' : 'Projects' },
+                  { fig: stats.totalChats, label: stats.totalChats === 1 ? 'Exchange' : 'Exchanges' },
+                  { fig: userCourses.length, label: userCourses.length === 1 ? 'Course' : 'Courses' },
+                ].map((s, i) => (
+                  <div
+                    key={s.label}
+                    className={i > 0 ? 'pl-4 md:pl-8 border-l border-[#e7e2d5]' : ''}
+                  >
+                    <p className="dashboard-display text-[3.5rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] text-stone-900 leading-none tabular-nums">
+                      {s.fig}
+                    </p>
+                    <p className="mt-4 dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-500">
+                      {s.label}
+                    </p>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
-                <p className="mt-1 text-sm text-gray-500">Get started by creating a new project.</p>
-                <div className="mt-6">
+            </section>
+
+            {/* Two-column editorial: Recent Projects · Recent Exchanges */}
+            <section className="mt-20 md:mt-24 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 animate-fade-up animate-delay-2">
+              {/* Recent Projects */}
+              <div>
+                <div className="flex items-baseline justify-between mb-6">
+                  <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500">
+                    Recent projects
+                  </p>
                   {firstCourseId ? (
                     <Link
                       to={`/course/${firstCourseId}/projects`}
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                      className="dashboard-mono text-[10px] tracking-[0.18em] uppercase text-stone-900 ink-underline hover:text-[#2a2359] transition-colors"
                     >
-                      <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                      New Project
+                      View all →
                     </Link>
                   ) : (
                     <Link
                       to="/join"
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                      className="dashboard-mono text-[10px] tracking-[0.18em] uppercase text-stone-900 ink-underline hover:text-[#2a2359] transition-colors"
                     >
-                      <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                      Join a Course
+                      Join a course →
                     </Link>
                   )}
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Recent Chat Activity */}
-        <div className="bg-white rounded-lg shadow border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          </div>
-          <div className="p-6">
-            {recentChats.length > 0 ? (
-              <div className="space-y-4">
-                {recentChats.map((chat) => (
-                  <div key={chat.id} className="border-l-4 border-primary-200 pl-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <ChatBubbleLeftRightIcon className="h-4 w-4 text-gray-400 mr-2" />
-                        <span className="text-xs text-gray-500">{chat.tool_used}</span>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {chat.created_at && !isNaN(new Date(chat.created_at)) ? 
-                          format(new Date(chat.created_at), 'MMM dd, HH:mm') : 'Unknown'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-900 mt-1 line-clamp-2">
-                      {chat.prompt.length > 100 ? `${chat.prompt.substring(0, 100)}...` : chat.prompt}
+                {recentProjects.length > 0 ? (
+                  <ol className="border-t border-[#e7e2d5]">
+                    {recentProjects.map((project, idx) => (
+                      <li key={project.id} className="border-b border-[#e7e2d5]">
+                        <Link
+                          to={`/chat/${project.id}`}
+                          className="group flex items-baseline gap-5 py-6 -mx-4 px-4 hover:bg-[#f4ede0]/50 transition-colors"
+                        >
+                          <span className="dashboard-mono text-[11px] text-stone-400 tabular-nums w-7 flex-shrink-0">
+                            {String(idx + 1).padStart(2, '0')}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="dashboard-display text-xl md:text-[1.4rem] text-stone-900 group-hover:text-[#2a2359] transition-colors truncate">
+                              {project.title}
+                            </p>
+                            <p className="mt-1.5 dashboard-mono text-[10px] tracking-[0.14em] uppercase text-stone-500">
+                              {format(new Date(project.created_at), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                          <ArrowRightIcon className="h-4 w-4 text-stone-300 group-hover:text-[#2a2359] group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="border-t border-[#e7e2d5] py-10">
+                    <p className="dashboard-serif-italic text-stone-600 text-lg">
+                      Your workspace is still blank.
                     </p>
-                    {chat.projects && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Project: {chat.projects.title}
-                      </p>
-                    )}
-                    {chat.chat_tags && chat.chat_tags.length > 0 && (
-                      <div className="flex items-center mt-2">
-                        <TagIcon className="h-3 w-3 text-gray-400 mr-1" />
-                        <div className="flex space-x-1">
-                          {chat.chat_tags.slice(0, 3).map((chatTag, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              {chatTag.tags.name}
-                            </span>
-                          ))}
-                          {chat.chat_tags.length > 3 && (
-                            <span className="text-xs text-gray-500">+{chat.chat_tags.length - 3} more</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    <div className="mt-5">
+                      {firstCourseId ? (
+                        <Link
+                          to={`/course/${firstCourseId}/projects`}
+                          className="inline-flex items-center dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-900 border-b border-stone-900 pb-1 hover:text-[#2a2359] hover:border-[#2a2359] transition-colors"
+                        >
+                          <PlusIcon className="h-3 w-3 mr-2" />
+                          Start your first project
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/join"
+                          className="inline-flex items-center dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-900 border-b border-stone-900 pb-1 hover:text-[#2a2359] hover:border-[#2a2359] transition-colors"
+                        >
+                          Join a course to begin →
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <ChatBubbleLeftRightIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No chat activity yet</h3>
-                <p className="mt-1 text-sm text-gray-500">Start a conversation with AI to see your activity here.</p>
+
+              {/* Recent Exchanges */}
+              <div>
+                <p className="dashboard-mono text-[10px] tracking-[0.24em] uppercase text-stone-500 mb-6">
+                  Recent exchanges
+                </p>
+                {recentChats.length > 0 ? (
+                  <ul className="border-t border-[#e7e2d5]">
+                    {recentChats.map(chat => (
+                      <li key={chat.id} className="border-b border-[#e7e2d5] py-6">
+                        <div className="flex items-baseline justify-between gap-3 mb-3">
+                          <p className="dashboard-mono text-[10px] tracking-[0.18em] uppercase text-[#2a2359]">
+                            {chat.tool_used || 'AI'}
+                          </p>
+                          <p className="dashboard-mono text-[10px] tracking-[0.12em] uppercase text-stone-400 tabular-nums">
+                            {chat.created_at && !isNaN(new Date(chat.created_at))
+                              ? format(new Date(chat.created_at), 'MMM d · HH:mm')
+                              : '—'}
+                          </p>
+                        </div>
+                        <p className="dashboard-serif-italic text-stone-700 leading-relaxed text-[0.98rem]">
+                          &ldquo;{chat.prompt.length > 140 ? `${chat.prompt.substring(0, 140)}…` : chat.prompt}&rdquo;
+                        </p>
+                        {(chat.projects || (chat.chat_tags && chat.chat_tags.length > 0)) && (
+                          <div className="mt-3 flex items-baseline flex-wrap gap-x-4 gap-y-1">
+                            {chat.projects && (
+                              <p className="dashboard-mono text-[10px] tracking-[0.14em] uppercase text-stone-500">
+                                <span className="text-stone-400">in ·</span> {chat.projects.title}
+                              </p>
+                            )}
+                            {chat.chat_tags && chat.chat_tags.length > 0 && (
+                              <div className="flex flex-wrap gap-3">
+                                {chat.chat_tags.slice(0, 3).map((chatTag, index) => (
+                                  <span
+                                    key={index}
+                                    className="dashboard-mono text-[9px] tracking-[0.14em] uppercase text-stone-600 border-b border-stone-300"
+                                  >
+                                    {chatTag.tags.name}
+                                  </span>
+                                ))}
+                                {chat.chat_tags.length > 3 && (
+                                  <span className="dashboard-mono text-[9px] tracking-[0.14em] uppercase text-stone-400">
+                                    +{chat.chat_tags.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="border-t border-[#e7e2d5] py-10">
+                    <p className="dashboard-serif-italic text-stone-600 text-lg">
+                      No exchanges on record yet.
+                    </p>
+                    <p className="mt-3 text-sm text-stone-500 max-w-sm leading-relaxed">
+                      Start a conversation with AI and your activity will appear here as a running log — model, timestamp, prompt, and tags.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </section>
+          </>
+        )}
+
+        {/* Bottom rule + colophon */}
+        <footer className="mt-24 pt-8 border-t border-[#e7e2d5]">
+          <p className="dashboard-mono text-[10px] tracking-[0.22em] uppercase text-stone-400">
+            AI Engagement Hub · Partnership over Policing
+          </p>
+        </footer>
       </div>
     </div>
   );
-} 
+}
