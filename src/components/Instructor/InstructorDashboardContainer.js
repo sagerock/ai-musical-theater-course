@@ -293,7 +293,7 @@ export default function InstructorDashboardContainer() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -309,7 +309,7 @@ export default function InstructorDashboardContainer() {
 
   if (!isInstructorAnywhere) {
     return (
-      <div className="p-6">
+      <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden p-6">
         <div className="text-center py-12">
           <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
@@ -323,7 +323,7 @@ export default function InstructorDashboardContainer() {
 
   if (instructorCourses.length === 0) {
     return (
-      <div className="p-6">
+      <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden p-6">
         <div className="text-center py-12">
           <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No Courses Yet</h3>
@@ -423,7 +423,7 @@ export default function InstructorDashboardContainer() {
   }
 
   return (
-    <div className="p-6">
+    <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
