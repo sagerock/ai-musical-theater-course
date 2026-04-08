@@ -226,12 +226,14 @@ export default function Dashboard() {
                 {firstCourseId ? 'Create Your First Project' : 'Join a Course to Start'}
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
               </Link>
-              <Link
-                to="/join"
-                className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
-              >
-                Join a Course
-              </Link>
+              {firstCourseId && (
+                <Link
+                  to="/join"
+                  className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10"
+                >
+                  Join a Course
+                </Link>
+              )}
             </div>
           </div>
 
