@@ -323,7 +323,7 @@ export default function Projects() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -337,7 +337,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-6">
+    <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden p-6">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">

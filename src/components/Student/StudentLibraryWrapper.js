@@ -29,7 +29,7 @@ export default function StudentLibraryWrapper() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading library...</p>
@@ -39,10 +39,12 @@ export default function StudentLibraryWrapper() {
   }
 
   return (
-    <StudentLibrary 
-      selectedCourseId={courseId}
-      selectedCourse={course}
-      currentUser={currentUser}
-    />
+    <div className="bg-[#faf7f2] min-h-screen overflow-x-hidden">
+      <StudentLibrary
+        selectedCourseId={courseId}
+        selectedCourse={course}
+        currentUser={currentUser}
+      />
+    </div>
   );
 }
