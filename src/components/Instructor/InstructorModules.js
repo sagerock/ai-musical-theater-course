@@ -15,7 +15,11 @@ export default function InstructorModules({ selectedCourseId, selectedCourse, cu
   const [showProgressGrid, setShowProgressGrid] = useState(false);
 
   const loadModules = useCallback(async () => {
-    if (!selectedCourseId) return;
+    if (!selectedCourseId) {
+      setModules([]);
+      setLoading(false);
+      return;
+    }
     try {
       const modulesData = await modulesApi.getModulesByCourse(selectedCourseId);
       setModules(modulesData);
