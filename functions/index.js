@@ -856,21 +856,93 @@ AI Engagement Hub
           logger.error('❌ Error sending email to admin:', admin.email, emailError.message);
         }
       }
-      
+
+      // Send acknowledgement email to the student who made the request
+      try {
+        const studentSubject = `We received your request to join ${emailData.courseName}`;
+        const studentHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">Request Received ✉️</h1>
+            </div>
+
+            <div style="background: #ffffff; padding: 30px 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+              <p>Hello ${emailData.studentName},</p>
+
+              <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h2 style="margin-top: 0; color: #2563eb;">Thanks — we got your request!</h2>
+                <p style="margin-bottom: 0;">Your request to join <strong>${emailData.courseName}</strong> has been sent to your instructor for review.</p>
+              </div>
+
+              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Course Details</h3>
+                <p><strong>Course:</strong> ${emailData.courseName}</p>
+                <p><strong>Course Code:</strong> ${emailData.courseCode}</p>
+                <p><strong>Requested:</strong> ${emailData.requestDate}</p>
+              </div>
+
+              <h3>What happens next?</h3>
+              <p>Your instructor will review your request. You'll receive another email as soon as they approve it, and then you'll be able to access the course from your dashboard.</p>
+
+              <p><a href="https://ai-engagement-hub.com/dashboard" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Go to Your Dashboard</a></p>
+
+              <p>Best regards,<br>AI Engagement Hub</p>
+            </div>
+          </div>
+        `;
+        const studentText = `
+Request Received - ${emailData.courseName}
+
+Hello ${emailData.studentName},
+
+Thanks — we got your request! Your request to join ${emailData.courseName} has been sent to your instructor for review.
+
+Course Details:
+- Course: ${emailData.courseName}
+- Course Code: ${emailData.courseCode}
+- Requested: ${emailData.requestDate}
+
+What happens next?
+Your instructor will review your request. You'll receive another email as soon as they approve it, and then you'll be able to access the course from your dashboard.
+
+Go to your dashboard: https://ai-engagement-hub.com/dashboard
+
+Best regards,
+AI Engagement Hub
+        `;
+
+        await sgMail.send({
+          to: emailData.studentEmail,
+          from: {
+            email: SENDGRID_FROM_EMAIL,
+            name: 'AI Engagement Hub'
+          },
+          subject: studentSubject,
+          text: studentText,
+          html: studentHtml
+        });
+        emailsSent++;
+        logger.info('✅ Acknowledgement email sent to student:', emailData.studentEmail);
+      } catch (emailError) {
+        emailsFailed++;
+        logger.error('❌ Error sending acknowledgement email to student:', emailData.studentEmail, emailError.message);
+      }
+
       logger.info(`📧 Email sending complete: ${emailsSent} sent, ${emailsFailed} failed`);
-      
+
     } catch (error) {
       logger.error('❌ Email sending setup error:', error.message);
-      emailsFailed = instructorEmails.length + adminEmails.length;
+      emailsFailed = instructorEmails.length + adminEmails.length + 1;
     }
-    
+
     return {
       success: true,
       message: 'Course join notifications processed successfully',
       notificationsSent: {
         instructors: instructorEmails.length,
         admins: adminEmails.length,
-        total: instructorEmails.length + adminEmails.length
+        student: 1,
+        total: instructorEmails.length + adminEmails.length + 1
       },
       emailResults: {
         sent: emailsSent,
@@ -1758,7 +1830,7 @@ exports.onUserRegistration = onDocumentCreated('users/{userId}', async (event) =
             <h3 style="margin-top: 0;">Getting Started</h3>
             <ul style="padding-left: 20px;">
               <li><strong>Students:</strong> Ask your instructor for a course code, then click "Join Course" from your dashboard.</li>
-              <li><strong>Instructors:</strong> Contact your admin to get promoted to the Instructor role, then create your first course from the Instructor Dashboard.</li>
+              <li><strong>Instructors:</strong> If you're an educator and need instructor access, email <a href="mailto:sage@sagerock.com" style="color: #2563eb;">sage@sagerock.com</a> and we'll get you set up.</li>
             </ul>
           </div>
 
@@ -1778,7 +1850,7 @@ Your account has been created successfully. We're excited to have you on board!
 
 Getting Started:
 - Students: Ask your instructor for a course code, then click "Join Course" from your dashboard.
-- Instructors: Contact your admin to get promoted to the Instructor role, then create your first course from the Instructor Dashboard.
+- Instructors: If you're an educator and need instructor access, email sage@sagerock.com and we'll get you set up.
 
 Need help? Visit our Help & Support page at https://ai-engagement-hub.com/help
 or check out our Video Tutorials at https://ai-engagement-hub.com/tutorials
