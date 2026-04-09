@@ -1882,7 +1882,7 @@ export const emailNotifications = {
       console.error('❌ Error sending new project email:', error);
       return { success: false, error: error.message };
     }
-  }
+  },
   async sendCourseInviteEmail(data) {
     const template = EMAIL_TEMPLATES.courseInvitation;
     const subject = template.subject(data);
