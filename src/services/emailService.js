@@ -1220,6 +1220,20 @@ class EmailService {
     
     return results;
   }
+
+  async sendCourseInviteEmail(data) {
+    const template = EMAIL_TEMPLATES.courseInvitation;
+    const subject = template.subject(data);
+    const htmlContent = template.getHtml(data);
+    const textContent = template.getText(data);
+
+    return await this.sendEmail(
+      data.studentEmail,
+      subject,
+      htmlContent,
+      textContent
+    );
+  }
 }
 
 // Create singleton instance
@@ -1882,19 +1896,6 @@ export const emailNotifications = {
       console.error('❌ Error sending new project email:', error);
       return { success: false, error: error.message };
     }
-  },
-  async sendCourseInviteEmail(data) {
-    const template = EMAIL_TEMPLATES.courseInvitation;
-    const subject = template.subject(data);
-    const htmlContent = template.getHtml(data);
-    const textContent = template.getText(data);
-
-    return await this.sendEmail(
-      data.studentEmail,
-      subject,
-      htmlContent,
-      textContent
-    );
   }
 };
 
