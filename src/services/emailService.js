@@ -889,6 +889,109 @@ ${data.courseName}
 AI Engagement Hub - Empowering educators and students with AI insights
 This message was sent by your instructor in ${data.courseName}
     `
+  },
+
+  courseInvitation: {
+    subject: (data) => `You're invited to join ${data.courseName} on AI Engagement Hub`,
+    getHtml: (data) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Course Invitation</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px; }
+          .steps { background: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0; }
+          .steps ol { margin: 0; padding-left: 20px; }
+          .steps li { margin-bottom: 8px; }
+          .button { display: inline-block; background: #4f46e5; color: #ffffff !important; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; font-size: 16px; }
+          .discount { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px 16px; border-radius: 6px; margin: 15px 0; }
+          .discount code { background: #d1fae5; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 15px; }
+          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>You're Invited!</h1>
+            <p>Join ${data.courseName} on AI Engagement Hub</p>
+          </div>
+          <div class="content">
+            <p>Hello,</p>
+
+            <p><strong>${data.instructorName}</strong> has invited you to join <strong>${data.courseName}</strong> (${data.semester} ${data.year}) on AI Engagement Hub.</p>
+
+            <p style="text-align: center;">
+              <a href="${data.joinUrl}" class="button" style="color: #ffffff !important; background-color: #4f46e5;">Join Course</a>
+            </p>
+
+            <div class="steps">
+              <h3 style="margin-top: 0;">Here's what to expect:</h3>
+              <ol>
+                <li>Create your free account (or log in if you already have one)</li>
+                ${data.discountCode
+                  ? `<li>At checkout, enter your discount code: <code>${data.discountCode}</code></li>`
+                  : `<li>Pay the $49 semester access fee (or enter a discount code at checkout if your instructor provided one)</li>`
+                }
+                <li>Your instructor will approve your enrollment</li>
+              </ol>
+            </div>
+
+            ${data.discountCode ? `
+            <div class="discount">
+              Your discount code: <code>${data.discountCode}</code>
+            </div>
+            ` : ''}
+
+            <p>Your course code is <strong>${data.courseCode}</strong> — it will be filled in automatically when you click the link above.</p>
+
+            <p>We look forward to seeing you in the course!</p>
+
+            <p>Best regards,<br>
+            <strong>${data.instructorName}</strong><br>
+            ${data.courseName}</p>
+          </div>
+          <div class="footer">
+            <p>AI Engagement Hub - Empowering educators and students with AI insights</p>
+            <p>This invitation was sent by your instructor for ${data.courseName}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    getText: (data) => `
+You're Invited to ${data.courseName} - AI Engagement Hub
+
+Hello,
+
+${data.instructorName} has invited you to join ${data.courseName} (${data.semester} ${data.year}) on AI Engagement Hub.
+
+Click here to get started: ${data.joinUrl}
+
+Here's what to expect:
+1. Create your free account (or log in if you already have one)
+${data.discountCode
+  ? `2. At checkout, enter your discount code: ${data.discountCode}`
+  : `2. Pay the $49 semester access fee (or enter a discount code at checkout if your instructor provided one)`
+}
+3. Your instructor will approve your enrollment
+${data.discountCode ? `\nYour discount code: ${data.discountCode}\n` : ''}
+Your course code is ${data.courseCode} — it will be filled in automatically when you click the link above.
+
+We look forward to seeing you in the course!
+
+Best regards,
+${data.instructorName}
+${data.courseName}
+
+---
+AI Engagement Hub - Empowering educators and students with AI insights
+This invitation was sent by your instructor for ${data.courseName}
+    `
   }
 };
 
@@ -1779,6 +1882,19 @@ export const emailNotifications = {
       console.error('❌ Error sending new project email:', error);
       return { success: false, error: error.message };
     }
+  }
+  async sendCourseInviteEmail(data) {
+    const template = EMAIL_TEMPLATES.courseInvitation;
+    const subject = template.subject(data);
+    const htmlContent = template.getHtml(data);
+    const textContent = template.getText(data);
+
+    return await this.sendEmail(
+      data.studentEmail,
+      subject,
+      htmlContent,
+      textContent
+    );
   }
 };
 

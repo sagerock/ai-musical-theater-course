@@ -13,8 +13,10 @@ import {
   ClipboardDocumentListIcon,
   FolderIcon,
   ChatBubbleLeftRightIcon,
-  WrenchScrewdriverIcon
+  WrenchScrewdriverIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import InviteStudentsModal from './InviteStudentsModal';
 
 export default function CourseDashboard() {
   const { courseId } = useParams();
@@ -27,6 +29,7 @@ export default function CourseDashboard() {
     conversationCount: 0
   });
   const [loading, setLoading] = useState(true);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const { currentUser, userRole, isInstructorAnywhere } = useAuth();
 
   useEffect(() => {
@@ -178,7 +181,16 @@ Check browser console for detailed information.
               <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium mr-2">
                 {course.course_code}
               </span>
-              <span>{course.semester} {course.year}</span>
+              <span className="mr-3">{course.semester} {course.year}</span>
+              {(userRole === 'instructor' || userRole === 'admin' || isInstructorAnywhere) && (
+                <button
+                  onClick={() => setShowInviteModal(true)}
+                  className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                >
+                  <EnvelopeIcon className="h-3.5 w-3.5 mr-1" />
+                  Invite Students
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -342,6 +354,14 @@ Check browser console for detailed information.
           )}
         </div>
       </div>
+
+      {/* Invite Students Modal */}
+      <InviteStudentsModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        course={course}
+        instructorName={currentUser?.name || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Your Instructor'}
+      />
     </div>
   );
 }
