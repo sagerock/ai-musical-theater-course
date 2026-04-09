@@ -3,6 +3,7 @@ import { userApi, courseApi, chatApi, projectApi } from '../../services/firebase
 import { hasAdminPermissions } from '../../utils/roleUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import approvalEmailService from '../../services/approvalEmailService';
 import MemberRoleManager from '../Course/MemberRoleManager';
 import {
   UsersIcon,
@@ -263,6 +264,18 @@ export default function Students({ selectedCourseId, selectedCourse, currentUser
       ));
       
       toast.success(`${student.name || student.email} has been approved for the course`);
+
+      // Send approval confirmation email
+      try {
+        await approvalEmailService.sendApprovalConfirmation({
+          userId: student.id,
+          courseId: selectedCourseId,
+          approvedRole: 'student',
+          approverName: currentUser?.name || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Instructor'
+        });
+      } catch (emailError) {
+        console.warn('Failed to send approval email:', emailError);
+      }
     } catch (error) {
       console.error('Error approving student:', error);
       toast.error('Failed to approve student');
