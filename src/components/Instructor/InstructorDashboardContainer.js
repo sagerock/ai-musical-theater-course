@@ -17,6 +17,7 @@ import FileManagement from './FileManagement';
 import CourseManagement from './CourseManagement';
 import AIAssistant from './AIAssistant';
 import InstructorModules from './InstructorModules';
+import InviteStudentsModal from '../Course/InviteStudentsModal';
 import { AcademicCapIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export default function InstructorDashboardContainer() {
@@ -28,6 +29,7 @@ export default function InstructorDashboardContainer() {
   
   // Course creation state
   const [showCreateCourseModal, setShowCreateCourseModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [newCourse, setNewCourse] = useState({
     name: '',
     description: '',
@@ -453,6 +455,7 @@ export default function InstructorDashboardContainer() {
         exporting={exporting}
         onExportData={handleExportData}
         onManageTags={handleManageTags}
+        onInviteStudents={() => setShowInviteModal(true)}
       />
 
       {/* Navigation */}
@@ -522,6 +525,16 @@ export default function InstructorDashboardContainer() {
           </Routes>
         )}
       </div>
+
+      {/* Invite Students Modal */}
+      {selectedCourse && (
+        <InviteStudentsModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          course={selectedCourse.courses}
+          instructorName={currentUser?.name || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Your Instructor'}
+        />
+      )}
 
       {/* Create Course Modal */}
       {showCreateCourseModal && (

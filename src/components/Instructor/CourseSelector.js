@@ -1,15 +1,16 @@
 import React from 'react';
-import { AcademicCapIcon, ArrowDownTrayIcon, TagIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, ArrowDownTrayIcon, TagIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
-export default function CourseSelector({ 
-  courses, 
-  selectedCourseId, 
-  onCourseChange, 
-  selectedCourse, 
+export default function CourseSelector({
+  courses,
+  selectedCourseId,
+  onCourseChange,
+  selectedCourse,
   loading,
   exporting,
   onExportData,
-  onManageTags 
+  onManageTags,
+  onInviteStudents
 }) {
   if (loading) {
     return (
@@ -66,6 +67,13 @@ export default function CourseSelector({
               >
                 <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
                 {exporting ? 'Exporting...' : 'Export Data'}
+              </button>
+              <button
+                onClick={onInviteStudents}
+                className="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-100 rounded hover:bg-indigo-200 transition-colors"
+              >
+                <EnvelopeIcon className="h-3 w-3 mr-1" />
+                Invite Students
               </button>
               <button
                 onClick={onManageTags}
