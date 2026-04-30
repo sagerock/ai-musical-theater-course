@@ -78,7 +78,12 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.from('users').update(dbUpdates).eq('id', user.id)
     if (error) throw error
 
-    setCurrentUser(prev => ({ ...prev, ...dbUpdates }))
+    setCurrentUser(prev => ({
+      ...prev,
+      name: dbUpdates.name !== undefined ? dbUpdates.name : prev.name,
+      email: dbUpdates.email !== undefined ? dbUpdates.email : prev.email,
+      updated_at: dbUpdates.updated_at
+    }))
   }
 
   const promoteToAdmin = async (email) => {
@@ -103,7 +108,18 @@ export function AuthProvider({ children }) {
       .single()
 
     if (userData) {
-      setCurrentUser(prev => ({ ...prev, ...userData }))
+      const role = userData.role || 'student'
+      setCurrentUser(prev => ({
+        ...prev,
+        name: userData.name || prev.name,
+        email: userData.email || prev.email,
+        role,
+        school_id: userData.school_id,
+        schoolId: userData.school_id,
+        updated_at: userData.updated_at
+      }))
+      setUserRole(role)
+      setIsSchoolAdministrator(role === 'school_administrator')
       setHasSemesterAccess(checkSemesterAccess(userData))
     }
   }
@@ -183,19 +199,27 @@ export function AuthProvider({ children }) {
   // ---- Auth state listener ----
 
   useEffect(() => {
-    // Load initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      loadUserState(session)
-    })
+    let active = true
 
-    // Listen for auth changes
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (active) loadUserState(session)
+      })
+      .catch((err) => {
+        console.error('Failed to get initial session:', err)
+        if (active) setLoading(false)
+      })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        loadUserState(session)
+        if (active) loadUserState(session)
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      active = false
+      subscription.unsubscribe()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = {
