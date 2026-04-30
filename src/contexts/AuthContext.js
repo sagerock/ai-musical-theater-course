@@ -1,417 +1,202 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  sendPasswordResetEmail,
-  updateProfile as firebaseUpdateProfile,
-  updateEmail
-} from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  collection, 
-  query, 
-  where, 
-  getDocs 
-} from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../lib/supabaseClient'
 
-const AuthContext = createContext();
+const ADMIN_EMAIL = 'sage+admin@sagerock.com'
+
+const AuthContext = createContext()
 
 export function useAuth() {
-  return useContext(AuthContext);
+  return useContext(AuthContext)
 }
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [isInstructorAnywhere, setIsInstructorAnywhere] = useState(false);
-  const [isSchoolAdministrator, setIsSchoolAdministrator] = useState(false);
-  const [hasSemesterAccess, setHasSemesterAccess] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null)
+  const [userRole, setUserRole] = useState(null)
+  const [isInstructorAnywhere, setIsInstructorAnywhere] = useState(false)
+  const [isSchoolAdministrator, setIsSchoolAdministrator] = useState(false)
+  const [hasSemesterAccess, setHasSemesterAccess] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  console.log('🔥 AuthProvider render:', {
-    currentUser: currentUser?.uid,
-    email: currentUser?.email,
-    userRole,
-    isInstructorAnywhere,
-    isSchoolAdministrator,
-    loading
-  });
+  // ---- Auth functions ----
 
-  // Authentication functions
   const signUp = async (email, password, displayName) => {
-    console.log('🔥 SignUp attempt:', email, displayName);
-    
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    
-    // Update profile with display name
-    if (displayName) {
-      await firebaseUpdateProfile(user, { displayName });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: displayName || email.split('@')[0] } }
+    })
+    if (error) throw error
+
+    // The handle_new_user trigger creates the users row automatically.
+    // Promote admin email immediately after sign-up.
+    if (email === ADMIN_EMAIL && data.user) {
+      await supabase.from('users')
+        .update({ role: 'admin' })
+        .eq('id', data.user.id)
     }
-    
-    // Check if this is the designated admin email
-    const isDesignatedAdmin = email === 'sage+admin@sagerock.com';
-    
-    // Create user document in Firestore
-    await setDoc(doc(db, 'users', user.uid), {
-      id: user.uid,
-      email: user.email,
-      name: displayName || user.email.split('@')[0],
-      role: isDesignatedAdmin ? 'admin' : 'student', // Admin role for designated email
-      isGlobalAdmin: isDesignatedAdmin,
-      emailNotificationsEnabled: true,
-      instructorNoteEmails: true,
-      newProjectEmails: true,
-      weeklyReminderEmails: true,
-      systemUpdateEmails: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-    
-    if (isDesignatedAdmin) {
-      console.log('✅ Admin user created successfully:', user.uid);
-    } else {
-      console.log('✅ User created successfully:', user.uid);
-    }
-    
-    return userCredential;
-  };
+
+    return data
+  }
 
   const signIn = async (email, password) => {
-    console.log('🔥 SignIn attempt:', email);
-    return signInWithEmailAndPassword(auth, email, password);
-  };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+    return data
+  }
 
-  // Backward compatibility aliases
-  const login = signIn;
-  const signup = signUp;
+  const login = signIn    // backward compat alias
+  const signup = signUp   // backward compat alias
 
   const logout = async () => {
-    console.log('🔥 Logout initiated');
-    return signOut(auth);
-  };
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+  }
 
   const resetPassword = async (email) => {
-    console.log('🔥 Password reset requested for:', email);
-
-    // Configure action code settings with authorized domain
-    const actionCodeSettings = {
-      // URL to redirect back to after password reset
-      url: `${window.location.origin}/login`,
-      handleCodeInApp: false,
-    };
-
-    return sendPasswordResetEmail(auth, email, actionCodeSettings);
-  };
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`
+    })
+    if (error) throw error
+  }
 
   const updateProfile = async (updates) => {
-    if (!auth.currentUser) {
-      throw new Error('No authenticated user');
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('No authenticated user')
+
+    const dbUpdates = { updated_at: new Date().toISOString() }
+
+    if (updates.display_name || updates.displayName) {
+      dbUpdates.name = updates.display_name || updates.displayName
     }
 
-    console.log('🔥 Profile update requested:', updates);
-
-    try {
-      // Handle display name updates
-      if (updates.display_name || updates.displayName) {
-        const displayName = updates.display_name || updates.displayName;
-        await firebaseUpdateProfile(auth.currentUser, { displayName });
-
-        // Also update the Firestore user document
-        await setDoc(doc(db, 'users', auth.currentUser.uid), {
-          name: displayName,
-          updatedAt: new Date()
-        }, { merge: true });
-
-        // Update the currentUser state with the new name
-        setCurrentUser(prev => ({
-          ...prev,
-          name: displayName,
-          displayName: displayName
-        }));
-
-        console.log('✅ Display name updated successfully');
-      }
-
-      // Handle email updates
-      if (updates.email) {
-        await updateEmail(auth.currentUser, updates.email);
-
-        // Update the Firestore user document
-        await setDoc(doc(db, 'users', auth.currentUser.uid), {
-          email: updates.email,
-          updatedAt: new Date()
-        }, { merge: true });
-
-        // Update the currentUser state with the new email
-        setCurrentUser(prev => ({
-          ...prev,
-          email: updates.email
-        }));
-
-        console.log('✅ Email updated successfully');
-      }
-
-    } catch (error) {
-      console.error('❌ Profile update error:', error);
-      throw error;
+    if (updates.email) {
+      const { error } = await supabase.auth.updateUser({ email: updates.email })
+      if (error) throw error
+      dbUpdates.email = updates.email
     }
-  };
+
+    const { error } = await supabase.from('users').update(dbUpdates).eq('id', user.id)
+    if (error) throw error
+
+    setCurrentUser(prev => ({ ...prev, ...dbUpdates }))
+  }
 
   const promoteToAdmin = async (email) => {
-    try {
-      console.log('🔥 Promoting user to admin:', email);
-      
-      if (email === 'sage+admin@sagerock.com') {
-        // Update the current user to admin if it's the designated admin email
-        if (auth.currentUser && auth.currentUser.email === email) {
-          await setDoc(doc(db, 'users', auth.currentUser.uid), {
-            id: auth.currentUser.uid,
-            email: auth.currentUser.email,
-            name: auth.currentUser.displayName || 'Admin',
-            role: 'admin',
-            isGlobalAdmin: true,
-            emailNotificationsEnabled: true,
-            instructorNoteEmails: true,
-            newProjectEmails: true,
-            weeklyReminderEmails: true,
-            systemUpdateEmails: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          });
-          
-          console.log('✅ User promoted to admin successfully');
-          return true;
-        }
-      }
-      
-      throw new Error('Only sage+admin@sagerock.com can be promoted to admin');
-    } catch (error) {
-      console.error('❌ Error promoting to admin:', error);
-      throw error;
+    if (email !== ADMIN_EMAIL) {
+      throw new Error('Only sage+admin@sagerock.com can be promoted to admin')
     }
-  };
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.email !== email) throw new Error('User not authenticated')
+    const { error } = await supabase.from('users').update({ role: 'admin' }).eq('id', user.id)
+    if (error) throw error
+    return true
+  }
 
-  // Fetch user role from Firestore with retry logic
-  const fetchUserRole = async (userId, retries = 3) => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        console.log(`🔍 Fetching user role for: ${userId} (attempt ${attempt}/${retries})`);
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const role = userData.role || 'student';
-          console.log('✅ User role fetched:', role);
-          return role;
-        } else {
-          console.log('⚠️ User document not found, defaulting to student');
-          return 'student';
-        }
-      } catch (error) {
-        console.error(`❌ Error fetching user role (attempt ${attempt}/${retries}):`, error);
-        
-        // If it's a network error and we have retries left, wait and try again
-        if (attempt < retries && (error.code === 'unavailable' || error.message?.includes('offline'))) {
-          console.log(`⏳ Retrying in ${attempt * 1000}ms...`);
-          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-          continue;
-        }
-        
-        // Final fallback
-        console.log('🔄 Using fallback role: student');
-        return 'student';
-      }
-    }
-    return 'student';
-  };
-
-  // Check if user has teaching permissions in any course with retry logic
-  const checkInstructorStatus = async (userId, retries = 3) => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        console.log(`🔍 Checking teaching permissions for: ${userId} (attempt ${attempt}/${retries})`);
-        
-        // Get all user's course memberships
-        const membershipsQuery = query(
-          collection(db, 'courseMemberships'),
-          where('userId', '==', userId),
-          where('status', '==', 'approved')
-        );
-        
-        const membershipsSnapshot = await getDocs(membershipsQuery);
-        
-        // Import roleUtils to check for teaching permissions
-        const { hasTeachingPermissions } = await import('../utils/roleUtils');
-        
-        // Check if user has teaching permissions in any course
-        const hasTeachingRole = membershipsSnapshot.docs.some(doc => {
-          const membership = doc.data();
-          return hasTeachingPermissions(membership.role);
-        });
-        
-        console.log('✅ Teaching permissions status:', hasTeachingRole);
-        return hasTeachingRole;
-      } catch (error) {
-        console.error(`❌ Error checking instructor status (attempt ${attempt}/${retries}):`, error);
-        
-        // If it's a network error and we have retries left, wait and try again
-        if (attempt < retries && (error.code === 'unavailable' || error.message?.includes('offline'))) {
-          console.log(`⏳ Retrying instructor check in ${attempt * 1000}ms...`);
-          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-          continue;
-        }
-        
-        // Final fallback
-        console.log('🔄 Using fallback instructor status: false');
-        return false;
-      }
-    }
-    return false;
-  };
-
-  // Check if user has active semester access
-  const checkSemesterAccess = (userData) => {
-    if (!userData?.semesterAccess?.semesterEndDate) return false;
-    const endDate = userData.semesterAccess.semesterEndDate?.toDate
-      ? userData.semesterAccess.semesterEndDate.toDate()
-      : new Date(userData.semesterAccess.semesterEndDate);
-    return endDate > new Date();
-  };
-
-  // Re-fetch user doc from Firestore (call after payment return)
   const refreshUser = async () => {
-    if (!auth.currentUser) return;
-    try {
-      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        setCurrentUser(prev => ({ ...prev, ...userData }));
-        setHasSemesterAccess(checkSemesterAccess(userData));
-      }
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (userData) {
+      setCurrentUser(prev => ({ ...prev, ...userData }))
+      setHasSemesterAccess(checkSemesterAccess(userData))
     }
-  };
+  }
 
-  // Auth state change handler
-  useEffect(() => {
-    console.log('🔥 Setting up auth state listener');
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('🔥 Auth state changed:', user ? user.uid : 'signed out');
-      
-      if (user) {
-        // First get the Firestore user document to get the full user data
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          let userData = {};
+  // ---- Helpers ----
 
-          if (userDoc.exists()) {
-            userData = userDoc.data();
-            console.log('🔥 Loaded Firestore user data:', userData);
-          } else {
-            console.log('⚠️ No Firestore user document found for:', user.uid);
-          }
+  const checkSemesterAccess = (userData) => {
+    if (!userData?.semester_end_date) return false
+    return new Date(userData.semester_end_date) > new Date()
+  }
 
-          // Map Firebase user to include both uid and id for backward compatibility
-          // and merge with Firestore user data
-          const mappedUser = {
-            ...user,
-            id: user.uid, // Add id property for components that expect it
-            uid: user.uid, // Keep uid for backward compatibility
-            name: userData.name || user.displayName || user.email?.split('@')[0], // Use Firestore name, then displayName, then email prefix
-            email: user.email,
-            role: userData.role || 'student',
-            ...userData // Merge any additional fields from Firestore
-          };
+  const loadUserState = async (session) => {
+    if (!session?.user) {
+      setCurrentUser(null)
+      setUserRole(null)
+      setIsInstructorAnywhere(false)
+      setIsSchoolAdministrator(false)
+      setHasSemesterAccess(false)
+      setLoading(false)
+      return
+    }
 
-          console.log('🔥 Final mappedUser object:', {
-            uid: mappedUser.uid,
-            email: mappedUser.email,
-            name: mappedUser.name,
-            displayName: mappedUser.displayName
-          });
+    const user = session.user
 
-          setCurrentUser(mappedUser);
-          setHasSemesterAccess(checkSemesterAccess(userData));
-        } catch (error) {
-          console.error('Error loading user data from Firestore:', error);
-          // Fallback to basic user object if Firestore fails
-          const mappedUser = {
-            ...user,
-            id: user.uid,
-            uid: user.uid,
-            name: user.displayName || user.email?.split('@')[0]
-          };
-          setCurrentUser(mappedUser);
-          setHasSemesterAccess(false);
-        }
-        
-        // Check if this is the designated admin email and auto-promote if needed
-        if (user.email === 'sage+admin@sagerock.com') {
-          try {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            
-            if (!userDoc.exists() || userDoc.data().role !== 'admin') {
-              console.log('🔥 Auto-promoting designated admin user:', user.email);
-              await setDoc(doc(db, 'users', user.uid), {
-                id: user.uid,
-                email: user.email,
-                name: user.displayName || 'Admin',
-                role: 'admin',
-                isGlobalAdmin: true,
-                emailNotificationsEnabled: true,
-                instructorNoteEmails: true,
-                newProjectEmails: true,
-                weeklyReminderEmails: true,
-                systemUpdateEmails: true,
-                createdAt: userDoc.exists() ? userDoc.data().createdAt : new Date(),
-                updatedAt: new Date()
-              });
-              console.log('✅ Admin user auto-promoted successfully');
-            }
-          } catch (error) {
-            console.error('❌ Error auto-promoting admin user:', error);
-          }
-        }
-        
-        // Fetch user role and instructor status
-        try {
-          const [role, isInstructor] = await Promise.all([
-            fetchUserRole(user.uid),
-            checkInstructorStatus(user.uid)
-          ]);
-          
-          setUserRole(role);
-          setIsInstructorAnywhere(isInstructor || role === 'instructor' || role === 'admin');
-          setIsSchoolAdministrator(role === 'school_administrator');
-          
-          console.log('✅ User data loaded:', { role, isInstructor, isSchoolAdmin: role === 'school_administrator' });
-        } catch (error) {
-          console.error('❌ Error loading user data:', error);
-          setUserRole('student');
-          setIsInstructorAnywhere(false);
-          setIsSchoolAdministrator(false);
-        }
-      } else {
-        setCurrentUser(null);
-        setUserRole(null);
-        setIsInstructorAnywhere(false);
-        setIsSchoolAdministrator(false);
-        setHasSemesterAccess(false);
+    try {
+      // Load user profile from users table
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      // Auto-promote admin email
+      if (user.email === ADMIN_EMAIL && userData?.role !== 'admin') {
+        await supabase.from('users').update({ role: 'admin' }).eq('id', user.id)
+        if (userData) userData.role = 'admin'
       }
-      
-      setLoading(false);
-    });
 
-    return unsubscribe;
-  }, []);
+      const role = userData?.role || 'student'
+
+      // Check if user has teaching role in any course
+      const { data: teachingMemberships } = await supabase
+        .from('course_memberships')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .in('role', ['instructor', 'teaching_assistant'])
+
+      const isInstructor = (teachingMemberships?.length > 0) ||
+        role === 'instructor' || role === 'admin'
+
+      setCurrentUser({
+        ...user,
+        id: user.id,
+        uid: user.id,  // backward compat
+        name: userData?.name || user.email?.split('@')[0],
+        email: user.email,
+        role,
+        ...(userData || {})
+      })
+      setUserRole(role)
+      setIsInstructorAnywhere(isInstructor)
+      setIsSchoolAdministrator(role === 'school_administrator')
+      setHasSemesterAccess(checkSemesterAccess(userData))
+    } catch (error) {
+      console.error('Error loading user state:', error)
+      setCurrentUser({ ...user, id: user.id, uid: user.id, role: 'student' })
+      setUserRole('student')
+      setIsInstructorAnywhere(false)
+      setIsSchoolAdministrator(false)
+      setHasSemesterAccess(false)
+    }
+
+    setLoading(false)
+  }
+
+  // ---- Auth state listener ----
+
+  useEffect(() => {
+    // Load initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      loadUserState(session)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        loadUserState(session)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = {
     currentUser,
@@ -422,18 +207,18 @@ export function AuthProvider({ children }) {
     loading,
     signUp,
     signIn,
-    login, // Backward compatibility alias
-    signup, // Backward compatibility alias
+    login,
+    signup,
     logout,
     resetPassword,
     updateProfile,
     promoteToAdmin,
     refreshUser
-  };
+  }
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  );
+  )
 }
