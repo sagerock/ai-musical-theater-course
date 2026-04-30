@@ -1052,3 +1052,364 @@ export const tagApi = {
     return (data || []).map(ct => normalizeTag(ct.tags))
   }
 }
+
+// ============================================================
+// analyticsApi
+// ============================================================
+
+export const analyticsApi = {
+  async generateCourseAnalytics(courseId) {
+    return this.getCourseAnalytics(courseId, true)
+  },
+
+  async getCourseAnalytics(courseId, forceRefresh = false) {
+    const { data: course } = await supabase.from('courses').select('*').eq('id', courseId).single()
+    const { data: analytics } = await supabase.from('course_analytics').select('*').eq('course_id', courseId).single()
+    const { data: chats } = await supabase
+      .from('chats')
+      .select('model, user_id, created_at, project_id, has_reflection')
+      .eq('course_id', courseId)
+
+    const toolUsage = {}
+    ;(chats || []).forEach(c => {
+      const model = c.model || 'unknown'
+      toolUsage[model] = (toolUsage[model] || 0) + 1
+    })
+
+    return {
+      courseInfo: {
+        id: courseId,
+        title: course?.title,
+        description: course?.description,
+        course_code: course?.course_code
+      },
+      summary: {
+        totalStudents: analytics?.student_count || 0,
+        totalInteractions: analytics?.total_chats || 0,
+        totalProjects: analytics?.total_projects || 0,
+        totalReflections: analytics?.total_reflections || 0,
+        averageInteractionsPerStudent: analytics?.student_count
+          ? Math.round((analytics.total_chats || 0) / analytics.student_count * 10) / 10
+          : 0,
+        topTool: Object.keys(toolUsage).sort((a, b) => toolUsage[b] - toolUsage[a])[0] || null
+      },
+      toolUsage,
+      engagementPatterns: { byDay: {}, byHour: {} },
+      lastUpdated: new Date().toISOString(),
+      cached: false
+    }
+  },
+
+  async getCourseAnalyticsSummary(courseId) {
+    const result = await this.getCourseAnalytics(courseId)
+    return { courseInfo: result.courseInfo, summary: result.summary, cached: false }
+  },
+
+  async refreshCourseAnalytics(courseId) {
+    return this.getCourseAnalytics(courseId, true)
+  },
+
+  async hasAnalytics(courseId) {
+    const { data } = await supabase.from('course_analytics').select('course_id').eq('course_id', courseId).single()
+    return !!data
+  },
+
+  async getAnalyticsStatus(courseId) {
+    const { data, error } = await supabase.from('course_analytics').select('*').eq('course_id', courseId).single()
+    if (error) return { exists: false, error: error.message }
+    return {
+      exists: true,
+      lastUpdated: new Date().toISOString(),
+      isStale: false,
+      isFresh: true,
+      studentCount: data.student_count,
+      interactionCount: data.total_chats,
+      projectCount: data.total_projects
+    }
+  }
+}
+
+// ============================================================
+// schoolsApi
+// ============================================================
+
+const normalizeSchool = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    name: row.name,
+    code: row.code,
+    shortName: row.code,
+    address: row.address,
+    city: row.city,
+    state: row.state,
+    country: row.country,
+    zipCode: row.zip_code,
+    zip_code: row.zip_code,
+    isActive: row.is_active,
+    is_active: row.is_active,
+    createdBy: row.created_by,
+    created_by: row.created_by,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    updatedAt: row.updated_at,
+    updated_at: row.updated_at,
+    ...row
+  }
+}
+
+export const schoolsApi = {
+  async createSchool(schoolData) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('schools')
+      .insert({
+        name: schoolData.name,
+        code: schoolData.shortName || schoolData.code || null,
+        address: schoolData.address || null,
+        city: schoolData.city || null,
+        state: schoolData.state || null,
+        country: schoolData.country || 'US',
+        zip_code: schoolData.zipCode || schoolData.zip_code || null,
+        is_active: true,
+        created_by: user?.id || null
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeSchool(data)
+  },
+
+  async getAllSchools() {
+    const { data, error } = await supabase.from('schools').select('*').eq('is_active', true).order('name')
+    if (error) throw error
+    return (data || []).map(normalizeSchool)
+  },
+
+  async getSchoolById(schoolId) {
+    const { data, error } = await supabase.from('schools').select('*').eq('id', schoolId).single()
+    if (error) throw error
+    return normalizeSchool(data)
+  },
+
+  async updateSchool(schoolId, updates) {
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.name !== undefined) dbUpdates.name = updates.name
+    if (updates.shortName !== undefined) dbUpdates.code = updates.shortName
+    if (updates.code !== undefined) dbUpdates.code = updates.code
+    if (updates.address !== undefined) dbUpdates.address = updates.address
+    if (updates.city !== undefined) dbUpdates.city = updates.city
+    if (updates.state !== undefined) dbUpdates.state = updates.state
+    if (updates.country !== undefined) dbUpdates.country = updates.country
+    if (updates.zipCode !== undefined) dbUpdates.zip_code = updates.zipCode
+    const { data, error } = await supabase
+      .from('schools')
+      .update(dbUpdates)
+      .eq('id', schoolId)
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeSchool(data)
+  },
+
+  async deleteSchool(schoolId) {
+    const { error } = await supabase
+      .from('schools')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', schoolId)
+    if (error) throw error
+  },
+
+  async getSchoolCourses(schoolId) {
+    const { data, error } = await supabase.from('courses').select('*').eq('school_id', schoolId).order('title')
+    if (error) throw error
+    return data || []
+  }
+}
+
+// ============================================================
+// announcementApi
+// ============================================================
+
+const normalizeAnnouncement = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    authorId: row.created_by,
+    author_id: row.created_by,
+    title: row.title,
+    content: row.content,
+    type: row.type,
+    isPinned: row.is_pinned,
+    is_pinned: row.is_pinned,
+    commentCount: row.comment_count,
+    comment_count: row.comment_count,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    updatedAt: row.updated_at,
+    updated_at: row.updated_at,
+    ...row
+  }
+}
+
+const normalizeComment = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    announcementId: row.announcement_id,
+    announcement_id: row.announcement_id,
+    authorId: row.user_id,
+    author_id: row.user_id,
+    userId: row.user_id,
+    user_id: row.user_id,
+    authorName: row.user_name,
+    user_name: row.user_name,
+    content: row.content,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    ...row
+  }
+}
+
+export const announcementApi = {
+  async createAnnouncement(announcementData) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert({
+        course_id: announcementData.courseId || announcementData.course_id,
+        title: announcementData.title,
+        content: announcementData.content,
+        type: 'announcement',
+        is_pinned: announcementData.isPinned || false,
+        created_by: user?.id || announcementData.authorId,
+        comment_count: 0
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeAnnouncement(data)
+  },
+
+  async createDiscussion(discussionData) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert({
+        course_id: discussionData.courseId || discussionData.course_id,
+        title: discussionData.title,
+        content: discussionData.content,
+        type: 'discussion',
+        is_pinned: false,
+        created_by: user?.id || discussionData.authorId,
+        comment_count: 0
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeAnnouncement(data)
+  },
+
+  async getAnnouncements(courseId) {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*, users:created_by(id, name, email)')
+      .eq('course_id', courseId)
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map(row => ({
+      ...normalizeAnnouncement(row),
+      authorName: row.users?.name,
+      author: row.users
+    }))
+  },
+
+  getDiscussions(courseId) { return this.getAnnouncements(courseId) },
+
+  async updateAnnouncement(announcementId, updates) {
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.title !== undefined) dbUpdates.title = updates.title
+    if (updates.content !== undefined) dbUpdates.content = updates.content
+    if (updates.isPinned !== undefined) dbUpdates.is_pinned = updates.isPinned
+    if (updates.is_pinned !== undefined) dbUpdates.is_pinned = updates.is_pinned
+    const { error } = await supabase.from('announcements').update(dbUpdates).eq('id', announcementId)
+    if (error) throw error
+    return { success: true }
+  },
+
+  async deleteAnnouncement(announcementId) {
+    await supabase.from('announcement_comments').delete().eq('announcement_id', announcementId)
+    const { error } = await supabase.from('announcements').delete().eq('id', announcementId)
+    if (error) throw error
+    return { success: true }
+  },
+
+  async pinAnnouncement(announcementId, isPinned) {
+    const { error } = await supabase
+      .from('announcements')
+      .update({ is_pinned: isPinned, updated_at: new Date().toISOString() })
+      .eq('id', announcementId)
+    if (error) throw error
+    return { success: true }
+  },
+
+  async addComment(announcementId, commentData) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('announcement_comments')
+      .insert({
+        announcement_id: announcementId,
+        user_id: user?.id || commentData.authorId,
+        user_name: commentData.authorName || null,
+        content: commentData.content
+      })
+      .select()
+      .single()
+    if (error) throw error
+    await this.incrementCommentCount(announcementId)
+    return normalizeComment(data)
+  },
+
+  async deleteComment(commentId) {
+    const { data: comment } = await supabase.from('announcement_comments').select('announcement_id').eq('id', commentId).single()
+    const { error } = await supabase.from('announcement_comments').delete().eq('id', commentId)
+    if (error) throw error
+    if (comment?.announcement_id) {
+      const { count } = await supabase
+        .from('announcement_comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('announcement_id', comment.announcement_id)
+      await supabase.from('announcements').update({ comment_count: count || 0 }).eq('id', comment.announcement_id)
+    }
+    return { success: true }
+  },
+
+  async updateComment(commentId, updates) {
+    const dbUpdates = {}
+    if (updates.content !== undefined) dbUpdates.content = updates.content
+    const { error } = await supabase.from('announcement_comments').update(dbUpdates).eq('id', commentId)
+    if (error) throw error
+    return { success: true }
+  },
+
+  async getComments(announcementId) {
+    const { data, error } = await supabase
+      .from('announcement_comments')
+      .select('*')
+      .eq('announcement_id', announcementId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map(normalizeComment)
+  },
+
+  async incrementCommentCount(announcementId) {
+    const { count } = await supabase
+      .from('announcement_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('announcement_id', announcementId)
+    await supabase.from('announcements').update({ comment_count: count || 0 }).eq('id', announcementId)
+  }
+}
