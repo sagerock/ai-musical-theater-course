@@ -1826,3 +1826,216 @@ export const realtimeApi = {
     return () => { supabase.removeChannel(channel) }
   }
 }
+
+// ============================================================
+// attachmentApi (Supabase Storage)
+// ============================================================
+
+const normalizeAttachment = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    userId: row.user_id,
+    user_id: row.user_id,
+    chatId: row.chat_id,
+    chat_id: row.chat_id,
+    fileName: row.file_name,
+    file_name: row.file_name,
+    fileSize: row.file_size,
+    file_size: row.file_size,
+    fileType: row.file_type,
+    file_type: row.file_type,
+    storagePath: row.storage_path,
+    storage_path: row.storage_path,
+    storageRef: row.storage_path,
+    downloadURL: row.download_url,
+    download_url: row.download_url,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    ...row
+  }
+}
+
+const normalizeMaterial = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    fileName: row.file_name,
+    file_name: row.file_name,
+    fileSize: row.file_size,
+    file_size: row.file_size,
+    fileType: row.file_type,
+    file_type: row.file_type,
+    fileUrl: row.file_url,
+    file_url: row.file_url,
+    storagePath: row.storage_path,
+    storage_path: row.storage_path,
+    visibility: row.visibility,
+    category: row.category,
+    description: row.description,
+    uploadedBy: row.uploaded_by,
+    uploaded_by: row.uploaded_by,
+    uploadedAt: row.uploaded_at,
+    uploaded_at: row.uploaded_at,
+    ...row
+  }
+}
+
+export const attachmentApi = {
+  async uploadPDFAttachment(file, chatId, userId) {
+    const ext = file.name.split('.').pop()
+    const path = `chats/${chatId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('attachments')
+      .upload(path, file, { contentType: file.type })
+    if (uploadError) throw uploadError
+
+    const { data: { publicUrl } } = supabase.storage.from('attachments').getPublicUrl(path)
+
+    const { data, error } = await supabase
+      .from('pdf_attachments')
+      .insert({
+        user_id: userId,
+        chat_id: chatId,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        storage_path: path,
+        download_url: publicUrl
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeAttachment(data)
+  },
+
+  async getChatAttachments(chatId) {
+    const { data, error } = await supabase
+      .from('pdf_attachments')
+      .select('*')
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return (data || []).map(normalizeAttachment)
+  },
+
+  async getAttachmentDownloadUrl(storagePath) {
+    const { data: { publicUrl } } = supabase.storage.from('attachments').getPublicUrl(storagePath)
+    return publicUrl
+  },
+
+  async getStudentAttachments(courseId, studentId) {
+    const { data, error } = await supabase
+      .from('pdf_attachments')
+      .select('*, chats!inner(course_id, project_id, projects(id, title))')
+      .eq('user_id', studentId)
+      .eq('chats.course_id', courseId)
+    if (error) throw error
+    return (data || []).map(row => ({
+      ...normalizeAttachment(row),
+      project: row.chats?.projects
+    }))
+  },
+
+  async getCourseAttachments(courseId) {
+    const { data, error } = await supabase
+      .from('pdf_attachments')
+      .select('*, chats!inner(course_id, project_id, projects(id, title)), users(id, name, email)')
+      .eq('chats.course_id', courseId)
+    if (error) throw error
+    return (data || []).map(row => ({
+      ...normalizeAttachment(row),
+      project: row.chats?.projects,
+      user: row.users
+    }))
+  },
+
+  async uploadCourseMaterial(materialData) {
+    const { file, courseId, visibility = 'visible', category, description, uploadedBy } = materialData
+    const path = `materials/${courseId}/${Date.now()}-${file.name}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('attachments')
+      .upload(path, file, { contentType: file.type })
+    if (uploadError) throw uploadError
+
+    const { data: { publicUrl } } = supabase.storage.from('attachments').getPublicUrl(path)
+
+    const { data, error } = await supabase
+      .from('course_materials')
+      .insert({
+        course_id: courseId,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        file_url: publicUrl,
+        storage_path: path,
+        visibility,
+        category: category || null,
+        description: description || null,
+        uploaded_by: uploadedBy
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeMaterial(data)
+  },
+
+  async getCourseMaterials(courseId) {
+    const { data, error } = await supabase
+      .from('course_materials')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('uploaded_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map(normalizeMaterial)
+  },
+
+  async getVisibleCourseMaterials(courseId) {
+    const { data, error } = await supabase
+      .from('course_materials')
+      .select('*')
+      .eq('course_id', courseId)
+      .eq('visibility', 'visible')
+      .order('uploaded_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map(normalizeMaterial)
+  },
+
+  async updateCourseMaterial(materialId, updates) {
+    const dbUpdates = {}
+    if (updates.visibility !== undefined) dbUpdates.visibility = updates.visibility
+    if (updates.category !== undefined) dbUpdates.category = updates.category
+    if (updates.description !== undefined) dbUpdates.description = updates.description
+    const { error } = await supabase.from('course_materials').update(dbUpdates).eq('id', materialId)
+    if (error) throw error
+    return { success: true }
+  },
+
+  async deleteCourseMaterial(materialId) {
+    const { data: material } = await supabase.from('course_materials').select('storage_path').eq('id', materialId).single()
+    if (material?.storage_path) {
+      await supabase.storage.from('attachments').remove([material.storage_path])
+    }
+    const { error } = await supabase.from('course_materials').delete().eq('id', materialId)
+    if (error) throw error
+    return { success: true }
+  },
+
+  async trackMaterialAccess() {
+    return
+  },
+
+  async deleteAttachment(attachmentId) {
+    const { data: att } = await supabase.from('pdf_attachments').select('storage_path').eq('id', attachmentId).single()
+    if (att?.storage_path) {
+      await supabase.storage.from('attachments').remove([att.storage_path])
+    }
+    const { error } = await supabase.from('pdf_attachments').delete().eq('id', attachmentId)
+    if (error) throw error
+    return { success: true }
+  }
+}
