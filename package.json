@@ -38,6 +38,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "CI=false react-scripts build",
+    "start:server": "node server.js",
+    "railway": "npm run build && NODE_ENV=production node server.js",
     "test": "react-scripts test",
     "test:rules": "jest --testMatch='**/firebase-rules-test.js'",
     "eject": "react-scripts eject",
