@@ -1126,6 +1126,171 @@ export const analyticsApi = {
       interactionCount: data.total_chats,
       projectCount: data.total_projects
     }
+  },
+
+  /**
+   * Platform usage analytics across all courses (or a specific course).
+   * Returns the same shape as the legacy Firestore-based analyticsApi so
+   * UI consumers (e.g. UsageAnalytics) can use it without changes.
+   */
+  async getPlatformUsageAnalytics(startDate, endDate, courseId = 'all') {
+    // Lazy-require the cost calculator helpers to avoid circular issues.
+    const { calculatePlatformCosts, estimateMonthlyCost, calculateModelCost } =
+      require('../utils/costCalculator')
+
+    let query = supabase
+      .from('chats')
+      .select('id, model, user_id, course_id, project_id, prompt, response, created_at')
+      .gte('created_at', new Date(startDate).toISOString())
+      .lte('created_at', new Date(endDate).toISOString())
+      .order('created_at', { ascending: false })
+
+    if (courseId && courseId !== 'all') {
+      query = query.eq('course_id', courseId)
+    }
+
+    const { data: chats, error } = await query
+    if (error) throw error
+
+    const usageData = (chats || []).map(chat => {
+      const inputText = chat.prompt || ''
+      const outputText = chat.response || ''
+      const model = chat.model || 'unknown'
+      // Approximate token counts: ~4 chars per token.
+      const inputTokens = Math.ceil(inputText.length / 4)
+      const outputTokens = Math.ceil(outputText.length / 4)
+      const searches = /sonar|perplexity/i.test(model) ? 1 : 0
+      return {
+        id: chat.id,
+        date: new Date(chat.created_at),
+        model,
+        inputTokens,
+        outputTokens,
+        searches,
+        userId: chat.user_id,
+        courseId: chat.course_id,
+        projectId: chat.project_id,
+        prompt: inputText.substring(0, 100),
+        responseLength: outputText.length
+      }
+    })
+
+    const costAnalysis = calculatePlatformCosts(usageData)
+    const daysInRange = Math.max(
+      1,
+      Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
+    )
+    const estimatedMonthlyCost = estimateMonthlyCost(costAnalysis, daysInRange)
+
+    // Per-user breakdown
+    const userMap = {}
+    for (const record of usageData) {
+      if (!record.userId) continue
+      if (!userMap[record.userId]) {
+        userMap[record.userId] = {
+          userId: record.userId,
+          interactions: 0,
+          totalCost: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          models: new Set()
+        }
+      }
+      const u = userMap[record.userId]
+      u.interactions += 1
+      u.inputTokens += record.inputTokens
+      u.outputTokens += record.outputTokens
+      u.models.add(record.model)
+      const cost = calculateModelCost(record.model, record.inputTokens, record.outputTokens, record.searches)
+      u.totalCost += cost.totalCost
+    }
+    Object.values(userMap).forEach(u => {
+      u.models = Array.from(u.models)
+      u.modelCount = u.models.length
+    })
+
+    // Per-course breakdown
+    const courseMap = {}
+    for (const record of usageData) {
+      const cId = record.courseId || 'no-course'
+      if (!courseMap[cId]) {
+        courseMap[cId] = {
+          courseId: cId,
+          interactions: 0,
+          totalCost: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          uniqueUsers: new Set(),
+          models: new Set()
+        }
+      }
+      const c = courseMap[cId]
+      c.interactions += 1
+      c.inputTokens += record.inputTokens
+      c.outputTokens += record.outputTokens
+      c.models.add(record.model)
+      if (record.userId) c.uniqueUsers.add(record.userId)
+      const cost = calculateModelCost(record.model, record.inputTokens, record.outputTokens, record.searches)
+      c.totalCost += cost.totalCost
+    }
+    Object.values(courseMap).forEach(c => {
+      c.uniqueUserCount = c.uniqueUsers.size
+      c.modelCount = c.models.size
+      c.models = Array.from(c.models)
+      delete c.uniqueUsers
+    })
+
+    return {
+      summary: {
+        ...costAnalysis,
+        dateRange: { startDate, endDate },
+        daysInRange,
+        estimatedMonthlyCost,
+        averageCostPerInteraction:
+          costAnalysis.totalCost / (costAnalysis.totalInteractions || 1),
+        averageTokensPerInteraction:
+          (costAnalysis.totalInputTokens + costAnalysis.totalOutputTokens) /
+          (costAnalysis.totalInteractions || 1)
+      },
+      breakdown: {
+        byProvider: costAnalysis.byProvider,
+        byModel: costAnalysis.byModel,
+        byUser: userMap,
+        byCourse: courseMap,
+        dailyCosts: costAnalysis.dailyCosts
+      },
+      rawData: usageData
+    }
+  },
+
+  async getQuickPlatformStats(days = 30) {
+    try {
+      const endDate = new Date()
+      const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000)
+      const analytics = await this.getPlatformUsageAnalytics(startDate, endDate)
+      const byModel = analytics.breakdown.byModel || {}
+      const topModel = Object.entries(byModel)
+        .sort(([, a], [, b]) => (b.interactions || 0) - (a.interactions || 0))[0]?.[0] || 'Unknown'
+      return {
+        totalCost: analytics.summary.totalCost,
+        totalInteractions: analytics.summary.totalInteractions,
+        totalTokens:
+          analytics.summary.totalInputTokens + analytics.summary.totalOutputTokens,
+        estimatedMonthlyCost: analytics.summary.estimatedMonthlyCost,
+        topModel,
+        days
+      }
+    } catch (error) {
+      console.error('Error getting quick platform stats:', error)
+      return {
+        totalCost: 0,
+        totalInteractions: 0,
+        totalTokens: 0,
+        estimatedMonthlyCost: 0,
+        topModel: 'Unknown',
+        days
+      }
+    }
   }
 }
 

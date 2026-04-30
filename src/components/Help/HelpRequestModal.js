@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { sendHelpRequestNotification } from '../../services/contactEmailService';
 import {
@@ -48,21 +47,24 @@ export default function HelpRequestModal({ onClose }) {
     try {
       setIsSubmitting(true);
       
-      // Save help request to Firebase Firestore
-      const docRef = await addDoc(collection(db, 'helpRequests'), {
-        userId: currentUser?.uid || null,
-        userEmail: currentUser?.email || null,
-        userName: currentUser?.displayName || currentUser?.email || 'Unknown User',
-        category: formData.category,
-        subject: formData.subject.trim(),
-        description: formData.description.trim(),
-        status: 'open',
-        priority: 'normal',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      
-      console.log('🎫 Help request saved successfully:', docRef.id);
+      // Save help request to Supabase
+      const { data: insertedRows, error: insertError } = await supabase
+        .from('help_requests')
+        .insert({
+          user_id: currentUser?.id || currentUser?.uid || null,
+          user_email: currentUser?.email || null,
+          user_name: currentUser?.displayName || currentUser?.name || currentUser?.email || 'Unknown User',
+          category: formData.category,
+          subject: formData.subject.trim(),
+          description: formData.description.trim(),
+          status: 'open',
+          priority: 'normal'
+        })
+        .select('id');
+
+      if (insertError) throw insertError;
+
+      console.log('🎫 Help request saved successfully:', insertedRows?.[0]?.id);
       
       // Send email notification to admin
       try {

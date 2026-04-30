@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { supabase } from '../../lib/supabaseClient';
 import { sendContactNotification } from '../../services/contactEmailService';
 import {
   XMarkIcon,
@@ -46,19 +45,22 @@ export default function InfoRequestModal({ onClose }) {
     try {
       setIsSubmitting(true);
       
-      // Save contact request to Firebase Firestore
-      const docRef = await addDoc(collection(db, 'contactRequests'), {
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        organization: formData.organization.trim(),
-        role: formData.role || null,
-        message: formData.message.trim() || null,
-        status: 'new',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      
-      console.log('📝 Contact request saved successfully:', docRef.id);
+      // Save contact request to Supabase
+      const { data: insertedRows, error: insertError } = await supabase
+        .from('contact_requests')
+        .insert({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          organization: formData.organization.trim(),
+          role: formData.role || null,
+          message: formData.message.trim() || null,
+          status: 'new'
+        })
+        .select('id');
+
+      if (insertError) throw insertError;
+
+      console.log('📝 Contact request saved successfully:', insertedRows?.[0]?.id);
       
       // Send email notification to admin
       try {

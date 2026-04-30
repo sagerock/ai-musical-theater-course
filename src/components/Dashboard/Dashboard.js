@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { projectApi, courseApi, chatApi } from '../../services/supabaseApi';
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import {
@@ -58,15 +57,18 @@ export default function Dashboard() {
             : Promise.resolve([])
         ]);
 
-        // Get project count server-side
-        const projectCountSnap = await getCountFromServer(
-          query(collection(db, 'projects'), where('createdBy', '==', currentUser.id))
-        ).catch(() => ({ data: () => ({ count: legacyProjects.length }) }));
+        // Get project count server-side via Supabase head query.
+        const legacyProjectCount = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('created_by', currentUser.id)
+          .then(({ count }) => count ?? legacyProjects.length)
+          .catch(() => legacyProjects.length);
 
         setRecentProjects(legacyProjects.slice(0, 3));
         setRecentChats(legacyChats.slice(0, 5));
         setStats({
-          totalProjects: projectCountSnap.data().count,
+          totalProjects: legacyProjectCount,
           totalChats: legacyChats.length,
           recentChats: 0
         });
@@ -85,33 +87,29 @@ export default function Dashboard() {
       // 2. Server-side chat count (no document downloads)
       // 3. Recent 3 projects (small payload)
       // 4. Recent 5 chats (small payload, optimized fetch)
-      const projectCountPromise = getCountFromServer(
-        query(collection(db, 'projects'), where('createdBy', '==', currentUser.id))
-      ).catch(() => ({ data: () => ({ count: 0 }) }));
+      const projectCountPromise = supabase
+        .from('projects')
+        .select('*', { count: 'exact', head: true })
+        .eq('created_by', currentUser.id)
+        .then(({ count }) => count || 0)
+        .catch(() => 0);
 
       // Chat count: students = own chats, instructors = course chats
       let chatCountPromise;
       if (isInstructor && instructorCourseIds.length > 0) {
-        // Sum counts across instructor courses (batched in groups of 10)
-        chatCountPromise = (async () => {
-          let total = 0;
-          for (let i = 0; i < instructorCourseIds.length; i += 10) {
-            const batch = instructorCourseIds.slice(i, i + 10);
-            const counts = await Promise.all(
-              batch.map(cId =>
-                getCountFromServer(
-                  query(collection(db, 'chats'), where('courseId', '==', cId))
-                ).then(snap => snap.data().count).catch(() => 0)
-              )
-            );
-            total += counts.reduce((a, b) => a + b, 0);
-          }
-          return total;
-        })();
+        chatCountPromise = supabase
+          .from('chats')
+          .select('*', { count: 'exact', head: true })
+          .in('course_id', instructorCourseIds)
+          .then(({ count }) => count || 0)
+          .catch(() => 0);
       } else {
-        chatCountPromise = getCountFromServer(
-          query(collection(db, 'chats'), where('userId', '==', currentUser.id))
-        ).then(snap => snap.data().count).catch(() => 0);
+        chatCountPromise = supabase
+          .from('chats')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id)
+          .then(({ count }) => count || 0)
+          .catch(() => 0);
       }
 
       // Recent projects: just need 3, fetched from first course (already sorted by createdAt desc)
@@ -131,7 +129,7 @@ export default function Dashboard() {
           .catch(() => []);
       }
 
-      const [projectCountSnap, chatCount, projects, chats] = await Promise.all([
+      const [projectCount, chatCount, projects, chats] = await Promise.all([
         projectCountPromise,
         chatCountPromise,
         recentProjectsPromise,
@@ -141,13 +139,13 @@ export default function Dashboard() {
       setRecentProjects(projects.slice(0, 3));
       setRecentChats(chats.slice(0, 5));
       setStats({
-        totalProjects: projectCountSnap.data().count,
+        totalProjects: projectCount,
         totalChats: chatCount,
         recentChats: 0
       });
 
       console.log('📊 Dashboard loaded:', {
-        projects: projectCountSnap.data().count,
+        projects: projectCount,
         chats: chatCount,
         recentProjects: projects.length,
         recentChats: chats.length

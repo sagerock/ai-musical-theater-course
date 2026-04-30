@@ -2,8 +2,6 @@
 // Handles email notifications for instructor notes and project updates
 
 import { getVideoLinks } from '../components/common/ContentRenderer';
-import { functions } from '../config/firebase';
-import { httpsCallable } from 'firebase/functions';
 
 const SENDGRID_API_KEY = process.env.REACT_APP_SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.REACT_APP_SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com';
@@ -1016,28 +1014,38 @@ class EmailService {
       emailData.replyTo = replyTo;
     }
 
-    // Use Firebase Cloud Function to send email
+    // Use server email endpoint (SendGrid proxy)
     try {
-      console.log('📧 Attempting to send email via Firebase Functions to:', to);
+      console.log('📧 Attempting to send email via /api/send-email to:', to);
 
-      const sendEmailFunction = httpsCallable(functions, 'sendEmail');
-      const result = await sendEmailFunction(emailData);
+      const response = await fetch(`${EMAIL_API_URL}/api/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailData)
+      });
 
-      if (result.data && result.data.success) {
-        console.log('✅ Email sent successfully via Firebase Functions to:', to);
-        return { success: true, message: result.data.message };
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => '');
+        throw new Error(`Email API returned ${response.status}: ${errorBody}`);
+      }
+
+      const result = await response.json();
+
+      if (result && result.success) {
+        console.log('✅ Email sent successfully via /api/send-email to:', to);
+        return { success: true, message: result.message };
       } else {
-        console.error('❌ Firebase Functions email error:', result.data);
+        console.error('❌ Email API error:', result);
         return { success: false, error: 'Email sending failed' };
       }
     } catch (error) {
-      console.error('❌ Firebase Functions email sending failed:', error);
-      
+      console.error('❌ Email sending failed:', error);
+
       // Check if it's a blocked request (ad blocker, etc.)
       if (error.message?.includes('ERR_BLOCKED_BY_CLIENT') || error.message?.includes('blocked')) {
         console.warn('⚠️ Email request blocked by client (likely ad blocker)');
       }
-      
+
       // Fallback to simulation mode if backend is not available
       console.log('🔄 Falling back to email simulation mode...');
       console.log('📧 SIMULATION MODE - Email would be sent to:', to);

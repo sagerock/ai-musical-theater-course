@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi, chatApi } from '../../services/supabaseApi';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { supabase } from '../../lib/supabaseClient';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -100,41 +99,24 @@ export default function InstructorDashboardContainer() {
       const chatIds = chats.map(c => c.id);
       const projectIds = [...new Set(chats.map(c => c.projectId).filter(Boolean))];
 
-      // Batch-fetch chatTags by chatId (groups of 10)
+      // Batch-fetch chat_tags joined with tags via Supabase. Postgres handles
+      // the lookup in a single query — no manual chunking required.
       const chatTagsMap = new Map();
-      for (let i = 0; i < chatIds.length; i += 10) {
-        const batch = chatIds.slice(i, i + 10);
+      if (chatIds.length > 0) {
         try {
-          const tagsQuery = query(collection(db, 'chatTags'), where('chatId', 'in', batch));
-          const tagsSnapshot = await getDocs(tagsQuery);
-
-          // Collect unique tag IDs for batch-fetching tag details
-          const tagIdsToFetch = new Set();
-          const rawChatTags = [];
-          tagsSnapshot.forEach(doc => {
-            const data = { id: doc.id, ...doc.data() };
-            rawChatTags.push(data);
-            if (data.tagId) tagIdsToFetch.add(data.tagId);
-          });
-
-          // Batch-fetch tag details
-          const tagDetailsMap = new Map();
-          const tagIdArray = Array.from(tagIdsToFetch);
-          for (let j = 0; j < tagIdArray.length; j += 10) {
-            const tagBatch = tagIdArray.slice(j, j + 10);
-            const tagQuery = query(collection(db, 'tags'), where('__name__', 'in', tagBatch));
-            const tagSnapshot = await getDocs(tagQuery);
-            tagSnapshot.forEach(doc => {
-              tagDetailsMap.set(doc.id, { id: doc.id, ...doc.data() });
-            });
-          }
-
-          // Assemble enriched chat tags
-          for (const ct of rawChatTags) {
-            if (!chatTagsMap.has(ct.chatId)) chatTagsMap.set(ct.chatId, []);
-            chatTagsMap.get(ct.chatId).push({
-              ...ct,
-              tags: tagDetailsMap.get(ct.tagId) || { name: 'Unknown Tag' }
+          const { data: chatTagRows, error: chatTagError } = await supabase
+            .from('chat_tags')
+            .select('id, chat_id, tag_id, tags(*)')
+            .in('chat_id', chatIds);
+          if (chatTagError) throw chatTagError;
+          for (const ct of chatTagRows || []) {
+            const chatId = ct.chat_id;
+            if (!chatTagsMap.has(chatId)) chatTagsMap.set(chatId, []);
+            chatTagsMap.get(chatId).push({
+              id: ct.id,
+              chatId,
+              tagId: ct.tag_id,
+              tags: ct.tags || { name: 'Unknown Tag' }
             });
           }
         } catch (error) {
@@ -142,18 +124,20 @@ export default function InstructorDashboardContainer() {
         }
       }
 
-      // Batch-fetch instructor notes by projectId (groups of 10)
-      const notesMap = new Map(); // keyed by projectId
-      for (let i = 0; i < projectIds.length; i += 10) {
-        const batch = projectIds.slice(i, i + 10);
+      // Batch-fetch instructor notes by projectId.
+      const notesMap = new Map();
+      if (projectIds.length > 0) {
         try {
-          const notesQuery = query(collection(db, 'instructorNotes'), where('projectId', 'in', batch));
-          const notesSnapshot = await getDocs(notesQuery);
-          notesSnapshot.forEach(doc => {
-            const data = { id: doc.id, ...doc.data() };
-            if (!notesMap.has(data.projectId)) notesMap.set(data.projectId, []);
-            notesMap.get(data.projectId).push(data);
-          });
+          const { data: noteRows, error: noteError } = await supabase
+            .from('instructor_notes')
+            .select('*')
+            .in('project_id', projectIds);
+          if (noteError) throw noteError;
+          for (const note of noteRows || []) {
+            const projectId = note.project_id;
+            if (!notesMap.has(projectId)) notesMap.set(projectId, []);
+            notesMap.get(projectId).push({ ...note, projectId });
+          }
         } catch (error) {
           console.warn('Error batch-fetching instructor notes:', error);
         }

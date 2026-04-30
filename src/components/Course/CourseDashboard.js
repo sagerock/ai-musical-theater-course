@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { courseApi } from '../../services/supabaseApi';
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { supabase } from '../../lib/supabaseClient';
 import { format } from 'date-fns';
 import { diagnoseCourseProjects } from '../../utils/diagnostics';
 import { repairProjectCourseIds } from '../../utils/dataRepair';
@@ -48,14 +47,20 @@ export default function CourseDashboard() {
       // Fire all queries in parallel
       const isInstructor = userRole === 'instructor' || isInstructorAnywhere;
 
-      // Server-side counts for projects and chats (zero document downloads)
-      const projectCountPromise = getCountFromServer(
-        query(collection(db, 'projects'), where('courseId', '==', courseId))
-      ).then(snap => snap.data().count).catch(() => 0);
+      // Server-side counts for projects and chats via Supabase head queries.
+      const projectCountPromise = supabase
+        .from('projects')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', courseId)
+        .then(({ count }) => count || 0)
+        .catch(() => 0);
 
-      const chatCountPromise = getCountFromServer(
-        query(collection(db, 'chats'), where('courseId', '==', courseId))
-      ).then(snap => snap.data().count).catch(() => 0);
+      const chatCountPromise = supabase
+        .from('chats')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', courseId)
+        .then(({ count }) => count || 0)
+        .catch(() => 0);
 
       // Members: only fetch for instructors (students use cached counts from course doc)
       const membersPromise = isInstructor

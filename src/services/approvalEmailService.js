@@ -1,16 +1,25 @@
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+const EMAIL_API_URL = process.env.REACT_APP_EMAIL_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
+
+async function postJson(path, payload) {
+  const response = await fetch(`${EMAIL_API_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => '');
+    throw new Error(`Request to ${path} failed (${response.status}): ${errorBody}`);
+  }
+
+  return response.json();
+}
 
 /**
  * Service for sending approval confirmation emails to students
  */
 class ApprovalEmailService {
-  constructor() {
-    this.sendApprovalConfirmationEmail = httpsCallable(functions, 'sendApprovalConfirmationEmail');
-    this.sendRoleChangeNotificationEmail = httpsCallable(functions, 'sendRoleChangeNotificationEmail');
-    this.sendGlobalRoleChangeEmail = httpsCallable(functions, 'sendGlobalRoleChangeEmail');
-  }
-
   /**
    * Send approval confirmation email to a student
    * @param {string} userId - ID of the user who was approved
@@ -28,15 +37,15 @@ class ApprovalEmailService {
         approverName
       });
 
-      const result = await this.sendApprovalConfirmationEmail({
+      const result = await postJson('/api/notify/approval', {
         userId,
         courseId,
         approvedRole,
         approverName
       });
 
-      console.log('✅ Approval confirmation email sent successfully:', result.data);
-      return result.data;
+      console.log('✅ Approval confirmation email sent successfully:', result);
+      return result;
     } catch (error) {
       console.error('❌ Error sending approval confirmation email:', error);
       throw error;
@@ -62,7 +71,7 @@ class ApprovalEmailService {
         changedBy
       });
 
-      const result = await this.sendRoleChangeNotificationEmail({
+      const result = await postJson('/api/notify/role-change', {
         userId,
         courseId,
         oldRole,
@@ -70,13 +79,14 @@ class ApprovalEmailService {
         changedBy
       });
 
-      console.log('✅ Role change notification email sent successfully:', result.data);
-      return result.data;
+      console.log('✅ Role change notification email sent successfully:', result);
+      return result;
     } catch (error) {
       console.error('❌ Error sending role change notification email:', error);
       throw error;
     }
   }
+
   /**
    * Send notification when a user's global role is changed
    * @param {string} userId - ID of the user whose role was changed
@@ -87,9 +97,16 @@ class ApprovalEmailService {
   async sendGlobalRoleChangeNotification({ userId, oldRole, newRole, changedBy }) {
     try {
       console.log('📧 Sending global role change notification...', { userId, oldRole, newRole, changedBy });
-      const result = await this.sendGlobalRoleChangeEmail({ userId, oldRole, newRole, changedBy });
-      console.log('✅ Global role change email sent:', result.data);
-      return result.data;
+      // Reuse the role-change endpoint; absence of courseId signals a global role change.
+      const result = await postJson('/api/notify/role-change', {
+        userId,
+        oldRole,
+        newRole,
+        changedBy,
+        scope: 'global'
+      });
+      console.log('✅ Global role change email sent:', result);
+      return result;
     } catch (error) {
       console.error('❌ Error sending global role change email:', error);
       throw error;

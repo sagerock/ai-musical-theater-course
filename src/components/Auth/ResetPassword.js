@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
-import { auth } from '../../config/firebase';
-import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 
 export default function ResetPassword() {
@@ -10,73 +8,71 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
-  const [validCode, setValidCode] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [validSession, setValidSession] = useState(false);
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
 
   useEffect(() => {
-    // Handle Firebase password reset flow
-    const handleFirebasePasswordReset = async () => {
-      console.log('Firebase ResetPassword component loaded');
-      console.log('Current user:', currentUser);
-      
-      // Get the action code from URL parameters (Firebase uses 'oobCode')
-      const actionCode = searchParams.get('oobCode');
-      const mode = searchParams.get('mode');
+    // Supabase password recovery flow:
+    //   1. User clicks the recovery link in their email.
+    //   2. Supabase opens the app with a recovery token in the URL hash; the
+    //      JS client picks it up automatically and emits a `PASSWORD_RECOVERY`
+    //      auth event with a temporary session.
+    //   3. While that session is active, calling `supabase.auth.updateUser`
+    //      with a new password completes the reset.
+    //
+    // This effect waits for either the recovery event or an existing session
+    // (the user may have already followed the link earlier in this tab).
+    let isMounted = true;
 
-      console.log('Firebase reset params:', { actionCode: !!actionCode, mode });
-
-      // If no action code, this is an invalid request
-      if (!actionCode) {
-        console.log('Missing action code');
-        toast.error('Invalid password reset link');
-        navigate('/login');
-        return;
-      }
-
-      // Mode should be resetPassword if provided, but we're lenient since we're on /reset-password route
-      if (mode && mode !== 'resetPassword') {
-        console.log('Invalid mode:', mode);
-        toast.error('Invalid password reset link');
-        navigate('/login');
-        return;
-      }
-      
-      try {
-        // Verify the password reset code
-        await verifyPasswordResetCode(auth, actionCode);
-        console.log('Firebase password reset code verified successfully');
-        setValidCode(true);
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      if (session) {
+        setValidSession(true);
         toast.success('Reset link verified. Enter your new password below.');
-      } catch (error) {
-        console.error('Firebase password reset verification error:', error);
-        
-        let errorMessage = 'Invalid or expired reset link';
-        if (error.code === 'auth/invalid-action-code') {
-          errorMessage = 'This password reset link is invalid or has already been used.';
-        } else if (error.code === 'auth/expired-action-code') {
-          errorMessage = 'This password reset link has expired. Please request a new one.';
-        }
-        
-        toast.error(errorMessage);
-        navigate('/login');
-      } finally {
-        setVerifying(false);
       }
+      setVerifying(false);
     };
 
-    handleFirebasePasswordReset();
-  }, [searchParams, navigate, currentUser]);
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        setValidSession(true);
+        setVerifying(false);
+        toast.success('Reset link verified. Enter your new password below.');
+      }
+    });
+
+    checkExistingSession();
+
+    // Fail closed: if no recovery session shows up within a few seconds,
+    // surface the invalid-link state so users aren't stuck on a spinner.
+    const timeoutId = setTimeout(() => {
+      if (!isMounted) return;
+      setVerifying(prev => {
+        if (prev) {
+          // We never received a recovery session.
+          return false;
+        }
+        return prev;
+      });
+    }, 4000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      authListener?.subscription?.unsubscribe?.();
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validCode) {
-      toast.error('Invalid reset code');
+
+    if (!validSession) {
+      toast.error('No active password reset session');
       return;
     }
-    
+
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -90,26 +86,28 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const actionCode = searchParams.get('oobCode');
-      
-      // Confirm the password reset with Firebase
-      await confirmPasswordReset(auth, actionCode, password);
-      
-      console.log('Firebase password reset completed successfully');
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+
+      console.log('Supabase password reset completed successfully');
       toast.success('Password updated successfully! Please sign in with your new password.');
+
+      // Sign the temporary recovery session out so the user logs in fresh.
+      await supabase.auth.signOut().catch(() => {});
+
       navigate('/login');
     } catch (error) {
       console.error('Error updating password:', error);
-      
+
       let errorMessage = 'Failed to update password';
-      if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please choose a stronger password.';
-      } else if (error.code === 'auth/invalid-action-code') {
-        errorMessage = 'This reset link is invalid or has expired.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error?.message) {
+        if (/weak|short|password/i.test(error.message)) {
+          errorMessage = error.message;
+        } else {
+          errorMessage = error.message;
+        }
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -138,7 +136,7 @@ export default function ResetPassword() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
             <p className="text-gray-600">Verifying reset link...</p>
           </div>
-        ) : validCode ? (
+        ) : validSession ? (
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="bg-white p-8 rounded-xl shadow-lg space-y-6">
             <div>

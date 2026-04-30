@@ -205,6 +205,65 @@ app.post('/api/send-email', async (req, res) => {
   }
 })
 
+// ============================================================
+// Email notification endpoints (replace Cloud Functions)
+// ============================================================
+
+async function sendNotificationEmail({ to, subject, html, text, replyTo }) {
+  const apiKey = process.env.SENDGRID_API_KEY
+  if (!apiKey) throw new Error('SENDGRID_API_KEY not configured')
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.REACT_APP_SENDGRID_FROM_EMAIL || 'noreply@aiengagementhub.com'
+  const sgMail = require('@sendgrid/mail')
+  sgMail.setApiKey(apiKey)
+  await sgMail.send({
+    to,
+    from: { email: fromEmail, name: 'AI Engagement Hub' },
+    subject,
+    text: text || html.replace(/<[^>]*>/g, ''),
+    html,
+    ...(replyTo ? { replyTo } : {})
+  })
+}
+
+app.post('/api/notify/course-join', async (req, res) => {
+  try {
+    const { courseTitle, studentName, studentEmail, instructorEmails } = req.body
+    if (!instructorEmails?.length) return res.json({ success: true, sent: 0 })
+    const html = `<p><strong>${studentName}</strong> (${studentEmail}) has requested to join your course <strong>${courseTitle}</strong>.</p><p>Sign in to approve or reject the request.</p>`
+    for (const to of instructorEmails) {
+      await sendNotificationEmail({ to, subject: `New enrollment request — ${courseTitle}`, html })
+    }
+    res.json({ success: true, sent: instructorEmails.length })
+  } catch (error) {
+    console.error('course-join notify error:', error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.post('/api/notify/approval', async (req, res) => {
+  try {
+    const { studentEmail, studentName, courseTitle } = req.body
+    const html = `<p>Hi ${studentName || 'there'},</p><p>You've been approved to join <strong>${courseTitle}</strong>. Sign in to access the course.</p>`
+    await sendNotificationEmail({ to: studentEmail, subject: `Approved: ${courseTitle}`, html })
+    res.json({ success: true })
+  } catch (error) {
+    console.error('approval notify error:', error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.post('/api/notify/role-change', async (req, res) => {
+  try {
+    const { studentEmail, studentName, courseTitle, newRole } = req.body
+    const html = `<p>Hi ${studentName || 'there'},</p><p>Your role in <strong>${courseTitle}</strong> has been updated to <strong>${newRole}</strong>.</p>`
+    await sendNotificationEmail({ to: studentEmail, subject: `Role updated in ${courseTitle}`, html })
+    res.json({ success: true })
+  } catch (error) {
+    console.error('role-change notify error:', error.message)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Stripe — create checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
