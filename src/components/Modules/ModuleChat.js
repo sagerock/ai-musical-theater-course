@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, PaperAirplaneIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
-import { modulesApi, moduleProgressApi, chatApi, moduleChatApi } from '../../services/firebaseApi';
+import { modulesApi, moduleProgressApi, chatApi, moduleChatApi } from '../../services/supabaseApi';
 import { aiApi } from '../../services/aiApi';
 import { getSmartConversationHistory } from '../../utils/conversationHistory';
 import ContentRenderer from '../common/ContentRenderer';

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { courseApi } from '../../services/supabaseApi';
-import { chatApi, analyticsApi } from '../../services/firebaseApi';
+import { courseApi, chatApi, analyticsApi } from '../../services/supabaseApi';
 import toast from 'react-hot-toast';
 import {
   FolderIcon,

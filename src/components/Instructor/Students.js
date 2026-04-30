@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { userApi, courseApi, projectApi } from '../../services/supabaseApi';
-import { chatApi } from '../../services/firebaseApi';
+import { userApi, courseApi, projectApi, chatApi } from '../../services/supabaseApi';
 import { hasAdminPermissions } from '../../utils/roleUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';

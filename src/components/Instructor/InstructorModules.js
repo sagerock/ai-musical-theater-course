@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PlusIcon, BookOpenIcon, TableCellsIcon } from '@heroicons/react/24/outline';
-import { modulesApi, moduleProgressApi } from '../../services/firebaseApi';
+import { modulesApi, moduleProgressApi } from '../../services/supabaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import ModuleCard from '../Modules/ModuleCard';
 import CreateModuleModal from '../Modules/CreateModuleModal';

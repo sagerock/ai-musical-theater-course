@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { tutorialApi } from '../../services/firebaseApi';
+import { tutorialApi } from '../../services/supabaseApi';
 import staticTutorials from '../../data/tutorials';
 import toast from 'react-hot-toast';
 import {

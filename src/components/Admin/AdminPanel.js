@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, userApi } from '../../services/supabaseApi';
-import { tagApi, schoolsApi } from '../../services/firebaseApi';
+import { courseApi, userApi, tagApi, schoolsApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import approvalEmailService from '../../services/approvalEmailService';

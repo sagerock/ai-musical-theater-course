@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { announcementApi } from '../../services/firebaseApi';
+import { announcementApi } from '../../services/supabaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import toast from 'react-hot-toast';
 import {

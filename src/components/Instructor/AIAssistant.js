@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PaperAirplaneIcon, ChatBubbleLeftRightIcon, SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { aiApi } from '../../services/aiApi';
-import { analyticsApi } from '../../services/firebaseApi';
+import { analyticsApi } from '../../services/supabaseApi';
 import MarkdownRenderer from '../Chat/MarkdownRenderer';
 import toast from 'react-hot-toast';
 

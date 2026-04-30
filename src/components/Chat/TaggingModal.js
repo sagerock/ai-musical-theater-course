@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { tagApi } from '../../services/firebaseApi';
+import { tagApi } from '../../services/supabaseApi';
 import toast from 'react-hot-toast';
 import {
   XMarkIcon,

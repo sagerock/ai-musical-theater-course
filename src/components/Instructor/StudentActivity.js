@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { chatApi, tagApi } from '../../services/firebaseApi';
+import { chatApi, tagApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import SessionDetailModal from './SessionDetailModal';
@@ -163,7 +163,7 @@ export default function StudentActivity({ selectedCourseId, selectedCourse, curr
       // Load course tags separately (tags are now at project level, not per-chat)
       let courseTags = [];
       try {
-        const tagModule = await import('../../services/firebaseApi');
+        const tagModule = await import('../../services/supabaseApi');
         courseTags = await tagModule.tagApi.getAllTags(selectedCourseId);
         console.log('🏷️ Loaded course tags:', courseTags.length);
       } catch (error) {

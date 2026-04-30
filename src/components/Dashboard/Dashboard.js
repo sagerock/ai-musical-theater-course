@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, courseApi } from '../../services/supabaseApi';
-import { chatApi } from '../../services/firebaseApi';
+import { projectApi, courseApi, chatApi } from '../../services/supabaseApi';
 import { collection, query, where, getCountFromServer } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { format } from 'date-fns';

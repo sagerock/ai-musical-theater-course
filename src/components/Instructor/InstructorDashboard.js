@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, userApi, courseApi } from '../../services/supabaseApi';
-import { chatApi, tagApi, attachmentApi, analyticsApi } from '../../services/firebaseApi';
+import { projectApi, userApi, courseApi, chatApi, tagApi, attachmentApi, analyticsApi } from '../../services/supabaseApi';
 import { format } from 'date-fns';
 import { 
   ROLES, 

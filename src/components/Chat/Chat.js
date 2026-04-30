@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectApi, courseApi } from '../../services/supabaseApi';
-import { chatApi, reflectionApi, instructorNotesApi, attachmentApi } from '../../services/firebaseApi';
+import { projectApi, courseApi, chatApi, reflectionApi, instructorNotesApi, attachmentApi } from '../../services/supabaseApi';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
 import { MODEL_PRICING, formatCurrency } from '../../utils/costCalculator';
 import { format } from 'date-fns';

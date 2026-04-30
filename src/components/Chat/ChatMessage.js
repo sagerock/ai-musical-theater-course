@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useAuth } from '../../contexts/AuthContext';
-import { attachmentApi } from '../../services/firebaseApi';
+import { attachmentApi } from '../../services/supabaseApi';
 import toast from 'react-hot-toast';
 import {
   UserIcon,

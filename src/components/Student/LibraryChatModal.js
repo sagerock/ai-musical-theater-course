@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { aiApi, AI_TOOLS } from '../../services/aiApi';
-import { chatApi } from '../../services/firebaseApi';
+import { chatApi } from '../../services/supabaseApi';
 import { MODEL_PRICING, formatCurrency } from '../../utils/costCalculator';
 import toast from 'react-hot-toast';
 import {

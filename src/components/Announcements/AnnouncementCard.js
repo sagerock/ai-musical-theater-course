@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { announcementApi } from '../../services/firebaseApi';
+import { announcementApi } from '../../services/supabaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import AnnouncementComments from './AnnouncementComments';
 import UserAvatar from '../common/UserAvatar';
