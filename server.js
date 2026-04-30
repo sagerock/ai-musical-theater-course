@@ -168,47 +168,9 @@ app.post('/api/google', async (req, res) => {
   }
 })
 
-// Perplexity
-app.post('/api/perplexity', async (req, res) => {
-  try {
-    const apiKey = process.env.PERPLEXITY_API_KEY
-    if (!apiKey) return res.status(500).json({ error: 'PERPLEXITY_API_KEY not configured' })
-
-    let { messages, model = 'sonar', stream = false } = req.body
-    if (model === 'sonar-pro') model = 'sonar'
-    if (!messages) return res.status(400).json({ error: 'messages is required' })
-
-    const perplexityUrl = 'https://api.perplexity.ai/chat/completions'
-    const response = await fetch(perplexityUrl, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages, stream })
-    })
-
-    if (!response.ok) {
-      const err = await response.text()
-      throw new Error(`Perplexity error ${response.status}: ${err}`)
-    }
-
-    if (stream) {
-      res.setHeader('Content-Type', 'text/event-stream')
-      res.setHeader('Cache-Control', 'no-cache')
-      res.setHeader('Connection', 'keep-alive')
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        res.write(decoder.decode(value, { stream: true }))
-      }
-      res.end()
-    } else {
-      res.json(await response.json())
-    }
-  } catch (error) {
-    console.error('Perplexity error:', error.message)
-    res.status(500).json({ error: error.message })
-  }
+// Perplexity — removed, no longer supported
+app.post('/api/perplexity', (req, res) => {
+  res.status(410).json({ error: 'Perplexity is no longer supported. Please use a different AI model.' })
 })
 
 // Send Email (SendGrid)
