@@ -1413,3 +1413,416 @@ export const announcementApi = {
     await supabase.from('announcements').update({ comment_count: count || 0 }).eq('id', announcementId)
   }
 }
+
+// ============================================================
+// modulesApi
+// ============================================================
+
+const normalizeModule = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    title: row.title,
+    description: row.description,
+    order: row.display_order,
+    display_order: row.display_order,
+    systemPrompt: row.system_prompt,
+    system_prompt: row.system_prompt,
+    minimumExchanges: row.minimum_exchanges,
+    minimum_exchanges: row.minimum_exchanges,
+    aiModel: row.ai_model,
+    ai_model: row.ai_model,
+    createdBy: row.created_by,
+    created_by: row.created_by,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    updatedAt: row.updated_at,
+    updated_at: row.updated_at,
+    ...row
+  }
+}
+
+export const modulesApi = {
+  async createModule(moduleData) {
+    const { data, error } = await supabase
+      .from('modules')
+      .insert({
+        course_id: moduleData.courseId || moduleData.course_id,
+        title: moduleData.title,
+        description: moduleData.description || null,
+        display_order: moduleData.order || moduleData.display_order || 0,
+        system_prompt: moduleData.systemPrompt || moduleData.system_prompt || null,
+        minimum_exchanges: moduleData.minimumExchanges || moduleData.minimum_exchanges || 0,
+        ai_model: moduleData.aiModel || moduleData.ai_model || null,
+        created_by: moduleData.createdBy || moduleData.created_by
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeModule(data)
+  },
+
+  async getModuleById(moduleId) {
+    const { data, error } = await supabase.from('modules').select('*').eq('id', moduleId).single()
+    if (error) throw error
+    return normalizeModule(data)
+  },
+
+  async getModulesByCourse(courseId) {
+    const { data, error } = await supabase
+      .from('modules')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('display_order')
+    if (error) throw error
+    return (data || []).map(normalizeModule)
+  },
+
+  async updateModule(moduleId, updates) {
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.title !== undefined) dbUpdates.title = updates.title
+    if (updates.description !== undefined) dbUpdates.description = updates.description
+    if (updates.order !== undefined) dbUpdates.display_order = updates.order
+    if (updates.systemPrompt !== undefined) dbUpdates.system_prompt = updates.systemPrompt
+    if (updates.minimumExchanges !== undefined) dbUpdates.minimum_exchanges = updates.minimumExchanges
+    if (updates.aiModel !== undefined) dbUpdates.ai_model = updates.aiModel
+    const { data, error } = await supabase
+      .from('modules')
+      .update(dbUpdates)
+      .eq('id', moduleId)
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeModule(data)
+  },
+
+  async deleteModule(moduleId) {
+    await supabase.from('module_progress').delete().eq('module_id', moduleId)
+    const { error } = await supabase.from('modules').delete().eq('id', moduleId)
+    if (error) throw error
+  }
+}
+
+// ============================================================
+// moduleProgressApi
+// ============================================================
+
+const normalizeProgress = (row) => {
+  if (!row) return null
+  return {
+    id: row.user_id + '_' + row.module_id,
+    userId: row.user_id,
+    user_id: row.user_id,
+    moduleId: row.module_id,
+    module_id: row.module_id,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    exchangeCount: row.exchange_count,
+    exchange_count: row.exchange_count,
+    completed: row.completed,
+    completedAt: row.completed_at,
+    completed_at: row.completed_at,
+    startedAt: row.started_at,
+    started_at: row.started_at,
+    ...row
+  }
+}
+
+export const moduleProgressApi = {
+  async createOrGetProgress(userId, moduleId, courseId) {
+    const { data: existing } = await supabase
+      .from('module_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('module_id', moduleId)
+      .single()
+    if (existing) return normalizeProgress(existing)
+
+    const { data, error } = await supabase
+      .from('module_progress')
+      .insert({
+        user_id: userId,
+        module_id: moduleId,
+        course_id: courseId,
+        exchange_count: 0,
+        completed: false
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeProgress(data)
+  },
+
+  async getModuleProgress(userId, moduleId) {
+    const { data, error } = await supabase
+      .from('module_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('module_id', moduleId)
+      .single()
+    if (error) return null
+    return normalizeProgress(data)
+  },
+
+  async getStudentModuleProgress(userId, courseId) {
+    const { data, error } = await supabase
+      .from('module_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+    if (error) throw error
+    const result = {}
+    ;(data || []).forEach(row => { result[row.module_id] = normalizeProgress(row) })
+    return result
+  },
+
+  async getCourseModuleProgress(courseId) {
+    const { data, error } = await supabase
+      .from('module_progress')
+      .select('*')
+      .eq('course_id', courseId)
+    if (error) throw error
+    return (data || []).map(normalizeProgress)
+  },
+
+  async incrementExchangeCount(userId, moduleId) {
+    const { data: existing } = await supabase
+      .from('module_progress')
+      .select('exchange_count')
+      .eq('user_id', userId)
+      .eq('module_id', moduleId)
+      .single()
+    const newCount = (existing?.exchange_count || 0) + 1
+    const { data, error } = await supabase
+      .from('module_progress')
+      .update({ exchange_count: newCount, updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('module_id', moduleId)
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeProgress(data)
+  },
+
+  async markComplete(userId, moduleId) {
+    const { data, error } = await supabase
+      .from('module_progress')
+      .update({
+        completed: true,
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .eq('module_id', moduleId)
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeProgress(data)
+  }
+}
+
+// ============================================================
+// moduleChatApi
+// ============================================================
+
+export const moduleChatApi = {
+  async getModuleChats(moduleId, userId) {
+    const { data, error } = await supabase
+      .from('chats')
+      .select('*')
+      .eq('module_id', moduleId)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return (data || []).map(normalizeChat)
+  }
+}
+
+// ============================================================
+// tutorialApi
+// ============================================================
+
+const normalizeTutorial = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    content: row.content,
+    description: row.content?.substring(0, 200),
+    published: row.published,
+    order: row.display_order,
+    display_order: row.display_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    ...row
+  }
+}
+
+export const tutorialApi = {
+  async getPublishedTutorials() {
+    const { data, error } = await supabase
+      .from('tutorials')
+      .select('*')
+      .eq('published', true)
+      .order('display_order')
+    if (error) throw error
+    return (data || []).map(normalizeTutorial)
+  },
+
+  async getTutorialBySlug(slug) {
+    const { data, error } = await supabase.from('tutorials').select('*').eq('slug', slug).single()
+    if (error) return null
+    return normalizeTutorial(data)
+  },
+
+  async getAllTutorials() {
+    const { data, error } = await supabase.from('tutorials').select('*').order('display_order')
+    if (error) throw error
+    return (data || []).map(normalizeTutorial)
+  },
+
+  async getTutorialById(id) {
+    const { data, error } = await supabase.from('tutorials').select('*').eq('id', id).single()
+    if (error) return null
+    return normalizeTutorial(data)
+  },
+
+  async createTutorial(tutorialData) {
+    const { data, error } = await supabase
+      .from('tutorials')
+      .insert({
+        slug: tutorialData.slug,
+        title: tutorialData.title,
+        content: tutorialData.content || '',
+        published: tutorialData.published || false,
+        display_order: tutorialData.order || 0
+      })
+      .select('id')
+      .single()
+    if (error) throw error
+    return data.id
+  },
+
+  async updateTutorial(id, updates) {
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.slug !== undefined) dbUpdates.slug = updates.slug
+    if (updates.title !== undefined) dbUpdates.title = updates.title
+    if (updates.content !== undefined) dbUpdates.content = updates.content
+    if (updates.published !== undefined) dbUpdates.published = updates.published
+    if (updates.order !== undefined) dbUpdates.display_order = updates.order
+    const { error } = await supabase.from('tutorials').update(dbUpdates).eq('id', id)
+    if (error) throw error
+  },
+
+  async deleteTutorial(id) {
+    const { error } = await supabase.from('tutorials').delete().eq('id', id)
+    if (error) throw error
+  },
+
+  async reorderTutorials(orderedItems) {
+    for (const item of orderedItems) {
+      await supabase.from('tutorials').update({ display_order: item.order }).eq('id', item.id)
+    }
+  },
+
+  async seedFromStaticData(tutorialsData) {
+    for (const t of tutorialsData) {
+      await supabase.from('tutorials').upsert({
+        slug: t.slug,
+        title: t.title,
+        content: t.content || '',
+        published: t.published !== false,
+        display_order: t.order || 0
+      }, { onConflict: 'slug' })
+    }
+  }
+}
+
+// ============================================================
+// paymentApi
+// ============================================================
+
+export const paymentApi = {
+  async createCheckoutSession(userId, userEmail, courseCode) {
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, userEmail, courseCode })
+    })
+    if (!response.ok) throw new Error('Failed to create checkout session')
+    return response.json()
+  }
+}
+
+// ============================================================
+// realtimeApi (Supabase Realtime subscriptions)
+// ============================================================
+
+export const realtimeApi = {
+  subscribeToProjectChats(projectId, callback) {
+    const channel = supabase
+      .channel(`project-chats-${projectId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'chats', filter: `project_id=eq.${projectId}` },
+        async () => {
+          const { data } = await supabase
+            .from('chats')
+            .select('*, reflections(*)')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: true })
+          callback((data || []).map(row => ({
+            ...normalizeChat(row),
+            reflection: row.reflections?.[0] || null
+          })))
+        }
+      )
+      .subscribe()
+    supabase
+      .from('chats')
+      .select('*, reflections(*)')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        callback((data || []).map(row => ({
+          ...normalizeChat(row),
+          reflection: row.reflections?.[0] || null
+        })))
+      })
+    return () => { supabase.removeChannel(channel) }
+  },
+
+  subscribeToUserCourses(userId, callback) {
+    const channel = supabase
+      .channel(`user-courses-${userId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'course_memberships', filter: `user_id=eq.${userId}` },
+        async () => {
+          const { data } = await supabase
+            .from('course_memberships')
+            .select('*, courses(*)')
+            .eq('user_id', userId)
+            .eq('status', 'approved')
+          callback((data || []).map(m => ({
+            ...normalizeCourse(m.courses),
+            membership: normalizeMembership(m)
+          })))
+        }
+      )
+      .subscribe()
+    supabase
+      .from('course_memberships')
+      .select('*, courses(*)')
+      .eq('user_id', userId)
+      .eq('status', 'approved')
+      .then(({ data }) => {
+        callback((data || []).map(m => ({
+          ...normalizeCourse(m.courses),
+          membership: normalizeMembership(m)
+        })))
+      })
+    return () => { supabase.removeChannel(channel) }
+  }
+}
