@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, chatApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
+import { chatApi } from '../../services/firebaseApi';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { hasTeachingPermissions } from '../../utils/roleUtils';

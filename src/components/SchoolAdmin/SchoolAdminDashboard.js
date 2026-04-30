@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, userApi, schoolsApi, analyticsApi } from '../../services/firebaseApi';
+import { courseApi, userApi } from '../../services/supabaseApi';
+import { schoolsApi, analyticsApi } from '../../services/firebaseApi';
 import { 
   AcademicCapIcon, 
   UsersIcon, 

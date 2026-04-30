@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
 import StudentLibrary from './StudentLibrary';
 
 export default function StudentLibraryWrapper() {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { announcementApi, courseApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
+import { announcementApi } from '../../services/firebaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import CreateAnnouncement from './CreateAnnouncement';
 import AnnouncementCard from './AnnouncementCard';

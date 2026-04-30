@@ -1245,7 +1245,7 @@ export const emailNotifications = {
   async notifyStudentOfInstructorNote(noteData) {
     try {
       // Check if student has email notifications enabled
-      const { userApi } = await import('./firebaseApi.js');
+      const { userApi } = await import('./supabaseApi.js');
       const hasNotificationsEnabled = await userApi.hasEmailNotificationsEnabled(
         noteData.studentId, 
         'instructor_note_emails'
@@ -1294,7 +1294,7 @@ export const emailNotifications = {
   async notifyUserOfReply(replyData) {
     try {
       // Check if recipient has email notifications enabled
-      const { userApi } = await import('./firebaseApi.js');
+      const { userApi } = await import('./supabaseApi.js');
       const hasNotificationsEnabled = await userApi.hasEmailNotificationsEnabled(
         replyData.recipientId,
         'instructor_note_emails' // Use same setting for replies
@@ -1496,7 +1496,7 @@ export const emailNotifications = {
       console.log('🔍 Starting admin notification process...');
       
       // Get all admin users
-      const { userApi } = await import('./firebaseApi.js');
+      const { userApi } = await import('./supabaseApi.js');
       const allUsers = await userApi.getAllUsers();
       console.log(`👥 Total users found: ${allUsers.length}`);
       
@@ -1528,7 +1528,7 @@ export const emailNotifications = {
       }
 
       // Get course statistics
-      const { courseApi } = await import('./firebaseApi.js');
+      const { courseApi } = await import('./supabaseApi.js');
       const course = await courseApi.getCourseByCode(enrollmentData.courseCode);
       const courseMembers = await courseApi.getCourseMembers(course.id);
       
@@ -1587,7 +1587,7 @@ export const emailNotifications = {
   async notifyAdminsOfInstructorEnrollmentRequest(enrollmentData) {
     try {
       // Get all admin users
-      const { userApi } = await import('./firebaseApi.js');
+      const { userApi } = await import('./supabaseApi.js');
       const allUsers = await userApi.getAllUsers();
       const adminUsers = allUsers.filter(user => user.role === 'admin' || user.is_global_admin);
 
@@ -1597,7 +1597,7 @@ export const emailNotifications = {
       }
 
       // Get course statistics
-      const { courseApi } = await import('./firebaseApi.js');
+      const { courseApi } = await import('./supabaseApi.js');
       const course = await courseApi.getCourseByCode(enrollmentData.courseCode);
       const courseMembers = await courseApi.getCourseMembers(course.id);
       
@@ -1719,7 +1719,7 @@ export const emailNotifications = {
       console.log('📧 Starting announcement email notifications...');
 
       // Get all course members
-      const { courseApi } = await import('./firebaseApi.js');
+      const { courseApi } = await import('./supabaseApi.js');
       const courseMembers = await courseApi.getCourseMembers(announcementData.courseId);
 
       // Filter to members with email addresses (all active members)

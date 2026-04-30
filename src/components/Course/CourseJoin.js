@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi, paymentApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
+import { paymentApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 import {
   AcademicCapIcon,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { analyticsApi } from '../../services/analyticsApi';
-import { courseApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
 import { formatCurrency, formatNumber, MODEL_PRICING } from '../../utils/costCalculator';
 import toast from 'react-hot-toast';
 import {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { ClockIcon, MinusIcon } from '@heroicons/react/24/outline';
-import { moduleProgressApi, courseApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
+import { moduleProgressApi } from '../../services/firebaseApi';
 import toast from 'react-hot-toast';
 
 const ModuleProgressGrid = ({ courseId, modules }) => {

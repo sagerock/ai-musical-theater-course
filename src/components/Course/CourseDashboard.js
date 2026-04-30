@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
 import { collection, query, where, getCountFromServer } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { format } from 'date-fns';

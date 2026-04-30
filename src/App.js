@@ -190,7 +190,7 @@ function StudentAssistantRoute({ children }) {
       // Check course-specific membership
       if (courseId && currentUser) {
         try {
-          const courseApi = await import('./services/firebaseApi').then(m => m.courseApi);
+          const courseApi = await import('./services/supabaseApi').then(m => m.courseApi);
           const userCourses = await courseApi.getUserCourses(currentUser.id);
           const courseMembership = userCourses.find(membership => 
             membership.courses.id === courseId
@@ -240,7 +240,7 @@ function StudentsPageWrapper() {
       if (!courseId) return;
       
       try {
-        const courseApi = await import('./services/firebaseApi').then(m => m.courseApi);
+        const courseApi = await import('./services/supabaseApi').then(m => m.courseApi);
         const courseData = await courseApi.getCourseById(courseId);
         setCourse({ courses: courseData });
       } catch (error) {

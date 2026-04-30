@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { courseApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
 import { hasTeachingPermissions } from '../../utils/roleUtils';
 import Footer from './Footer';
 import {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { attachmentApi, projectApi, chatApi } from '../../services/firebaseApi';
+import { projectApi } from '../../services/supabaseApi';
+import { attachmentApi, chatApi } from '../../services/firebaseApi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import LibraryChatModal from './LibraryChatModal';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { courseApi } from '../../services/firebaseApi';
+import { courseApi } from '../../services/supabaseApi';
 import { 
   getRoleDisplayName, 
   getRoleStyle, 
