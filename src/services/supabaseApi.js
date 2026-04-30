@@ -716,3 +716,339 @@ export const chatApi = {
   async fixMissingToolUsed() { return { fixed: 0, message: 'No-op on Supabase' } },
   async fixOrphanedChats() { return { fixed: 0, orphaned: 0, message: 'No-op on Supabase' } }
 }
+
+// ============================================================
+// reflectionApi
+// ============================================================
+
+const normalizeReflection = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    chatId: row.chat_id,
+    chat_id: row.chat_id,
+    userId: row.user_id,
+    user_id: row.user_id,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    projectId: row.project_id,
+    project_id: row.project_id,
+    content: row.content,
+    reflection_text: row.content,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    updatedAt: row.updated_at,
+    updated_at: row.updated_at,
+    ...row
+  }
+}
+
+export const reflectionApi = {
+  async createReflection(reflectionData) {
+    const content = reflectionData.content || reflectionData.reflection_text
+    const { data, error } = await supabase
+      .from('reflections')
+      .insert({
+        chat_id: reflectionData.chatId || reflectionData.chat_id || null,
+        user_id: reflectionData.userId || reflectionData.user_id,
+        course_id: reflectionData.courseId || reflectionData.course_id || null,
+        project_id: reflectionData.projectId || reflectionData.project_id || null,
+        content
+      })
+      .select()
+      .single()
+    if (error) throw error
+    if (data.chat_id) {
+      await supabase.from('chats').update({ has_reflection: true }).eq('id', data.chat_id)
+    }
+    return normalizeReflection(data)
+  },
+
+  async getReflectionById(reflectionId) {
+    const { data, error } = await supabase.from('reflections').select('*').eq('id', reflectionId).single()
+    if (error) throw error
+    return normalizeReflection(data)
+  },
+
+  async getReflectionByChat(chatId) {
+    const { data, error } = await supabase.from('reflections').select('*').eq('chat_id', chatId).single()
+    if (error) return null
+    return normalizeReflection(data)
+  },
+
+  async updateReflection(reflectionId, updates) {
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.content !== undefined) dbUpdates.content = updates.content
+    if (updates.reflection_text !== undefined) dbUpdates.content = updates.reflection_text
+    const { data, error } = await supabase
+      .from('reflections')
+      .update(dbUpdates)
+      .eq('id', reflectionId)
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeReflection(data)
+  },
+
+  async deleteReflection(reflectionId) {
+    const { data: refl } = await supabase.from('reflections').select('chat_id').eq('id', reflectionId).single()
+    const { error } = await supabase.from('reflections').delete().eq('id', reflectionId)
+    if (error) throw error
+    if (refl?.chat_id) {
+      await supabase.from('chats').update({ has_reflection: false }).eq('id', refl.chat_id)
+    }
+    return true
+  },
+
+  async getCourseReflections(courseId) {
+    const { data, error } = await supabase
+      .from('reflections')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data || []).map(normalizeReflection)
+  },
+
+  async checkReflectionIntegrity() {
+    return { issues: [], correctCount: 0 }
+  }
+}
+
+// ============================================================
+// instructorNotesApi
+// ============================================================
+
+const normalizeNote = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    project_id: row.project_id,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    authorId: row.author_id,
+    author_id: row.author_id,
+    instructorId: row.author_id,
+    authorName: row.author_name,
+    author_name: row.author_name,
+    content: row.content,
+    parentId: row.parent_id,
+    parent_id: row.parent_id,
+    threadId: row.thread_id,
+    thread_id: row.thread_id,
+    isReply: row.is_reply,
+    is_reply: row.is_reply,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    updatedAt: row.updated_at,
+    updated_at: row.updated_at,
+    ...row
+  }
+}
+
+export const instructorNotesApi = {
+  async createNote(noteData) {
+    const { data, error } = await supabase
+      .from('instructor_notes')
+      .insert({
+        project_id: noteData.projectId || noteData.project_id,
+        course_id: noteData.courseId || noteData.course_id,
+        author_id: noteData.authorId || noteData.author_id || noteData.instructorId,
+        author_name: noteData.authorName || noteData.author_name || null,
+        content: noteData.content,
+        parent_id: noteData.parentId || noteData.parent_id || null,
+        thread_id: noteData.threadId || noteData.thread_id || null,
+        is_reply: noteData.isReply || noteData.is_reply || false
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeNote(data)
+  },
+
+  async replyToNote(noteId, replyData) {
+    const { data: parent } = await supabase.from('instructor_notes').select('thread_id, project_id, course_id').eq('id', noteId).single()
+    const threadId = parent?.thread_id || noteId
+    return this.createNote({
+      ...replyData,
+      project_id: replyData.project_id || parent?.project_id,
+      course_id: replyData.course_id || parent?.course_id,
+      parent_id: noteId,
+      thread_id: threadId,
+      is_reply: true
+    })
+  },
+
+  async deleteInstructorNote(noteId) {
+    const { error } = await supabase.from('instructor_notes').delete().eq('id', noteId)
+    if (error) throw error
+    return { success: true }
+  },
+
+  async getNotesByChat(chatId) {
+    const { data: chat } = await supabase.from('chats').select('project_id').eq('id', chatId).single()
+    if (!chat?.project_id) return []
+    return this.getProjectNotes(chat.project_id)
+  },
+
+  async getProjectNotes(projectId) {
+    const { data, error } = await supabase
+      .from('instructor_notes')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    const notes = (data || []).map(normalizeNote)
+    return this.organizeThreadedNotes(notes)
+  },
+
+  organizeThreadedNotes(notes) {
+    const byId = new Map(notes.map(n => [n.id, { ...n, replies: [] }]))
+    const roots = []
+    notes.forEach(n => {
+      const node = byId.get(n.id)
+      if (n.parent_id && byId.has(n.parent_id)) {
+        byId.get(n.parent_id).replies.push(node)
+      } else {
+        roots.push(node)
+      }
+    })
+    return roots
+  },
+
+  async getNotesForDashboard(instructorId, courseId) {
+    let q = supabase
+      .from('instructor_notes')
+      .select('*, projects(id, title, created_by, users:created_by(id, name, email))')
+      .order('created_at', { ascending: false })
+    if (courseId) q = q.eq('course_id', courseId)
+    const { data, error } = await q
+    if (error) throw error
+    return (data || []).map(normalizeNote)
+  }
+}
+
+// ============================================================
+// tagApi
+// ============================================================
+
+const normalizeTag = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    description: row.description,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    isGlobal: row.is_global,
+    is_global: row.is_global,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    ...row
+  }
+}
+
+export const tagApi = {
+  async getAllTags(courseId = null) {
+    let q = supabase.from('tags').select('*').order('name')
+    if (courseId) q = q.or(`course_id.eq.${courseId},is_global.eq.true`)
+    const { data, error } = await q
+    if (error) throw error
+    return (data || []).map(normalizeTag)
+  },
+
+  async createTag(tagData, courseId) {
+    const { data, error } = await supabase
+      .from('tags')
+      .insert({
+        name: tagData.name,
+        color: tagData.color || null,
+        description: tagData.description || null,
+        course_id: courseId || tagData.courseId || tagData.course_id || null,
+        is_global: tagData.isGlobal || tagData.is_global || false
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeTag(data)
+  },
+
+  async getTagById(tagId) {
+    const { data, error } = await supabase.from('tags').select('*').eq('id', tagId).single()
+    if (error) throw error
+    return normalizeTag(data)
+  },
+
+  async getCourseTagsWithUsage(courseId) {
+    const { data: tags } = await supabase.from('tags').select('*').eq('course_id', courseId)
+    const { data: chatTags } = await supabase
+      .from('chat_tags')
+      .select('tag_id, chats!inner(course_id)')
+      .eq('chats.course_id', courseId)
+    const counts = {}
+    ;(chatTags || []).forEach(ct => { counts[ct.tag_id] = (counts[ct.tag_id] || 0) + 1 })
+    return (tags || []).map(t => ({ ...normalizeTag(t), usage_count: counts[t.id] || 0 }))
+  },
+
+  async getGlobalTagsWithUsage(courseId) {
+    const { data: tags } = await supabase.from('tags').select('*').eq('is_global', true)
+    const { data: chatTags } = await supabase
+      .from('chat_tags')
+      .select('tag_id, chats!inner(course_id)')
+      .eq('chats.course_id', courseId)
+    const counts = {}
+    ;(chatTags || []).forEach(ct => { counts[ct.tag_id] = (counts[ct.tag_id] || 0) + 1 })
+    return (tags || []).map(t => ({ ...normalizeTag(t), usage_count: counts[t.id] || 0 }))
+  },
+
+  getCourseTags(courseId) { return this.getCourseTagsWithUsage(courseId) },
+
+  async addTagsToChat(chatId, tagIds) {
+    const rows = tagIds.map(tag_id => ({ chat_id: chatId, tag_id }))
+    const { error } = await supabase.from('chat_tags').upsert(rows, { onConflict: 'chat_id,tag_id' })
+    if (error) throw error
+    return true
+  },
+
+  async removeTagsFromChat(chatId, tagIds) {
+    const { error } = await supabase
+      .from('chat_tags')
+      .delete()
+      .eq('chat_id', chatId)
+      .in('tag_id', tagIds)
+    if (error) throw error
+    return true
+  },
+
+  async updateTag(tagId, updates) {
+    const dbUpdates = {}
+    if (updates.name !== undefined) dbUpdates.name = updates.name
+    if (updates.color !== undefined) dbUpdates.color = updates.color
+    if (updates.description !== undefined) dbUpdates.description = updates.description
+    const { data, error } = await supabase
+      .from('tags')
+      .update(dbUpdates)
+      .eq('id', tagId)
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeTag(data)
+  },
+
+  async deleteTag(tagId) {
+    await supabase.from('chat_tags').delete().eq('tag_id', tagId)
+    const { error } = await supabase.from('tags').delete().eq('id', tagId)
+    if (error) throw error
+  },
+
+  async getChatTags(chatId) {
+    const { data, error } = await supabase
+      .from('chat_tags')
+      .select('tag_id, tags(*)')
+      .eq('chat_id', chatId)
+    if (error) throw error
+    return (data || []).map(ct => normalizeTag(ct.tags))
+  }
+}
