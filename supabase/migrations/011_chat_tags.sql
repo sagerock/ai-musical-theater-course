@@ -1,0 +1,6 @@
+CREATE TABLE chat_tags (
+  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (chat_id, tag_id)
+);
