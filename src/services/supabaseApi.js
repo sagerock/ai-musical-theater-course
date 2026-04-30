@@ -540,3 +540,179 @@ export const projectApi = {
     }))
   }
 }
+
+// ============================================================
+// chatApi
+// ============================================================
+
+const normalizeChat = (row) => {
+  if (!row) return null
+  return {
+    id: row.id,
+    prompt: row.prompt,
+    response: row.response,
+    tool_used: row.model,
+    model: row.model,
+    userId: row.user_id,
+    user_id: row.user_id,
+    projectId: row.project_id,
+    project_id: row.project_id,
+    moduleId: row.module_id,
+    module_id: row.module_id,
+    courseId: row.course_id,
+    course_id: row.course_id,
+    has_reflection: row.has_reflection,
+    createdAt: row.created_at,
+    created_at: row.created_at,
+    updatedAt: row.updated_at,
+    updated_at: row.updated_at,
+    ...row
+  }
+}
+
+export const chatApi = {
+  async createChat(chatData, courseId) {
+    const { data, error } = await supabase
+      .from('chats')
+      .insert({
+        prompt: chatData.prompt,
+        response: chatData.response || null,
+        model: chatData.tool_used || chatData.model || null,
+        user_id: chatData.userId || chatData.user_id,
+        project_id: chatData.projectId || chatData.project_id || null,
+        module_id: chatData.moduleId || chatData.module_id || null,
+        course_id: courseId || chatData.courseId || chatData.course_id || null,
+        has_reflection: chatData.has_reflection || false
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeChat(data)
+  },
+
+  async getChatById(chatId) {
+    const { data, error } = await supabase
+      .from('chats')
+      .select('*')
+      .eq('id', chatId)
+      .single()
+    if (error) throw error
+    return normalizeChat(data)
+  },
+
+  async getProjectChats(projectId) {
+    const { data, error } = await supabase
+      .from('chats')
+      .select('*, reflections(*)')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return (data || []).map(row => ({
+      ...normalizeChat(row),
+      reflection: row.reflections?.[0] || null
+    }))
+  },
+
+  async getUserChats(userId, courseId = null, limitCount = 100) {
+    let q = supabase
+      .from('chats')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limitCount)
+    if (courseId) q = q.eq('course_id', courseId)
+    const { data, error } = await q
+    if (error) throw error
+    return (data || []).map(normalizeChat)
+  },
+
+  async getChatsWithFilters(filters = {}) {
+    let q = supabase.from('chats').select('*, users(id, name, email), projects(id, title), reflections(*)').order('created_at', { ascending: false })
+    if (filters.courseId) q = q.eq('course_id', filters.courseId)
+    if (filters.userId) q = q.eq('user_id', filters.userId)
+    if (filters.projectId) q = q.eq('project_id', filters.projectId)
+    if (filters.toolUsed) q = q.eq('model', filters.toolUsed)
+    if (filters.startDate) q = q.gte('created_at', new Date(filters.startDate).toISOString())
+    if (filters.endDate) q = q.lte('created_at', new Date(filters.endDate).toISOString())
+    if (filters.limit) q = q.limit(filters.limit)
+    const { data, error } = await q
+    if (error) throw error
+    return (data || []).map(row => ({
+      ...normalizeChat(row),
+      users: row.users,
+      user: row.users,
+      project: row.projects,
+      reflection: row.reflections?.[0] || null,
+      reflections: row.reflections || []
+    }))
+  },
+
+  async getChatsWithFiltersOptimized(filters = {}) {
+    return this.getChatsWithFilters(filters)
+  },
+
+  async getCourseChatsCount(courseId) {
+    const { count: totalChats } = await supabase
+      .from('chats')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+    const { data: usersData } = await supabase
+      .from('chats')
+      .select('user_id')
+      .eq('course_id', courseId)
+    const { data: projectsData } = await supabase
+      .from('chats')
+      .select('project_id')
+      .eq('course_id', courseId)
+      .not('project_id', 'is', null)
+    const { count: reflectionCount } = await supabase
+      .from('chats')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+      .eq('has_reflection', true)
+    return {
+      totalChats: totalChats || 0,
+      uniqueUsers: new Set((usersData || []).map(c => c.user_id)).size,
+      uniqueProjects: new Set((projectsData || []).map(c => c.project_id).filter(Boolean)).size,
+      reflectionCount: reflectionCount || 0
+    }
+  },
+
+  async getCourseChatsCountLightweight(courseId) {
+    const { count: totalChats } = await supabase
+      .from('chats')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+    const { count: reflectionCount } = await supabase
+      .from('chats')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+      .eq('has_reflection', true)
+    return { totalChats: totalChats || 0, reflectionCount: reflectionCount || 0 }
+  },
+
+  async updateChat(chatId, updates) {
+    const dbUpdates = { updated_at: new Date().toISOString() }
+    if (updates.prompt !== undefined) dbUpdates.prompt = updates.prompt
+    if (updates.response !== undefined) dbUpdates.response = updates.response
+    if (updates.tool_used !== undefined) dbUpdates.model = updates.tool_used
+    if (updates.model !== undefined) dbUpdates.model = updates.model
+    if (updates.has_reflection !== undefined) dbUpdates.has_reflection = updates.has_reflection
+    const { data, error } = await supabase
+      .from('chats')
+      .update(dbUpdates)
+      .eq('id', chatId)
+      .select()
+      .single()
+    if (error) throw error
+    return normalizeChat(data)
+  },
+
+  async deleteChat(chatId) {
+    const { error } = await supabase.from('chats').delete().eq('id', chatId)
+    if (error) throw error
+  },
+
+  async fixMissingToolUsed() { return { fixed: 0, message: 'No-op on Supabase' } },
+  async fixOrphanedChats() { return { fixed: 0, orphaned: 0, message: 'No-op on Supabase' } }
+}
