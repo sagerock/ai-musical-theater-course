@@ -8,7 +8,6 @@ export const AI_TOOLS = {
   'GPT-5': 'gpt-5-2025-08-07',
   'GPT-5.2': 'gpt-5.2',
   // OpenAI Models - GPT-4.1 Series
-  'GPT-4.1 Nano': 'gpt-4.1-nano-2025-04-14',
   'GPT-4.1 Mini': 'gpt-4.1-mini-2025-04-14',
   'GPT-4.1': 'gpt-4.1-2025-04-14',
   // Anthropic Models
@@ -263,7 +262,6 @@ export const aiApi = {
 
     // Add OpenAI models - GPT-4.1 Series
     models.push(
-      { id: 'gpt-4.1-nano-2025-04-14', name: 'GPT-4.1 Nano', provider: 'openai' },
       { id: 'gpt-4.1-mini-2025-04-14', name: 'GPT-4.1 Mini', provider: 'openai' },
       { id: 'gpt-4.1-2025-04-14', name: 'GPT-4.1', provider: 'openai' }
     );

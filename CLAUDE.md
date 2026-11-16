@@ -94,6 +94,8 @@ Helper functions in `firestore.rules`: `isAuthenticated()`, `isOwner()`, `isGlob
 
 Known gaps, not yet closed: any signed-in user can read the `users` and `courses` collections (names, emails, access codes); a user with the global `instructor` role can update any course; hidden instructor notes are filtered only in the client; no per-user rate limit on the AI routes; old Supabase credentials remain in Git history (the project they belong to is paused); Cloud Functions other than `sendEmail` are still on the retired Node 20 runtime and need the bump to 22 (already set in `firebase.json`) on their next deploy.
 
+UI walk-through (2026-11-16, test accounts, all removed afterwards): student, instructor and student-assistant screens all work under the new rules. Leftovers that are not rules problems: the student course page makes two course-wide count queries that the rules refuse before it falls back to the student's own counts (console noise only; student assistants do get course-wide counts); `Projects.js` calls `notifyInstructorOfNewProject`, which does not exist, and passes no instructor addresses, so the "new project" email to instructors has never worked since July 2025 (turning it on is a product call); Gemini models return 402 because the Google AI key's prepaid credits are used up; joining a course without semester access goes to live Stripe checkout.
+
 ### Deployments
 
 - Production: Vercel, auto-deploys from `main`, at `www.ai-engagement-hub.com` (Firebase project `staging-intelligence-8c59c`). The `ai-interaction-logger.vercel.app` address serves the same build but is not an allowed sign-in domain.
