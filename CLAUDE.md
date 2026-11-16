@@ -29,7 +29,7 @@ Deploy Firestore rules: `./deploy_firebase_rules.sh` or `./deploy-rules.sh`
 
 ```
 React Chat UI → aiProxyService (src/services/aiProxyService.js)
-  → Vercel serverless function (api/openai.js | api/anthropic.js | api/google.js | api/perplexity.js)
+  → Vercel serverless function (api/openai.js | api/anthropic.js)
   → Provider API → Response normalized to OpenAI format → Client
 ```
 
@@ -74,10 +74,8 @@ Node.js 22, Firebase Functions v2. Key callable functions:
 ### Vercel Serverless API (api/)
 
 Each AI provider has its own proxy route with provider-specific handling:
-- `api/openai.js` — GPT-5 forced to temperature=1, 60s max duration
-- `api/anthropic.js` — Converts OpenAI message format to Anthropic Messages API and back
-- `api/google.js` — Uses Gemini `startChat()` with history, maps roles (`assistant`→`model`)
-- `api/perplexity.js` — OpenAI-compatible endpoint, maps `sonar-pro`→`sonar`
+- `api/openai.js` — sends no temperature to GPT-5 and later (they accept only the default), 60s max duration
+- `api/anthropic.js` — Converts OpenAI message format to Anthropic Messages API and back; current Claude models think first, so it returns the text blocks only
 - `api/send-email.js` — SendGrid proxy for contact and help notifications to the site inbox only, 30s max duration
 - `api/health.js` — Health check
 
@@ -94,7 +92,7 @@ Helper functions in `firestore.rules`: `isAuthenticated()`, `isOwner()`, `isGlob
 
 Known gaps, not yet closed: any signed-in user can read the `users` and `courses` collections (names, emails, access codes); a user with the global `instructor` role can update any course; hidden instructor notes are filtered only in the client; no per-user rate limit on the AI routes; old Supabase credentials remain in Git history (the project they belong to is paused); Cloud Functions other than `sendEmail` are still on the retired Node 20 runtime and need the bump to 22 (already set in `firebase.json`) on their next deploy.
 
-UI walk-through (2026-11-16, test accounts, all removed afterwards): student, instructor and student-assistant screens all work under the new rules. Leftovers that are not rules problems: the student course page makes two course-wide count queries that the rules refuse before it falls back to the student's own counts (console noise only; student assistants do get course-wide counts); `Projects.js` calls `notifyInstructorOfNewProject`, which does not exist, and passes no instructor addresses, so the "new project" email to instructors has never worked since July 2025 (turning it on is a product call); Gemini models return 402 because the Google AI key's prepaid credits are used up; joining a course without semester access goes to live Stripe checkout.
+UI walk-through (2026-11-16, test accounts, all removed afterwards): student, instructor and student-assistant screens all work under the new rules. Leftovers that are not rules problems: the student course page makes two course-wide count queries that the rules refuse before it falls back to the student's own counts (console noise only; student assistants do get course-wide counts); `Projects.js` calls `notifyInstructorOfNewProject`, which does not exist, and passes no instructor addresses, so the "new project" email to instructors has never worked since July 2025 (turning it on is a product call); joining a course without semester access goes to live Stripe checkout.
 
 ### Deployments
 
@@ -113,7 +111,7 @@ Heavy analytics run server-side via the `generateCourseAnalytics` Cloud Function
 - Local dev: `EMAIL_API_URL=http://localhost:3001`
 
 **Server-side** (Vercel env vars, NO `REACT_APP_` prefix):
-- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `PERPLEXITY_API_KEY`, `SENDGRID_API_KEY`
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `SENDGRID_API_KEY` (`GOOGLE_API_KEY` and `PERPLEXITY_API_KEY` are no longer used)
 
 See `.env.local.example` for the current template.
 
@@ -122,6 +120,6 @@ See `.env.local.example` for the current template.
 - React 18, React Router, Tailwind CSS
 - Firebase (Auth, Firestore, Storage, Cloud Functions v2)
 - Vercel (hosting + serverless API proxy)
-- AI: OpenAI (GPT-5/4.1 series), Anthropic (Claude Sonnet 4.5, Opus 4.1), Google (Gemini 2.5 Flash/Pro), Perplexity (Sonar Pro)
+- AI: OpenAI (GPT-6 Luna, GPT-6.1 Sol) and Anthropic (Claude Haiku 5.5, Sonnet 5.5, Opus 5.5) only, since 2026-11-16. Gemini and Perplexity were dropped (Sage); their routes are gone
 - SendGrid for transactional email
 - PDF.js + Tesseract.js for document extraction with OCR fallback
