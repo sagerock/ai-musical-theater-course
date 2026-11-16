@@ -5,61 +5,11 @@
 
 // Model configurations with their context limits and optimal settings
 const MODEL_CONFIGS = {
-  // OpenAI GPT-5 Series
-  'GPT-5 Nano': {
-    maxTokens: 128000,        // 128K context window
-    optimalMessages: 20,      // Keep more messages for better context
-    maxMessages: 50,          // Maximum to prevent token overflow
-    avgTokensPerMessage: 150 // Rough estimate
-  },
-  'GPT-5 Mini': {
-    maxTokens: 128000,        // 128K context window
-    optimalMessages: 25,      // Balanced approach
-    maxMessages: 60,
-    avgTokensPerMessage: 150
-  },
-  'GPT-5': {
-    maxTokens: 400000,        // 400K context window (huge!)
-    optimalMessages: 40,      // Can handle extensive context
-    maxMessages: 100,         // Very generous limit
-    avgTokensPerMessage: 150
-  },
-  
-  // Anthropic Claude Models
-  'Claude Sonnet 4': {
-    maxTokens: 200000,        // 200K context window
-    optimalMessages: 30,      // Good balance for Claude
-    maxMessages: 75,
-    avgTokensPerMessage: 150
-  },
-  'Claude Opus 4': {
-    maxTokens: 200000,        // 200K context window
-    optimalMessages: 35,      // Premium model can handle more
-    maxMessages: 80,
-    avgTokensPerMessage: 150
-  },
-  
-  // Google Gemini Models
-  'Gemini Flash': {
-    maxTokens: 32000,         // 32K context window
-    optimalMessages: 10,      // Keep it lighter for Flash
-    maxMessages: 25,
-    avgTokensPerMessage: 150
-  },
-  'Gemini 2.5 Pro': {
-    maxTokens: 1000000,       // 1M context window (massive!)
-    optimalMessages: 50,      // Can handle very long conversations
-    maxMessages: 200,         // Extremely generous
-    avgTokensPerMessage: 150
-  },
-  
-  // Perplexity Model
-  'Sonar Pro': {
-    maxTokens: 127000,        // 127K context window
-    optimalMessages: 20,      // Good for search-focused queries
-    maxMessages: 50,
-    avgTokensPerMessage: 150
-  }
+  'GPT-6 Luna': { maxTokens: 400000, optimalMessages: 25, maxMessages: 60, avgTokensPerMessage: 150 },
+  'GPT-6.1 Sol': { maxTokens: 400000, optimalMessages: 40, maxMessages: 100, avgTokensPerMessage: 150 },
+  'Claude Haiku 5.5': { maxTokens: 400000, optimalMessages: 25, maxMessages: 60, avgTokensPerMessage: 150 },
+  'Claude Sonnet 5.5': { maxTokens: 400000, optimalMessages: 40, maxMessages: 100, avgTokensPerMessage: 150 },
+  'Claude Opus 5.5': { maxTokens: 400000, optimalMessages: 40, maxMessages: 100, avgTokensPerMessage: 150 },
 };
 
 // Default fallback configuration

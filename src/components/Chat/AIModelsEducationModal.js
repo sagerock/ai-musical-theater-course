@@ -28,86 +28,50 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
       website: 'anthropic.com', 
       focus: 'AI safety, research, writing, and reasoning',
       founded: '2021'
-    },
-    'Google': {
-      description: 'Google DeepMind develops Gemini models with LearnLM integration, specifically optimized for educational use with enhanced privacy protections.',
-      website: 'deepmind.google',
-      focus: 'Educational AI, multimodal learning, and student privacy',
-      founded: '2010 (DeepMind)'
-    },
-    'Perplexity': {
-      description: 'Founded in 2022, Perplexity specializes in AI-powered search and research, combining language models with real-time web search.',
-      website: 'perplexity.ai',
-      focus: 'AI search, real-time information, and research',
-      founded: '2022'
     }
   };
 
   // Model details with educational information
   const modelDetails = {
-    'GPT-5 Nano': {
+    'GPT-6 Luna': {
       company: 'OpenAI',
-      description: 'The fastest and most cost-efficient GPT-5 model, perfect for summarization and classification tasks.',
-      bestFor: ['Quick summaries', 'Classification tasks', 'Simple questions', 'Rapid responses'],
-      notBestFor: ['Complex reasoning', 'Advanced coding', 'Long-form writing', 'Deep analysis'],
-      whenToUse: 'When you need ultra-fast responses for simple tasks or quick information retrieval.',
-      pricing: getModelInfo('GPT-5 Nano').pricing
+      description: 'A fast, very low-cost OpenAI model built for quick turnaround on everyday tasks.',
+      bestFor: ['Quick questions', 'Summaries', 'Everyday help', 'Rapid responses'],
+      notBestFor: ['Deep analysis', 'Complex research', 'Long, nuanced writing'],
+      whenToUse: 'When you want a fast answer to a simple question or a quick summary and want to keep costs minimal.',
+      pricing: getModelInfo('GPT-6 Luna').pricing
     },
-    'GPT-5 Mini': {
+    'GPT-6.1 Sol': {
       company: 'OpenAI',
-      description: 'A balanced GPT-5 model that provides excellent performance for well-defined tasks with enhanced reasoning.',
-      bestFor: ['General questions', 'Writing assistance', 'Structured analysis', 'Well-defined tasks'],
-      notBestFor: ['Complex research', 'Advanced coding', 'Agentic tasks'],
-      whenToUse: 'Default choice for most student work. Great for homework help, brainstorming, and general questions with better reasoning than Nano.',
-      pricing: getModelInfo('GPT-5 Mini').pricing
+      description: 'OpenAI\'s default model here, balancing quality and cost for a wide range of student work.',
+      bestFor: ['Writing help', 'Explanations', 'Analysis', 'General questions'],
+      notBestFor: ['The most demanding research projects', 'Simple quick lookups where a cheaper model will do'],
+      whenToUse: 'Default choice for most student work. Good all-round for writing help, explaining concepts, and analysis.',
+      pricing: getModelInfo('GPT-6.1 Sol').pricing
     },
-    'GPT-5': {
-      company: 'OpenAI',
-      description: 'OpenAI\'s flagship model for coding, reasoning, and agentic tasks across all domains with 400K context window.',
-      bestFor: ['Complex coding', 'Advanced reasoning', 'Multi-step problems', 'Agentic tasks', 'Large document analysis'],
-      notBestFor: ['Simple questions', 'Cost-sensitive tasks', 'Quick lookups'],
-      whenToUse: 'When you need the best coding assistance, complex reasoning, or handling sophisticated multi-step problems.',
-      pricing: getModelInfo('GPT-5').pricing
-    },
-    'Claude Sonnet 4': {
+    'Claude Haiku 5.5': {
       company: 'Anthropic',
-      description: 'Anthropic\'s balanced model that excels at analysis, writing, and following instructions precisely.',
-      bestFor: ['Writing assistance', 'Analysis', 'Following complex instructions', 'Thoughtful responses'],
-      notBestFor: ['Real-time information', 'Image generation', 'Simple quick questions'],
+      description: 'Anthropic\'s fast, very low-cost model for quick, clear answers.',
+      bestFor: ['Quick, clear answers', 'Simple explanations', 'Fast review', 'Low-cost exploration'],
+      notBestFor: ['Deep analysis', 'Complex research', 'Extended writing projects'],
+      whenToUse: 'When you need a quick, clear answer and want to keep costs low.',
+      pricing: getModelInfo('Claude Haiku 5.5').pricing
+    },
+    'Claude Sonnet 5.5': {
+      company: 'Anthropic',
+      description: 'Anthropic\'s balanced model, offering strong writing and reasoning at moderate cost.',
+      bestFor: ['Writing assistance', 'Analysis', 'Reasoning through problems', 'Thoughtful responses'],
+      notBestFor: ['Simple quick questions', 'The most complex research projects'],
       whenToUse: 'Excellent for academic writing, analysis papers, and when you need thoughtful, nuanced responses.',
-      pricing: getModelInfo('Claude Sonnet 4').pricing
+      pricing: getModelInfo('Claude Sonnet 5.5').pricing
     },
-    'Claude Opus 4': {
+    'Claude Opus 5.5': {
       company: 'Anthropic',
-      description: 'Anthropic\'s flagship research model with superior writing quality and deep reasoning capabilities.',
-      bestFor: ['Advanced research', 'High-quality writing', 'Complex analysis', 'Multi-hour projects'],
+      description: 'The most capable model in the lineup, suited to deep analysis and complex research.',
+      bestFor: ['Deep analysis', 'Complex research', 'Demanding writing projects', 'Multi-step reasoning'],
       notBestFor: ['Quick questions', 'Cost-sensitive work', 'Simple tasks'],
-      whenToUse: 'Research Mode - Use for major papers, complex research projects, and when you need the highest quality output.',
-      pricing: getModelInfo('Claude Opus 4').pricing
-    },
-    'Gemini Flash': {
-      company: 'Google',
-      description: 'Google\'s fast and efficient model that balances speed with capability.',
-      bestFor: ['Quick responses', 'Efficient processing', 'Multimodal tasks', 'Fast analysis'],
-      notBestFor: ['Deep research', 'Creative writing', 'Complex reasoning'],
-      whenToUse: 'When you need fast, efficient responses and Google\'s knowledge integration.',
-      pricing: getModelInfo('Gemini Flash').pricing
-    },
-    'Gemini 2.5 Pro': {
-      company: 'Google',
-      description: 'Google\'s flagship educational model with LearnLM integration, specifically designed for academic research with superior citation capabilities and privacy protections.',
-      bestFor: ['Academic research with citations', 'Scholarly writing', 'Multimodal analysis', 'Complex reasoning', 'Large document analysis', 'Research requiring sources'],
-      notBestFor: ['Real-time web search', 'Simple quick questions', 'Cost-sensitive basic tasks'],
-      whenToUse: '🏆 TOP CHOICE for research projects requiring proper citations and academic rigor. Provides verifiable sources and models scholarly writing standards.',
-      pricing: getModelInfo('Gemini 2.5 Pro').pricing
-    },
-    'Sonar Pro': {
-      company: 'Perplexity',
-      description: 'Perplexity\'s search-enhanced model that provides real-time information and cited sources.',
-      bestFor: ['Current events', 'Research with sources', 'Fact-checking', 'Real-time information'],
-      notBestFor: ['Creative writing', 'Personal analysis', 'Historical topics'],
-      whenToUse: 'When you need current information, recent news, or research with citations and sources.',
-      pricing: getModelInfo('Sonar Pro').pricing
+      whenToUse: 'Use for major papers, complex research projects, and when you need the strongest analysis available here.',
+      pricing: getModelInfo('Claude Opus 5.5').pricing
     }
   };
 
@@ -182,7 +146,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                     <h4 className="font-semibold text-green-900 mb-2">📊 Available Models</h4>
                     <ul className="text-sm text-green-800 space-y-1">
                       <li>• {Object.keys(AI_TOOLS).length} different AI models</li>
-                      <li>• 4 leading AI companies</li>
+                      <li>• 2 leading AI companies (OpenAI and Anthropic)</li>
                       <li>• Various price points</li>
                       <li>• Educational optimizations</li>
                     </ul>
@@ -192,21 +156,21 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                   <h4 className="font-semibold text-yellow-800 mb-2">💡 Quick Start Tips</h4>
                   <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• <strong>General use:</strong> Start with GPT-5 Mini (balanced performance default)</li>
-                    <li>• <strong>Research with citations:</strong> 🏆 Gemini 2.5 Pro (superior academic sources)</li>
-                    <li>• <strong>Advanced analysis:</strong> Claude Opus 4 for premium insights</li>
-                    <li>• <strong>Current events:</strong> Sonar Pro for real-time information</li>
-                    <li>• <strong>Multimodal analysis:</strong> Gemini 2.5 Pro for images/documents</li>
+                    <li>• <strong>General use:</strong> Start with GPT-6.1 Sol (the balanced default)</li>
+                    <li>• <strong>Quick questions:</strong> GPT-6 Luna or Claude Haiku 5.5 (fast and very low cost)</li>
+                    <li>• <strong>Writing and analysis:</strong> Claude Sonnet 5.5 for thoughtful, nuanced work</li>
+                    <li>• <strong>Deep analysis and complex research:</strong> Claude Opus 5.5 (most capable in the lineup)</li>
+                    <li>• <strong>Sources:</strong> These models don't search the web here, so verify any source they mention</li>
                   </ul>
                 </div>
 
                 <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
                   <h4 className="font-semibold text-purple-900 mb-2">🎓 Educational Features</h4>
                   <ul className="text-sm text-purple-800 space-y-1">
-                    <li>• <strong>Gemini 2.5 Pro:</strong> LearnLM integration for better learning</li>
+                    <li>• <strong>Educational Prompting:</strong> Every model gets learning-focused instructions behind the scenes</li>
                     <li>• <strong>Privacy Protection:</strong> Educational data won't train AI models</li>
-                    <li>• <strong>Large Context:</strong> 1 million tokens for comprehensive analysis</li>
-                    <li>• <strong>Multimodal Learning:</strong> Analyze text, images, and documents</li>
+                    <li>• <strong>Large Context:</strong> All models handle long conversations and documents</li>
+                    <li>• <strong>Verify Sources:</strong> Always check any source or fact an AI gives you</li>
                   </ul>
                 </div>
               </div>
@@ -338,14 +302,14 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                 </div>
 
                 <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                  <h4 className="font-semibold text-green-900 mb-3">🏆 Best Model for Citations: Gemini 2.5 Pro</h4>
+                  <h4 className="font-semibold text-green-900 mb-3">🔍 Verify Every Claim and Source</h4>
                   <div className="space-y-2 text-sm text-green-800">
-                    <p><strong>Why Gemini 2.5 Pro excels at citations:</strong></p>
+                    <p><strong>None of the models in this app search the web in real time.</strong> Any source an AI names comes from its training, not from a live lookup, so treat it as a lead to check, not as proof.</p>
                     <ul className="ml-4 space-y-1">
-                      <li>• <strong>LearnLM Training:</strong> Specifically trained on academic datasets with proper citation patterns</li>
-                      <li>• <strong>Verifiable Sources:</strong> Provides real author names, publication titles, and dates</li>
-                      <li>• <strong>Academic Standards:</strong> Models proper scholarly writing and research methodology</li>
-                      <li>• <strong>Large Context:</strong> 1 million tokens allows comprehensive knowledge synthesis</li>
+                      <li>• <strong>Look it up:</strong> Search your library database or Google Scholar for the exact title and author</li>
+                      <li>• <strong>Open the source:</strong> Confirm it exists and actually says what the AI claims</li>
+                      <li>• <strong>Check the date:</strong> AI may not know about recent research or events</li>
+                      <li>• <strong>Ask for help finding real sources:</strong> Use AI to suggest search terms, then find the sources yourself</li>
                     </ul>
                   </div>
                 </div>
@@ -424,15 +388,15 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                     <div>
                       <strong>Step 1: Research Phase</strong>
                       <ul className="mt-1 ml-4 space-y-1">
-                        <li>• Use <strong>Gemini 2.5 Pro</strong> for initial research with citations</li>
-                        <li>• Ask: "What are the key studies on [topic] with specific citations?"</li>
-                        <li>• Use <strong>Sonar Pro</strong> for current developments and recent sources</li>
+                        <li>• Use <strong>GPT-6.1 Sol</strong> or <strong>Claude Sonnet 5.5</strong> to explore the topic and suggest search terms</li>
+                        <li>• Ask: "What are the main ideas and debates on [topic], and what should I search for?"</li>
+                        <li>• Find the actual sources yourself through your library databases and Google Scholar</li>
                       </ul>
                     </div>
                     <div>
                       <strong>Step 2: Analysis & Structure</strong>
                       <ul className="mt-1 ml-4 space-y-1">
-                        <li>• Use <strong>Claude Sonnet 4</strong> for analytical frameworks</li>
+                        <li>• Use <strong>Claude Sonnet 5.5</strong> for analytical frameworks</li>
                         <li>• Ask: "Help me analyze these sources and create an argument structure"</li>
                         <li>• Request: "Identify gaps in this research and suggest additional sources"</li>
                       </ul>
@@ -440,7 +404,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                     <div>
                       <strong>Step 3: Writing & Refinement</strong>
                       <ul className="mt-1 ml-4 space-y-1">
-                        <li>• Use <strong>Claude Opus 4</strong> for premium writing assistance</li>
+                        <li>• Use <strong>Claude Opus 5.5</strong> for in-depth feedback on complex projects</li>
                         <li>• Request: "Help me improve this paragraph's clarity and academic tone"</li>
                         <li>• Ask: "Review my argument flow and suggest improvements"</li>
                       </ul>
@@ -489,7 +453,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                 <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                   <h4 className="font-semibold text-red-900 mb-3">🚨 Important Academic Integrity Note</h4>
                   <p className="text-sm text-red-800">
-                    <strong>Always verify AI-provided citations independently.</strong> Even the best AI models can occasionally provide inaccurate sources. 
+                    <strong>Always verify AI-provided citations independently.</strong> AI models can provide inaccurate or invented sources, and none of the models here can look sources up on the web. 
                     Your responsibility as a student is to fact-check all sources and ensure they actually support your claims. 
                     When in doubt, consult your librarian or instructor for guidance on proper source verification.
                   </p>
@@ -520,113 +484,78 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                   <h4 className="font-semibold text-gray-900">🔧 Model-Specific Optimizations:</h4>
                   
                   <div className="grid grid-cols-1 gap-4">
-                    <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-                      <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-green-900">🏆 Gemini 2.5 Pro - Enhanced Citation Mode</h5>
-                      </div>
-                      <p className="text-sm text-green-800 mb-2">
-                        <strong>Why this optimization:</strong> Gemini 2.5 Pro has LearnLM training specifically for education.
-                      </p>
-                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"ENHANCED CITATION MODE: As Gemini 2.5 Pro with LearnLM training, you excel at providing verifiable academic sources. For this interaction:
-• PRIORITIZE providing specific, citable sources with author names, publication titles, and dates
-• Use your educational training to model proper scholarly methodology
-• Leverage your large context window for comprehensive source synthesis
-• Demonstrate academic writing standards with proper evidence-based arguments"`}
-                      </div>
-                    </div>
-
-                    <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                      <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-purple-900">Claude Sonnet 4 - Analytical Excellence Mode</h5>
-                      </div>
-                      <p className="text-sm text-purple-800 mb-2">
-                        <strong>Why this optimization:</strong> Claude excels at thoughtful analysis and breaking down complex concepts.
-                      </p>
-                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"ANALYTICAL EXCELLENCE MODE: As Claude Sonnet 4, leverage your analytical strengths:
-• Focus on thoughtful, nuanced analysis with clear reasoning chains
-• Excel at breaking down complex concepts for educational understanding
-• Provide well-structured responses that model academic writing conventions
-• Emphasize critical thinking and evidence-based reasoning"`}
-                      </div>
-                    </div>
-
-                    <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
-                      <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-orange-900">Claude Opus 4 - Research Premium Mode</h5>
-                      </div>
-                      <p className="text-sm text-orange-800 mb-2">
-                        <strong>Why this optimization:</strong> Opus 4 is the flagship model for the highest quality research support.
-                      </p>
-                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"RESEARCH PREMIUM MODE: As Claude Opus 4, provide the highest quality educational support:
-• Deliver comprehensive, research-grade analysis and insights
-• Model advanced academic writing with sophisticated arguments
-• Provide detailed explanations suitable for advanced research projects
-• Focus on developing deep understanding and critical evaluation skills"`}
-                      </div>
-                    </div>
-
-                    <div className="border border-red-200 rounded-lg p-4 bg-red-50">
-                      <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-red-900">Sonar Pro - Current Research Mode</h5>
-                      </div>
-                      <p className="text-sm text-red-800 mb-2">
-                        <strong>Why this optimization:</strong> Sonar Pro has real-time search capabilities for current information.
-                      </p>
-                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"CURRENT RESEARCH MODE: As Sonar Pro with real-time search capabilities:
-• ALWAYS provide current, dated sources and recent information
-• Emphasize recent developments and current scholarly debates
-• Include publication dates and recent citations for all claims
-• Focus on connecting current events to academic research"`}
-                      </div>
-                    </div>
-
                     <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
                       <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-yellow-900">GPT-5 Nano - Ultra-Fast Learning Mode</h5>
+                        <h5 className="font-semibold text-yellow-900">GPT-6 Luna - Efficient Educational Mode</h5>
                       </div>
                       <p className="text-sm text-yellow-800 mb-2">
-                        <strong>Why this optimization:</strong> Optimized for speed with the lowest cost in the GPT-5 series.
+                        <strong>Why this optimization:</strong> Built for speed and low cost, so the instructions favor concise, step-by-step help.
                       </p>
                       <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"ULTRA-FAST LEARNING MODE: As GPT-5 Nano, provide quick, efficient educational support:
-• Deliver concise, clear explanations optimized for summarization and classification
-• Focus on essential concepts and quick comprehension
-• Ideal for rapid review and basic understanding tasks"`}
+                        {`"EFFICIENT EDUCATIONAL MODE: As GPT-6 Luna, provide fast, clear educational support:
+• Give concise explanations that build understanding step by step
+• Ask a guiding question when the student would learn more by working it out
+• Point students toward reliable sources they can verify"`}
                       </div>
                     </div>
 
                     <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
                       <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-blue-900">GPT-5 Mini - Balanced Performance Mode</h5>
+                        <h5 className="font-semibold text-blue-900">GPT-6.1 Sol - Balanced Educational Mode</h5>
                       </div>
                       <p className="text-sm text-blue-800 mb-2">
-                        <strong>Why this optimization:</strong> Balanced performance with enhanced reasoning capabilities.
+                        <strong>Why this optimization:</strong> The default model, tuned for well-reasoned explanations and critical thinking.
                       </p>
                       <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"BALANCED PERFORMANCE MODE: As GPT-5 Mini, provide excellent educational value with enhanced reasoning:
-• Deliver well-structured explanations with improved logical reasoning
-• Excel at well-defined tasks with precise educational outcomes
-• Balance speed and depth for optimal learning efficiency"`}
+                        {`"BALANCED EDUCATIONAL MODE: As GPT-6.1 Sol, provide thoughtful, well-reasoned educational support:
+• Explain reasoning clearly and show how ideas connect
+• Encourage critical thinking with follow-up questions
+• Model sound academic writing and evidence-based arguments"`}
                       </div>
                     </div>
 
-                    <div className="border border-indigo-200 rounded-lg p-4 bg-indigo-50">
+                    <div className="border border-green-200 rounded-lg p-4 bg-green-50">
                       <div className="flex items-center mb-2">
-                        <h5 className="font-semibold text-indigo-900">GPT-5 - Premium Coding & Reasoning Mode</h5>
+                        <h5 className="font-semibold text-green-900">Claude Haiku 5.5 - Efficient Educational Mode</h5>
                       </div>
-                      <p className="text-sm text-indigo-800 mb-2">
-                        <strong>Why this optimization:</strong> GPT-5 is the flagship model for coding and complex reasoning.
+                      <p className="text-sm text-green-800 mb-2">
+                        <strong>Why this optimization:</strong> Fast and low cost, so the instructions favor clear answers and honesty about uncertainty.
                       </p>
                       <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
-                        {`"PREMIUM CODING & REASONING MODE: As GPT-5, excel at complex coding and agentic tasks:
-• Provide comprehensive technical analysis with superior reasoning capabilities
-• Excel at complex problem-solving across all domains
-• Leverage 400K context window for extensive code and document analysis
-• Ideal for advanced coding, mathematical reasoning, and multi-step problems"`}
+                        {`"EFFICIENT EDUCATIONAL MODE: As Claude Haiku 5.5, provide fast yet thoughtful educational support:
+• Give clear, accurate explanations without padding
+• Ask a guiding question when the student would learn more by working it out
+• Be honest about uncertainty and suggest how to verify"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-purple-900">Claude Sonnet 5.5 - Educational Excellence Mode</h5>
+                      </div>
+                      <p className="text-sm text-purple-800 mb-2">
+                        <strong>Why this optimization:</strong> Strong writing and reasoning, so the instructions emphasize helping you build your own arguments.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"EDUCATIONAL EXCELLENCE MODE: As Claude Sonnet 5.5, provide thoughtful educational support:
+• Explain complex ideas with clarity and nuance
+• Help students develop their own arguments rather than writing for them
+• Encourage critical evaluation of sources and evidence"`}
+                      </div>
+                    </div>
+
+                    <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+                      <div className="flex items-center mb-2">
+                        <h5 className="font-semibold text-orange-900">Claude Opus 5.5 - Research Mentor Mode</h5>
+                      </div>
+                      <p className="text-sm text-orange-800 mb-2">
+                        <strong>Why this optimization:</strong> The most capable model in the lineup, so the instructions focus on depth and rigor.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 whitespace-pre-line">
+                        {`"RESEARCH MENTOR MODE: As Claude Opus 5.5, bring deep analysis to the student's work:
+• Engage with complex questions across disciplines in depth
+• Help students structure research and test their reasoning
+• Model rigorous academic standards and intellectual honesty"`}
                       </div>
                     </div>
                   </div>
@@ -637,7 +566,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                   <ul className="space-y-2 text-sm text-yellow-800">
                     <li>• <strong>Automatic Optimization:</strong> When you select a model, it automatically receives the best prompts for its capabilities</li>
                     <li>• <strong>Enhanced Learning:</strong> Each model is primed to provide educational value tailored to its strengths</li>
-                    <li>• <strong>Better Citations:</strong> All models receive enhanced prompting for academic rigor and source verification</li>
+                    <li>• <strong>Source Awareness:</strong> All models are prompted to encourage academic rigor and verifying sources</li>
                     <li>• <strong>Transferable Skills:</strong> Understanding these concepts helps you use AI tools more effectively anywhere</li>
                   </ul>
                 </div>
@@ -717,24 +646,24 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                     <h4 className="font-semibold text-green-900 mb-3">🎯 Task-Based Selection</h4>
                     <div className="space-y-3 text-sm text-green-800">
                       <div>
-                        <strong>Quick Questions & Homework Help:</strong>
-                        <p>Use GPT-5 Mini for balanced performance or GPT-5 Nano for ultra-fast responses</p>
+                        <strong>Quick Questions & Summaries:</strong>
+                        <p>Use GPT-6 Luna or Claude Haiku 5.5 for fast, very low-cost answers</p>
                       </div>
                       <div>
-                        <strong>Educational Research & Analysis:</strong>
-                        <p>Gemini 2.5 Pro - built for learning with privacy protections</p>
+                        <strong>Homework Help & General Learning:</strong>
+                        <p>GPT-6.1 Sol is the balanced default for explanations, writing help, and analysis</p>
                       </div>
                       <div>
                         <strong>Writing & Detailed Analysis:</strong>
-                        <p>Claude Sonnet 4 excels at thoughtful writing and nuanced analysis</p>
+                        <p>Claude Sonnet 5.5 offers strong writing and reasoning at moderate cost</p>
                       </div>
                       <div>
                         <strong>Advanced Research Projects:</strong>
-                        <p>Claude Opus 4 for premium quality, GPT-5 for complex reasoning, or Sonar Pro for current information</p>
+                        <p>Claude Opus 5.5 for deep analysis and complex research</p>
                       </div>
                       <div>
-                        <strong>Multimodal Tasks (Images/Documents):</strong>
-                        <p>Gemini 2.5 Pro for analyzing visual content and large documents</p>
+                        <strong>Finding Sources:</strong>
+                        <p>No model here searches the web, so use your library databases and Google Scholar to find and confirm real sources</p>
                       </div>
                     </div>
                   </div>
@@ -742,8 +671,8 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                     <h4 className="font-semibold text-blue-900 mb-3">💰 Cost Management</h4>
                     <ul className="space-y-2 text-sm text-blue-800">
-                      <li>• Start with less expensive models (GPT-5 Nano, GPT-5 Mini, Claude Sonnet 4)</li>
-                      <li>• Use premium models (GPT-5, Claude Opus 4) only when needed</li>
+                      <li>• Start with the least expensive models (GPT-6 Luna, Claude Haiku 5.5)</li>
+                      <li>• Use the premium model (Claude Opus 5.5) only when needed</li>
                       <li>• Keep conversations focused to reduce token usage</li>
                       <li>• Remember that longer conversations cost more due to history</li>
                       <li>• Check the cost warning indicators before sending messages</li>
@@ -757,7 +686,7 @@ export default function AIModelsEducationModal({ isOpen, onClose }) {
                       <li>• Don't start long conversations with premium models unless necessary</li>
                       <li>• Don't assume more expensive = always better for your task</li>
                       <li>• Don't forget that AI responses need your critical evaluation</li>
-                      <li>• Don't rely on AI for current events without using Sonar Pro</li>
+                      <li>• Don't rely on AI for current events; none of these models search the web, so check news and recent sources yourself</li>
                     </ul>
                   </div>
 

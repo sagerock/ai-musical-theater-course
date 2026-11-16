@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { aiApi, AI_TOOLS } from '../../services/aiApi';
+import { aiApi, AI_TOOLS, DEFAULT_AI_TOOL } from '../../services/aiApi';
 import { chatApi } from '../../services/firebaseApi';
 import { MODEL_PRICING, formatCurrency } from '../../utils/costCalculator';
 import toast from 'react-hot-toast';
@@ -25,7 +25,7 @@ export default function LibraryChatModal({
 }) {
   const [chats, setChats] = useState([]);
   const [prompt, setPrompt] = useState('');
-  const [selectedTool, setSelectedTool] = useState('GPT-5 Mini');
+  const [selectedTool, setSelectedTool] = useState(DEFAULT_AI_TOOL);
   const [sending, setSending] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);

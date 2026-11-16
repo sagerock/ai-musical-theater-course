@@ -12,7 +12,7 @@ const CreateModuleModal = ({ isOpen, onClose, onSubmit, existingModule }) => {
     order: 1,
     systemPrompt: '',
     minimumExchanges: 4,
-    aiModel: 'GPT-5 Mini'
+    aiModel: 'GPT-6.1 Sol'
   });
   const [saving, setSaving] = useState(false);
 
@@ -24,7 +24,7 @@ const CreateModuleModal = ({ isOpen, onClose, onSubmit, existingModule }) => {
         order: existingModule.order || 1,
         systemPrompt: existingModule.systemPrompt || '',
         minimumExchanges: existingModule.minimumExchanges || 4,
-        aiModel: existingModule.aiModel || 'GPT-5 Mini'
+        aiModel: existingModule.aiModel || 'GPT-6.1 Sol'
       });
     } else {
       setFormData({
@@ -33,7 +33,7 @@ const CreateModuleModal = ({ isOpen, onClose, onSubmit, existingModule }) => {
         order: 1,
         systemPrompt: '',
         minimumExchanges: 4,
-        aiModel: 'GPT-5 Mini'
+        aiModel: 'GPT-6.1 Sol'
       });
     }
   }, [existingModule]);

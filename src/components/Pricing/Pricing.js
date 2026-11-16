@@ -159,7 +159,7 @@ export default function Pricing() {
 
             <ul className="space-y-3 mb-8">
               {[
-                'Access to all AI models (GPT-5, Claude, Gemini, and more)',
+                'Access to all AI models (GPT-6 and Claude models)',
                 'Use across any and all of your courses',
                 'Real-time analytics dashboard',
                 'AI literacy education resources',
@@ -235,7 +235,7 @@ export default function Pricing() {
               {
                 icon: SparklesIcon,
                 title: 'Leading AI Models',
-                description: 'GPT-5, GPT-4.1, Claude Opus & Sonnet, Gemini, Perplexity — all in one place with educational prompting built in.'
+                description: 'GPT-6 Luna, GPT-6.1 Sol, and Claude Haiku, Sonnet & Opus — all in one place with educational prompting built in.'
               },
               {
                 icon: ChartBarIcon,

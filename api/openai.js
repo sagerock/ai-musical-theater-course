@@ -36,11 +36,11 @@ export default async function handler(req, res) {
       maxRetries: 1    // Retry once on network errors
     });
 
-    const { messages, model = 'gpt-4o-mini', stream = false } = req.body;
+    const { messages, model = 'gpt-6.1-sol', stream = false } = req.body;
 
-    // GPT-5 models only support temperature = 1
-    const isGPT5Model = typeof model === 'string' && model.startsWith('gpt-5');
-    const temperature = isGPT5Model ? 1 : (req.body.temperature || 0.7);
+    // GPT-5 and later accept only the default temperature, so send none for them.
+    const fixedTemperature = typeof model === 'string' && /^gpt-([5-9]|\d{2,})/.test(model);
+    const temperatureParam = fixedTemperature ? {} : { temperature: req.body.temperature || 0.7 };
 
     const payloadError = validateChatPayload(req.body, /^(gpt-|o\d|chatgpt-)[\w.-]*$/);
     if (payloadError) {
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
         const stream = await openai.chat.completions.create({
           model,
           messages,
-          temperature,
+          ...temperatureParam,
           stream: true,
         });
 
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       const completion = await openai.chat.completions.create({
         model,
         messages,
-        temperature,
+        ...temperatureParam,
       });
 
       const duration = Date.now() - startTime;

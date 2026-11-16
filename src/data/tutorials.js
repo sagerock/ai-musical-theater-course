@@ -62,13 +62,13 @@ const tutorials = [
   {
     slug: 'choosing-ai-models',
     title: 'Choosing the Right AI Model',
-    description: 'Learn when to use GPT, Claude, Gemini, or Perplexity for different tasks.',
+    description: 'Learn when to use GPT-6 or Claude models for different tasks.',
     category: 'Using AI Chat',
     audience: ['student'],
     videoUrl: '',
     duration: '2:30',
     order: 5,
-    transcript: `AI Engagement Hub gives you access to models from OpenAI, Anthropic, Google, and Perplexity. Use the model selector dropdown above your chat to switch between them. GPT-5 is great for coding and reasoning. Claude Sonnet excels at analysis and nuanced writing. Gemini Pro provides strong citations for research. And Sonar Pro pulls in real-time web results. Click the info icon next to the selector to see our full model comparison guide.`,
+    transcript: `AI Engagement Hub gives you access to models from OpenAI and Anthropic. Use the model selector dropdown above your chat to switch between them. GPT-6 Luna and Claude Haiku are fast and low cost for quick questions. GPT-6.1 Sol is a balanced all-rounder. Claude Sonnet excels at analysis and nuanced writing. And Claude Opus is the most capable for deep research. Always verify any sources. Click the info icon next to the selector to see our full model comparison guide.`,
   },
   {
     slug: 'uploading-documents',

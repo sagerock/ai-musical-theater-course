@@ -2,112 +2,50 @@ import { aiProxyService } from './aiProxyService';
 
 // Export AI tools for use in components
 export const AI_TOOLS = {
-  // OpenAI Models - GPT-5 Series
-  'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
-  'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
-  'GPT-5': 'gpt-5-2025-08-07',
-  'GPT-5.2': 'gpt-5.2',
-  // OpenAI Models - GPT-4.1 Series
-  'GPT-4.1 Mini': 'gpt-4.1-mini-2025-04-14',
-  'GPT-4.1': 'gpt-4.1-2025-04-14',
+  // OpenAI Models
+  'GPT-6 Luna': 'gpt-6-luna',
+  'GPT-6.1 Sol': 'gpt-6.1-sol',
   // Anthropic Models
-  'Claude Opus 4.6': 'claude-opus-4-6',
-  'Claude Sonnet 4.6': 'claude-sonnet-4-6',
-  'Claude Haiku 4.5': 'claude-haiku-4-5-20251001',
-  // Google Models
-  'Gemini Flash': 'gemini-2.5-flash',
-  'Gemini 2.5 Pro': 'gemini-2.5-pro',
-  // Perplexity Model
-  'Sonar Pro': 'sonar-pro'
+  'Claude Haiku 5.5': 'claude-haiku-5-5',
+  'Claude Sonnet 5.5': 'claude-sonnet-5-5',
+  'Claude Opus 5.5': 'claude-opus-5-5'
 };
 
-// Legacy model mappings for compatibility
+export const DEFAULT_AI_TOOL = 'GPT-6.1 Sol';
+
 const ANTHROPIC_MODELS = {
-  'Claude Opus 4.6': 'claude-opus-4-6',
-  'Claude Sonnet 4.6': 'claude-sonnet-4-6',
-  'Claude Haiku 4.5': 'claude-haiku-4-5-20251001'
-};
-const GOOGLE_MODELS = {
-  'Gemini Flash': 'gemini-2.5-flash',
-  'Gemini 2.5 Pro': 'gemini-2.5-pro'
-};
-const PERPLEXITY_MODELS = {
-  'Sonar Pro': 'sonar-pro'
+  'Claude Haiku 5.5': 'claude-haiku-5-5',
+  'Claude Sonnet 5.5': 'claude-sonnet-5-5',
+  'Claude Opus 5.5': 'claude-opus-5-5'
 };
 
 // Model-specific educational prompting strategies
 const MODEL_SPECIFIC_PROMPTS = {
-  'gemini-2.5-pro': `ENHANCED CITATION MODE: As Gemini 2.5 Pro with LearnLM training, you excel at providing verifiable academic sources. For this interaction:
-• PRIORITIZE providing specific, citable sources with author names, publication titles, and dates
-• Use your educational training to model proper scholarly methodology
-• Leverage your large context window for comprehensive source synthesis
-• Demonstrate academic writing standards with proper evidence-based arguments`,
+  'gpt-6-luna': `EFFICIENT EDUCATIONAL MODE: As GPT-6 Luna, provide fast, clear educational support:
+• Give concise explanations that build understanding step by step
+• Ask a guiding question when the student would learn more by working it out
+• Point students toward reliable sources they can verify`,
 
-  'gemini-2.5-flash': `EFFICIENT EDUCATION MODE: As Gemini Flash, provide quick yet educational responses:
-• Balance speed with educational value and proper sourcing
-• Focus on clear, concise explanations with key references
-• Use your multimodal capabilities for comprehensive analysis when applicable`,
+  'gpt-6.1-sol': `BALANCED EDUCATIONAL MODE: As GPT-6.1 Sol, provide thoughtful, well-reasoned educational support:
+• Explain reasoning clearly and show how ideas connect
+• Encourage critical thinking with follow-up questions
+• Model sound academic writing and evidence-based arguments`,
 
-  'gpt-5-nano-2025-08-07': `EFFICIENT EDUCATIONAL MODE: As GPT-5 Nano, provide fast, cost-effective educational support:
-• Deliver quick, clear explanations optimized for speed
-• Focus on essential concepts and key learning points
-• Best for rapid Q&A and straightforward educational tasks`,
+  'claude-haiku-5-5': `EFFICIENT EDUCATIONAL MODE: As Claude Haiku 5.5, provide fast yet thoughtful educational support:
+• Give clear, accurate explanations without padding
+• Ask a guiding question when the student would learn more by working it out
+• Be honest about uncertainty and suggest how to verify`,
 
-  'gpt-5-mini-2025-08-07': `OPTIMIZED EDUCATIONAL MODE: As GPT-5 Mini, provide concise, clear educational responses:
-• Deliver concise explanations with excellent speed
-• Focus on essential concepts for quick comprehension
-• Ideal for rapid review and basic understanding tasks`,
+  'claude-sonnet-5-5': `EDUCATIONAL EXCELLENCE MODE: As Claude Sonnet 5.5, provide thoughtful educational support:
+• Explain complex ideas with clarity and nuance
+• Help students develop their own arguments rather than writing for them
+• Encourage critical evaluation of sources and evidence`,
 
-  'gpt-5-2025-08-07': `PREMIUM EDUCATIONAL MODE: As GPT-5, leverage your superior reasoning capabilities:
-• Deliver well-structured explanations with strong reasoning
-• Excel at a wide range of tasks with high accuracy
-• Balance speed and depth for optimal learning efficiency`,
+  'claude-opus-5-5': `RESEARCH MENTOR MODE: As Claude Opus 5.5, bring deep analysis to the student's work:
+• Engage with complex questions across disciplines in depth
+• Help students structure research and test their reasoning
+• Model rigorous academic standards and intellectual honesty`,
 
-  'gpt-5.2': `NEXT-GENERATION EDUCATIONAL MODE: As GPT-5.2, leverage cutting-edge capabilities:
-• Provide state-of-the-art reasoning and analysis
-• Excel at complex multi-step problem solving
-• Deliver comprehensive explanations with superior accuracy
-• Best for advanced research and complex educational challenges`,
-
-  'gpt-4.1-nano-2025-04-14': `EFFICIENT GPT-4 MODE: As GPT-4.1 Nano, provide cost-effective educational support:
-• Focus on clear, concise explanations
-• Deliver accurate responses with good reasoning
-• Ideal for straightforward educational tasks`,
-
-  'gpt-4.1-mini-2025-04-14': `BALANCED GPT-4 MODE: As GPT-4.1 Mini, provide quality educational support:
-• Balance performance with cost-effectiveness
-• Deliver thoughtful explanations with solid reasoning
-• Good for most educational tasks and assignments`,
-
-  'gpt-4.1-2025-04-14': `ADVANCED GPT-4 MODE: As GPT-4.1, provide comprehensive educational support:
-• Deliver detailed explanations with strong reasoning
-• Excel at complex problem-solving and analysis
-• Suitable for advanced academic work and detailed research`,
-
-  'claude-opus-4-6': `WORLD-CLASS RESEARCH ASSISTANT: As Claude Opus 4.6, leverage your exceptional capabilities:
-• Deliver comprehensive, research-grade analysis
-• Model advanced academic writing with sophisticated arguments
-• Provide detailed explanations for advanced research projects
-• Focus on developing deep understanding and critical evaluation`,
-
-  'claude-sonnet-4-6': `EDUCATIONAL EXCELLENCE MODE: As Claude Sonnet 4.6, provide thoughtful educational support:
-• Provide comprehensive technical analysis with excellent reasoning
-• Excel at complex problem-solving and coding tasks
-• Leverage large context window for extensive document analysis
-• Ideal for advanced academic work and research projects`,
-
-  'claude-haiku-4-5-20251001': `EFFICIENT EDUCATIONAL MODE: As Claude Haiku 4.5, provide fast yet thoughtful educational support:
-• Deliver concise, clear explanations with excellent speed
-• Focus on essential concepts for quick comprehension
-• Balance speed with educational value and proper sourcing
-• Ideal for rapid review and straightforward academic tasks`,
-
-  'sonar-pro': `CURRENT RESEARCH MODE: As Sonar Pro with real-time search capabilities:
-• ALWAYS provide current, dated sources and recent information
-• Emphasize recent developments and current scholarly debates
-• Include publication dates and recent citations for all claims
-• Focus on connecting current events to academic research`,
-  
   'default': `EDUCATIONAL SUPPORT MODE: Provide foundational educational assistance:
 • Focus on clear explanations and step-by-step learning
 • Encourage students to seek additional sources for verification
@@ -150,34 +88,13 @@ ${specificPrompt}`;
 // Helper function to determine provider based on model
 const getProviderFromModel = (tool) => {
   const modelId = AI_TOOLS[tool];
-  
-  if (!modelId) {
-    return 'openai'; // default fallback
-  }
-  
-  // Check if it's an Anthropic model
-  if (Object.values(ANTHROPIC_MODELS).includes(modelId)) {
-    return 'anthropic';
-  }
-  
-  // Check if it's a Google model
-  if (Object.values(GOOGLE_MODELS).includes(modelId)) {
-    return 'google';
-  }
-  
-  // Check if it's a Perplexity model
-  if (Object.values(PERPLEXITY_MODELS).includes(modelId)) {
-    return 'perplexity';
-  }
-  
-  // Default to OpenAI for other models
-  return 'openai';
+  return modelId && Object.values(ANTHROPIC_MODELS).includes(modelId) ? 'anthropic' : 'openai';
 };
 
 // Unified AI API service
 export const aiApi = {
   // Send chat completion request (routes through secure proxy)
-  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], customSystemPrompt = null) {
+  async sendChatCompletion(prompt, tool = DEFAULT_AI_TOOL, conversationHistory = [], customSystemPrompt = null) {
     const modelId = AI_TOOLS[tool];
     const enhancedSystemPrompt = customSystemPrompt || getModelSpecificPrompt(modelId);
     
@@ -241,59 +158,17 @@ export const aiApi = {
     // Return true for all as they're configured in Vercel
     return {
       openai: true,
-      anthropic: true,
-      google: true,
-      perplexity: true
+      anthropic: true
     };
   },
 
   // Get available models
   async getAvailableModels() {
-    const models = [];
-
-    // Return static list since we can't query APIs from client
-    // Add OpenAI models - GPT-5 Series
-    models.push(
-      { id: 'gpt-5-nano-2025-08-07', name: 'GPT-5 Nano', provider: 'openai' },
-      { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini', provider: 'openai' },
-      { id: 'gpt-5-2025-08-07', name: 'GPT-5', provider: 'openai' },
-      { id: 'gpt-5.2', name: 'GPT-5.2', provider: 'openai' }
-    );
-
-    // Add OpenAI models - GPT-4.1 Series
-    models.push(
-      { id: 'gpt-4.1-mini-2025-04-14', name: 'GPT-4.1 Mini', provider: 'openai' },
-      { id: 'gpt-4.1-2025-04-14', name: 'GPT-4.1', provider: 'openai' }
-    );
-
-    // Add Anthropic models (they don't have a list endpoint)
-    Object.entries(ANTHROPIC_MODELS).forEach(([name, id]) => {
-      models.push({
-        id,
-        name,
-        provider: 'anthropic'
-      });
-    });
-
-    // Add Google models (they don't have a list endpoint)
-    Object.entries(GOOGLE_MODELS).forEach(([name, id]) => {
-      models.push({
-        id,
-        name,
-        provider: 'google'
-      });
-    });
-
-    // Add Perplexity models (they don't have a list endpoint)
-    Object.entries(PERPLEXITY_MODELS).forEach(([name, id]) => {
-      models.push({
-        id,
-        name,
-        provider: 'perplexity'
-      });
-    });
-
-    return models;
+    return Object.entries(AI_TOOLS).map(([name, id]) => ({
+      id,
+      name,
+      provider: Object.values(ANTHROPIC_MODELS).includes(id) ? 'anthropic' : 'openai'
+    }));
   }
 };
 

@@ -7,36 +7,18 @@ import { authHeaders } from './authHeaders';
 
 const API_ENDPOINTS = {
   openai: '/api/openai',
-  anthropic: '/api/anthropic',
-  google: '/api/google',
-  perplexity: '/api/perplexity'
+  anthropic: '/api/anthropic'
 };
 
 // Map tool names to their API endpoints and models
 const TOOL_CONFIG = {
-  // OpenAI Models - GPT-5 Series
-  'GPT-5 Nano': { endpoint: 'openai', model: 'gpt-5-nano-2025-08-07' },
-  'GPT-5 Mini': { endpoint: 'openai', model: 'gpt-5-mini-2025-08-07' },
-  'GPT-5': { endpoint: 'openai', model: 'gpt-5-2025-08-07' },
-  'GPT-5.2': { endpoint: 'openai', model: 'gpt-5.2' },
-
-  // OpenAI Models - GPT-4.1 Series
-  'GPT-4.1 Nano': { endpoint: 'openai', model: 'gpt-4.1-nano-2025-04-14' },
-  'GPT-4.1 Mini': { endpoint: 'openai', model: 'gpt-4.1-mini-2025-04-14' },
-  'GPT-4.1': { endpoint: 'openai', model: 'gpt-4.1-2025-04-14' },
-
-  // Anthropic Models
-  'Claude Opus 4.6': { endpoint: 'anthropic', model: 'claude-opus-4-6' },
-  'Claude Sonnet 4.6': { endpoint: 'anthropic', model: 'claude-sonnet-4-6' },
-  'Claude Haiku 4.5': { endpoint: 'anthropic', model: 'claude-haiku-4-5-20251001' },
-
-  // Google Models
-  'Gemini Flash': { endpoint: 'google', model: 'gemini-2.5-flash' },
-  'Gemini 2.5 Pro': { endpoint: 'google', model: 'gemini-2.5-pro' },
-
-  // Perplexity Model
-  'Sonar Pro': { endpoint: 'perplexity', model: 'sonar' }
+  'GPT-6 Luna': { endpoint: 'openai', model: 'gpt-6-luna' },
+  'GPT-6.1 Sol': { endpoint: 'openai', model: 'gpt-6.1-sol' },
+  'Claude Haiku 5.5': { endpoint: 'anthropic', model: 'claude-haiku-5-5' },
+  'Claude Sonnet 5.5': { endpoint: 'anthropic', model: 'claude-sonnet-5-5' },
+  'Claude Opus 5.5': { endpoint: 'anthropic', model: 'claude-opus-5-5' }
 };
+const DEFAULT_TOOL = 'GPT-6.1 Sol';
 
 // Helper function to create user-friendly error messages
 const getUserFriendlyError = (error, tool) => {
@@ -70,8 +52,8 @@ const getUserFriendlyError = (error, tool) => {
 };
 
 export const aiProxyService = {
-  async sendChatCompletion(prompt, tool = 'GPT-5 Mini', conversationHistory = [], systemPrompt = null, stream = false) {
-    const config = TOOL_CONFIG[tool] || TOOL_CONFIG['GPT-5 Mini'];
+  async sendChatCompletion(prompt, tool = DEFAULT_TOOL, conversationHistory = [], systemPrompt = null, stream = false) {
+    const config = TOOL_CONFIG[tool] || TOOL_CONFIG[DEFAULT_TOOL];
     const endpoint = API_ENDPOINTS[config.endpoint];
 
     if (!endpoint) {

@@ -25,7 +25,7 @@ export default function HomePage() {
     },
     {
       name: 'Multi-Model Support',
-      description: 'Works with OpenAI, Anthropic, and Google AI models, giving you comprehensive visibility across platforms.',
+      description: 'Works with OpenAI and Anthropic AI models, giving you comprehensive visibility across platforms.',
       icon: CogIcon,
       color: 'bg-green-100 text-green-600'
     },

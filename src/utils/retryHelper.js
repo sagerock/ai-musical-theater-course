@@ -151,38 +151,16 @@ class RetryHelper {
   // Model-specific retry configurations
   getModelConfig(model) {
     const configs = {
-      // GPT-5 models - Can experience high load, need robust retry
-      'gpt-5': {
+      // OpenAI models
+      'gpt-6': {
         maxRetries: 3,
         baseDelay: 1500,
         maxDelay: 10000
-      },
-      'gpt-5-mini': {
-        maxRetries: 3,
-        baseDelay: 1500,
-        maxDelay: 10000
-      },
-      'gpt-5-nano': {
-        maxRetries: 3,
-        baseDelay: 1200,
-        maxDelay: 8000
       },
       // Claude models - might need more retries due to capacity
       'claude': {
         maxRetries: 3,
         baseDelay: 1500,
-        maxDelay: 10000
-      },
-      // Gemini models - Can be slower, especially 2.5 Pro with large contexts
-      'gemini': {
-        maxRetries: 3,
-        baseDelay: 2000,
-        maxDelay: 15000
-      },
-      // Perplexity - external service, might need more retries
-      'sonar': {
-        maxRetries: 3,
-        baseDelay: 2000,
         maxDelay: 10000
       }
     };

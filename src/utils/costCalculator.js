@@ -3,6 +3,13 @@
 
 // Pricing data (cost per 1 million tokens)
 export const MODEL_PRICING = {
+  // Current models (list prices checked 2026-11-16)
+  'gpt-6-luna': { input: 0.10, output: 0.50, provider: 'OpenAI', displayName: 'GPT-6 Luna' },
+  'gpt-6.1-sol': { input: 2.00, output: 10.00, provider: 'OpenAI', displayName: 'GPT-6.1 Sol' },
+  'claude-haiku-5-5': { input: 0.10, output: 0.50, provider: 'Anthropic', displayName: 'Claude Haiku 5.5' },
+  'claude-sonnet-5-5': { input: 2.00, output: 10.00, provider: 'Anthropic', displayName: 'Claude Sonnet 5.5' },
+  'claude-opus-5-5': { input: 4.00, output: 20.00, provider: 'Anthropic', displayName: 'Claude Opus 5.5' },
+  // Retired models, kept so older chats still show a cost
   // OpenAI Models - GPT-5 Series
   'gpt-5-nano-2025-08-07': {
     input: 0.10,
@@ -91,6 +98,11 @@ export const MODEL_PRICING = {
 
 // Display name mappings for UI
 export const DISPLAY_NAME_MAPPING = {
+  'GPT-6 Luna': 'gpt-6-luna',
+  'GPT-6.1 Sol': 'gpt-6.1-sol',
+  'Claude Haiku 5.5': 'claude-haiku-5-5',
+  'Claude Sonnet 5.5': 'claude-sonnet-5-5',
+  'Claude Opus 5.5': 'claude-opus-5-5',
   'GPT-5 Nano': 'gpt-5-nano-2025-08-07',
   'GPT-5 Mini': 'gpt-5-mini-2025-08-07',
   'GPT-5': 'gpt-5-2025-08-07',

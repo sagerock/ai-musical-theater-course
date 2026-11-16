@@ -215,7 +215,7 @@ Be helpful but honest about data availability.`;
 
       const response = await aiApi.sendChatCompletion(
         `${courseContext}\n\nInstructor Question: ${inputMessage}`,
-        'Claude Sonnet 4' // Using Claude Sonnet 4 for superior analytical insights and thoughtful responses
+        'Claude Sonnet 5.5'
       );
 
       console.log('AI Response received:', response);

@@ -160,7 +160,7 @@ export default function Help() {
               <h4 className="font-medium text-gray-900 mb-2">4. Start chatting with AI</h4>
               <p className="text-gray-600">
                 Open your project and type a message to start a conversation. Use the <strong>model selector</strong> dropdown
-                to switch between AI models (GPT, Claude, Gemini, Perplexity). You can attach PDFs using the paperclip icon,
+                to switch between AI models (GPT-6 and Claude). You can attach PDFs using the paperclip icon,
                 and switch models mid-conversation.
               </p>
             </div>
@@ -303,8 +303,8 @@ export default function Help() {
             <div>
               <h4 className="font-medium text-gray-900 mb-2">What AI models are available?</h4>
               <p className="text-gray-600">
-                We offer 8 powerful AI models: GPT-5 Nano, GPT-5 Mini, and GPT-5 (OpenAI), Claude Sonnet 4 and Claude Opus 4 (Anthropic), 
-                Gemini Flash and Gemini 2.5 Pro (Google), and Sonar Pro (Perplexity for research). Each has unique strengths 
+                We offer 5 powerful AI models: GPT-6 Luna and GPT-6.1 Sol (OpenAI), Claude Haiku 5.5, Claude Sonnet 5.5, and Claude Opus 5.5 (Anthropic). 
+                Each has unique strengths 
                 for different types of conversations and tasks.
               </p>
             </div>

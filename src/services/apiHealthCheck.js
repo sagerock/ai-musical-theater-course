@@ -17,7 +17,7 @@ export const apiHealthCheck = {
             { role: 'system', content: 'You are a helpful assistant.' },
             { role: 'user', content: 'Say "OK" if you can read this.' }
           ],
-          model: 'gpt-5-mini-2025-08-07'
+          model: 'gpt-6-luna'
         })
       });
 
@@ -28,7 +28,7 @@ export const apiHealthCheck = {
         return {
           success: false,
           provider: 'OpenAI',
-          model: 'gpt-5-mini-2025-08-07',
+          model: 'gpt-6-luna',
           error: error.error || `HTTP ${response.status}`,
           duration,
           timestamp: new Date().toISOString()
@@ -40,7 +40,7 @@ export const apiHealthCheck = {
       return {
         success: true,
         provider: 'OpenAI',
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'gpt-6-luna',
         response: data.choices?.[0]?.message?.content || 'No response',
         duration,
         timestamp: new Date().toISOString()
@@ -49,7 +49,7 @@ export const apiHealthCheck = {
       return {
         success: false,
         provider: 'OpenAI',
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'gpt-6-luna',
         error: error.message,
         duration: Date.now() - startTime,
         timestamp: new Date().toISOString()
@@ -70,7 +70,7 @@ export const apiHealthCheck = {
           messages: [
             { role: 'user', content: 'Say "OK" if you can read this.' }
           ],
-          model: 'claude-sonnet-4-6'
+          model: 'claude-haiku-5-5'
         })
       });
 
@@ -81,7 +81,7 @@ export const apiHealthCheck = {
         return {
           success: false,
           provider: 'Anthropic',
-          model: 'claude-sonnet-4-6',
+          model: 'claude-haiku-5-5',
           error: error.error || `HTTP ${response.status}`,
           duration,
           timestamp: new Date().toISOString()
@@ -93,7 +93,7 @@ export const apiHealthCheck = {
       return {
         success: true,
         provider: 'Anthropic',
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-5-5',
         response: data.choices?.[0]?.message?.content || data.content?.[0]?.text || 'No response',
         duration,
         timestamp: new Date().toISOString()
@@ -102,113 +102,7 @@ export const apiHealthCheck = {
       return {
         success: false,
         provider: 'Anthropic',
-        model: 'claude-sonnet-4-6',
-        error: error.message,
-        duration: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      };
-    }
-  },
-
-  /**
-   * Test Google Gemini API connection
-   */
-  async testGoogle() {
-    const startTime = Date.now();
-    try {
-      const response = await fetch('/api/google', {
-        method: 'POST',
-        headers: await authHeaders(),
-        body: JSON.stringify({
-          messages: [
-            { role: 'user', content: 'Say "OK" if you can read this.' }
-          ],
-          model: 'gemini-2.5-flash'
-        })
-      });
-
-      const duration = Date.now() - startTime;
-
-      if (!response.ok) {
-        const error = await response.json();
-        return {
-          success: false,
-          provider: 'Google',
-          model: 'gemini-2.5-flash',
-          error: error.error || `HTTP ${response.status}`,
-          duration,
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      const data = await response.json();
-
-      return {
-        success: true,
-        provider: 'Google',
-        model: 'gemini-2.5-flash',
-        response: data.choices?.[0]?.message?.content || 'No response',
-        duration,
-        timestamp: new Date().toISOString()
-      };
-    } catch (error) {
-      return {
-        success: false,
-        provider: 'Google',
-        model: 'gemini-2.5-flash',
-        error: error.message,
-        duration: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      };
-    }
-  },
-
-  /**
-   * Test Perplexity API connection
-   */
-  async testPerplexity() {
-    const startTime = Date.now();
-    try {
-      const response = await fetch('/api/perplexity', {
-        method: 'POST',
-        headers: await authHeaders(),
-        body: JSON.stringify({
-          messages: [
-            { role: 'user', content: 'Say "OK" if you can read this.' }
-          ],
-          model: 'sonar'
-        })
-      });
-
-      const duration = Date.now() - startTime;
-
-      if (!response.ok) {
-        const error = await response.json();
-        return {
-          success: false,
-          provider: 'Perplexity',
-          model: 'sonar-pro',
-          error: error.error || `HTTP ${response.status}`,
-          duration,
-          timestamp: new Date().toISOString()
-        };
-      }
-
-      const data = await response.json();
-
-      return {
-        success: true,
-        provider: 'Perplexity',
-        model: 'sonar-pro',
-        response: data.choices?.[0]?.message?.content || 'No response',
-        duration,
-        timestamp: new Date().toISOString()
-      };
-    } catch (error) {
-      return {
-        success: false,
-        provider: 'Perplexity',
-        model: 'sonar-pro',
+        model: 'claude-haiku-5-5',
         error: error.message,
         duration: Date.now() - startTime,
         timestamp: new Date().toISOString()
@@ -222,9 +116,7 @@ export const apiHealthCheck = {
   async testAll() {
     const results = await Promise.all([
       this.testOpenAI(),
-      this.testAnthropic(),
-      this.testGoogle(),
-      this.testPerplexity()
+      this.testAnthropic()
     ]);
 
     const summary = {

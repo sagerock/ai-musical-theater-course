@@ -16,12 +16,11 @@ import {
 
 // AI models available for discussion responses
 const DISCUSSION_AI_MODELS = [
-  'Claude Sonnet 4.6',
-  'Claude Opus 4.6',
-  'GPT-5 Mini',
-  'GPT-5',
-  'Gemini 2.5 Pro',
-  'Gemini Flash'
+  'Claude Sonnet 5.5',
+  'Claude Opus 5.5',
+  'Claude Haiku 5.5',
+  'GPT-6.1 Sol',
+  'GPT-6 Luna'
 ];
 
 export default function AnnouncementComments({
@@ -38,7 +37,7 @@ export default function AnnouncementComments({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [generatingAI, setGeneratingAI] = useState(false);
-  const [selectedAIModel, setSelectedAIModel] = useState('Claude Sonnet 4.6');
+  const [selectedAIModel, setSelectedAIModel] = useState('Claude Sonnet 5.5');
 
   useEffect(() => {
     loadComments();

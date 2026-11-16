@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { requireUser, validateChatPayload } from './_auth.js';
 
-const MAX_OUTPUT_TOKENS = 8192;
+// Includes the model's thinking, which counts toward max_tokens on current Claude models.
+const MAX_OUTPUT_TOKENS = 16000;
 
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
       apiKey: apiKey,
     });
 
-    const { messages, model = 'claude-sonnet-4-6', stream = false } = req.body;
+    const { messages, model = 'claude-sonnet-5-5', stream = false } = req.body;
 
     const payloadError = validateChatPayload(req.body, /^claude-[\w.-]+$/);
     if (payloadError) {
@@ -39,7 +40,7 @@ export default async function handler(req, res) {
     const requestedTokens = Number.parseInt(req.body.max_tokens, 10);
     const max_tokens = Number.isFinite(requestedTokens) && requestedTokens > 0
       ? Math.min(requestedTokens, MAX_OUTPUT_TOKENS)
-      : 4096;
+      : 8192;
 
     // Convert OpenAI format to Anthropic format if needed
     const formattedMessages = messages.map(msg => ({
@@ -68,10 +69,11 @@ export default async function handler(req, res) {
 
         for await (const chunk of stream) {
           // Convert Anthropic stream format to OpenAI format for consistency
+          if (chunk.type !== 'content_block_delta' || chunk.delta?.type !== 'text_delta') continue;
           const data = JSON.stringify({
             choices: [{
               delta: {
-                content: chunk.delta?.text || ''
+                content: chunk.delta.text
               }
             }]
           });
@@ -95,9 +97,11 @@ export default async function handler(req, res) {
       });
 
       // Extract the text content safely
-      const textContent = message.content && message.content[0] && message.content[0].text
-        ? message.content[0].text
-        : 'I apologize, but I was unable to generate a response.';
+      // Current Claude models think first, so the reply is the text blocks, not content[0].
+      const textContent = (message.content || [])
+        .filter(block => block.type === 'text')
+        .map(block => block.text)
+        .join('') || 'I apologize, but I was unable to generate a response.';
 
       // Convert Anthropic response to OpenAI format for consistency
       const response = {

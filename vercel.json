@@ -12,12 +12,6 @@
     "api/anthropic.js": {
       "maxDuration": 60
     },
-    "api/google.js": {
-      "maxDuration": 60
-    },
-    "api/perplexity.js": {
-      "maxDuration": 60
-    },
     "api/create-checkout-session.js": {
       "maxDuration": 10
     },

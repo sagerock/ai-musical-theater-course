@@ -198,7 +198,7 @@ Analyze the data and provide helpful insights.`;
 
       const aiResponse = await aiApi.sendChatCompletion(
         systemPrompt,
-        'claude-sonnet-4-20250514', // Use a good model for analysis
+        'Claude Sonnet 5.5', // Use a good model for analysis
         [] // No conversation history for now
       );
 

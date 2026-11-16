@@ -5093,7 +5093,7 @@ export const modulesApi = {
         order: moduleData.order || 1,
         systemPrompt: moduleData.systemPrompt || '',
         minimumExchanges: moduleData.minimumExchanges || 4,
-        aiModel: moduleData.aiModel || 'GPT-5 Mini',
+        aiModel: moduleData.aiModel || 'GPT-6.1 Sol',
         createdBy: moduleData.createdBy,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
