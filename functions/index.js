@@ -1575,6 +1575,53 @@ exports.sendEmail = onCall({
     throw new HttpsError('failed-precondition', 'Email service not configured. Please set SENDGRID_API_KEY.');
   }
 
+  // Who may email whom. Staff (admins, instructors, assistants) can write to
+  // anyone, e.g. to invite students. Everyone else can only write to people
+  // who already have an account here (their instructors and the admins), so a
+  // freshly registered account cannot use this function to mail strangers.
+  const recipients = (Array.isArray(to) ? to : [to])
+    .map((r) => (typeof r === 'string' ? r : r && r.email))
+    .filter((r) => typeof r === 'string' && r.trim())
+    .map((r) => r.trim());
+  if (recipients.length === 0 || recipients.length > 500) {
+    throw new HttpsError('invalid-argument', 'Invalid recipient list');
+  }
+
+  let callerIsStaff = false;
+  try {
+    const callerDoc = await db.collection('users').doc(callerUid).get();
+    const callerRole = callerDoc.exists ? callerDoc.data().role : null;
+    callerIsStaff = ['admin', 'instructor', 'teaching_assistant', 'school_administrator'].includes(callerRole);
+    if (!callerIsStaff) {
+      const memberships = await db.collection('courseMemberships')
+        .where('userId', '==', callerUid)
+        .where('status', '==', 'approved')
+        .get();
+      callerIsStaff = memberships.docs.some((m) =>
+        ['instructor', 'teaching_assistant', 'student_assistant', 'school_administrator'].includes(m.data().role));
+    }
+
+    if (!callerIsStaff) {
+      if (recipients.length > 25) {
+        throw new HttpsError('permission-denied', 'Too many recipients');
+      }
+      const known = new Set();
+      const candidates = Array.from(new Set(recipients.flatMap((r) => [r, r.toLowerCase()])));
+      for (let i = 0; i < candidates.length; i += 10) {
+        const found = await db.collection('users').where('email', 'in', candidates.slice(i, i + 10)).get();
+        found.forEach((u) => known.add(String(u.data().email).toLowerCase()));
+      }
+      if (!recipients.every((r) => known.has(r.toLowerCase()))) {
+        logger.warn('🚫 sendEmail refused: recipient is not a platform user', {callerUid});
+        throw new HttpsError('permission-denied', 'You can only email people who use AI Engagement Hub');
+      }
+    }
+  } catch (error) {
+    if (error instanceof HttpsError) throw error;
+    logger.error('❌ Could not verify sendEmail permissions:', error);
+    throw new HttpsError('permission-denied', 'Unable to verify permission to send email');
+  }
+
   try {
     // Get sender info from auth user
     const userDoc = await db.collection('users').doc(callerUid).get();

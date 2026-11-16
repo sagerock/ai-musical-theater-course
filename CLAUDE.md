@@ -62,14 +62,14 @@ Auto-admin: the email `sage+admin@sagerock.com` is automatically promoted to adm
 
 ### Firebase Cloud Functions (functions/index.js)
 
-Node.js 20, Firebase Functions v2. Key callable functions:
+Node.js 22, Firebase Functions v2. Key callable functions:
 
 - `deleteUserCompletely` — Admin-only cascading delete (memberships, chats, projects, notes, reflections, auth account)
 - `generateCourseAnalytics` — Server-side analytics computation, cached in `courseAnalytics` collection, marked stale by `updateAnalyticsOnChatChange` trigger
 - `sendCourseJoinNotifications` — Emails instructors/admins when students request enrollment
 - `sendApprovalConfirmationEmail` — Welcome email when enrollment is approved
 - `sendRoleChangeNotificationEmail` — Notifies students of role changes
-- `sendEmail` — General-purpose authenticated email sender via SendGrid
+- `sendEmail` — Authenticated email sender via SendGrid; staff can write to anyone, others only to existing users
 
 ### Vercel Serverless API (api/)
 
@@ -78,19 +78,26 @@ Each AI provider has its own proxy route with provider-specific handling:
 - `api/anthropic.js` — Converts OpenAI message format to Anthropic Messages API and back
 - `api/google.js` — Uses Gemini `startChat()` with history, maps roles (`assistant`→`model`)
 - `api/perplexity.js` — OpenAI-compatible endpoint, maps `sonar-pro`→`sonar`
-- `api/send-email.js` — SendGrid proxy, 30s max duration
+- `api/send-email.js` — SendGrid proxy for contact and help notifications to the site inbox only, 30s max duration
 - `api/health.js` — Health check
 
-### Firestore Security Rules (firestore.rules)
+### Security model (hardened 2026-11-16)
 
-Helper functions: `isAuthenticated()`, `isOwner()`, `isGlobalAdmin()`, `hasTeachingPermissionsInCourse()`, `hasStudentAssistantPermissionsInCourse()`, `isMemberOfCourse()`, `isSchoolAdministratorForCourse()`
+- **API routes need a sign-in.** `api/_auth.js` verifies the caller's Firebase ID token for the AI proxies and checkout; the client attaches it through `src/services/authHeaders.js`. `api/send-email.js` is reachable without a login (public contact form), so it only ever sends to the site's own notification inbox (`CONTACT_NOTIFY_EMAIL`). Mail to students and instructors goes through the `sendEmail` Cloud Function, which lets non-staff write only to existing platform users.
+- **Rules are not filters.** There are no blanket `allow list` rules on student data. A query is allowed only when its `where` constraints prove every result passes the same conditions as a single read, either directly (`userId ==`, `courseId ==`, `createdBy ==`) or through the parent document (`projectId`, `chatId`, `announcementId`). A new query on chats, projects, attachments, reflections, notes, materials, announcements, comments, modules or progress must carry one of those constraints.
+- **Users cannot change their own `role`, `isGlobalAdmin`, `schoolId` or `semesterAccess`.** Admins set roles; the Stripe webhook sets paid access. The designated admin address can self-promote only when its email is verified.
+- **Storage:** course materials are staff-write and member-read, discussion attachments are member-only, both checked against Firestore memberships (cross-service rules).
+- **Chat text is never trusted as HTML.** `MarkdownRenderer` escapes everything first and renders only http(s)/mailto links.
+- **Test before deploying rules:** `npm run test:security` replays the app's real query shapes per role in the emulators (`tests/security-rules.check.js`). Add a case there for any new query or collection.
 
-Key patterns:
-- Teaching permissions = `teaching_assistant` OR `instructor` OR `school_administrator`
-- Students create pending memberships; instructors approve
-- Student assistants can view peer projects (enables peer mentoring)
-- Chats are most restrictive: owner + course instructors only
-- Contact requests are publicly writable (lead gen), admin-only readable
+Helper functions in `firestore.rules`: `isAuthenticated()`, `isOwner()`, `isGlobalAdmin()`, `hasTeachingPermissionsInCourse()`, `hasStudentAssistantPermissionsInCourse()`, `isMemberOfCourse()`, `isSchoolAdministratorForCourse()`, `canViewProject()`, `canViewChat()`, `canViewAnnouncement()`.
+
+Known gaps, not yet closed: any signed-in user can read the `users` and `courses` collections (names, emails, access codes); a user with the global `instructor` role can update any course; hidden instructor notes are filtered only in the client; no per-user rate limit on the AI routes; old Supabase credentials remain in Git history (the project they belong to is paused); Cloud Functions other than `sendEmail` are still on the retired Node 20 runtime and need the bump to 22 (already set in `firebase.json`) on their next deploy.
+
+### Deployments
+
+- Production: Vercel, auto-deploys from `main`, at `www.ai-engagement-hub.com` (Firebase project `staging-intelligence-8c59c`). The `ai-interaction-logger.vercel.app` address serves the same build but is not an allowed sign-in domain.
+- `origin/supabase-migration` (April 2026) is an unfinished Supabase + Railway port. Its Railway service was stopped on 2026-11-16 because its server exposes the AI and email routes without a login; fix that before starting it again.
 
 ### Analytics Architecture
 
