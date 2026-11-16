@@ -1,10 +1,15 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { requireUser, validateChatPayload } from './_auth.js';
 
 export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Signed-in users only
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   try {
     // Get API key from server-side environment variable
@@ -22,8 +27,9 @@ export default async function handler(req, res) {
 
     const { messages, model = 'gemini-2.5-flash', stream = false } = req.body;
 
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'Messages array is required' });
+    const payloadError = validateChatPayload(req.body, /^gemini-[\w.-]+$/);
+    if (payloadError) {
+      return res.status(400).json({ error: payloadError });
     }
 
     // Get the model

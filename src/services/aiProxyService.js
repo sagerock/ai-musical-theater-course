@@ -3,6 +3,7 @@
 
 import errorLogger from '../utils/errorLogger';
 import retryHelper from '../utils/retryHelper';
+import { authHeaders } from './authHeaders';
 
 const API_ENDPOINTS = {
   openai: '/api/openai',
@@ -130,9 +131,7 @@ export const aiProxyService = {
         try {
           const fetchResponse = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: await authHeaders(),
             body: JSON.stringify({
               messages,
               model: config.model,

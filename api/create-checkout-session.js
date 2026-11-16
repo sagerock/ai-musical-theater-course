@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { requireUser } from './_auth.js';
 
 // Semester configuration
 const SEMESTERS = {
@@ -32,10 +33,17 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Stripe not configured. Please set STRIPE_SECRET_KEY in Vercel environment variables.' });
   }
 
-  const { userId, userEmail, courseCode } = req.body;
+  // Signed-in users only. The account being paid for always comes from the
+  // verified sign-in, never from the request body.
+  const user = await requireUser(req, res);
+  if (!user) return;
 
-  if (!userId || !userEmail || !courseCode) {
-    return res.status(400).json({ error: 'userId, userEmail, and courseCode are required' });
+  const userId = user.uid;
+  const userEmail = user.email;
+  const courseCode = typeof req.body?.courseCode === 'string' ? req.body.courseCode : '';
+
+  if (!userEmail || !courseCode || courseCode.length > 64) {
+    return res.status(400).json({ error: 'courseCode is required' });
   }
 
   try {
@@ -47,7 +55,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: `No semester configuration found for ${semesterKey}` });
     }
 
-    const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://aiengagementhub.com';
+    // Send the browser back to this deployment, not to whatever Origin the caller claims.
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const origin = `https://${host}`;
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: ['http://localhost:3000', 'http://127.0.0.1:3000'] }));
 app.use(express.json());
 
 // SendGrid configuration
@@ -82,12 +82,12 @@ app.get('/api/health', (req, res) => {
 app.get('/api/test-config', (req, res) => {
   res.json({
     hasApiKey: !!SENDGRID_API_KEY,
-    fromEmail: SENDGRID_FROM_EMAIL,
-    apiKeyStart: SENDGRID_API_KEY ? SENDGRID_API_KEY.substring(0, 10) + '...' : 'Not configured'
+    fromEmail: SENDGRID_FROM_EMAIL
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+// Local development helper only: listen on loopback so it is never reachable from the network.
+app.listen(PORT, '127.0.0.1', () => {
   console.log(`🚀 Email proxy server running on port ${PORT}`);
   console.log(`📋 Health check available at: http://localhost:${PORT}/api/health`);
   console.log(`📧 Email endpoint available at: http://localhost:${PORT}/api/send-email`);

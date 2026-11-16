@@ -1,8 +1,14 @@
+import { requireUser, validateChatPayload } from './_auth.js';
+
 export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Signed-in users only
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   try {
     // Get API key from server-side environment variable
@@ -23,8 +29,9 @@ export default async function handler(req, res) {
       model = 'sonar';
     }
 
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'Messages array is required' });
+    const payloadError = validateChatPayload(req.body, /^sonar[\w.-]*$/);
+    if (payloadError) {
+      return res.status(400).json({ error: payloadError });
     }
 
     // Perplexity uses OpenAI-compatible API

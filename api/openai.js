@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { requireUser, validateChatPayload } from './_auth.js';
 
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -6,12 +7,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Signed-in users only
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   try {
     // Get API key from server-side environment variable (no REACT_APP_ prefix)
     const apiKey = process.env.OPENAI_API_KEY;
-
-    console.log('OpenAI API Key Length:', apiKey ? apiKey.length : 'undefined');
-    console.log('API Key starts with:', apiKey ? apiKey.substring(0, 20) + '...' : 'undefined');
 
     if (!apiKey) {
       console.error('OpenAI API key not configured in Vercel environment variables');
@@ -37,11 +39,12 @@ export default async function handler(req, res) {
     const { messages, model = 'gpt-4o-mini', stream = false } = req.body;
 
     // GPT-5 models only support temperature = 1
-    const isGPT5Model = model.startsWith('gpt-5');
+    const isGPT5Model = typeof model === 'string' && model.startsWith('gpt-5');
     const temperature = isGPT5Model ? 1 : (req.body.temperature || 0.7);
 
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'Messages array is required' });
+    const payloadError = validateChatPayload(req.body, /^(gpt-|o\d|chatgpt-)[\w.-]*$/);
+    if (payloadError) {
+      return res.status(400).json({ error: payloadError });
     }
 
     if (stream) {

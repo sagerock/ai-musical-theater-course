@@ -1,3 +1,4 @@
+import { authHeaders } from './authHeaders';
 import { 
   collection, 
   doc, 
@@ -2044,13 +2045,16 @@ export const chatApi = {
     // Fetch only uncached projects
     for (let i = 0; i < uncachedProjectIds.length; i += 10) {
       const batch = uncachedProjectIds.slice(i, i + 10);
-      const projectQuery = query(collection(db, 'projects'), where('__name__', 'in', batch));
-      const projectSnapshot = await getDocs(projectQuery);
-      
-      projectSnapshot.forEach(doc => {
-        const projectData = { id: doc.id, ...doc.data() };
-        projectMap.set(doc.id, projectData);
-        dataCache.setProject(doc.id, projectData); // Cache for future use
+      // Single-document reads: security rules can check each project on its own
+      const projectSnapshots = await Promise.all(
+        batch.map(projectId => getDoc(doc(db, 'projects', projectId)).catch(() => null))
+      );
+
+      projectSnapshots.forEach(projectSnap => {
+        if (!projectSnap || !projectSnap.exists()) return;
+        const projectData = { id: projectSnap.id, ...projectSnap.data() };
+        projectMap.set(projectSnap.id, projectData);
+        dataCache.setProject(projectSnap.id, projectData); // Cache for future use
       });
     }
     
@@ -2061,10 +2065,16 @@ export const chatApi = {
     if (chatIdsWithReflections.length > 0) {
       for (let i = 0; i < chatIdsWithReflections.length; i += 10) {
         const batch = chatIdsWithReflections.slice(i, i + 10);
-        const reflectionQuery = query(
-          collection(db, 'reflections'),
-          where('chatId', 'in', batch)
-        );
+        const reflectionQuery = filters.courseId
+          ? query(
+              collection(db, 'reflections'),
+              where('courseId', '==', filters.courseId),
+              where('chatId', 'in', batch)
+            )
+          : query(
+              collection(db, 'reflections'),
+              where('chatId', 'in', batch)
+            );
         const reflectionSnapshot = await getDocs(reflectionQuery);
 
         reflectionSnapshot.forEach(doc => {
@@ -2465,12 +2475,18 @@ export const attachmentApi = {
         const chatBatch = allChatIds.slice(i, i + 10);
         const attachmentsQuery = query(
           collection(db, 'pdfAttachments'),
-          where('chatId', 'in', chatBatch),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', studentId),
+          where('chatId', 'in', chatBatch)
         );
         const attachmentsSnapshot = await getDocs(attachmentsQuery);
         allAttachments.push(...attachmentsSnapshot.docs);
       }
+      // Newest first (sorted here so the query needs no extra index)
+      const attachmentTime = (d) => {
+        const t = d.data().createdAt;
+        return t?.toMillis ? t.toMillis() : new Date(t || 0).getTime();
+      };
+      allAttachments.sort((a, b) => attachmentTime(b) - attachmentTime(a));
       
       // Deduplicate attachments by ID
       const uniqueAttachmentDocs = Array.from(
@@ -2560,6 +2576,7 @@ export const attachmentApi = {
       for (const projectBatch of projectBatches) {
         const chatsQuery = query(
           collection(db, 'chats'),
+          where('courseId', '==', courseId),
           where('projectId', 'in', projectBatch)
         );
         const chatsSnapshot = await getDocs(chatsQuery);
@@ -2583,13 +2600,13 @@ export const attachmentApi = {
       // Get all attachments for these chats (in batches)
       const allAttachments = [];
       for (const chatBatch of chatBatches) {
-        const attachmentsQuery = query(
+        // One query per chat: security rules check access through that chat
+        const snapshots = await Promise.all(chatBatch.map(chatId => getDocs(query(
           collection(db, 'pdfAttachments'),
-          where('chatId', 'in', chatBatch),
+          where('chatId', '==', chatId),
           orderBy('createdAt', 'desc')
-        );
-        const attachmentsSnapshot = await getDocs(attachmentsQuery);
-        allAttachments.push(...attachmentsSnapshot.docs);
+        ))));
+        snapshots.forEach(snapshot => allAttachments.push(...snapshot.docs));
       }
       
       console.log('🔥 Found raw attachments for course:', allAttachments.length);
@@ -4878,7 +4895,7 @@ export const paymentApi = {
   async createCheckoutSession(userId, userEmail, courseCode) {
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await authHeaders(),
       body: JSON.stringify({ userId, userEmail, courseCode }),
     });
 

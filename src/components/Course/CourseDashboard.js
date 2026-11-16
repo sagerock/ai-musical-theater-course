@@ -49,13 +49,23 @@ export default function CourseDashboard() {
       const isInstructor = userRole === 'instructor' || isInstructorAnywhere;
 
       // Server-side counts for projects and chats (zero document downloads)
-      const projectCountPromise = getCountFromServer(
-        query(collection(db, 'projects'), where('courseId', '==', courseId))
-      ).then(snap => snap.data().count).catch(() => 0);
+      // Course-wide counts are for staff. Everyone else counts their own work,
+      // which is all the security rules let them see.
+      const uid = currentUser?.uid || currentUser?.id;
+      const courseWide = (name) =>
+        getCountFromServer(query(collection(db, name), where('courseId', '==', courseId)))
+          .then(snap => snap.data().count);
+      const ownOnly = (name, ownerField) =>
+        getCountFromServer(query(collection(db, name), where('courseId', '==', courseId), where(ownerField, '==', uid)))
+          .then(snap => snap.data().count);
 
-      const chatCountPromise = getCountFromServer(
-        query(collection(db, 'chats'), where('courseId', '==', courseId))
-      ).then(snap => snap.data().count).catch(() => 0);
+      const projectCountPromise = courseWide('projects')
+        .catch(() => ownOnly('projects', 'createdBy'))
+        .catch(() => 0);
+
+      const chatCountPromise = courseWide('chats')
+        .catch(() => ownOnly('chats', 'userId'))
+        .catch(() => 0);
 
       // Members: only fetch for instructors (students use cached counts from course doc)
       const membersPromise = isInstructor

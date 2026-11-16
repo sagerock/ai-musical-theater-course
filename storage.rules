@@ -2,44 +2,64 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper function to check if user is authenticated
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper function to check if user owns the file
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // PDF attachments stored as: /pdf-uploads/{userId}/{chatId}/{filename}
-    match /pdf-uploads/{userId}/{chatId}/{filename} {
-      // Only file owner can read/write their PDFs
-      // TODO: Add instructor access for course oversight when needed
-      allow read, write: if isOwner(userId);
-    }
-    
-    // User profile images stored as: /profile-images/{userId}/{filename}
-    match /profile-images/{userId}/{filename} {
-      allow read: if isAuthenticated();  // Public read for profile images
-      allow write: if isOwner(userId);   // Only owner can upload
-    }
-    
-    // Course materials stored as: /course-materials/{courseId}/{filename}
-    match /course-materials/{courseId}/{filename} {
-      // Only course members can read course materials
-      // Only instructors and admins can upload course materials
-      allow read: if isAuthenticated(); // TODO: Restrict to course members when courseId lookup is available
-      allow write: if isAuthenticated(); // TODO: Restrict to instructors/admins when role lookup is available
+    // Course access is looked up in Firestore (cross-service rules).
+    function membershipPath(courseId) {
+      return /databases/(default)/documents/courseMemberships/$(request.auth.uid + '_' + courseId);
     }
 
-    // Announcement attachments stored as: /announcements/{courseId}/{filename}
-    match /announcements/{courseId}/{filename} {
-      // All authenticated users can read announcement attachments (they're public within the course)
+    function isCourseMember(courseId) {
+      return isAuthenticated() &&
+             firestore.exists(membershipPath(courseId)) &&
+             firestore.get(membershipPath(courseId)).data.status == 'approved';
+    }
+
+    function isCourseStaff(courseId) {
+      return isCourseMember(courseId) &&
+             firestore.get(membershipPath(courseId)).data.role in ['teaching_assistant', 'instructor', 'school_administrator'];
+    }
+
+    function isGlobalAdmin() {
+      return isAuthenticated() &&
+             firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Uploads are capped so the bucket cannot be used as free file hosting.
+    function isReasonableSize() {
+      return request.resource == null || request.resource.size < 50 * 1024 * 1024;
+    }
+
+    // PDF attachments stored as: /pdf-uploads/{userId}/{chatId}/{filename}
+    match /pdf-uploads/{userId}/{chatId}/{filename} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isReasonableSize();
+    }
+
+    // User profile images stored as: /profile-images/{userId}/{filename}
+    match /profile-images/{userId}/{filename} {
       allow read: if isAuthenticated();
-      // Only authenticated users can upload (will be restricted by Firestore rules to instructors)
-      allow write: if isAuthenticated();
+      allow write: if isOwner(userId) && isReasonableSize();
+    }
+
+    // Course materials stored as: /course-materials/{courseId}/{filename}
+    match /course-materials/{courseId}/{filename} {
+      allow read: if isCourseMember(courseId) || isGlobalAdmin();
+      allow write: if (isCourseStaff(courseId) || isGlobalAdmin()) && isReasonableSize();
+    }
+
+    // Announcement and discussion attachments stored as: /announcements/{courseId}/{filename}
+    match /announcements/{courseId}/{filename} {
+      allow read: if isCourseMember(courseId) || isGlobalAdmin();
+      allow write: if (isCourseMember(courseId) || isGlobalAdmin()) && isReasonableSize();
     }
   }
 }

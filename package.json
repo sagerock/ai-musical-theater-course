@@ -43,7 +43,8 @@
     "features:status": "node scripts/feature-status.js",
     "features:labels": "node scripts/setup-github-labels.js",
     "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"npm start\""
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "test:security": "firebase emulators:exec --project demo-aeh-rules --only firestore,storage \"node tests/security-rules.check.js\""
   },
   "eslintConfig": {
     "extends": [

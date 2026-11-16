@@ -147,7 +147,7 @@ export default function InstructorDashboardContainer() {
       for (let i = 0; i < projectIds.length; i += 10) {
         const batch = projectIds.slice(i, i + 10);
         try {
-          const notesQuery = query(collection(db, 'instructorNotes'), where('projectId', 'in', batch));
+          const notesQuery = query(collection(db, 'instructorNotes'), where('courseId', '==', selectedCourseId), where('projectId', 'in', batch));
           const notesSnapshot = await getDocs(notesQuery);
           notesSnapshot.forEach(doc => {
             const data = { id: doc.id, ...doc.data() };

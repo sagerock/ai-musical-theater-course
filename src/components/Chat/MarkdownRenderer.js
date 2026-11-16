@@ -1,5 +1,19 @@
 import React from 'react';
 
+// Chat text (prompts, AI responses, notes) is stored data that another person
+// may later view, so it is never trusted as HTML. Everything is escaped first
+// and only the markdown we generate ourselves becomes markup.
+const escapeHtml = (value) =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+// Only web and mail links are allowed; anything else (javascript:, data:, ...) is dropped.
+const isSafeUrl = (url) => /^(https?:\/\/|mailto:)/i.test(url.trim());
+
 // Simple markdown renderer without external dependencies
 export default function MarkdownRenderer({ children }) {
   if (!children) return null;
@@ -41,7 +55,7 @@ export default function MarkdownRenderer({ children }) {
   };
 
   const formatText = (text) => {
-    let formatted = text;
+    let formatted = escapeHtml(text);
 
     // Handle code blocks (```code```) — extract and preserve them
     const codeBlocks = [];
@@ -68,18 +82,24 @@ export default function MarkdownRenderer({ children }) {
     // Handle images (![alt](url)) — must be before links
     formatted = formatted.replace(
       /!\[([^\]]*)\]\(([^)]+)\)/g,
-      '<img src="$2" alt="$1" style="max-width:100%" />'
+      (match, alt, url) =>
+        /^https?:\/\//i.test(url.trim())
+          ? `<img src="${url.trim()}" alt="${alt}" style="max-width:100%" />`
+          : alt
     );
 
     // Handle links ([text](url))
     formatted = formatted.replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+      (match, label, url) =>
+        isSafeUrl(url)
+          ? `<a href="${url.trim()}" target="_blank" rel="noopener noreferrer">${label}</a>`
+          : label
     );
 
     // Auto-link bare URLs (not already inside an href or src)
     formatted = formatted.replace(
-      /(?<!="|'>)(https?:\/\/[^\s<)]+)/g,
+      /(?<!="|'>)(https?:\/\/(?:(?!&lt;|&gt;|&quot;|&#39;)[^\s<)])+)/g,
       '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
     );
 
@@ -137,7 +157,7 @@ export default function MarkdownRenderer({ children }) {
 
     // Handle blockquotes
     formatted = formatted.replace(
-      /^> (.*$)/gm,
+      /^&gt; (.*$)/gm,
       '<blockquote>$1</blockquote>'
     );
     // Merge consecutive blockquotes

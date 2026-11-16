@@ -96,14 +96,81 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId == get(/databases/$(database)/documents/courses/$(courseId)).data.schoolId;
     }
     
+    // ---- Helpers that reach access through a related document ----
+    // Security rules are not filters: a query is only allowed when its own
+    // constraints prove that every result passes. These helpers let a query on
+    // projectId / chatId / announcementId be proven through the parent document.
+
+    function projectDoc(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data;
+    }
+
+    // Owner of the project, or staff / student assistant / school administrator of its course
+    function canViewProject(projectId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/projects/$(projectId)) && (
+               projectDoc(projectId).get('createdBy', null) == request.auth.uid ||
+               projectDoc(projectId).get('created_by', null) == request.auth.uid ||
+               hasStudentAssistantPermissionsInCourse(projectDoc(projectId).courseId) ||
+               isSchoolAdministratorForCourse(projectDoc(projectId).courseId)
+             );
+    }
+
+    function chatDoc(chatId) {
+      return get(/databases/$(database)/documents/chats/$(chatId)).data;
+    }
+
+    // Owner of the chat, or staff / student assistant of its course
+    function canViewChat(chatId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/chats/$(chatId)) && (
+               chatDoc(chatId).userId == request.auth.uid ||
+               hasStudentAssistantPermissionsInCourse(chatDoc(chatId).courseId)
+             );
+    }
+
+    // Approved member of the course an announcement or discussion belongs to
+    function canViewAnnouncement(announcementId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/announcements/$(announcementId)) &&
+             isMemberOfCourse(get(/databases/$(database)/documents/announcements/$(announcementId)).data.courseId);
+    }
+
+    // ---- Helpers for the user document ----
+    // role, isGlobalAdmin, schoolId and semesterAccess decide what a person can
+    // see and whether they have paid. Only an admin (or the payment webhook,
+    // which bypasses rules) may set them.
+    function privilegedUserFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+               .hasAny(['role', 'isGlobalAdmin', 'schoolId', 'semesterAccess']);
+    }
+
+    function isPlainNewUser() {
+      return request.resource.data.get('role', 'student') == 'student' &&
+             request.resource.data.get('isGlobalAdmin', false) == false &&
+             !request.resource.data.keys().hasAny(['schoolId', 'semesterAccess']);
+    }
+
+    // The designated admin address may promote itself, but only once the
+    // address is verified, so registering it first is not enough.
+    function isDesignatedAdminAccount() {
+      return request.auth.token.email == 'sage+admin@sagerock.com' &&
+             request.auth.token.email_verified == true;
+    }
+
     // USERS COLLECTION - Secure user profile access for educational environment
     match /users/{userId} {
       // In an educational platform, basic user profiles (name, email) should be readable by authenticated users
       // This allows Teaching Assistants and other course staff to see student names in their courses
       allow read: if isAuthenticated();
       
-      // Only allow write access to own profile, admins, or data repair functions
-      allow write: if isOwner(userId) || isGlobalAdmin() || canPerformDataRepair();
+      // People manage their own profile but can never change their own role,
+      // admin flag, school or paid access.
+      allow create: if isGlobalAdmin() ||
+                       (isOwner(userId) && (isPlainNewUser() || isDesignatedAdminAccount()));
+      allow update: if isGlobalAdmin() ||
+                       (isOwner(userId) && (privilegedUserFieldsUnchanged() || isDesignatedAdminAccount()));
+      allow delete: if isOwner(userId) || isGlobalAdmin();
       
       // Allow instructors, teaching assistants and admins to query/list users for course management and data repair
       allow list: if isAuthenticated() && (hasTeachingPermissions() || isGlobalAdmin() || canPerformDataRepair());
@@ -201,21 +268,20 @@ service cloud.firestore {
         isGlobalAdmin()                                  // Global admin
       );
       
-      // Allow list queries for projects (filtered by read rules)
-      allow list: if isAuthenticated();
+      // Queries follow the same conditions as single reads (no blanket list).
     }
 
     // CHATS COLLECTION - Owner or instructor access (most sensitive data)
     match /chats/{chatId} {
       // Students can read their own chats, instructors can read student chats from their courses
+      // Applies to single reads and to queries alike (no blanket list).
       allow read: if isAuthenticated() && (
         isOwner(resource.data.userId) ||                 // Chat owner
-        isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
+        resource.data.get('user_id', null) == request.auth.uid ||  // Chat owner (legacy field name)
+        hasStudentAssistantPermissionsInCourse(resource.data.courseId) ||  // Course staff and student assistants
+        canViewProject(resource.data.projectId) ||       // Reached through the project (project owner, course staff)
         isGlobalAdmin()                                  // Global admin
       );
-      
-      // Allow collection queries for authenticated users (filtered by read rules above)
-      allow list: if isAuthenticated();
       
       // Only chat owners can create/update their chats (students can't see others' chats)
       allow create: if isAuthenticated() && 
@@ -236,12 +302,9 @@ service cloud.firestore {
     match /pdfAttachments/{attachmentId} {
       allow read: if isAuthenticated() && (
         isOwner(resource.data.userId) ||                 // Attachment owner
+        canViewChat(resource.data.chatId) ||             // Chat owner, course staff and student assistants
         isGlobalAdmin()                                  // Global admin
-        // TODO: Add instructor access via chat lookup when needed
       );
-      
-      // Allow list queries for authenticated users (they'll only see their own due to read rules)
-      allow list: if isAuthenticated();
       
       allow create: if isAuthenticated() && 
                    request.resource.data.userId == request.auth.uid;
@@ -256,22 +319,18 @@ service cloud.firestore {
       // 2. User is an instructor in the course
       // 3. User is an admin
       allow read: if isAuthenticated() && (
-        // Check if user owns the project
-        (exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
-         (get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.createdBy == request.auth.uid ||
-          get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.created_by == request.auth.uid)) ||
-        // Or user is instructor in the course
+        // Staff of the course the note belongs to
         isInstructorInCourse(resource.data.courseId) ||
-        // Or user is admin
+        // The person who wrote the note
+        resource.data.authorId == request.auth.uid ||
+        // The owner of the project the note is about, or staff of that project's course
+        // (lets a query on projectId alone be proven)
+        (exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) && (
+          projectDoc(resource.data.projectId).get('createdBy', null) == request.auth.uid ||
+          projectDoc(resource.data.projectId).get('created_by', null) == request.auth.uid ||
+          isInstructorInCourse(projectDoc(resource.data.projectId).courseId)
+        )) ||
         isGlobalAdmin()
-      );
-
-      // Same restrictions for listing
-      allow list: if isAuthenticated() && (
-        // Note: list operations will be filtered by the read rule above
-        hasInstructorRole() ||  // Instructors can query
-        isGlobalAdmin() ||       // Admins can query
-        request.auth.uid != null // Regular users can query (but only see their notes due to read rule)
       );
 
       // Very simple create rule - just check authorId matches
@@ -295,14 +354,8 @@ service cloud.firestore {
       // Students can access their own reflections, instructors can read student reflections
       allow read: if isAuthenticated() && (
         isOwner(resource.data.userId) ||                 // Reflection owner
-        isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
-        isGlobalAdmin()                                  // Global admin
-      );
-      
-      // Allow collection queries for users to find their own reflections and for instructors
-      allow list: if isAuthenticated() && (
-        request.auth.uid != null ||                      // Authenticated users can query
-        hasInstructorRole() ||                           // Users with instructor role
+        hasStudentAssistantPermissionsInCourse(resource.data.courseId) ||  // Course staff and student assistants
+        canViewChat(resource.data.chatId) ||             // Reached through the chat it reflects on
         isGlobalAdmin()                                  // Global admin
       );
       
@@ -315,46 +368,29 @@ service cloud.firestore {
 
     // TAGS - Course-specific tags
     match /tags/{tagId} {
-      // Course members can read tags, instructors/admins can manage them
-      allow read: if isAuthenticated() && (
-        resource.data.courseId == null ||               // Global tags (no course)
-        isMemberOfCourse(resource.data.courseId) ||     // Course member
-        isGlobalAdmin()                                  // Global admin
-      );
-      
-      // Allow collection queries for course members and admins
-      allow list: if isAuthenticated();
-      
+      // Tags are labels only (no student content), so any signed-in user may read them.
+      allow read: if isAuthenticated();
+
+      // Course tags are managed by that course's staff; global tags by admins.
       allow create: if isAuthenticated() && (
-        request.resource.data.courseId == null ||       // Global tags (no course)
-        isInstructorInCourse(request.resource.data.courseId) ||  // Instructor in course
-        isGlobalAdmin()                                  // Global admin
+        (request.resource.data.get('courseId', null) != null &&
+         isInstructorInCourse(request.resource.data.courseId)) ||
+        isGlobalAdmin()
       );
-      
+
       allow update, delete: if isAuthenticated() && (
-        resource.data.courseId == null ||               // Global tags (no course)
-        isInstructorInCourse(resource.data.courseId) ||  // Instructor in course
-        isGlobalAdmin()                                  // Global admin
+        (resource.data.get('courseId', null) != null &&
+         isInstructorInCourse(resource.data.courseId)) ||
+        isGlobalAdmin()
       );
     }
 
     // CHAT TAGS - Junction table for chat-tag relationships
     match /chatTags/{chatTagId} {
-      // Users can read their own chat tags, instructors can read student chat tags in their courses
-      allow read: if isAuthenticated() && (
-        // Chat owner can read their own tags
-        exists(/databases/$(database)/documents/chats/$(resource.data.chatId)) &&
-        get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.userId == request.auth.uid ||
-        // Instructors can read tags for chats in their courses
-        exists(/databases/$(database)/documents/chats/$(resource.data.chatId)) &&
-        isInstructorInCourse(get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.courseId) ||
-        // Global admins can read all
-        isGlobalAdmin()
-      );
-      
-      // Allow collection queries but filtered by read rules above
-      allow list: if isAuthenticated();
-      
+      // A chat tag holds only a chat id and a tag id (no content), so any
+      // signed-in user may read them. The chats themselves stay protected.
+      allow read: if isAuthenticated();
+
       // Users can create/modify tags for their own chats, instructors for student chats in their courses
       allow create: if isAuthenticated() && (
         // Chat owner can tag their own chats
@@ -434,9 +470,6 @@ service cloud.firestore {
         isGlobalAdmin()
       );
 
-      // Allow collection queries for users to find their own payments and for admins
-      allow list: if isAuthenticated();
-
       // No client writes — payments are created exclusively by the webhook via firebase-admin
       allow create, update, delete: if false;
     }
@@ -455,9 +488,7 @@ service cloud.firestore {
       
       // Only admins can update/delete help requests (for status management)
       allow update, delete: if isGlobalAdmin();
-      
-      // Users can query their own requests, admins can query all
-      allow list: if isAuthenticated();
+
     }
     
     // COURSE MATERIALS - Instructor-managed library of course documents
@@ -471,9 +502,6 @@ service cloud.firestore {
         // Global admins can read all materials
         isGlobalAdmin()
       );
-
-      // Allow collection queries for course members
-      allow list: if isAuthenticated();
 
       // Only instructors and TAs can create course materials
       allow create: if isAuthenticated() && (
@@ -495,9 +523,6 @@ service cloud.firestore {
         isMemberOfCourse(resource.data.courseId) ||
         isGlobalAdmin()
       );
-
-      // Allow collection queries for course members
-      allow list: if isAuthenticated();
 
       // Create rules:
       // - Instructors/TAs can create both announcements and discussions
@@ -538,20 +563,24 @@ service cloud.firestore {
 
     // ANNOUNCEMENT COMMENTS - All course members can comment
     match /announcementComments/{commentId} {
-      // Anyone can read comments (filtered by announcement access)
-      allow read: if isAuthenticated();
+      // Members of the course the post belongs to can read its comments
+      allow read: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid ||
+        canViewAnnouncement(resource.data.announcementId) ||
+        isGlobalAdmin()
+      );
 
-      // Allow collection queries
-      allow list: if isAuthenticated();
-
-      // Any authenticated user can create comments if they set themselves as the author
+      // Members of the course can comment, as themselves
       allow create: if isAuthenticated() &&
-                      request.resource.data.authorId == request.auth.uid;
+                      request.resource.data.authorId == request.auth.uid && (
+                        canViewAnnouncement(request.resource.data.announcementId) ||
+                        isGlobalAdmin()
+                      );
 
       // Authors can update their own comments
-      allow update: if isAuthenticated() &&
+      allow update: if isAuthenticated() && (
                       resource.data.authorId == request.auth.uid ||
-                      isGlobalAdmin();
+                      isGlobalAdmin());
 
       // Authors can delete their own comments, instructors can delete any comment in their course, admins can delete any
       allow delete: if isAuthenticated() && (
@@ -572,7 +601,10 @@ service cloud.firestore {
     // ==================== MODULES ====================
     // Course learning modules - instructors manage, course members read
     match /modules/{moduleId} {
-      allow read, list: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        isMemberOfCourse(resource.data.courseId) ||
+        isGlobalAdmin()
+      );
       allow create: if isAuthenticated() && (
         hasTeachingPermissionsInCourse(request.resource.data.courseId) ||
         isGlobalAdmin()
@@ -586,14 +618,24 @@ service cloud.firestore {
     // ==================== MODULE PROGRESS ====================
     // Student module completion tracking
     match /moduleProgress/{progressId} {
-      allow read, list: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isInstructorInCourse(resource.data.courseId) ||
+        // lets course staff find a module's progress records by moduleId
+        (exists(/databases/$(database)/documents/modules/$(resource.data.moduleId)) &&
+         isInstructorInCourse(get(/databases/$(database)/documents/modules/$(resource.data.moduleId)).data.courseId)) ||
+        isGlobalAdmin()
+      );
       allow create: if isAuthenticated() &&
         request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         isGlobalAdmin()
       );
-      allow delete: if isAuthenticated() && isGlobalAdmin();
+      allow delete: if isAuthenticated() && (
+        isInstructorInCourse(resource.data.courseId) ||
+        isGlobalAdmin()
+      );
     }
   }
 }

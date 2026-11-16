@@ -114,3 +114,6 @@ Thumbs.db
 *.temp
 .vercel
 .env.backup
+
+# Emulator logs
+*-debug.log

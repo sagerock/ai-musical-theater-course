@@ -1,10 +1,17 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { requireUser, validateChatPayload } from './_auth.js';
+
+const MAX_OUTPUT_TOKENS = 8192;
 
 export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Signed-in users only
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   try {
     // Get API key from server-side environment variable
@@ -22,11 +29,17 @@ export default async function handler(req, res) {
       apiKey: apiKey,
     });
 
-    const { messages, model = 'claude-sonnet-4-6', max_tokens = 4096, stream = false } = req.body;
+    const { messages, model = 'claude-sonnet-4-6', stream = false } = req.body;
 
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'Messages array is required' });
+    const payloadError = validateChatPayload(req.body, /^claude-[\w.-]+$/);
+    if (payloadError) {
+      return res.status(400).json({ error: payloadError });
     }
+
+    const requestedTokens = Number.parseInt(req.body.max_tokens, 10);
+    const max_tokens = Number.isFinite(requestedTokens) && requestedTokens > 0
+      ? Math.min(requestedTokens, MAX_OUTPUT_TOKENS)
+      : 4096;
 
     // Convert OpenAI format to Anthropic format if needed
     const formattedMessages = messages.map(msg => ({

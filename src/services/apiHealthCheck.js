@@ -1,3 +1,4 @@
+import { authHeaders } from './authHeaders';
 // API Health Check Service
 // Tests connectivity and basic functionality of all AI provider APIs
 
@@ -10,7 +11,7 @@ export const apiHealthCheck = {
     try {
       const response = await fetch('/api/openai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           messages: [
             { role: 'system', content: 'You are a helpful assistant.' },
@@ -64,7 +65,7 @@ export const apiHealthCheck = {
     try {
       const response = await fetch('/api/anthropic', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           messages: [
             { role: 'user', content: 'Say "OK" if you can read this.' }
@@ -117,7 +118,7 @@ export const apiHealthCheck = {
     try {
       const response = await fetch('/api/google', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           messages: [
             { role: 'user', content: 'Say "OK" if you can read this.' }
@@ -170,7 +171,7 @@ export const apiHealthCheck = {
     try {
       const response = await fetch('/api/perplexity', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           messages: [
             { role: 'user', content: 'Say "OK" if you can read this.' }
